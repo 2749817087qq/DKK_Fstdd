@@ -1,0 +1,49 @@
+change_id: 2026-09-15-crlf-eol-governance
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 0
+last_modified: '2026-09-15T09:51:01.904086'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-15T09:49:08'
+    confirmed_by: dialog
+    confirmed_evidence: 用户选择：确认，并授权一次跑到底（D哥 2026-09-15）
+    slices_completed:
+      S1:
+        new_tests: 2
+        tc_coverage: TC-EOL-001,TC-EOL-002
+        verified_at: '2026-09-15T09:51:00'
+      S2:
+        new_tests: 3
+        tc_coverage: TC-EOL-003,TC-EOL-004,TC-EOL-005
+        verified_at: '2026-09-15T09:51:00'
+      S3:
+        new_tests: 2
+        tc_coverage: TC-EOL-006,TC-EOL-007
+        verified_at: '2026-09-15T09:51:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-15T09:49:07'
+    confirmed_by: dialog
+    confirmed_evidence: 用户选择：确认，并授权一次跑到底（D哥 2026-09-15）
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-15T09:49:06'
+    confirmed_by: dialog
+    confirmed_evidence: 用户选择：确认，并授权一次跑到底（D哥 2026-09-15）
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 7
+  tc_cases: 7
+  test_functions: 7
+version: '3.0'

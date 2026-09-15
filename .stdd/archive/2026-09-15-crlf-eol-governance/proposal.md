@@ -1,7 +1,7 @@
 # 仓库行尾符（EOL）治理：消除批量 add 时的 CRLF 警告风暴
 
 <!-- source_hash: 5b101662e436e8a6 -->
-<!-- generated_at: 2026-09-15T09:31:58.555959 -->
+<!-- generated_at: 2026-09-15T09:49:06.098849 -->
 <!-- canonical: canonical/proposals/2026-09-15-crlf-eol-governance.yaml -->
 
 ## Why
