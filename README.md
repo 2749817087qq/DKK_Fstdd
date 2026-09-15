@@ -257,7 +257,49 @@ rm -f <文件> && git checkout -- <文件>
 
 ---
 
-## 9. 许可与来源
+## 9. 经验回传
+
+STDD 会把每个 change 中踩过的坑沉淀为「经验」。本仓库提供了一条**回传到本项目自己仓库**的链路。
+
+### 为什么不用 `stdd experience share`
+
+上游的 `share` 目标仓库是**硬编码**的，且有两条路径：
+
+| 路径 | 目标 | 问题 |
+|---|---|---|
+| 1 | `gh repo clone leonai42/stdd-experiences` 后直接 push | 需写权限，普通使用者必然失败 |
+| 2 | `POST https://hzddyy.com/stdd/api/share-experience` | **第三方服务器**，属数据外发 |
+
+两者都不是「回传到本项目自己的仓库」，因此本地安装策略会**跳过**该步骤。
+
+### 本仓库的回传方式
+
+```bash
+python tools/share_experience.py --list                    # 查看可回传的经验
+python tools/share_experience.py --export --from-archive   # 导出到 experiences/
+python tools/share_experience.py --export --from-archive --publish   # 导出并推送
+```
+
+- **目标仓库**：`2749817087qq/DKKstdd-experiences`（可用 `--repo` 或 `EXP_REPO` 覆盖）
+- **经验来源**：`.stdd/experiences/EXP-*.md`，以及已归档 change 的 `test-report.md`
+- **强制脱敏**：导出前自动替换绝对路径、IP、内网域名、凭证、邮箱（`--no-sanitize` 可关闭，但不建议）
+
+### 自动化
+
+已配置定时任务「STDD 经验库自动同步」，每周一 09:00 自动导出并推送。任务在 GitHub
+不通时会自动借 SSH 隧道出网（见第 8 节）。
+
+### 手工贡献（其他人）
+
+使用者若想贡献自己的经验：
+
+1. fork `2749817087qq/DKKstdd-experiences`
+2. 把导出的 `EXP-*.md` 放入 `experiences/` 目录
+3. 发起 Pull Request
+
+---
+
+## 10. 许可与来源
 
 | 内容 | 许可 |
 |------|------|
