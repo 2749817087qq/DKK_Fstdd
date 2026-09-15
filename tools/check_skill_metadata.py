@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import os
 import re
 import shutil
 import sys
@@ -25,7 +26,25 @@ from pathlib import Path
 
 REQUIRED = ["name", "description", "version", "license"]
 UNKNOWN = "unknown"
-BACKUP_ROOT = Path.home() / ".workbuddy-ai" / "backups"
+
+
+def backup_root() -> Path:
+    """备份根路径。
+
+    项目约定：开发形成的产物一律存放在工作区文件夹内。
+    本脚本位于 <工作区>/stdd-repo/tools/，故默认取 <工作区>/backups。
+    可用 STDD_BACKUP_DIR 覆盖；定位失败时回落到用户目录。
+    """
+    env = os.environ.get("STDD_BACKUP_DIR")
+    if env:
+        return Path(env)
+    try:
+        cand = Path(__file__).resolve().parents[2] / "backups"
+        if cand.parent.exists():
+            return cand
+    except IndexError:
+        pass
+    return Path.home() / ".workbuddy-ai" / "backups"
 
 DEFAULT_DIRS = [
     Path.home() / ".workbuddy-ai" / "skills",
@@ -107,7 +126,7 @@ def verify_fm_parsable(f: Path) -> bool:
 
 
 def backup(todo: list, ts: str) -> Path | None:
-    dest = BACKUP_ROOT / f"skill-metadata-{ts}"
+    dest = backup_root() / f"skill-metadata-{ts}"
     dest.mkdir(parents=True, exist_ok=True)
     n = 0
     for f, _ in todo:
@@ -120,9 +139,10 @@ def backup(todo: list, ts: str) -> Path | None:
 
 
 def latest_backup() -> Path | None:
-    if not BACKUP_ROOT.exists():
+    root = backup_root()
+    if not root.exists():
         return None
-    cands = sorted(BACKUP_ROOT.glob("skill-metadata-*"))
+    cands = sorted(root.glob("skill-metadata-*"))
     return cands[-1] if cands else None
 
 

@@ -11,12 +11,27 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+
+def backup_root() -> Path:
+    """与 check_skill_metadata.backup_root 保持一致：默认落在工作区 backups/。"""
+    env = os.environ.get("STDD_BACKUP_DIR")
+    if env:
+        return Path(env)
+    try:
+        cand = Path(__file__).resolve().parents[2] / "backups"
+        if cand.parent.exists():
+            return cand
+    except IndexError:
+        pass
+    return Path.home() / ".workbuddy-ai" / "backups"
 
 PY = sys.executable
 # 源码在 stdd-repo（开发源），但实际运行的是安装位置 DKKstdd。
@@ -170,7 +185,7 @@ def tc_004(repo: Path) -> tuple[bool, str]:
         return False, f"仍有 {len(missing)} 项缺失：{', '.join(missing[:5])}"
 
     # 备份完整性：至少存在一次 --fix 备份，且备份文件正文与当前一致
-    bk_root = Path.home() / ".workbuddy-ai" / "backups"
+    bk_root = backup_root()
     cands = sorted(bk_root.glob("skill-metadata-*")) if bk_root.exists() else []
     if not cands:
         return False, "未找到任何 --fix 备份目录"

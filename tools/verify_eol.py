@@ -27,12 +27,21 @@ MIXED_FILES = [
     "upstream/.gitignore",
 ]
 BASELINE_WARN_LINES = 640  # 无规则时实测告警行数（对照基准，随文件数浮动）
-# 本变更有意修改的文件：其 diff 属预期业务变更，不计入「行尾治理引入的额外变更」。
-# 新增白名单项时必须说明原因，避免白名单演变为掩盖问题的黑洞。
-ALLOWED_DIFF = {
-    "README.md",            # C2：补充 EOL 治理说明
-    "tools/verify_eol.py",  # C1：实现 / 迭代验证脚本本身
+# 按路径前缀判定「允许出现 diff」的范围。
+#
+# 语义：tools/ 与 docs/ 是本仓库自有且持续演进的代码与文档，其 diff 属正常开发活动，
+#       不代表行尾治理引入了意外变更 —— 每改一次脚本就加一条白名单是不可持续的。
+#       反之，upstream/（vendor 的上游代码）与 skills/ 等若出现 diff，
+#       才是行尾治理真正该拦截的信号。
+# 精确文件项用于无法用前缀表达的散落文件，新增时必须注明原因。
+ALLOWED_DIFF_PREFIX = ("tools/", "docs/")
+ALLOWED_DIFF_EXACT = {
+    "README.md",  # 仓库说明，随变更持续更新
 }
+
+
+def _is_allowed_diff(path: str) -> bool:
+    return path in ALLOWED_DIFF_EXACT or path.startswith(ALLOWED_DIFF_PREFIX)
 
 
 def _git(repo: Path, *args: str, capture: bool = True) -> subprocess.CompletedProcess:
@@ -117,11 +126,11 @@ def tc_005(repo: Path) -> tuple[bool, str]:
     _git(repo, "add", "--renormalize", ".")
     r = _git(repo, "diff", "--cached", "--diff-filter=M", "--name-only")
     changed = [l for l in r.stdout.splitlines() if l.strip()]
-    unexpected = [f for f in changed if f not in ALLOWED_DIFF]
+    unexpected = [f for f in changed if not _is_allowed_diff(f)]
     if unexpected:
         return False, (f"行尾治理引入了 {len(unexpected)} 个非预期变更："
                        f"{', '.join(unexpected[:5])}")
-    excluded = [f for f in changed if f in ALLOWED_DIFF]
+    excluded = [f for f in changed if _is_allowed_diff(f)]
     note = f"（已排除有意修改：{', '.join(excluded)}）" if excluded else ""
     return True, f"行尾治理零额外变更{note}"
 

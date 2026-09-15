@@ -101,7 +101,8 @@ python tools/verify_skill_standards.py --repo .
 **通过判据**：
 
 - `四项齐全: 40/40`
-- `--fix` 前自动备份到 `~/.workbuddy-ai/backups/skill-metadata-<时间戳>/`
+- `--fix` 前自动备份到工作区 `<工作区>/backups/skill-metadata-<时间戳>/`
+  （项目约定：开发产物一律存放在工作区文件夹内；可用 `STDD_BACKUP_DIR` 覆盖）
 - 备份文件数 == 待改文件数（不等即中止）
 - 修复后正文哈希与备份一致（只动了 frontmatter）
 - `verify_skill_standards.py` 输出 `7/7 通过`
