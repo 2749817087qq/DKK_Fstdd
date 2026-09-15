@@ -296,10 +296,15 @@ def publish_via_pr(out_dir: Path, repo: str, token: str, dry_run: bool = False) 
             return False
         print(f"      已推送到 {login}/{name} 分支 {branch}")
 
+        # 默认分支必须查询而非硬编码：实测目标仓库默认分支为 main，
+        # 而脚本原本写死 master，PR 会因 base 不存在而创建失败。
+        info = _gh_api("GET", f"/repos/{repo}", token)
+        base_branch = info.get("default_branch") or "main"
+
         pr = _gh_api("POST", f"/repos/{repo}/pulls", token, {
             "title": f"experience: {n} 条经验（{datetime.date.today()}）",
             "head": f"{login}:{branch}",
-            "base": "master",
+            "base": base_branch,
             "body": (f"由 `tools/share_experience.py` 自动提交，共 {n} 条脱敏经验。\n\n"
                      f"来源：{login} 的本机经验库。提交前已强制脱敏"
                      f"（路径 / IP / 域名 / 凭证 / 邮箱）。"),
