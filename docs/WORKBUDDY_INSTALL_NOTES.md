@@ -8,10 +8,10 @@
 
 | 内容 | 路径 |
 |------|------|
-| STDD 源码 / CLI / 静态资源骨架 | `C:\Users\Administrator\.workbuddy-ai\stdd` |
+| STDD 源码 / CLI / 静态资源骨架 | `C:\Users\Administrator\.workbuddy-ai\DKKstdd\upstream` |
 | 全局 skill（WorkBuddy 用户级） | `C:\Users\Administrator\.workbuddy-ai\skills\stdd*` |
-| 重装脚本 | `C:\Users\Administrator\.workbuddy-ai\stdd\tools\install_workbuddy_skills.py` |
-| 校验脚本（升级后必跑） | `C:\Users\Administrator\.workbuddy-ai\stdd\tools\verify_workbuddy_skills.py` |
+| 重装脚本 | `C:\Users\Administrator\.workbuddy-ai\DKKstdd\tools\install_workbuddy_skills.py` |
+| 校验脚本（升级后必跑） | `C:\Users\Administrator\.workbuddy-ai\DKKstdd\tools\verify_workbuddy_skills.py` |
 
 已安装的全局 skill（6 个）：
 
@@ -28,10 +28,10 @@
    `~/.workbuddy-ai/skills/<name>/SKILL.md` 不一致，已改为 WorkBuddy 标准目录格式。
 2. **路径固化**：skill 正文里 `.stdd/skills/_shared/*.md`、`python bin/stdd` 均为项目相对路径，
    全局安装后不可解析，已全部替换为绝对路径
-   （`C:/Users/Administrator/.workbuddy-ai/stdd/...`）。
+   （`C:/Users/Administrator/.workbuddy-ai/DKKstdd/upstream/...`）。
 3. **Python 解释器**：STDD CLI 依赖 PyYAML + Jinja2。managed Python 3.13 无 PyYAML，
    系统 `C:\Python311\python.exe` 已具备（PyYAML 6.0.2 / Jinja2 3.1.6），
-   故 skill 中的命令统一写为 `"C:\Python311\python.exe" "C:/Users/Administrator/.workbuddy-ai/stdd/bin/stdd"`。
+   故 skill 中的命令统一写为 `"C:\Python311\python.exe" "C:/Users/Administrator/.workbuddy-ai/DKKstdd/upstream/bin/stdd"`。
 
 ## 3. 安全策略（本机默认）
 
@@ -51,8 +51,8 @@
 **规程**：任何升级 / 重装 / 版本同步之后，立即执行以下两步，缺一不可：
 
 ```
-"C:\Python311\python.exe" "C:/Users/Administrator/.workbuddy-ai/stdd/tools/install_workbuddy_skills.py"
-"C:\Python311\python.exe" "C:/Users/Administrator/.workbuddy-ai/stdd/tools/verify_workbuddy_skills.py"
+"C:\Python311\python.exe" "C:/Users/Administrator/.workbuddy-ai/DKKstdd/tools/install_workbuddy_skills.py"
+"C:\Python311\python.exe" "C:/Users/Administrator/.workbuddy-ai/DKKstdd/tools/verify_workbuddy_skills.py"
 ```
 
 - 第 1 步：重新生成本机适配后的 skill（安全策略、绝对路径、Python 解释器绑定）
@@ -74,7 +74,7 @@
 
 1. 在项目根目录初始化（每个项目只需一次）：
    ```
-   "C:\Python311\python.exe" "C:/Users/Administrator/.workbuddy-ai/stdd/bin/stdd" init
+   "C:\Python311\python.exe" "C:/Users/Administrator/.workbuddy-ai/DKKstdd/upstream/bin/stdd" init
    ```
 2. 在 WorkBuddy 对话中直接说需求即可按触发词命中，例如：
    - 「用 STDD 做一个 XXX 功能」→ `stdd` 总入口 → `stdd-understand`

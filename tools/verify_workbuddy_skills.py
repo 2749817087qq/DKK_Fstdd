@@ -5,7 +5,7 @@
 退出码：0 = 全部通过；1 = 存在 FAIL 项（此时禁止继续 DELIVER 相关操作）。
 
 用法：
-    "C:\\Python311\\python.exe" "C:/Users/Administrator/.workbuddy-ai/stdd/tools/verify_workbuddy_skills.py"
+    "C:\\Python311\\python.exe" "C:/Users/Administrator/.workbuddy-ai/DKKstdd/tools/verify_workbuddy_skills.py"
 """
 from pathlib import Path
 import os
@@ -82,7 +82,7 @@ def main() -> int:
             print(f"  - {x}")
         print("\n修复方式：重跑安装脚本")
         print('  "C:\\Python311\\python.exe" '
-              '"C:/Users/Administrator/.workbuddy-ai/stdd/tools/install_workbuddy_skills.py"')
+              '"C:/Users/Administrator/.workbuddy-ai/DKKstdd/tools/install_workbuddy_skills.py"')
         return 1
     print(f"[PASS] {len(EXPECTED)} 个 skill 全部通过：安全策略在位、路径适配完好")
     return 0
