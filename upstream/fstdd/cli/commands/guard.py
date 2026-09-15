@@ -438,7 +438,7 @@ def _assess_and_recommend(project_root: Path,
             result["scope"] = _SCOPE_LARGE
             result["reason"] = (
                 f"batch 描述 '{desc}' 判定为大型变更。"
-                " 请用 full STDD 流程: /stdd-understand 启动。"
+                " 请用 full STDD 流程: /fstdd-understand 启动。"
             )
             return result
 
@@ -477,12 +477,12 @@ def _assess_and_recommend(project_root: Path,
             result["scope"] = _SCOPE_MEDIUM
             result["reason"] = (
                 f"检测到 {file_count} 个文件改动，建议走 full STDD。"
-                " /stdd-understand 启动完整流程。"
+                " /fstdd-understand 启动完整流程。"
             )
     else:
         result["reason"] = (
             "无 active change。微修复用 'stdd batch open \"描述\"'，"
-            "新功能/重构用 '/stdd-understand'。"
+            "新功能/重构用 '/fstdd-understand'。"
         )
 
     result["mode"] = "none"
@@ -558,7 +558,7 @@ def _check_agent_ops(operation: str, project_root: Path) -> tuple[bool, str]:
                       and (d / ".fstdd.yaml").exists()]
     if active_changes:
         return True, ""
-    return False, f"  [STDD Guard] Agent 操作 ({operation}) 需要在 active change 中执行。请先 /stdd-understand。"
+    return False, f"  [STDD Guard] Agent 操作 ({operation}) 需要在 active change 中执行。请先 /fstdd-understand。"
 
 
 def _check_inertia(project_root: Path) -> str | None:

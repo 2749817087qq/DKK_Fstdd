@@ -97,7 +97,7 @@ def cmd_new(args: argparse.Namespace) -> None:
 
     print()
     print("  下一步:")
-    print(f"   /stdd-understand  开始需求理解阶段")
+    print(f"   /fstdd-understand  开始需求理解阶段")
 
 
 def _setup_parallel_worktrees(project_root: Path, change_name: str):

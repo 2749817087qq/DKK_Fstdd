@@ -78,4 +78,4 @@ def cmd_rollback(args: argparse.Namespace) -> None:
 
     print(f" 已恢复: changes/{target.name}")
     print(f"   状态已更新为 active")
-    print(f"   使用 /stdd-continue 或 stdd status {target.name} 查看")
+    print(f"   使用 /fstdd-continue 或 stdd status {target.name} 查看")

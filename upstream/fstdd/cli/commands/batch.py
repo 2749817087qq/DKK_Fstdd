@@ -171,13 +171,13 @@ def _cmd_batch_open(project_root: Path, description: str = "", strategy: str = "
             print(f"  🚫 batch 不适合大型变更。")
             print(f"     描述 '{description}' 被判定为 {scope} 级别。")
             print(f"     请用 full STDD 流程:")
-            print(f"       /stdd-understand")
+            print(f"       /fstdd-understand")
             return
         if scope == _SCOPE_MEDIUM:
             print(f"  ⚠️  描述 '{description}' 看起来是中等规模变更。")
             print(f"     batch 适合微修复 (<5 文件, <100 行)。")
             print(f"     如果确认只用 batch，请用更小的描述重新 open。")
-            print(f"     如果是较大改动，建议: /stdd-understand")
+            print(f"     如果是较大改动，建议: /fstdd-understand")
             return
 
     # V2.9.4: Warn if an active STDD change exists (batch should not replace full flow)

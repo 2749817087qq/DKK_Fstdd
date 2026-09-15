@@ -259,7 +259,7 @@ def _write_upgrade_notes(project_root: Path, old_ver: str, new_ver: str) -> None
                 "title": "Guard 完善 + 新项目冷启动修复",
                 "what": [
                     "stdd init 自动安装 Guard + 拉取社区经验",
-                    "STDD_CONSTITUTION.md 强制性流程契约",
+                    "FSTDD_CONSTITUTION.md 强制性流程契约",
                     "Phase 完整性检查（Build→Verify 超时告警）",
                     "僵尸 Change 检测（>7天未推进 → 提醒清理）",
                     "多平台 Guard 支持（Claude Code/OpenCode/Codex/Aider）",
@@ -290,7 +290,7 @@ def _write_upgrade_notes(project_root: Path, old_ver: str, new_ver: str) -> None
         "action_required": [
             "📖 阅读 AI 操作手册: .fstdd/onboarding/AI_OPERATING_MANUAL.yaml",
             "📋 完成自检清单（self_check 章节，8 道题）",
-            "📖 阅读流程契约: STDD_CONSTITUTION.md",
+            "📖 阅读流程契约: FSTDD_CONSTITUTION.md",
         "🏕️ 启动训练营: stdd bootcamp start",
         ],
     }

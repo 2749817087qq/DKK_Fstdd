@@ -152,8 +152,8 @@ def cmd_init(args: argparse.Namespace) -> None:
                 else:
                     skipped += 1
 
-    logger.info("STDD 初始化完成，已复制 %d 个文件", copied)
-    print("STDD 初始化完成")
+    logger.info("FSTDD 初始化完成，已复制 %d 个文件", copied)
+    print("FSTDD 初始化完成")
     print(f"   项目根目录: {project_root}")
     print(f"   已创建 .fstdd/ 目录、changes/、specs/、archive/、agent_tests/")
     if force and skipped > 0:
@@ -173,9 +173,9 @@ def cmd_init(args: argparse.Namespace) -> None:
 
     print()
     print("  开始使用:")
-    print("   /stdd-understand  <需求描述>    启动新变更的需求理解阶段")
-    print("   /stdd-spec                      进入规格设计阶段")
-    print("   /stdd-continue                  继续执行当前变更")
+    print("   /fstdd-understand  <需求描述>    启动新变更的需求理解阶段")
+    print("   /fstdd-spec                      进入规格设计阶段")
+    print("   /fstdd-continue                  继续执行当前变更")
 
 
 def _post_init_guard(project_root: Path) -> None:
@@ -210,8 +210,8 @@ def _post_init_experiences(project_root: Path, stdd_source: Path) -> None:
 
 
 def _post_init_constitution(project_root: Path) -> None:
-    """V3.0.1: Generate STDD_CONSTITUTION.md with mandatory process contract."""
-    const_path = project_root / "STDD_CONSTITUTION.md"
+    """V3.0.1: Generate FSTDD_CONSTITUTION.md with mandatory process contract."""
+    const_path = project_root / "FSTDD_CONSTITUTION.md"
     if const_path.exists():
         return  # don't overwrite existing
     content = """# STDD 流程强制契约 / Process Constitution
@@ -222,7 +222,7 @@ def _post_init_constitution(project_root: Path) -> None:
 ## ⚠️ 核心规则 / Core Rules
 
 ### 1. 所有代码修改必须通过 STDD Change
-- 新功能 / 重构 / Bug 修复 → 先 `/stdd-understand <描述>`
+- 新功能 / 重构 / Bug 修复 → 先 `/fstdd-understand <描述>`
 - **不得在没有 active change 的情况下直接编辑代码**
 - Guard 会自动拦截未经授权的 Write/Edit 操作
 
@@ -255,14 +255,14 @@ def _post_init_constitution(project_root: Path) -> None:
 
 | 命令 | 用途 |
 |------|------|
-| `/stdd-understand <需求>` | 启动新 Change（Phase 1） |
-| `/stdd-spec` | 进入规格设计（Phase 2） |
-| `/stdd-continue` | 继续执行当前 Change |
+| `/fstdd-understand <需求>` | 启动新 Change（Phase 1） |
+| `/fstdd-spec` | 进入规格设计（Phase 2） |
+| `/fstdd-continue` | 继续执行当前 Change |
 | `stdd status` | 查看当前 Change 状态 + Guard 状态 |
 | `stdd guard status` | 查看 Guard 运行状态 |
 """
     const_path.write_text(content, encoding="utf-8")
-    print("  [STDD] STDD_CONSTITUTION.md 已生成（强制性流程契约）")
+    print("  [FSTDD] FSTDD_CONSTITUTION.md 已生成（强制性流程契约）")
 
 
 def _post_init_self_check(project_root: Path) -> None:
