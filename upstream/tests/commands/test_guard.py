@@ -5,7 +5,7 @@ import io
 import json
 import yaml
 
-from stdd.cli.commands.guard import (
+from fstdd.cli.commands.guard import (
     _find_active_change,
     _find_open_batch,
     _classify_description,
@@ -184,7 +184,7 @@ class TestGuardHookStdin:
         change_dir = self._setup_change(tmp_path, "build")
         self._stdin_json(monkeypatch, "Write", str(change_dir / "GATE3_APPROVED"))
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.guard import cmd_guard_check
+        from fstdd.cli.commands.guard import cmd_guard_check
         assert cmd_guard_check(self._make_args(hook_stdin=True)) == 2
 
     def test_blocks_state_confirmation_edit(self, tmp_path, monkeypatch):
@@ -193,7 +193,7 @@ class TestGuardHookStdin:
         self._stdin_json(monkeypatch, "Write", str(change_dir / ".stdd.yaml"),
                          content="confirmed_at: 2026-06-06T10:00:00\nconfirmed_by: dialog\n")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.guard import cmd_guard_check
+        from fstdd.cli.commands.guard import cmd_guard_check
         assert cmd_guard_check(self._make_args(hook_stdin=True)) == 2
 
     def test_allows_canonical_in_understand(self, tmp_path, monkeypatch):
@@ -202,7 +202,7 @@ class TestGuardHookStdin:
         canon = change_dir / "canonical" / "proposals" / "2026-06-06-path-test.yaml"
         self._stdin_json(monkeypatch, "Write", str(canon), content="meta:\n  change_id: x\n")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.guard import cmd_guard_check
+        from fstdd.cli.commands.guard import cmd_guard_check
         assert cmd_guard_check(self._make_args(hook_stdin=True, quiet=True)) == 0
 
     def test_allows_change_docs_in_spec(self, tmp_path, monkeypatch):
@@ -211,7 +211,7 @@ class TestGuardHookStdin:
         for fname in ("design.md", "test-plan.md"):
             self._stdin_json(monkeypatch, "Write", str(change_dir / fname), content="# doc\n")
             monkeypatch.chdir(tmp_path)
-            from stdd.cli.commands.guard import cmd_guard_check
+            from fstdd.cli.commands.guard import cmd_guard_check
             assert cmd_guard_check(self._make_args(hook_stdin=True, quiet=True)) == 0
 
     def test_blocks_source_code_in_understand(self, tmp_path, monkeypatch):
@@ -219,7 +219,7 @@ class TestGuardHookStdin:
         self._setup_change(tmp_path, "understand", done=())
         self._stdin_json(monkeypatch, "Write", str(tmp_path / "app" / "foo.py"), content="x=1\n")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.guard import cmd_guard_check
+        from fstdd.cli.commands.guard import cmd_guard_check
         assert cmd_guard_check(self._make_args(hook_stdin=True, quiet=True)) == 2
 
     def test_allows_normal_file_in_build(self, tmp_path, monkeypatch):
@@ -227,7 +227,7 @@ class TestGuardHookStdin:
         self._setup_change(tmp_path, "build", done=("understand", "spec"))
         self._stdin_json(monkeypatch, "Edit", str(tmp_path / "app" / "foo.py"))
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.guard import cmd_guard_check
+        from fstdd.cli.commands.guard import cmd_guard_check
         assert cmd_guard_check(self._make_args(hook_stdin=True, quiet=True)) == 0
 
     def test_stdin_parse_failure_fails_open(self, tmp_path, monkeypatch):
@@ -235,5 +235,5 @@ class TestGuardHookStdin:
         self._setup_change(tmp_path, "build", done=("understand", "spec"))
         monkeypatch.setattr("sys.stdin", io.StringIO("not-json {{{"))
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.guard import cmd_guard_check
+        from fstdd.cli.commands.guard import cmd_guard_check
         assert cmd_guard_check(self._make_args(hook_stdin=True, quiet=True)) == 0

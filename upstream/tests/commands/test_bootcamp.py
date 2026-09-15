@@ -4,7 +4,7 @@ from pathlib import Path
 
 def test_bootcamp_status(temp_project, monkeypatch, capsys):
     monkeypatch.chdir(temp_project)
-    from stdd.cli.commands.bootcamp import cmd_bootcamp
+    from fstdd.cli.commands.bootcamp import cmd_bootcamp
     import argparse
     ns = argparse.Namespace(subcommand="status", level=None, module=None, verbose=0)
     cmd_bootcamp(ns)
@@ -13,7 +13,7 @@ def test_bootcamp_status(temp_project, monkeypatch, capsys):
 
 def test_bootcamp_start_shows_level(temp_project, monkeypatch, capsys):
     monkeypatch.chdir(temp_project)
-    from stdd.cli.commands.bootcamp import cmd_bootcamp
+    from fstdd.cli.commands.bootcamp import cmd_bootcamp
     import argparse
     ns = argparse.Namespace(subcommand="start", level=None, module=None, verbose=0)
     cmd_bootcamp(ns)
@@ -22,7 +22,7 @@ def test_bootcamp_start_shows_level(temp_project, monkeypatch, capsys):
 
 def test_bootcamp_retry_invalid(temp_project, monkeypatch, capsys):
     monkeypatch.chdir(temp_project)
-    from stdd.cli.commands.bootcamp import cmd_bootcamp
+    from fstdd.cli.commands.bootcamp import cmd_bootcamp
     import argparse
     ns = argparse.Namespace(subcommand="retry", level=99, module=None, verbose=0)
     import sys
@@ -43,7 +43,7 @@ def test_bootcamp_grade_with_work(temp_project, monkeypatch, capsys):
     (bd / "answer" / ".stdd.yaml").write_text(yaml.dump({"change_id": "fix-typo"}))
     # Work: .stdd.yaml nested under .stdd/changes/ (mimics real CLI output)
     (bd / "work" / ".stdd" / "changes" / "fix-typo" / ".stdd.yaml").write_text(yaml.dump({"change_id": "fix-typo"}))
-    from stdd.cli.commands.bootcamp import cmd_bootcamp
+    from fstdd.cli.commands.bootcamp import cmd_bootcamp
     import argparse
     ns = argparse.Namespace(subcommand="grade", level=1, module=None, verbose=0)
     cmd_bootcamp(ns)

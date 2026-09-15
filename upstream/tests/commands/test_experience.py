@@ -83,7 +83,7 @@ class TestExperienceAdd:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         args = _make_args("add",
                           category="cascading_errors",
@@ -129,7 +129,7 @@ class TestExperienceAdd:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         for i in range(3):
             args = _make_args("add",
@@ -161,7 +161,7 @@ class TestExperienceAdd:
         _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         args = _make_args("add",
                           category="invalid_category_name",
@@ -191,7 +191,7 @@ class TestExperienceList:
         _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         # Add python experience
         cmd_experience(_make_args("add", category="cascading_errors", pattern="python err",
@@ -222,7 +222,7 @@ class TestExperienceList:
         _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors", pattern="test",
                                    language="python", severity="high", tags="test",
@@ -254,7 +254,7 @@ class TestExperienceStats:
         _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         # Add experiences in 2 categories
         cmd_experience(_make_args("add", category="cascading_errors", pattern="err1",
@@ -278,7 +278,7 @@ class TestExperienceStats:
         _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors", pattern="err",
                                    language="python", severity="high", body="",
@@ -306,7 +306,7 @@ class TestExperienceExport:
         _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         # Add experience with sensitive content
         cmd_experience(_make_args("add",
@@ -350,7 +350,7 @@ class TestExperienceExport:
         _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add",
                                    category="scope_creep",
@@ -382,7 +382,7 @@ class TestExperienceExport:
         _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors", pattern="test",
                                    language="python", severity="high", body="",
@@ -405,7 +405,7 @@ class TestExperiencePull:
         _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         args = _make_args("pull", pack_name="python-pack", source=None)
         with pytest.raises(SystemExit) as exc_info:
@@ -431,7 +431,7 @@ community:
         exp_config.write_text(content, encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         args = _make_args("pull", pack_name="python", source=None)
         with pytest.raises(SystemExit) as exc_info:
@@ -447,7 +447,7 @@ class TestIndexRebuild:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         # Add experiences
         cmd_experience(_make_args("add", category="cascading_errors", pattern="err1",
@@ -486,7 +486,7 @@ class TestCommunityPool:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors", pattern="test",
                                    language="python", severity="high", body="",
@@ -494,7 +494,7 @@ class TestCommunityPool:
 
         files = sorted(exp_dir.glob("EXP-*.md"))
         eid = files[0].stem
-        from stdd.cli.commands.experience import _load_experience
+        from fstdd.cli.commands.experience import _load_experience
         data = _load_experience(exp_dir / f"{eid}.md")
         assert "community_votes_useful" in data
         assert data["community_votes_useful"] == 0
@@ -508,7 +508,7 @@ class TestCommunityPool:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors",
                                    pattern="Bug in /home/user/projects/myapp/auth.py with 192.168.1.100",
@@ -537,7 +537,7 @@ class TestCommunityPool:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="scope_creep", pattern="test",
                                    language="python", severity="medium", body="",
@@ -553,7 +553,7 @@ class TestCommunityPool:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors", pattern="test publish",
                                    language="python", severity="high", body="",
@@ -565,7 +565,7 @@ class TestCommunityPool:
         args = _make_args("export", format="json", output=str(tar_out), no_sanitize=False, publish=True)
         cmd_experience(args)
 
-        from stdd.cli.commands.experience import _load_experience
+        from fstdd.cli.commands.experience import _load_experience
         data = _load_experience(exp_dir / f"{eid}.md")
         assert data["lifecycle_state"] == "shared"
 
@@ -588,7 +588,7 @@ class TestProjectType:
         (tmp_path / "changes" / "dummy" / "test.py").parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / "changes" / "dummy" / "test.py").write_text("x=1")
 
-        from stdd.cli.commands.experience import _detect_project_type
+        from fstdd.cli.commands.experience import _detect_project_type
         ptype = _detect_project_type(tmp_path / "changes")
         assert ptype == "python"
 
@@ -601,7 +601,7 @@ class TestProjectType:
         (tmp_path / "changes" / "web" / "style.css").write_text("body {}")
         (tmp_path / "changes" / "web" / "app.js").write_text("console.log(1)")
 
-        from stdd.cli.commands.experience import _detect_project_type
+        from fstdd.cli.commands.experience import _detect_project_type
         ptype = _detect_project_type(tmp_path / "changes")
         assert ptype == "static_site"
 
@@ -612,7 +612,7 @@ class TestProjectType:
         (tmp_path / "changes" / "doc" / "readme.md").parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / "changes" / "doc" / "readme.md").write_text("# Title")
 
-        from stdd.cli.commands.experience import _detect_project_type
+        from fstdd.cli.commands.experience import _detect_project_type
         ptype = _detect_project_type(tmp_path / "changes")
         assert ptype == "docs"
 
@@ -621,7 +621,7 @@ class TestProjectType:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors", pattern="test",
                                    language="python", severity="medium", body="",
@@ -630,7 +630,7 @@ class TestProjectType:
 
         files = sorted(exp_dir.glob("EXP-*.md"))
         eid = files[0].stem
-        from stdd.cli.commands.experience import _load_experience
+        from fstdd.cli.commands.experience import _load_experience
         data = _load_experience(exp_dir / f"{eid}.md")
         assert "project_type" in data
 
@@ -655,7 +655,7 @@ lifecycle_state: discovered
         exp_file.write_text(content, encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import _load_experience
+        from fstdd.cli.commands.experience import _load_experience
         data = _load_experience(exp_file)
         assert data is not None
         assert "project_type" not in data  # Old format has no project_type
@@ -670,7 +670,7 @@ class TestCategoryValidation:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience, VALID_CATEGORIES
+        from fstdd.cli.commands.experience import cmd_experience, VALID_CATEGORIES
 
         for cat in VALID_CATEGORIES:
             args = _make_args("add", category=cat, pattern=f"test {cat}",
@@ -691,7 +691,7 @@ class TestExperienceLifecycle:
 
     def _get_exp_data(self, exp_dir, eid):
         """Load experience frontmatter data."""
-        from stdd.cli.commands.experience import _load_experience
+        from fstdd.cli.commands.experience import _load_experience
         return _load_experience(exp_dir / f"{eid}.md")
 
     def test_new_experience_is_discovered(self, tmp_path, monkeypatch):
@@ -699,7 +699,7 @@ class TestExperienceLifecycle:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors", pattern="test",
                                    language="python", severity="medium", body="",
@@ -714,7 +714,7 @@ class TestExperienceLifecycle:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors", pattern="test",
                                    language="python", severity="high", body="",
@@ -731,7 +731,7 @@ class TestExperienceLifecycle:
 
     def test_auto_promote_to_verified(self, tmp_path, monkeypatch):
         """TC-EXP-LC-003: Auto-promote to verified when occurrences>=2 and confidence>=0.7."""
-        from stdd.cli.commands.experience import _auto_promote
+        from fstdd.cli.commands.experience import _auto_promote
 
         data = {"lifecycle_state": "discovered", "occurrences": 2, "confidence": 0.7}
         assert _auto_promote(data) == "verified"
@@ -744,7 +744,7 @@ class TestExperienceLifecycle:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors", pattern="test",
                                    language="python", severity="high", body="",
@@ -775,7 +775,7 @@ class TestExperienceLifecycle:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="scope_creep", pattern="test",
                                    language="python", severity="medium", body="",
@@ -795,7 +795,7 @@ class TestExperienceLifecycle:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors", pattern="active",
                                    language="python", severity="high", body="",
@@ -833,7 +833,7 @@ class TestExperienceLifecycle:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors", pattern="test",
                                    language="python", severity="medium", body="",
@@ -851,7 +851,7 @@ class TestExperienceLifecycle:
         exp_dir = _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
 
         cmd_experience(_make_args("add", category="cascading_errors", pattern="test",
                                    language="python", severity="high", body="",
@@ -884,7 +884,7 @@ experience:
 """)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         import sys
         from io import StringIO
 
@@ -915,7 +915,7 @@ experience:
 """)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         import sys
         from io import StringIO
 

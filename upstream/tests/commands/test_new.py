@@ -4,7 +4,7 @@ import pytest
 import sys
 from pathlib import Path
 
-from stdd.cli.commands.new import cmd_new
+from fstdd.cli.commands.new import cmd_new
 
 
 def test_new_valid_name(temp_project: Path, monkeypatch):

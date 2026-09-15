@@ -4,7 +4,7 @@ import pytest
 import yaml
 from pathlib import Path
 
-from stdd.cli.commands.rollback import cmd_rollback
+from fstdd.cli.commands.rollback import cmd_rollback
 
 
 def test_rollback_success(archived_change: Path, monkeypatch):

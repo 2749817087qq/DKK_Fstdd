@@ -3,7 +3,7 @@ import argparse
 import pytest
 from pathlib import Path
 
-from stdd.cli.commands.status import cmd_status
+from fstdd.cli.commands.status import cmd_status
 
 
 def test_status_valid_change(sample_change: Path, monkeypatch, capsys):

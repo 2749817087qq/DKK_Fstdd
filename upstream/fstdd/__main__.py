@@ -18,7 +18,7 @@ _bin_dir = os.path.join(_STDD_ROOT, "bin")
 if _bin_dir not in sys.path:
     sys.path.insert(0, _bin_dir)
 
-from stdd.cli import main
+from fstdd.cli import main
 
 if __name__ == "__main__":
     main()

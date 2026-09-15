@@ -4,7 +4,7 @@ import pytest
 import yaml
 from pathlib import Path
 
-from stdd.cli.commands.archive import cmd_archive
+from fstdd.cli.commands.archive import cmd_archive
 
 
 def test_archive_completed_change(sample_change: Path, monkeypatch):

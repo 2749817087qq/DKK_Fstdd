@@ -10,7 +10,7 @@ class TestFixLevel1:
     def test_fix_level1_dry_run(self, tmp_path, monkeypatch, capsys):
         """L1 dry-run prints preview without modifying files."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.fix import cmd_fix
+        from fstdd.cli.commands.fix import cmd_fix
         import argparse
         args = argparse.Namespace(level=1, dry_run=True)
 
@@ -23,7 +23,7 @@ class TestFixLevel1:
         # Create a clean Python file
         (tmp_path / "test.py").write_text("def hello():\n    return 'world'\n", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.fix import cmd_fix
+        from fstdd.cli.commands.fix import cmd_fix
         import argparse
         args = argparse.Namespace(level=1, dry_run=False)
 
@@ -34,7 +34,7 @@ class TestFixLevel1:
     def test_fix_invalid_level(self, tmp_path, monkeypatch):
         """Invalid level exits with error."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.fix import cmd_fix
+        from fstdd.cli.commands.fix import cmd_fix
         import argparse
         args = argparse.Namespace(level=99, dry_run=False)
 
@@ -48,7 +48,7 @@ class TestFixLevel2:
     def test_fix_level2_dry_run(self, tmp_path, monkeypatch, capsys):
         """L2 dry-run doesn't modify files."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.fix import cmd_fix
+        from fstdd.cli.commands.fix import cmd_fix
         import argparse
         args = argparse.Namespace(level=2, dry_run=True)
 
@@ -62,7 +62,7 @@ class TestFixLevel2:
             "def greet(name: str) -> str:\n    return f'Hello {name}'\n",
             encoding="utf-8")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.fix import cmd_fix
+        from fstdd.cli.commands.fix import cmd_fix
         import argparse
         args = argparse.Namespace(level=2, dry_run=False)
 
@@ -77,7 +77,7 @@ class TestFixLevel3:
     def test_fix_level3_report_only(self, tmp_path, monkeypatch, capsys):
         """L3 generates report without modifying code."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.fix import cmd_fix
+        from fstdd.cli.commands.fix import cmd_fix
         import argparse
         args = argparse.Namespace(level=3, dry_run=False)
 
@@ -93,7 +93,7 @@ class TestFixDispatch:
     def test_dispatch_routes_to_fix(self, tmp_path, monkeypatch, capsys):
         """_dispatch calls cmd_fix correctly."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.fix import _dispatch
+        from fstdd.cli.commands.fix import _dispatch
         import argparse
         args = argparse.Namespace(level=1, dry_run=True)
 

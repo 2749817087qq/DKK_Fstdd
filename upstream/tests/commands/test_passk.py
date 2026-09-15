@@ -9,7 +9,7 @@ class TestPassK:
 
     def test_passk_all_pass(self, tmp_path, monkeypatch, capsys):
         """k=3 all passes."""
-        from stdd.cli.commands.ci import run_pass_k
+        from fstdd.cli.commands.ci import run_pass_k
         # Mock a command that always succeeds
         result = run_pass_k("python -c \"exit(0)\"", k=3)
         assert result["pass_count"] == 3
@@ -41,7 +41,7 @@ else:
 """, encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import run_pass_k
+        from fstdd.cli.commands.ci import run_pass_k
         result = run_pass_k(f"python {script}", k=3)
         assert result["pass_at_1"] == 0.0  # First run fails
         assert result["pass_at_k"] > 0.5  # At least one succeeds
@@ -49,7 +49,7 @@ else:
 
     def test_passk_default_k1(self, tmp_path, monkeypatch):
         """Default k=1 maintains V2.7 behavior."""
-        from stdd.cli.commands.ci import run_pass_k
+        from fstdd.cli.commands.ci import run_pass_k
         result = run_pass_k("python -c \"exit(0)\"", k=1)
         assert result["pass_count"] == 1
         assert result["total"] == 1

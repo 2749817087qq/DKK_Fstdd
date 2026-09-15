@@ -23,7 +23,7 @@ from pathlib import Path
 
 # V2.9.3: Import scope classifier from guard
 try:
-    from stdd.cli.commands.guard import _classify_description, _SCOPE_LARGE, _SCOPE_MEDIUM
+    from fstdd.cli.commands.guard import _classify_description, _SCOPE_LARGE, _SCOPE_MEDIUM
 except ImportError:
     # Fallback: guard module not importable (shouldn't happen but be safe)
     def _classify_description(text: str) -> str:

@@ -26,7 +26,7 @@ class TestStateFreshness:
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.state import cmd_state
+        from fstdd.cli.commands.state import cmd_state
         import argparse
         args = argparse.Namespace(name="test", resume=True, set=None)
 
@@ -50,7 +50,7 @@ class TestStateFreshness:
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.state import cmd_state
+        from fstdd.cli.commands.state import cmd_state
         import argparse
         args = argparse.Namespace(name="test", resume=True, set=None)
 
@@ -68,7 +68,7 @@ class TestStateFreshness:
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.state import cmd_state
+        from fstdd.cli.commands.state import cmd_state
         import argparse
         args = argparse.Namespace(name="test", resume=False,
                                    set="active_phase=3")
@@ -84,7 +84,7 @@ class TestStateFreshness:
         (change_dir / ".stdd.yaml").write_text("resume_context: test\n", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.state import cmd_state
+        from fstdd.cli.commands.state import cmd_state
         import argparse
         args = argparse.Namespace(name="test", resume=False,
                                    set="invalid_field=value")
@@ -110,7 +110,7 @@ class TestStateDefault:
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.state import cmd_state
+        from fstdd.cli.commands.state import cmd_state
         import argparse
         args = argparse.Namespace(name="test", resume=False, set=None)
 

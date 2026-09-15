@@ -3,7 +3,7 @@ import pytest
 from pathlib import Path
 from datetime import date
 
-from stdd.cli.finder import find_change_dir
+from fstdd.cli.finder import find_change_dir
 
 
 def test_exact_match(sample_change: Path):

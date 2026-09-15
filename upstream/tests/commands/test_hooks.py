@@ -17,7 +17,7 @@ class TestHooksInstall:
         (claude_dir / "settings.local.json").write_text("{}", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.hooks import cmd_hooks_install
+        from fstdd.cli.commands.hooks import cmd_hooks_install
         import argparse
         args = argparse.Namespace(action="install", force=False)
 
@@ -70,7 +70,7 @@ class TestHooksInstall:
         (claude_dir / "settings.local.json").write_text("{}", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.hooks import cmd_hooks_install
+        from fstdd.cli.commands.hooks import cmd_hooks_install
         import argparse
         args = argparse.Namespace(action="install", force=False)
 
@@ -90,7 +90,7 @@ class TestHooksInstall:
         (claude_dir / "settings.local.json").write_text("{}", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.hooks import cmd_hooks_install
+        from fstdd.cli.commands.hooks import cmd_hooks_install
         import argparse
         args = argparse.Namespace(action="install", force=True)
 
@@ -105,7 +105,7 @@ class TestHooksInstall:
         (hooks_dir / "test-hook.py").write_text("# test", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.hooks import cmd_hooks_status
+        from fstdd.cli.commands.hooks import cmd_hooks_status
         import argparse
         args = argparse.Namespace(action="status")
 
@@ -116,7 +116,7 @@ class TestHooksInstall:
     def test_status_no_hooks(self, tmp_path, monkeypatch, capsys):
         """Status when no hooks installed."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.hooks import cmd_hooks_status
+        from fstdd.cli.commands.hooks import cmd_hooks_status
         import argparse
         args = argparse.Namespace(action="status")
 
@@ -133,7 +133,7 @@ class TestHooksInstall:
             json.dumps(settings), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.hooks import cmd_hooks_uninstall
+        from fstdd.cli.commands.hooks import cmd_hooks_uninstall
         import argparse
         args = argparse.Namespace(action="uninstall")
 
@@ -145,7 +145,7 @@ class TestHooksInstall:
 
     def test_dispatch_routes_correctly(self, tmp_path, monkeypatch):
         """_dispatch routes to correct subcommand."""
-        from stdd.cli.commands.hooks import _dispatch
+        from fstdd.cli.commands.hooks import _dispatch
         import argparse
 
         # Verify dispatch doesn't crash for valid actions
@@ -177,7 +177,7 @@ class TestHooksInstall:
             json.dumps(bad_settings), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.hooks import _validate_hooks_config
+        from fstdd.cli.commands.hooks import _validate_hooks_config
         warnings = _validate_hooks_config(claude_dir / "settings.local.json")
 
         # Should report at least 3 issues: string, int, empty hooks
@@ -213,7 +213,7 @@ class TestHooksInstall:
             json.dumps(good_settings), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.hooks import _validate_hooks_config
+        from fstdd.cli.commands.hooks import _validate_hooks_config
         warnings = _validate_hooks_config(claude_dir / "settings.local.json")
 
         assert len(warnings) == 0, f"Expected 0 warnings for valid config, got: {warnings}"
@@ -221,7 +221,7 @@ class TestHooksInstall:
     def test_dispatch_unknown_action(self, tmp_path, monkeypatch):
         """Dispatch exits on unknown action."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.hooks import _dispatch
+        from fstdd.cli.commands.hooks import _dispatch
         import argparse
         args = argparse.Namespace(action="unknown")
 

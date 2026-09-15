@@ -3,7 +3,7 @@ import argparse
 import pytest
 from pathlib import Path
 
-from stdd.cli.commands.install import cmd_install
+from fstdd.cli.commands.install import cmd_install
 
 
 def test_install_unsupported_platform(temp_project: Path, monkeypatch):
@@ -87,7 +87,7 @@ def test_install_workbuddy(temp_project: Path, monkeypatch):
 
 def test_skill_meta_has_upgrade_entry():
     """TC-PSI-001: SKILL_META 包含 upgrade 条目且字段完整。"""
-    from stdd.cli.commands.install import SKILL_META
+    from fstdd.cli.commands.install import SKILL_META
     assert "upgrade" in SKILL_META
     meta = SKILL_META["upgrade"]
     assert meta["name"] == "stdd-upgrade"
@@ -121,7 +121,7 @@ def test_install_frontmatter_has_stdd_version(temp_project: Path, monkeypatch):
 
 def test_codex_in_platform_map():
     """TC-CODEX-001: platform_map 包含 codex 条目且配置完整。"""
-    from stdd.cli.commands.install import cmd_install
+    from fstdd.cli.commands.install import cmd_install
     # Access platform_map via the function's closure
     import inspect
     source = inspect.getsource(cmd_install)
@@ -129,7 +129,7 @@ def test_codex_in_platform_map():
         "platform_map should contain 'codex' key"
 
     # Direct import check
-    import stdd.cli.commands.install as install_mod
+    import fstdd.cli.commands.install as install_mod
     # Re-read the module source to check platform_map
     import ast
     tree = ast.parse(inspect.getsource(install_mod))

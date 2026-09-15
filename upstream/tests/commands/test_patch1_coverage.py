@@ -14,7 +14,7 @@ class TestExpProvenance:
         exp_dir = tmp_path / ".stdd" / "experiences"
         exp_dir.mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         import argparse
         args = argparse.Namespace(
             subcommand="add", category="cascading_errors", pattern="test",
@@ -33,7 +33,7 @@ class TestExpProvenance:
         exp_dir = tmp_path / ".stdd" / "experiences"
         exp_dir.mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         import argparse
         # Add experience
         cmd_experience(argparse.Namespace(
@@ -67,7 +67,7 @@ class TestExpProvenance:
             "community": {"registries": [], "packs": []}
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         import argparse
         args = argparse.Namespace(
             subcommand="pull", pack_name="nonexistent", source=None
@@ -90,7 +90,7 @@ class TestCIMoreCoverage:
             "anchoring": {"level": "L2"}
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.ci import check_anchoring_missing
+        from fstdd.cli.commands.ci import check_anchoring_missing
         status, msg = check_anchoring_missing(change_dir, tmp_path)
         assert status == "FAIL"
 
@@ -105,7 +105,7 @@ class TestCIMoreCoverage:
             "anchoring": {"level": "L1"}
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.ci import check_anchoring_missing
+        from fstdd.cli.commands.ci import check_anchoring_missing
         status, msg = check_anchoring_missing(change_dir, tmp_path)
         assert status == "FAIL"
 
@@ -119,7 +119,7 @@ class TestCIMoreCoverage:
             }}
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.ci import check_slice_completion
+        from fstdd.cli.commands.ci import check_slice_completion
         status, msg = check_slice_completion(change_dir, tmp_path)
         assert status == "WARN"
 
@@ -134,7 +134,7 @@ class TestCIMoreCoverage:
             }}}
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.ci import check_slice_completion
+        from fstdd.cli.commands.ci import check_slice_completion
         status, msg = check_slice_completion(change_dir, tmp_path)
         assert status == "PASS"
 
@@ -145,7 +145,7 @@ class TestAgentMoreCoverage:
     def test_verify_spec_missing(self, tmp_path, monkeypatch):
         """Agent verify exits when spec not found."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.agent import cmd_agent_verify
+        from fstdd.cli.commands.agent import cmd_agent_verify
         import argparse
         args = argparse.Namespace(task="missing", cp=None, dry_run=False)
         with pytest.raises(SystemExit):
@@ -164,7 +164,7 @@ class TestAgentMoreCoverage:
             "rollback": {"steps": []}
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.agent import cmd_agent_verify
+        from fstdd.cli.commands.agent import cmd_agent_verify
         import argparse
         args = argparse.Namespace(task="test", cp=None, dry_run=True)
         cmd_agent_verify(args)
@@ -183,7 +183,7 @@ class TestTraceMoreCoverage:
         (change_dir / "test-plan.md").write_text(
             "| **ID** | TC-TEST-001 | **P0** | test | test | test |", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.trace import cmd_trace
+        from fstdd.cli.commands.trace import cmd_trace
         import argparse
         args = argparse.Namespace(tc_id="TC-TEST-001", name=None)
         cmd_trace(args)
@@ -193,7 +193,7 @@ class TestTraceMoreCoverage:
     def test_trace_invalid_format(self, tmp_path, monkeypatch):
         """Trace with invalid TC-ID format exits."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.trace import cmd_trace
+        from fstdd.cli.commands.trace import cmd_trace
         import argparse
         args = argparse.Namespace(tc_id="INVALID", name=None)
         with pytest.raises(SystemExit):

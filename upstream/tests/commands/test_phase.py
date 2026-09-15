@@ -10,8 +10,8 @@ import pytest
 from pathlib import Path
 from datetime import date
 
-from stdd.cli.commands.phase import cmd_phase
-from stdd.cli.commands.phase_constants import (
+from fstdd.cli.commands.phase import cmd_phase
+from fstdd.cli.commands.phase_constants import (
     PHASE_ORDER,
     GATE_PHASES,
     LEGACY_PHASE_MAP,

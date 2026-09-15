@@ -25,7 +25,7 @@ class TestCanonVerifyEdge:
             encoding="utf-8")
 
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.canon import cmd_canon_verify
+        from fstdd.cli.commands.canon import cmd_canon_verify
         import argparse
         args = argparse.Namespace(change_name="test")
 
@@ -36,7 +36,7 @@ class TestCanonVerifyEdge:
     def test_verify_yaml_not_found(self, tmp_path, monkeypatch):
         """Verify exits when YAML doesn't exist."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.canon import cmd_canon_verify
+        from fstdd.cli.commands.canon import cmd_canon_verify
         import argparse
         args = argparse.Namespace(change_name="no-such")
 
@@ -51,7 +51,7 @@ class TestCanonVerifyEdge:
         (canon_dir / "test.yaml").write_text(yaml.dump({"meta": {"change_id": "test"}}),
                                               encoding="utf-8")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.canon import cmd_canon_verify
+        from fstdd.cli.commands.canon import cmd_canon_verify
         import argparse
         args = argparse.Namespace(change_name="test")
 
@@ -68,7 +68,7 @@ class TestCanonGenerateEdge:
     def test_generate_yaml_not_found(self, tmp_path, monkeypatch):
         """Generate exits when YAML doesn't exist."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.canon import cmd_canon_generate
+        from fstdd.cli.commands.canon import cmd_canon_generate
         import argparse
         args = argparse.Namespace(change_name="no-such", type="proposal", all=False)
 

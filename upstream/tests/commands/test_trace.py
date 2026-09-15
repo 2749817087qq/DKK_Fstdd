@@ -3,7 +3,7 @@ import argparse
 import pytest
 from pathlib import Path
 
-from stdd.cli.commands.trace import cmd_trace
+from fstdd.cli.commands.trace import cmd_trace
 
 
 def test_trace_valid_tc_id(sample_change: Path, monkeypatch):

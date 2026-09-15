@@ -20,6 +20,12 @@ phases:
         new_tests: 2
         verified_at: "2026-09-15T23:05:00"
         note: "标识层替换 375 处（20 文件）；skill 目录改名；TC-001/002 通过"
+      "S2":
+        status: done
+        tc_coverage: "2/2"
+        new_tests: 2
+        verified_at: "2026-09-15T23:12:00"
+        note: "包改名 upstream/stdd→fstdd；39 文件 273 处 import；CLI 入口改名；TC-003/004 通过"
   deliver:
     status: pending
   spec:

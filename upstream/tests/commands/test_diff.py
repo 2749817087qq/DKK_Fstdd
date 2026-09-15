@@ -3,7 +3,7 @@ import argparse
 import pytest
 from pathlib import Path
 
-from stdd.cli.commands.diff import cmd_diff
+from fstdd.cli.commands.diff import cmd_diff
 
 
 def test_diff_with_test_plan(sample_change_with_specs: Path, monkeypatch):

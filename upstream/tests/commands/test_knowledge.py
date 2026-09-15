@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock
 def test_knowledge_query_empty_graph(temp_project, monkeypatch, capsys):
     """TC-KG-006: query on empty graph shows helpful message."""
     monkeypatch.chdir(temp_project)
-    from stdd.cli.commands.knowledge import cmd_knowledge
+    from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="query", keyword_or_id="test", verbose=0,
                            related=False, format="table", dry_run=False)
     cmd_knowledge(ns)
@@ -37,7 +37,7 @@ def test_knowledge_query_no_match(temp_project, monkeypatch, capsys):
     with open(know_dir / "knowledge-graph.yaml", "w", encoding="utf-8") as f:
         yaml.dump(graph, f, allow_unicode=True)
 
-    from stdd.cli.commands.knowledge import cmd_knowledge
+    from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="query", keyword_or_id="XYZZY_NOT_FOUND_12345", verbose=0,
                            related=False, format="table", dry_run=False)
     cmd_knowledge(ns)
@@ -75,7 +75,7 @@ def test_knowledge_query_match(temp_project, monkeypatch, capsys):
     with open(know_dir / "knowledge-graph.yaml", "w", encoding="utf-8") as f:
         yaml.dump(graph, f, allow_unicode=True)
 
-    from stdd.cli.commands.knowledge import cmd_knowledge
+    from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="query", keyword_or_id="except", verbose=0,
                            related=False, format="table", dry_run=False)
     cmd_knowledge(ns)
@@ -104,7 +104,7 @@ def test_knowledge_query_json_format(temp_project, monkeypatch, capsys):
     with open(know_dir / "knowledge-graph.yaml", "w", encoding="utf-8") as f:
         yaml.dump(graph, f, allow_unicode=True)
 
-    from stdd.cli.commands.knowledge import cmd_knowledge
+    from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="query", keyword_or_id="test", verbose=0,
                            related=False, format="json", dry_run=False)
     cmd_knowledge(ns)
@@ -145,7 +145,7 @@ last_seen: "2026-07-01"
 """
     (exp_dir / "EXP-2026-0001.md").write_text(exp_content, encoding="utf-8")
 
-    from stdd.cli.commands.knowledge import cmd_knowledge
+    from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="merge", verbose=0, dry_run=False)
     # Mock community fetch to return None
     with patch("stdd.cli.commands.knowledge._fetch_community_graph", return_value=None):
@@ -211,7 +211,7 @@ last_seen: "2026-07-02"
 """
     (exp_dir / "EXP-2026-0002.md").write_text(exp_content, encoding="utf-8")
 
-    from stdd.cli.commands.knowledge import cmd_knowledge
+    from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="merge", verbose=0, dry_run=False)
     with patch("stdd.cli.commands.knowledge._fetch_community_graph", return_value=None):
         cmd_knowledge(ns)
@@ -236,7 +236,7 @@ def test_knowledge_merge_network_fallback(temp_project, monkeypatch, capsys):
     config_dir.joinpath("project.yaml").write_text(
         "project:\n  name: test-project\n  language: python\nsource_dir: app\n", encoding="utf-8")
 
-    from stdd.cli.commands.knowledge import cmd_knowledge
+    from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="merge", verbose=0, dry_run=False)
     with patch("stdd.cli.commands.knowledge._fetch_community_graph", return_value=None):
         cmd_knowledge(ns)
@@ -275,7 +275,7 @@ def test_knowledge_predict(temp_project, monkeypatch, capsys):
     with open(know_dir / "knowledge-graph.yaml", "w", encoding="utf-8") as f:
         yaml.dump(graph, f, allow_unicode=True)
 
-    from stdd.cli.commands.knowledge import cmd_knowledge
+    from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="predict", keyword_or_id="", verbose=0,
                            change_name="2026-07-01-test-change", format="table", dry_run=False)
     cmd_knowledge(ns)
@@ -305,7 +305,7 @@ def test_knowledge_predict_json(temp_project, monkeypatch, capsys):
     with open(know_dir / "knowledge-graph.yaml", "w", encoding="utf-8") as f:
         yaml.dump(graph, f, allow_unicode=True)
 
-    from stdd.cli.commands.knowledge import cmd_knowledge
+    from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="predict", keyword_or_id="", verbose=0,
                            change_name="test-change", format="json", dry_run=False)
     cmd_knowledge(ns)
@@ -337,7 +337,7 @@ def test_knowledge_predict_insufficient_data(temp_project, monkeypatch, capsys):
     with open(know_dir / "knowledge-graph.yaml", "w", encoding="utf-8") as f:
         yaml.dump(graph, f, allow_unicode=True)
 
-    from stdd.cli.commands.knowledge import cmd_knowledge
+    from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="predict", keyword_or_id="", verbose=0,
                            change_name="test", format="table", dry_run=False)
     cmd_knowledge(ns)
@@ -392,7 +392,7 @@ lifecycle_state: deposited
 """
     (exp_dir / "EXP-2026-0001.md").write_text(exp_content, encoding="utf-8")
 
-    from stdd.cli.commands.knowledge import cmd_knowledge
+    from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="fix", keyword_or_id="EXP-2026-0001", verbose=0,
                            experience_id="EXP-2026-0001", format="table", dry_run=False)
     cmd_knowledge(ns)
@@ -422,7 +422,7 @@ def test_knowledge_fix_no_template(temp_project, monkeypatch, capsys):
     with open(know_dir / "knowledge-graph.yaml", "w", encoding="utf-8") as f:
         yaml.dump(graph, f, allow_unicode=True)
 
-    from stdd.cli.commands.knowledge import cmd_knowledge
+    from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="fix", keyword_or_id="EXP-2026-0001", verbose=0,
                            experience_id="EXP-2026-0001", format="table", dry_run=False)
     cmd_knowledge(ns)

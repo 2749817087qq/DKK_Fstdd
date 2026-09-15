@@ -57,7 +57,7 @@ class TestCiInit:
         _setup_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("init")
         cmd_ci(args)
@@ -85,7 +85,7 @@ class TestCiInit:
         _setup_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("init", dry_run=True)
         cmd_ci(args)
@@ -108,7 +108,7 @@ ci:
 """, encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("init")
         cmd_ci(args)
@@ -126,7 +126,7 @@ class TestCiGenerate:
         _setup_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("generate", target="workflow")
         cmd_ci(args)
@@ -140,7 +140,7 @@ class TestCiGenerate:
         _setup_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("generate", target="pre-commit")
         cmd_ci(args)
@@ -153,7 +153,7 @@ class TestCiGenerate:
         _setup_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("generate", target="pr-template")
         cmd_ci(args)
@@ -166,7 +166,7 @@ class TestCiGenerate:
         _setup_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("generate", target="workflow", dry_run=True)
         cmd_ci(args)
@@ -181,7 +181,7 @@ class TestCiGenerate:
         _setup_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("generate", target="unknown-target")
         cmd_ci(args)  # Should not crash; prints error message
@@ -200,7 +200,7 @@ repos:
 """
         (tmp_path / ".pre-commit-config.yaml").write_text(existing, encoding="utf-8")
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("generate", target="pre-commit")
         cmd_ci(args)
@@ -259,7 +259,7 @@ class TestCiCheckFailures:
         self._setup_valid_change(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("check-failures", name="2026-01-01-test-change")
         cmd_ci(args)  # Should not raise SystemExit
@@ -272,7 +272,7 @@ class TestCiCheckFailures:
         # Missing: proposal.md, design.md, test-plan.md, .stdd.yaml
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("check-failures", name="2026-01-01-test-change")
         with pytest.raises(SystemExit) as exc_info:
@@ -303,7 +303,7 @@ TC-CASUAL-001 TC-CASUAL-001 TC-CASUAL-002 TC-CASUAL-001
 
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("check-failures", name="2026-01-01-test-change")
         with pytest.raises(SystemExit) as exc_info:
@@ -315,7 +315,7 @@ TC-CASUAL-001 TC-CASUAL-001 TC-CASUAL-002 TC-CASUAL-001
         _setup_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("check-failures", name="nonexistent")
         with pytest.raises(SystemExit) as exc_info:
@@ -331,7 +331,7 @@ class TestCiEdgeCases:
         _setup_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = _make_args("unknown-subcommand")
         with pytest.raises(SystemExit) as exc_info:
@@ -343,7 +343,7 @@ class TestCiEdgeCases:
         _setup_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
 
         args = argparse.Namespace(
             command="ci",
@@ -388,7 +388,7 @@ class TestCiCheckEnhanced:
         self._setup_scope_change(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import check_scope_creep
+        from fstdd.cli.commands.ci import check_scope_creep
         change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-scope-test"
         # Mock: check reads git diff but won't find anything alarming
         # Actually, without git, it should SKIP
@@ -404,7 +404,7 @@ class TestCiCheckEnhanced:
         (change_dir / "proposal.md").write_text("# No capabilities\n", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import check_scope_creep
+        from fstdd.cli.commands.ci import check_scope_creep
         status, msg = check_scope_creep(change_dir, tmp_path)
         assert status == "SKIP"
 
@@ -420,7 +420,7 @@ class TestCiCheckEnhanced:
             json.dumps({"summary": {"percent_covered": 90.0}}), encoding="utf-8"
         )
 
-        from stdd.cli.commands.ci import check_coverage_vacuum
+        from fstdd.cli.commands.ci import check_coverage_vacuum
         status, msg = check_coverage_vacuum(change_dir, tmp_path)
         assert status == "PASS"
         assert "90" in msg
@@ -437,7 +437,7 @@ class TestCiCheckEnhanced:
             json.dumps({"summary": {"percent_covered": 62.0}}), encoding="utf-8"
         )
 
-        from stdd.cli.commands.ci import check_coverage_vacuum
+        from fstdd.cli.commands.ci import check_coverage_vacuum
         status, msg = check_coverage_vacuum(change_dir, tmp_path)
         assert status == "FAIL"
         assert "62" in msg
@@ -449,7 +449,7 @@ class TestCiCheckEnhanced:
         change_dir.mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import check_coverage_vacuum
+        from fstdd.cli.commands.ci import check_coverage_vacuum
         status, msg = check_coverage_vacuum(change_dir, tmp_path)
         assert status == "SKIP"
 
@@ -480,7 +480,7 @@ class TestCiCheckEnhanced:
 """, encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import check_contract_gap
+        from fstdd.cli.commands.ci import check_contract_gap
         status, msg = check_contract_gap(change_dir, tmp_path)
         assert status in ("PASS", "SKIP")  # PASS if cross-ref found, SKIP if pattern doesn't match
 
@@ -499,7 +499,7 @@ class TestCiCheckEnhanced:
 """, encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import check_contract_gap
+        from fstdd.cli.commands.ci import check_contract_gap
         status, msg = check_contract_gap(change_dir, tmp_path)
         assert status == "SKIP"
 
@@ -508,7 +508,7 @@ class TestCiCheckEnhanced:
         self._setup_scope_change(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import cmd_ci
+        from fstdd.cli.commands.ci import cmd_ci
         args = _make_args("check-failures", name="2026-01-01-scope-test")
         cmd_ci(args)
         captured = capsys.readouterr()

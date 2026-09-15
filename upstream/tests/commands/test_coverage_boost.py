@@ -15,7 +15,7 @@ class TestIndexCoverage:
         (tmp_path / "project-index.yaml").write_text(yaml.dump(index_data), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.index import cmd_index_trace
+        from fstdd.cli.commands.index import cmd_index_trace
         import argparse
         args = argparse.Namespace(file="nonexistent.py")
         cmd_index_trace(args)
@@ -25,7 +25,7 @@ class TestIndexCoverage:
     def test_show_no_index(self, tmp_path, monkeypatch):
         """Show with no project-index exits."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.index import cmd_index_show
+        from fstdd.cli.commands.index import cmd_index_show
         import argparse
         args = argparse.Namespace(capability=None)
         with pytest.raises(SystemExit):
@@ -38,7 +38,7 @@ class TestIndexCoverage:
             "capabilities": {}
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.index import cmd_index_show
+        from fstdd.cli.commands.index import cmd_index_show
         import argparse
         args = argparse.Namespace(capability="no-such")
         cmd_index_show(args)
@@ -54,7 +54,7 @@ class TestExperienceCoverage:
         exp_dir = _setup_exp_dir(tmp_path)
         # Create experiences with different provenance
         for i, prov in enumerate(["ci-detected", "ai-inferred", "ci-detected"]):
-            from stdd.cli.commands.experience import cmd_experience
+            from fstdd.cli.commands.experience import cmd_experience
             import argparse
             args = argparse.Namespace(
                 subcommand="add", category="cascading_errors",
@@ -67,7 +67,7 @@ class TestExperienceCoverage:
             cmd_experience(args)
 
         # Filter by provenance
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         import argparse
         args = argparse.Namespace(
             subcommand="list", format="json", category=None,
@@ -88,7 +88,7 @@ class TestExperienceCoverage:
     def test_export_sanitize_patterns(self, tmp_path, monkeypatch):
         """Export sanitizes IP and paths."""
         exp_dir = _setup_exp_dir(tmp_path)
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         import argparse
         # Create experience with sensitive data
         args = argparse.Namespace(
@@ -122,7 +122,7 @@ class TestExperienceCoverage:
     def test_add_with_provenance(self, tmp_path, monkeypatch):
         """Adding experience includes provenance field."""
         exp_dir = _setup_exp_dir(tmp_path)
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         import argparse
         args = argparse.Namespace(
             subcommand="add", category="cascading_errors",
@@ -154,7 +154,7 @@ class TestCICoverage:
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import check_anchoring_missing
+        from fstdd.cli.commands.ci import check_anchoring_missing
         status, msg = check_anchoring_missing(change_dir, tmp_path)
         assert status == "FAIL"
 
@@ -170,7 +170,7 @@ class TestCICoverage:
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import check_anchoring_missing
+        from fstdd.cli.commands.ci import check_anchoring_missing
         status, msg = check_anchoring_missing(change_dir, tmp_path)
         assert status == "PASS"
 
@@ -186,7 +186,7 @@ class TestCICoverage:
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import check_slice_completion
+        from fstdd.cli.commands.ci import check_slice_completion
         status, msg = check_slice_completion(change_dir, tmp_path)
         assert status == "PASS"
 
@@ -202,7 +202,7 @@ class TestCICoverage:
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.ci import check_slice_completion
+        from fstdd.cli.commands.ci import check_slice_completion
         status, msg = check_slice_completion(change_dir, tmp_path)
         assert status == "PASS"
 
@@ -220,7 +220,7 @@ class TestProposalCoverage:
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.proposal import cmd_proposal_validate
+        from fstdd.cli.commands.proposal import cmd_proposal_validate
         import argparse
         args = argparse.Namespace(change_name="test")
         with pytest.raises(SystemExit) as exc:
@@ -230,7 +230,7 @@ class TestProposalCoverage:
     def test_show_nonexistent(self, tmp_path, monkeypatch):
         """Show proposal that doesn't exist exits with error."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.proposal import cmd_proposal_show
+        from fstdd.cli.commands.proposal import cmd_proposal_show
         import argparse
         args = argparse.Namespace(change_name="no-such")
         with pytest.raises(SystemExit):
@@ -243,7 +243,7 @@ class TestAgentCoverage:
     def test_verify_spec_not_found(self, tmp_path, monkeypatch):
         """Agent verify with missing spec."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.agent import cmd_agent_verify
+        from fstdd.cli.commands.agent import cmd_agent_verify
         import argparse
         args = argparse.Namespace(task="no-such", cp=None, dry_run=True)
         with pytest.raises(SystemExit):
@@ -252,7 +252,7 @@ class TestAgentCoverage:
     def test_dispatch_unknown_action(self, tmp_path, monkeypatch):
         """Agent dispatch unknown action."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.agent import _dispatch
+        from fstdd.cli.commands.agent import _dispatch
         import argparse
         args = argparse.Namespace(action="unknown", task=None)
         with pytest.raises(SystemExit):
@@ -265,7 +265,7 @@ class TestTraceCoverage:
     def test_trace_without_changes_dir(self, tmp_path, monkeypatch):
         """Trace when no changes directory exists."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.trace import cmd_trace
+        from fstdd.cli.commands.trace import cmd_trace
         import argparse
         args = argparse.Namespace(tc_id="TC-TEST-001", name=None)
         try:

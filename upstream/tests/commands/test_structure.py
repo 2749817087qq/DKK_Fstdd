@@ -14,7 +14,7 @@ class TestStructureDelta:
         (change_dir / "app.py").write_text("print('hello')", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.structure import _dispatch
+        from fstdd.cli.commands.structure import _dispatch
         import argparse
         args = argparse.Namespace(action="delta", target="test-change")
 
@@ -29,7 +29,7 @@ class TestStructureDelta:
     def test_delta_nonexistent_change(self, tmp_path, monkeypatch):
         """delta for non-existent change exits with error."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.structure import _dispatch
+        from fstdd.cli.commands.structure import _dispatch
         import argparse
         args = argparse.Namespace(action="delta", target="no-such-change")
 
@@ -47,7 +47,7 @@ class TestStructureMerge:
         (change_dir / "app.py").write_text("print('hello')", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.structure import _dispatch
+        from fstdd.cli.commands.structure import _dispatch
         import argparse
 
         # First generate delta
@@ -69,7 +69,7 @@ class TestStructureShow:
     def test_show_before_merge(self, tmp_path, monkeypatch, capsys):
         """show without index gives helpful message."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.structure import _dispatch
+        from fstdd.cli.commands.structure import _dispatch
         import argparse
         args = argparse.Namespace(action="show", target=None)
 
@@ -84,7 +84,7 @@ class TestStructureShow:
         (change_dir / "app.py").write_text("print('hello')", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.structure import _dispatch
+        from fstdd.cli.commands.structure import _dispatch
         import argparse
         _dispatch(argparse.Namespace(action="delta", target="test-change"))
         _dispatch(argparse.Namespace(action="merge", target="test-change"))
@@ -100,7 +100,7 @@ class TestStructureGraph:
     def test_graph_without_index(self, tmp_path, monkeypatch, capsys):
         """graph without index gives helpful message."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.structure import _dispatch
+        from fstdd.cli.commands.structure import _dispatch
         import argparse
         args = argparse.Namespace(action="graph", target=None)
 
@@ -115,7 +115,7 @@ class TestStructureGraph:
         (change_dir / "app.py").write_text("print('hello')", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.structure import _dispatch
+        from fstdd.cli.commands.structure import _dispatch
         import argparse
         _dispatch(argparse.Namespace(action="delta", target="test-change"))
         _dispatch(argparse.Namespace(action="merge", target="test-change"))
@@ -131,7 +131,7 @@ class TestStructureRebuild:
     def test_rebuild_empty(self, tmp_path, monkeypatch, capsys):
         """rebuild with no deltas."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.structure import _dispatch
+        from fstdd.cli.commands.structure import _dispatch
         import argparse
         args = argparse.Namespace(action="rebuild", target=None)
 
@@ -145,7 +145,7 @@ class TestStructureDispatch:
 
     def test_dispatch_unknown_action(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.structure import _dispatch
+        from fstdd.cli.commands.structure import _dispatch
         import argparse
         args = argparse.Namespace(action="unknown", target=None)
         with pytest.raises(SystemExit):

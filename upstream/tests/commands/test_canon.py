@@ -17,7 +17,7 @@ class TestCanonicalDataModel:
         (change_dir / ".stdd.yaml").write_text("task_type: code\n", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.proposal import cmd_proposal_init
+        from fstdd.cli.commands.proposal import cmd_proposal_init
         import argparse
         args = argparse.Namespace(change_name=change_name, format="yaml")
 
@@ -36,7 +36,7 @@ class TestCanonicalDataModel:
         assert data["meta"]["change_id"] == change_name
 
         # Assert — Human View MD 从 YAML 生成（YAML → generate → MD）
-        from stdd.cli.commands.canon import cmd_canon_generate
+        from fstdd.cli.commands.canon import cmd_canon_generate
         args2 = argparse.Namespace(change_name=change_name, type="proposal", all=False)
         cmd_canon_generate(args2)
         proposal_md = tmp_path / ".stdd" / "changes" / change_name / "proposal.md"
@@ -57,7 +57,7 @@ class TestCanonicalDataModel:
         }), encoding="utf-8")
 
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.proposal import cmd_proposal_validate
+        from fstdd.cli.commands.proposal import cmd_proposal_validate
         import argparse
         args = argparse.Namespace(change_name="test")
 
@@ -73,7 +73,7 @@ class TestCanonicalDataModel:
         (change_dir / ".stdd.yaml").write_text("active_phase: 1\n", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.state import cmd_state
+        from fstdd.cli.commands.state import cmd_state
         import argparse
         args = argparse.Namespace(subcommand=None, resume=False, context=False)
 
@@ -93,7 +93,7 @@ class TestCanonicalDataModel:
         (tmp_path / ".stdd" / "specs" / "rate-limiting" / "spec.md").write_text("# spec", encoding="utf-8")
 
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.index import cmd_index_update
+        from fstdd.cli.commands.index import cmd_index_update
         import argparse
         args = argparse.Namespace(subcommand="update")
 
@@ -123,7 +123,7 @@ class TestCanonicalDataModel:
             yaml.dump(index_data), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.index import cmd_index_trace
+        from fstdd.cli.commands.index import cmd_index_trace
         import argparse
         args = argparse.Namespace(file="middleware/rate_limit.py")
 
@@ -138,7 +138,7 @@ class TestDualTrackFoundation:
     def test_canon_init_creates_directories(self, tmp_path, monkeypatch):
         """TC-DUAL-001: canon init creates all required directories."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.canon import cmd_canon_init
+        from fstdd.cli.commands.canon import cmd_canon_init
         import argparse
         args = argparse.Namespace()
         args.project_level = True  # V2.9: --project-level flag for root-level init
@@ -190,7 +190,7 @@ class TestDualTrackFoundation:
         (tmp_path / ".stdd" / "changes" / "test").mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.canon import cmd_canon_generate
+        from fstdd.cli.commands.canon import cmd_canon_generate
         import argparse
         args = argparse.Namespace(change_name="test", type="proposal", all=False)
 
@@ -206,7 +206,7 @@ class TestDualTrackFoundation:
         """TC-DUAL-003: canon verify warns when Human View is stale."""
         # Mock minimal verify
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.canon import cmd_canon_verify
+        from fstdd.cli.commands.canon import cmd_canon_verify
         import argparse
         args = argparse.Namespace(change_name="test")
 
@@ -242,7 +242,7 @@ class TestAgentSpec:
         }), encoding="utf-8")
 
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.agent import cmd_agent_verify
+        from fstdd.cli.commands.agent import cmd_agent_verify
         import argparse
         args = argparse.Namespace(task="deploy-test", cp=None, dry_run=True)
 

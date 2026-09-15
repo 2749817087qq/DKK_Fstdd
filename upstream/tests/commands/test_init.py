@@ -3,7 +3,7 @@ import argparse
 import pytest
 from pathlib import Path
 
-from stdd.cli.commands.init import cmd_init
+from fstdd.cli.commands.init import cmd_init
 
 
 def test_init_normal(temp_project: Path, monkeypatch):

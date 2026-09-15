@@ -64,7 +64,7 @@ class TestSessionResume:
         change_dir = _setup_state_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.state import write_resume_context
+        from fstdd.cli.commands.state import write_resume_context
 
         write_resume_context(change_dir,
                              resume_context="slice-2-halfway",
@@ -82,7 +82,7 @@ class TestSessionResume:
         change_dir = _setup_state_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.state import read_resume_context
+        from fstdd.cli.commands.state import read_resume_context
 
         ctx = read_resume_context(change_dir)
         assert ctx["resume_context"] is None
@@ -95,7 +95,7 @@ class TestSessionResume:
         change_dir = _setup_state_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.state import write_resume_context, read_resume_context
+        from fstdd.cli.commands.state import write_resume_context, read_resume_context
 
         write_resume_context(change_dir, resume_context="build-phase-started")
         ctx = read_resume_context(change_dir)
@@ -111,7 +111,7 @@ class TestSessionResume:
         change_dir = _setup_state_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.state import write_resume_context, read_resume_context
+        from fstdd.cli.commands.state import write_resume_context, read_resume_context
 
         write_resume_context(change_dir,
                              resume_context="chunk-3-of-5",

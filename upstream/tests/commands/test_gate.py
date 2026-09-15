@@ -86,7 +86,7 @@ class TestGateConfirm:
         change_dir = _setup_gate_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=1)
         cmd_gate(args)
@@ -102,7 +102,7 @@ class TestGateConfirm:
         change_dir = _setup_gate_project(tmp_path, gates_confirmed=[1])
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=1)
         cmd_gate(args)
@@ -118,7 +118,7 @@ class TestGateConfirm:
         _setup_gate_project(tmp_path)  # No gates confirmed
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=2)
         with pytest.raises(SystemExit) as exc_info:
@@ -130,7 +130,7 @@ class TestGateConfirm:
         _setup_gate_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=4)
         with pytest.raises(SystemExit) as exc_info:
@@ -142,7 +142,7 @@ class TestGateConfirm:
         change_dir = _setup_gate_project(tmp_path, gates_confirmed=[1, 2])
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=3)
         cmd_gate(args)
@@ -160,7 +160,7 @@ class TestGateConfirm:
         (change_dir / "GATE2_APPROVED").touch()
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=2)
         cmd_gate(args)
@@ -176,7 +176,7 @@ class TestGateConfirm:
         (change_dir / "GATE2_APPROVED").touch()
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         # First call: confirm via file token
         args = _make_args("approve", name="2026-01-01-gate-test", gate=2)
@@ -193,7 +193,7 @@ class TestGateConfirm:
         _setup_gate_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import _read_gates_config
+        from fstdd.cli.commands.gate import _read_gates_config
         config = _read_gates_config(tmp_path)
         assert "confirmation" in config
         assert "channels" in config["confirmation"]
@@ -218,7 +218,7 @@ class TestGateAutoMD:
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=1)
         cmd_gate(args)
@@ -237,7 +237,7 @@ class TestGateAutoMD:
         change_dir = _setup_gate_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=1)
         cmd_gate(args)
@@ -274,7 +274,7 @@ class TestGateAutoMD:
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=2)
         cmd_gate(args)
@@ -315,7 +315,7 @@ class TestGateAutoMD:
         }), encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=2)
         cmd_gate(args)  # 不应因 TODO 占位目录创建失败而抛错
@@ -336,7 +336,7 @@ class TestGateHardDefense:
         change_dir = _setup_gate_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = argparse.Namespace(
             command="gate", subcommand="approve", dry_run=False, verbose=0,
@@ -354,7 +354,7 @@ class TestGateHardDefense:
         change_dir = _setup_gate_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=1,
                           confirmed_by="dialog", evidence="用户：确认")
@@ -373,7 +373,7 @@ class TestGateHardDefense:
         change_dir = _setup_gate_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=1, confirmed_by="dialog")
         cmd_gate(args)
@@ -394,7 +394,7 @@ class TestGateHardDefense:
         _setup_gate_project(tmp_path, gates_confirmed=[1])
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=2,
                           confirmed_by="file_token")
@@ -408,7 +408,7 @@ class TestGateHardDefense:
         (change_dir / "GATE2_APPROVED").touch()
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=2,
                           confirmed_by="file_token")
@@ -422,7 +422,7 @@ class TestGateHardDefense:
         (change_dir / "GATE2_APPROVED").touch()
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=2,
                           confirmed_by="file_token")
@@ -438,7 +438,7 @@ class TestGateHardDefense:
         _setup_gate_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.gate import cmd_gate
+        from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=1,
                           confirmed_by="hacker")

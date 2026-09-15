@@ -41,7 +41,7 @@ class TestUpgradeCheck:
         _setup_project(tmp_path, "2.5.0")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.upgrade import cmd_upgrade
+        from fstdd.cli.commands.upgrade import cmd_upgrade
         import sys
         from io import StringIO
 
@@ -56,7 +56,7 @@ class TestUpgradeCheck:
 
     def test_check_at_latest(self, tmp_path, monkeypatch):
         """TC-UPGRADE-002: No gap when same version."""
-        from stdd.cli.utils import get_source_version
+        from fstdd.cli.utils import get_source_version
         src = get_source_version() or "3.0.4"
         _setup_project(tmp_path, src)
         (tmp_path / ".stdd" / "version.yaml").write_text(
@@ -65,7 +65,7 @@ class TestUpgradeCheck:
         )
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.upgrade import cmd_upgrade
+        from fstdd.cli.commands.upgrade import cmd_upgrade
         import sys
         from io import StringIO
 
@@ -83,7 +83,7 @@ class TestUpgradeCheck:
         _setup_project(tmp_path, "2.3.0")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.upgrade import cmd_upgrade
+        from fstdd.cli.commands.upgrade import cmd_upgrade
         import sys
         from io import StringIO
 
@@ -105,7 +105,7 @@ class TestUpgradeLock:
         _setup_project(tmp_path, "2.5.0", locked=True)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.upgrade import cmd_upgrade
+        from fstdd.cli.commands.upgrade import cmd_upgrade
         import sys
         from io import StringIO
 
@@ -123,7 +123,7 @@ class TestUpgradeLock:
         _setup_project(tmp_path, "2.5.0")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.upgrade import cmd_upgrade
+        from fstdd.cli.commands.upgrade import cmd_upgrade
 
         cmd_upgrade(_make_args(lock=True))
 
@@ -137,7 +137,7 @@ class TestUpgradeLock:
         _setup_project(tmp_path, "2.5.0", locked=True)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.upgrade import cmd_upgrade
+        from fstdd.cli.commands.upgrade import cmd_upgrade
 
         cmd_upgrade(_make_args(unlock=True))
 
@@ -154,7 +154,7 @@ class TestUpgradeDryRun:
         _setup_project(tmp_path, "2.5.0")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.upgrade import cmd_upgrade
+        from fstdd.cli.commands.upgrade import cmd_upgrade
         import sys
         from io import StringIO
 
@@ -178,7 +178,7 @@ class TestUpgradeRegistry:
         _setup_project(tmp_path, "2.9.0")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.upgrade import _register_project, _registry_path
+        from fstdd.cli.commands.upgrade import _register_project, _registry_path
 
         _register_project(tmp_path, "2.9.0")
         rp = _registry_path()
@@ -199,7 +199,7 @@ class TestStartupCheck:
         _setup_project(tmp_path, "2.3.0")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.utils import try_version_check
+        from fstdd.cli.utils import try_version_check
         import sys
         from io import StringIO
 
@@ -216,7 +216,7 @@ class TestStartupCheck:
         _setup_project(tmp_path, "2.3.0", locked=True)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.utils import try_version_check
+        from fstdd.cli.utils import try_version_check
         import sys
         from io import StringIO
 
@@ -231,7 +231,7 @@ class TestStartupCheck:
     def test_startup_check_non_stdd_skips(self, tmp_path, monkeypatch):
         """TC-UPGRADE-014: Non-STDD project gets no notice."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.utils import try_version_check
+        from fstdd.cli.utils import try_version_check
         import sys
         from io import StringIO
 
@@ -248,7 +248,7 @@ class TestVersionCompare:
     """Unit tests for version comparison."""
 
     def test_compare_versions(self):
-        from stdd.cli.utils import compare_versions
+        from fstdd.cli.utils import compare_versions
         assert compare_versions("2.5", "2.9") < 0
         assert compare_versions("2.9.0", "2.9.0") == 0
         assert compare_versions("2.10", "2.9") > 0

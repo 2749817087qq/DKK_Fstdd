@@ -3,7 +3,7 @@ import pytest
 import logging
 from pathlib import Path
 
-from stdd.cli.utils import (
+from fstdd.cli.utils import (
     setup_logging,
     get_logger,
     get_stdd_source,
@@ -73,7 +73,7 @@ def test_read_config_legacy_fallback(tmp_path: Path):
 
 def test_read_config_non_dict_yaml(temp_project: Path, monkeypatch):
     """config.d/ 中非 dict 文件被跳过并警告。"""
-    from stdd.cli.utils import read_config, setup_logging
+    from fstdd.cli.utils import read_config, setup_logging
     setup_logging(0)
     (temp_project / ".stdd" / "config.d").mkdir(parents=True, exist_ok=True)
     # 创建一个包含 YAML 列表的配置文件

@@ -29,7 +29,7 @@ class TestNewParallel:
 
         monkeypatch.chdir(repo)
 
-        from stdd.cli.commands.new import cmd_new
+        from fstdd.cli.commands.new import cmd_new
         import argparse
         args = argparse.Namespace(name="test-parallel", dry_run=False, parallel=True)
 
@@ -55,7 +55,7 @@ class TestNewParallel:
         (repo / ".stdd").mkdir()
         monkeypatch.chdir(repo)
 
-        from stdd.cli.commands.new import cmd_new
+        from fstdd.cli.commands.new import cmd_new
         import argparse
         args = argparse.Namespace(name="test-dry", dry_run=True, parallel=True)
 

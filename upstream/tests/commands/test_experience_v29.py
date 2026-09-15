@@ -11,14 +11,14 @@ class TestExperienceExtract:
 
     def test_extract_no_changes_dir(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="extract", dry_run=False, verbose=0)
         cmd_experience(args)
 
     def test_extract_no_test_report(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
         (temp_project / ".stdd" / "changes" / "2026-06-01-test").mkdir(parents=True)
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="extract", dry_run=False, verbose=0)
         cmd_experience(args)
 
@@ -49,7 +49,7 @@ class TestExperienceExtract:
         (config_dir / "experience.yaml").write_text("experience:\n  dir: .stdd/experiences\n", encoding="utf-8")
         (config_dir / "project.yaml").write_text("project:\n  name: test\n  language: python\n", encoding="utf-8")
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="extract", dry_run=False, verbose=0)
         cmd_experience(args)
         exp_dir = temp_project / ".stdd" / "experiences"
@@ -74,7 +74,7 @@ class TestExperienceExtract:
         (config_dir / "experience.yaml").write_text("experience:\n  dir: .stdd/experiences\n", encoding="utf-8")
         (config_dir / "project.yaml").write_text("project:\n  name: test\n  language: python\n", encoding="utf-8")
 
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="extract", dry_run=False, verbose=0)
         cmd_experience(args)
         drafts = list(exp_dir.glob("EXP-*.md"))
@@ -101,14 +101,14 @@ class TestExperienceReview:
 
     def test_review_empty(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="review", dry_run=False, verbose=0)
         cmd_experience(args)
 
     def test_review_no_drafts(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
         (temp_project / ".stdd" / "experiences").mkdir(parents=True)
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="review", dry_run=False, verbose=0)
         cmd_experience(args)
 
@@ -124,7 +124,7 @@ class TestExperienceReview:
         oi = builtins.input
         builtins.input = lambda _="": "Q"
         try:
-            from stdd.cli.commands.experience import cmd_experience
+            from fstdd.cli.commands.experience import cmd_experience
             args = argparse.Namespace(subcommand="review", dry_run=False, verbose=0)
             cmd_experience(args)
         finally:
@@ -144,7 +144,7 @@ class TestExperienceReview:
         oi = builtins.input
         builtins.input = lambda _="": "L"
         try:
-            from stdd.cli.commands.experience import cmd_experience
+            from fstdd.cli.commands.experience import cmd_experience
             args = argparse.Namespace(subcommand="review", dry_run=False, verbose=0)
             cmd_experience(args)
         finally:
@@ -161,7 +161,7 @@ class TestExperienceReview:
         oi = builtins.input
         builtins.input = lambda _="": "D"
         try:
-            from stdd.cli.commands.experience import cmd_experience
+            from fstdd.cli.commands.experience import cmd_experience
             args = argparse.Namespace(subcommand="review", dry_run=False, verbose=0)
             cmd_experience(args)
         finally:
@@ -193,7 +193,7 @@ class TestExperienceShare:
     def test_share_not_found(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
         (temp_project / ".stdd" / "experiences").mkdir(parents=True)
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="share", experience_id="EXP-NOTFOUND",
                                   dry_run=False, verbose=0)
         with pytest.raises(SystemExit):
@@ -219,7 +219,7 @@ class TestExperienceShare:
 
         requests.post = mp
         try:
-            from stdd.cli.commands.experience import cmd_experience
+            from fstdd.cli.commands.experience import cmd_experience
             args = argparse.Namespace(subcommand="share", experience_id="EXP-2026-0500",
                                       dry_run=False, verbose=0)
             cmd_experience(args)
@@ -243,7 +243,7 @@ class TestExperienceShare:
 
         requests.post = lambda url, **kw: MR()
         try:
-            from stdd.cli.commands.experience import cmd_experience
+            from fstdd.cli.commands.experience import cmd_experience
             args = argparse.Namespace(subcommand="share", experience_id="EXP-2026-0600",
                                       dry_run=False, verbose=0)
             cmd_experience(args)
@@ -274,7 +274,7 @@ class TestExperienceSearch:
 
     def test_search_empty(self, temp_project, monkeypatch, capsys):
         monkeypatch.chdir(temp_project)
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="search", keyword="test",
                                   category=None, language=None, severity=None,
                                   format="table", dry_run=False, verbose=0)
@@ -289,7 +289,7 @@ class TestExperienceSearch:
                       root_cause="Connection pool exhausted")
         self._make_exp(exp_dir, "EXP-2026-1002", pattern="API rate limiting bug",
                       root_cause="No rate limiter configured")
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="search", keyword="connection",
                                   category=None, language=None, severity=None,
                                   format="table", dry_run=False, verbose=0)
@@ -308,7 +308,7 @@ class TestExperienceSearch:
                       pattern="Timeout hallucination", language="python")
         self._make_exp(exp_dir, "EXP-2026-2003", category="cascading_errors",
                       pattern="Timeout api", language="go")
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="search", keyword="timeout",
                                   category="cascading_errors", language="python",
                                   severity=None, format="table", dry_run=False, verbose=0)
@@ -323,7 +323,7 @@ class TestExperienceSearch:
         exp_dir = temp_project / ".stdd" / "experiences"
         exp_dir.mkdir(parents=True)
         self._make_exp(exp_dir, "EXP-2026-3001", pattern="Test pattern")
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="search", keyword="xyznotfound",
                                   category=None, language=None, severity=None,
                                   format="table", dry_run=False, verbose=0)
@@ -336,7 +336,7 @@ class TestExperienceSearch:
         exp_dir = temp_project / ".stdd" / "experiences"
         exp_dir.mkdir(parents=True)
         self._make_exp(exp_dir, "EXP-2026-4001", pattern="Test json output")
-        from stdd.cli.commands.experience import cmd_experience
+        from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="search", keyword="json",
                                   category=None, language=None, severity=None,
                                   format="json", dry_run=False, verbose=0)

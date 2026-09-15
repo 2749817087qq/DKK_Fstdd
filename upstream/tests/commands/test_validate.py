@@ -3,7 +3,7 @@ import argparse
 import pytest
 from pathlib import Path
 
-from stdd.cli.commands.validate import cmd_validate
+from fstdd.cli.commands.validate import cmd_validate
 
 
 def test_validate_valid_change(sample_change_with_specs: Path, monkeypatch):

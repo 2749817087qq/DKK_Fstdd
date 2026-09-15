@@ -100,7 +100,7 @@ class TestCurateDeduplicate:
         _setup_curate_project(tmp_path, with_inbox=True)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.curate import cmd_curate_deduplicate
+        from fstdd.cli.commands.curate import cmd_curate_deduplicate
         args = _make_args("deduplicate")
         cmd_curate_deduplicate(args, tmp_path)
 
@@ -112,7 +112,7 @@ class TestCurateDeduplicate:
 
     def test_pattern_similarity_calculation(self):
         """Unit test for pattern similarity scoring."""
-        from stdd.cli.commands.curate import _pattern_similarity
+        from fstdd.cli.commands.curate import _pattern_similarity
 
         sim_high = _pattern_similarity(
             "async function bare except misses CancelledError",
@@ -135,7 +135,7 @@ class TestCuratePack:
         _setup_curate_project(tmp_path, with_inbox=True)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.curate import cmd_curate_pack
+        from fstdd.cli.commands.curate import cmd_curate_pack
         args = _make_args("pack", language="python")
         cmd_curate_pack(args, tmp_path)
         # No curated experiences without review, so pack may be empty
@@ -157,7 +157,7 @@ class TestCurateReviewInteractive:
         inputs = iter(["a", "a"])
         builtins.input = lambda _="": next(inputs)
         try:
-            from stdd.cli.commands.curate import cmd_curate_review
+            from fstdd.cli.commands.curate import cmd_curate_review
             args = _make_args("review")
             cmd_curate_review(args, tmp_path)
         finally:
@@ -173,7 +173,7 @@ class TestCurateReviewInteractive:
         inputs = iter(["r", "test rejection reason", "r", "test rejection reason 2"])
         builtins.input = lambda _="": next(inputs)
         try:
-            from stdd.cli.commands.curate import cmd_curate_review
+            from fstdd.cli.commands.curate import cmd_curate_review
             args = _make_args("review")
             cmd_curate_review(args, tmp_path)
         finally:
@@ -188,7 +188,7 @@ class TestCurateReviewInteractive:
         oi = builtins.input
         builtins.input = lambda _="": "s"  # skip all
         try:
-            from stdd.cli.commands.curate import cmd_curate_review
+            from fstdd.cli.commands.curate import cmd_curate_review
             args = _make_args("review")
             cmd_curate_review(args, tmp_path)
         finally:
@@ -204,7 +204,7 @@ class TestCurateReviewInteractive:
         inputs = iter(["e", "new pattern", "new root cause", "new fix", "s"])
         builtins.input = lambda _="": next(inputs)
         try:
-            from stdd.cli.commands.curate import cmd_curate_review
+            from fstdd.cli.commands.curate import cmd_curate_review
             args = _make_args("review")
             cmd_curate_review(args, tmp_path)
         finally:

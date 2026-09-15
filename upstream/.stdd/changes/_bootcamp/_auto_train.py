@@ -92,6 +92,6 @@ System SHALL display KPIs.
         else:
             fp.write_text(content)
 
-    from stdd.cli.commands.bootcamp import cmd_bootcamp_grade
+    from fstdd.cli.commands.bootcamp import cmd_bootcamp_grade
     ns = _argparse.Namespace(subcommand="grade", level=level, module=None, verbose=0)
     cmd_bootcamp_grade(ns)

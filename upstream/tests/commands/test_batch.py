@@ -31,7 +31,7 @@ class TestBatchCreate:
         _setup_batch_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import _create_batch
+        from fstdd.cli.commands.batch import _create_batch
         batch_dir = _create_batch(tmp_path)
 
         assert batch_dir.exists()
@@ -48,7 +48,7 @@ class TestBatchCreate:
         _setup_batch_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import _create_batch, _close_batch
+        from fstdd.cli.commands.batch import _create_batch, _close_batch
 
         b1 = _create_batch(tmp_path)
         _close_batch(b1)
@@ -65,7 +65,7 @@ class TestBatchClose:
         _setup_batch_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import _create_batch, _close_batch
+        from fstdd.cli.commands.batch import _create_batch, _close_batch
 
         batch_dir = _create_batch(tmp_path)
         _close_batch(batch_dir)
@@ -85,7 +85,7 @@ class TestBatchStatus:
         _setup_batch_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import _create_batch, cmd_batch
+        from fstdd.cli.commands.batch import _create_batch, cmd_batch
 
         _create_batch(tmp_path)
         cmd_batch(_make_args("status"))
@@ -102,7 +102,7 @@ class TestBatchList:
         _setup_batch_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import _create_batch, _close_batch, cmd_batch
+        from fstdd.cli.commands.batch import _create_batch, _close_batch, cmd_batch
 
         b1 = _create_batch(tmp_path)
         _close_batch(b1)
@@ -123,7 +123,7 @@ class TestBatchNoBatch:
         _setup_batch_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import cmd_batch
+        from fstdd.cli.commands.batch import cmd_batch
         cmd_batch(_make_args("status"))
         captured = capsys.readouterr()
 
@@ -134,7 +134,7 @@ class TestBatchNoBatch:
         _setup_batch_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import cmd_batch
+        from fstdd.cli.commands.batch import cmd_batch
         cmd_batch(_make_args("close"))
         captured = capsys.readouterr()
         assert "无打开的批次" in captured.out
@@ -144,7 +144,7 @@ class TestBatchNoBatch:
         _setup_batch_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import cmd_batch
+        from fstdd.cli.commands.batch import cmd_batch
         cmd_batch(_make_args("open", "修复一个typo"))
         captured = capsys.readouterr()
         assert "批次已打开" in captured.out
@@ -154,7 +154,7 @@ class TestBatchNoBatch:
         _setup_batch_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import cmd_batch
+        from fstdd.cli.commands.batch import cmd_batch
         cmd_batch(_make_args("open", "重写系统架构API"))
         captured = capsys.readouterr()
         assert "batch 不适合大型变更" in captured.out
@@ -164,7 +164,7 @@ class TestBatchNoBatch:
         _setup_batch_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import cmd_batch
+        from fstdd.cli.commands.batch import cmd_batch
         cmd_batch(_make_args("open", "修bug"))
         cmd_batch(_make_args("add", "fix: typo"))
         captured = capsys.readouterr()
@@ -175,7 +175,7 @@ class TestBatchNoBatch:
         _setup_batch_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import cmd_batch
+        from fstdd.cli.commands.batch import cmd_batch
         cmd_batch(_make_args("open", "测试归档"))
         cmd_batch(_make_args("close", force=True))
         cmd_batch(_make_args("archive"))

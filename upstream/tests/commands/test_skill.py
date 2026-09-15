@@ -13,7 +13,7 @@ class TestSkillCreate:
         (tmp_path / ".stdd" / "skills" / "languages").mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.skill import cmd_skill_create
+        from fstdd.cli.commands.skill import cmd_skill_create
         import argparse
         args = argparse.Namespace(action="create", name="test-patterns", type="language")
 
@@ -36,7 +36,7 @@ class TestSkillCreate:
         (tmp_path / ".stdd" / "skills" / "workflow").mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.skill import cmd_skill_create
+        from fstdd.cli.commands.skill import cmd_skill_create
         import argparse
         args = argparse.Namespace(action="create", name="my-workflow", type="workflow")
 
@@ -52,7 +52,7 @@ class TestSkillCreate:
         (tmp_path / ".stdd" / "skills" / "tools").mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.skill import cmd_skill_create
+        from fstdd.cli.commands.skill import cmd_skill_create
         import argparse
         args = argparse.Namespace(action="create", name="docker-build", type="tools")
 
@@ -70,7 +70,7 @@ class TestSkillCreate:
         (skill_dir / "SKILL.md").write_text("# existing", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.skill import cmd_skill_create
+        from fstdd.cli.commands.skill import cmd_skill_create
         import argparse
         args = argparse.Namespace(action="create", name="existing", type="language")
 
@@ -83,7 +83,7 @@ class TestSkillCreate:
         (tmp_path / ".stdd" / "skills" / "languages").mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.skill import _dispatch
+        from fstdd.cli.commands.skill import _dispatch
         import argparse
         args = argparse.Namespace(action="create", name="dispatch-test", type="language")
 
@@ -94,7 +94,7 @@ class TestSkillCreate:
     def test_dispatch_unknown_action(self, tmp_path, monkeypatch):
         """Dispatch exits on unknown action."""
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.skill import _dispatch
+        from fstdd.cli.commands.skill import _dispatch
         import argparse
         args = argparse.Namespace(action="unknown", name="test")
 

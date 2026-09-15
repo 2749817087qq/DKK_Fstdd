@@ -4,7 +4,7 @@ import pytest
 import yaml
 from pathlib import Path
 
-from stdd.cli.commands.abort import cmd_abort
+from fstdd.cli.commands.abort import cmd_abort
 
 
 def test_abort_with_yes(sample_change: Path, monkeypatch):

@@ -41,7 +41,7 @@ class TestBatchPipeline:
         _setup_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import cmd_batch, _find_open_batch
+        from fstdd.cli.commands.batch import cmd_batch, _find_open_batch
 
         # 1. open
         cmd_batch(_make_args("open", "批量修复UI bug"))
@@ -128,7 +128,7 @@ class TestBatchPipeline:
         _setup_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import cmd_batch
+        from fstdd.cli.commands.batch import cmd_batch
         cmd_batch(_make_args("open", "测试"))
         cmd_batch(_make_args("child", child_action="add", name="early", description="x"))
         captured = capsys.readouterr()
@@ -139,11 +139,11 @@ class TestBatchPipeline:
         _setup_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import cmd_batch, _find_open_batch
+        from fstdd.cli.commands.batch import cmd_batch, _find_open_batch
         cmd_batch(_make_args("open", "测试"))
         batch = _find_open_batch(tmp_path)
         # 直接推进批级到 build
-        from stdd.cli.commands.gate import _confirm_gate
+        from fstdd.cli.commands.gate import _confirm_gate
         _confirm_gate(1, batch, confirmed_by="test")
         _confirm_gate(2, batch, confirmed_by="test")
         data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
@@ -167,13 +167,13 @@ class TestBatchPipelineGuard:
         _setup_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import cmd_batch, _find_open_batch
-        from stdd.cli.commands.guard import _find_active_change
+        from fstdd.cli.commands.batch import cmd_batch, _find_open_batch
+        from fstdd.cli.commands.guard import _find_active_change
 
         cmd_batch(_make_args("open", "测试"))
         batch = _find_open_batch(tmp_path)
         # 推进到 build 并创建子 change
-        from stdd.cli.commands.gate import _confirm_gate
+        from fstdd.cli.commands.gate import _confirm_gate
         _confirm_gate(1, batch, confirmed_by="test")
         _confirm_gate(2, batch, confirmed_by="test")
         data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
@@ -194,7 +194,7 @@ class TestBatchHardDefense:
     def _open_and_gate1(self, tmp_path, monkeypatch):
         _setup_env(tmp_path)
         monkeypatch.chdir(tmp_path)
-        from stdd.cli.commands.batch import cmd_batch, _find_open_batch
+        from fstdd.cli.commands.batch import cmd_batch, _find_open_batch
         cmd_batch(_make_args("open", "批量修复UI bug"))
         cmd_batch(_make_args("proposal", "批量修复UI bug"))
         cmd_batch(_make_args("gate", gate=1))
@@ -203,7 +203,7 @@ class TestBatchHardDefense:
     def test_batch_gate_requires_channel(self, tmp_path, monkeypatch, capsys):
         """TC-BATCH-101: 批级 gate 无 confirmed_by → 拒绝，phase 不动."""
         batch = self._open_and_gate1(tmp_path, monkeypatch)
-        from stdd.cli.commands.batch import cmd_batch
+        from fstdd.cli.commands.batch import cmd_batch
         cmd_batch(_make_args("gate", gate=2, confirmed_by=""))
         captured = capsys.readouterr()
         assert "confirmed_by" in captured.out
@@ -219,7 +219,7 @@ class TestBatchHardDefense:
     def test_batch_deliver_requires_channel(self, tmp_path, monkeypatch, capsys):
         """TC-BATCH-103: 批级 deliver 无 confirmed_by → 拒绝（Gate 3 不再静默自动确认）."""
         batch = self._open_and_gate1(tmp_path, monkeypatch)
-        from stdd.cli.commands.batch import cmd_batch
+        from fstdd.cli.commands.batch import cmd_batch
         cmd_batch(_make_args("gate", gate=2))
         cmd_batch(_make_args("child", child_action="add", name="c1", description="x"))
         # deliver 无通道声明 → 拒绝
@@ -232,7 +232,7 @@ class TestBatchHardDefense:
     def test_batch_deliver_gate3_audit_field(self, tmp_path, monkeypatch, capsys):
         """TC-BATCH-104: 批级 deliver 带 dialog → build.confirmed_by=dialog 落库."""
         batch = self._open_and_gate1(tmp_path, monkeypatch)
-        from stdd.cli.commands.batch import cmd_batch
+        from fstdd.cli.commands.batch import cmd_batch
         cmd_batch(_make_args("gate", gate=2))
         cmd_batch(_make_args("child", child_action="add", name="c1", description="x"))
         child = list((batch / "changes").iterdir())[0]
@@ -252,7 +252,7 @@ class TestBatchHardDefense:
     def test_child_inherits_batch_audit(self, tmp_path, monkeypatch):
         """TC-BATCH-105: 子 change 继承批级 confirmed_by/confirmed_actor."""
         batch = self._open_and_gate1(tmp_path, monkeypatch)
-        from stdd.cli.commands.batch import cmd_batch
+        from fstdd.cli.commands.batch import cmd_batch
         cmd_batch(_make_args("gate", gate=2))
         cmd_batch(_make_args("child", child_action="add", name="c1", description="x"))
         child = list((batch / "changes").iterdir())[0]
@@ -266,8 +266,8 @@ class TestBatchHardDefense:
         _setup_env(tmp_path)
         monkeypatch.chdir(tmp_path)
 
-        from stdd.cli.commands.batch import cmd_batch
-        from stdd.cli.commands.guard import _find_active_change
+        from fstdd.cli.commands.batch import cmd_batch
+        from fstdd.cli.commands.guard import _find_active_change
 
         cmd_batch(_make_args("open", "测试"))
         child_dir, phase = _find_active_change(tmp_path)
