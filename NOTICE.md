@@ -1,15 +1,15 @@
 # 版权与来源声明
 
-本仓库是 **STDD（Spec+Test Driven Development）的 WorkBuddy 适配层与金融领域扩展**，
+本仓库是 **FSTDD（Spec+Test Driven Development）的 WorkBuddy 适配层与金融领域扩展**，
 属于上游项目的衍生作品。所有第三方权利均在此列明，未列明的内容均为本仓库原创。
 
 ---
 
-## 1. 上游项目：STDD
+## 1. 上游项目：FSTDD
 
 | 项 | 内容 |
 |----|------|
-| 项目 | STDD — Spec+Test Driven Development |
+| 项目 | FSTDD — Spec+Test Driven Development |
 | 仓库 | https://github.com/leonai42/stdd |
 | 版本 | V3.0.5（master 分支） |
 | 许可 | **MIT License** |
@@ -23,7 +23,7 @@
 
 1. skill 安装格式适配：上游 WorkBuddy 安装器输出 `~/.workbuddy/skills/*.md`（单文件），
    本适配改为 WorkBuddy 实际加载的目录格式 `~/.workbuddy-ai/skills/<name>/SKILL.md`。
-2. 路径固化：skill 正文中的项目相对路径（`.stdd/skills/_shared/*`、`python bin/stdd`）
+2. 路径固化：skill 正文中的项目相对路径（`.stdd/skills/_shared/*`、`python bin/fstdd`）
    改为绝对路径，使其可在全局安装位置工作。
 3. 运行时绑定：CLI 调用绑定到具备 PyYAML / Jinja2 依赖的 Python 解释器。
 4. 安全策略：默认禁用「经验自动上传社区」步骤（该步骤会向外部仓库外发项目数据），
@@ -44,12 +44,12 @@
 **处理方式**：
 
 - 该 skill **无开源许可声明**，依著作权法默认保留全部权利，**不享有转载与再分发授权**。
-- 本仓库 **`skills/stdd-fin/SKILL.md` 不包含该 skill 的任何原文内容**，未复制其段落、清单或表述。
+- 本仓库 **`skills/fstdd-fin/SKILL.md` 不包含该 skill 的任何原文内容**，未复制其段落、清单或表述。
 - 仅参考其**领域分类视角**（金融系统应覆盖哪些领域），并以本仓库原创的
   「四条主线自查问题」形式重新组织。
 - 涉及的金融领域术语（KYC、AML、事件溯源、Saga、PCI DSS 等）均为**行业公共知识**，
   不受个别作品专有。
-- 已在 `skills/stdd-fin/SKILL.md` 的 frontmatter 与正文中明确署名其参考来源。
+- 已在 `skills/fstdd-fin/SKILL.md` 的 frontmatter 与正文中明确署名其参考来源。
 
 > ⚠️ **注意**：本仓库对外分发时，**不得**包含 `fintech-engineer` 的 `SKILL.md` / `SKILLS.md` 原文。
 > 如需使用其原始内容，请自行向权利方取得授权。
@@ -59,7 +59,7 @@
 ## 3. 第三方参考：`wb-finance-skill`
 
 WorkBuddy 内置的金融场景总入口 skill（腾讯 WorkBuddy 产品自带组件）。
-本仓库**不包含其任何内容**，仅在 `stdd-fin` 中以协作契约方式引用其取数规范
+本仓库**不包含其任何内容**，仅在 `fstdd-fin` 中以协作契约方式引用其取数规范
 （例如「涉及市场数据时优先使用 agentic_search」）。属于功能协作引用，不构成内容复制。
 
 ---
@@ -71,7 +71,7 @@ WorkBuddy 内置的金融场景总入口 skill（腾讯 WorkBuddy 产品自带�
 - `tools/install_workbuddy_skills.py` — WorkBuddy 全局 skill 安装与策略施加脚本
 - `tools/verify_workbuddy_skills.py` — 安全策略与路径适配校验脚本
 - `docs/WORKBUDDY_INSTALL_NOTES.md` — 安装、适配、安全策略与验证记录
-- `skills/stdd-fin/SKILL.md` — 金融系统版 STDD（原创重构）
+- `skills/fstdd-fin/SKILL.md` — 金融系统版 FSTDD（原创重构）
 - 本 `NOTICE.md` 与 `README.md`
 
 ---

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""经验回传：把本机沉淀的 STDD 经验整理为可提交到本仓库的经验包。
+"""经验回传：把本机沉淀的 FSTDD 经验整理为可提交到本仓库的经验包。
 
-设计取舍（为什么不用 `stdd experience share`）：
+设计取舍（为什么不用 `fstdd experience share`）：
   上游 share 有两条路径，目标是硬编码的：
     1. `gh repo clone leonai42/stdd-experiences` 后直接 push —— 需写权限，普通使用者必然失败
     2. fallback：POST 到 `https://hzddyy.com/stdd/api/share-experience` —— 第三方服务器
@@ -32,7 +32,7 @@ import time
 from pathlib import Path
 
 # 经验包回传目标仓库（可用环境变量覆盖）
-DEFAULT_EXP_REPO = "2749817087qq/DKKstdd-experiences"
+DEFAULT_EXP_REPO = "2749817087qq/Fstdd-experiences"
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXP_DIR = REPO_ROOT / ".stdd" / "experiences"

@@ -51,13 +51,13 @@ grep -rn "C:\\\\Users\\\\\|C:/Users/" ~/.workbuddy-ai/skills/ | grep -v "^Binary
 **通过判据**：
 
 - 每个命中都要么（a）属于本机适配文档中的**安装位置说明**，要么（b）已通过
-  `STDD_SRC` / `STDD_OUT` 环境变量可覆盖
+  `FSTDD_SRC` / `FSTDD_OUT` 环境变量可覆盖
 - 出现在可执行命令中的路径，必须能由 `install_workbuddy_skills.py` 按当前位置重新生成
 
 **验证方式（换机模拟）**：
 
 ```bash
-STDD_SRC=/tmp/fake-upstream STDD_OUT=/tmp/fake-skills \
+FSTDD_SRC=/tmp/fake-upstream FSTDD_OUT=/tmp/fake-skills \
   python tools/install_workbuddy_skills.py
 ```
 
@@ -70,8 +70,8 @@ STDD_SRC=/tmp/fake-upstream STDD_OUT=/tmp/fake-skills \
 **检查内容**：CLI 实际能跑，而不只是文件在位。
 
 ```bash
-STDD_PY="C:/Python311/python.exe" \
-  python ~/.workbuddy-ai/DKKstdd/tools/verify_workbuddy_skills.py
+FSTDD_PY="C:/Python311/python.exe" \
+  python ~/.workbuddy-ai/Fstdd/tools/verify_workbuddy_skills.py
 ```
 
 **通过判据**：
@@ -81,8 +81,8 @@ STDD_PY="C:/Python311/python.exe" \
 - 门禁有效性反向验证（确认它真的会拦）：
 
 ```bash
-STDD_CLI=/nonexistent/stdd STDD_PY="C:/Python311/python.exe" \
-  python ~/.workbuddy-ai/DKKstdd/tools/verify_workbuddy_skills.py
+FSTDD_CLI=/nonexistent/stdd FSTDD_PY="C:/Python311/python.exe" \
+  python ~/.workbuddy-ai/Fstdd/tools/verify_workbuddy_skills.py
 echo "退出码应为非 0，实际: $?"
 ```
 
@@ -102,7 +102,7 @@ python tools/verify_skill_standards.py --repo .
 
 - `四项齐全: 40/40`
 - `--fix` 前自动备份到工作区 `<工作区>/backups/skill-metadata-<时间戳>/`
-  （项目约定：开发产物一律存放在工作区文件夹内；可用 `STDD_BACKUP_DIR` 覆盖）
+  （项目约定：开发产物一律存放在工作区文件夹内；可用 `FSTDD_BACKUP_DIR` 覆盖）
 - 备份文件数 == 待改文件数（不等即中止）
 - 修复后正文哈希与备份一致（只动了 frontmatter）
 - `verify_skill_standards.py` 输出 `7/7 通过`

@@ -22,7 +22,7 @@ from pathlib import Path
 
 def backup_root() -> Path:
     """与 check_skill_metadata.backup_root 保持一致：默认落在工作区 backups/。"""
-    env = os.environ.get("STDD_BACKUP_DIR")
+    env = os.environ.get("FSTDD_BACKUP_DIR")
     if env:
         return Path(env)
     try:
@@ -34,15 +34,15 @@ def backup_root() -> Path:
     return Path.home() / ".workbuddy-ai" / "backups"
 
 PY = sys.executable
-# 源码在 stdd-repo（开发源），但实际运行的是安装位置 DKKstdd。
-# 在 stdd-repo 里直接跑 verify 会因 STDD_SRC 指向副本的 upstream 而误判。
-INSTALLED_TOOLS = Path.home() / ".workbuddy-ai" / "DKKstdd" / "tools"
+# 源码在 stdd-repo（开发源），但实际运行的是安装位置 Fstdd。
+# 在 stdd-repo 里直接跑 verify 会因 FSTDD_SRC 指向副本的 upstream 而误判。
+INSTALLED_TOOLS = Path.home() / ".workbuddy-ai" / "Fstdd" / "tools"
 SKILL_DIRS = [
     Path.home() / ".workbuddy-ai" / "skills",
     Path.home() / ".workbuddy" / "skills",
 ]
-STDD_SKILLS = ["stdd", "stdd-understand", "stdd-spec", "stdd-build",
-               "stdd-deliver", "stdd-upgrade"]
+FSTDD_SKILLS = ["fstdd", "fstdd-understand", "fstdd-spec", "fstdd-build",
+               "fstdd-deliver", "fstdd-upgrade"]
 REQUIRED_FM = ["name", "description", "version", "license"]
 # 严格口径：只认 `version` 字段，不接受 `stdd_version`（后者是上游版本号，
 # 不是 skill 自身版本）。首次统计曾把两者混算得到「缺 23」，实测修正为 31。
@@ -103,14 +103,14 @@ def tc_002(repo: Path) -> tuple[bool, str]:
     fake = Path(tempfile.mkdtemp(prefix="ses_fake_")) / "nonexistent-stdd"
     try:
         import os
-        env = dict(os.environ, STDD_CLI=str(fake))
+        env = dict(os.environ, FSTDD_CLI=str(fake))
         r = subprocess.run([PY, str(v)], capture_output=True, text=True,
                            encoding="utf-8", errors="replace", env=env)
         if r.returncode == 0:
             return False, "CLI 不可用时 verify 仍返回 0，门禁无效"
         out = (r.stdout or "") + (r.stderr or "")
-        if "STDD_CLI" not in v.read_text(encoding="utf-8"):
-            return False, "verify 不支持 STDD_CLI 覆盖，故障注入无法生效"
+        if "FSTDD_CLI" not in v.read_text(encoding="utf-8"):
+            return False, "verify 不支持 FSTDD_CLI 覆盖，故障注入无法生效"
         return True, f"CLI 不可用时 verify 正确失败（退出码 {r.returncode}）"
     finally:
         shutil.rmtree(fake.parent, ignore_errors=True)
@@ -218,9 +218,9 @@ def _hash_body(p: Path) -> str:
 
 
 def tc_005(repo: Path) -> tuple[bool, str]:
-    """安装器生成的 6 个 STDD skill 天生合规"""
+    """安装器生成的 6 个 FSTDD skill 天生合规"""
     bad = []
-    for name in STDD_SKILLS:
+    for name in FSTDD_SKILLS:
         f = Path.home() / ".workbuddy-ai" / "skills" / name / "SKILL.md"
         if not f.exists():
             bad.append(f"{name}: 缺失")
@@ -231,7 +231,7 @@ def tc_005(repo: Path) -> tuple[bool, str]:
                 bad.append(f"{name}:{k}")
     if bad:
         return False, f"{len(bad)} 项不合规：{', '.join(bad[:6])}"
-    return True, "6 个 STDD skill 四项元数据齐全"
+    return True, "6 个 FSTDD skill 四项元数据齐全"
 
 
 def tc_006(repo: Path) -> tuple[bool, str]:

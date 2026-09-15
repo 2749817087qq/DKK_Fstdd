@@ -33,9 +33,9 @@ def backup_root() -> Path:
 
     项目约定：开发形成的产物一律存放在工作区文件夹内。
     本脚本位于 <工作区>/stdd-repo/tools/，故默认取 <工作区>/backups。
-    可用 STDD_BACKUP_DIR 覆盖；定位失败时回落到用户目录。
+    可用 FSTDD_BACKUP_DIR 覆盖；定位失败时回落到用户目录。
     """
-    env = os.environ.get("STDD_BACKUP_DIR")
+    env = os.environ.get("FSTDD_BACKUP_DIR")
     if env:
         return Path(env)
     try:

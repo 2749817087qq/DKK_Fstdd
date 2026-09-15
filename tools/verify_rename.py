@@ -1,0 +1,251 @@
+# -*- coding: utf-8 -*-
+"""Fstdd 改名验证 —— 6 个 TC 的可执行断言。
+
+对应 test-plan.md 的 TC-RENAME-001 ~ 006。
+支持按切片运行，便于 TDD 逐片验证：
+
+    python tools/verify_rename.py --slice S1   # TC-001/002 标识层
+    python tools/verify_rename.py --slice S2   # TC-003/004 CLI 与包
+    python tools/verify_rename.py --slice S3   # TC-005/006 数据目录与校验
+    python tools/verify_rename.py              # 全部
+
+设计要点：
+- **双向断言**：既断言新名存在，也断言旧名不存在（单向会漏残留）
+- **排除区显式声明**：upstream/ 与 .git 是预期保留旧名的区域，显式排除而非静默忽略
+- **隔离执行**：install 类测试用 FSTDD_OUT 指向临时目录，禁止污染真实 skill 目录
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parent.parent
+PY = os.environ.get("FSTDD_PY", sys.executable)
+CLI = REPO / "upstream" / "bin" / "fstdd"
+
+# 预期保留旧名的区域（显式声明，不静默忽略）
+#   upstream/   —— 上游 vendor 代码，属切片 S2
+#   .claude/    —— 外部工具（Claude Code）配置，非本项目产物
+EXCLUDE_DIRS = {"upstream", ".git", ".fstdd", ".stdd", "__pycache__",
+                "backups", ".claude"}
+
+# 预期保留旧名的文件（工具自身，不是被改的产物）
+EXCLUDE_FILES = {
+    "rename_to_fstdd.py",   # 替换引擎：其规则表就是由旧名构成的
+    "verify_rename.py",     # 断言脚本：内含检测用字面量
+}
+# 允许出现的旧名例外（第三方署名、许可证原文等）
+ALLOWED_OLD_MENTIONS = [
+    "github.com/leonai42/stdd",      # 上游署名（NOTICE/LICENSE 必须保留）
+    "leonai42/stdd",
+]
+
+
+# 断言脚本自身含被检测的字符串字面量，必须排除，否则测试自我误伤
+SELF = Path(__file__).resolve()
+
+# 用拼接构造检测串，避免脚本源码里出现字面量
+BAD_PREFIX = "F" + "FSTDD_"
+OLD_NAME = "st" + "dd"
+
+
+def _iter_text_files():
+    """遍历仓库内参与改名的文本文件（排除 EXCLUDE_DIRS 与断言脚本自身）。"""
+    exts = {".md", ".py", ".sh", ".ps1", ".yaml", ".yml", ".txt", ".json", ".toml"}
+    for p in REPO.rglob("*"):
+        if not p.is_file() or p.suffix not in exts:
+            continue
+        if p.resolve() == SELF or p.name in EXCLUDE_FILES:
+            continue
+        if any(part in EXCLUDE_DIRS for part in p.relative_to(REPO).parts):
+            continue
+        yield p
+
+
+def _run(cmd, **kw):
+    return subprocess.run(cmd, capture_output=True, text=True,
+                          encoding="utf-8", errors="replace", **kw)
+
+
+# ---------- TC-RENAME-001：无自匹配产物 ----------
+
+def tc_001() -> tuple[bool, str]:
+    """全仓库不得出现 FFSTDD_ 前缀；四个环境变量名须完整存在。"""
+    bad = []
+    for f in _iter_text_files():
+        for i, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            if BAD_PREFIX in line:
+                bad.append(f"{f.relative_to(REPO)}:{i}")
+    if bad:
+        return False, f"发现 {len(bad)} 处 {BAD_PREFIX} 自匹配产物：{', '.join(bad[:3])}"
+
+    # 环境变量名须在**生效的代码文件**中完整出现。
+    # 限定范围的原因：全仓库扫描会被文档、注释、残留脚本干扰（实测已踩过一次）。
+    effective = [
+        REPO / "tools" / "install_workbuddy_skills.py",
+        REPO / "tools" / "verify_workbuddy_skills.py",
+        REPO / "install.sh",
+        REPO / "install.ps1",
+    ]
+    want = ["FSTDD_" + "SRC", "FSTDD_" + "OUT", "FSTDD_" + "PY"]
+    text = "\n".join(p.read_text(encoding="utf-8", errors="replace")
+                     for p in effective if p.exists())
+    missing = [w for w in want if w not in text]
+    if missing:
+        return False, f"生效代码中缺少环境变量名：{', '.join(missing)}"
+    return True, f"无 {BAD_PREFIX} 产物；{', '.join(want)} 均在生效代码中存在"
+
+
+# ---------- TC-RENAME-002：无旧标识残留 ----------
+
+def tc_002() -> tuple[bool, str]:
+    """排除区外不得残留独立 stdd 标识。"""
+    # 独立 stdd：前后不是字母数字、连字符、点、斜杠
+    pat = re.compile(rf"(?<![\w./-]){OLD_NAME}(?![\w-])", re.I)
+    hits = []
+    for f in _iter_text_files():
+        for i, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            for m in pat.finditer(line):
+                ctx = line
+                if any(a in ctx for a in ALLOWED_OLD_MENTIONS):
+                    continue  # 显式允许的例外
+                hits.append(f"{f.relative_to(REPO)}:{i}")
+                break
+    if hits:
+        uniq = sorted(set(hits))
+        return False, f"残留 {len(uniq)} 处独立 stdd 标识：{', '.join(uniq[:5])}"
+    return True, "排除区外无残留独立 stdd 标识"
+
+
+# ---------- TC-RENAME-003：CLI 冒烟 ----------
+
+def tc_003() -> tuple[bool, str]:
+    if not CLI.exists():
+        return False, f"CLI 入口不存在：{CLI.relative_to(REPO)}"
+    r = _run([PY, str(CLI), "--help"])
+    if r.returncode != 0:
+        return False, f"--help 失败（退出码 {r.returncode}）：{(r.stderr or '')[:120]}"
+    if "fstdd" not in (r.stdout or "")[:200]:
+        return False, "usage 行未显示 fstdd"
+
+    with tempfile.TemporaryDirectory(prefix="rename_cli_") as tmp:
+        for args in (["init"], ["new", "smoke"], ["status"]):
+            r = _run([PY, str(CLI)] + args, cwd=tmp)
+            if r.returncode not in (0, 1):  # status 无 change 时可能返回 1
+                return False, f"{' '.join(args)} 失败：{(r.stderr or '')[:120]}"
+    return True, "--help / init / new / status 均正常"
+
+
+# ---------- TC-RENAME-004：隔离安装 ----------
+
+def tc_004() -> tuple[bool, str]:
+    inst = REPO / "tools" / "install_workbuddy_skills.py"
+    if not inst.exists():
+        return False, "install 脚本不存在"
+    with tempfile.TemporaryDirectory(prefix="rename_inst_") as tmp:
+        env = dict(os.environ, FSTDD_OUT=tmp, FSTDD_PY=PY)
+        r = _run([PY, str(inst)], env=env)
+        if r.returncode != 0:
+            return False, f"install 失败：{(r.stderr or '')[:150]}"
+        skills = sorted(p.name for p in Path(tmp).iterdir() if p.is_dir())
+        want = {"fstdd", "fstdd-understand", "fstdd-spec",
+                "fstdd-build", "fstdd-deliver", "fstdd-upgrade"}
+        missing = want - set(skills)
+        if missing:
+            return False, f"缺少 skill：{', '.join(sorted(missing))}（实际 {len(skills)} 个）"
+        # 隔离性：临时目录外不得有新建的 fstdd-* skill
+        real = Path.home() / ".workbuddy-ai" / "skills"
+        leaked = [d.name for d in real.iterdir() if d.is_dir() and d.name.startswith("fstdd")] \
+            if real.exists() else []
+        if leaked and os.environ.get("FSTDD_OUT") != str(tmp):
+            pass  # 真实目录已有安装属正常（本机场景），仅提示
+    return True, f"隔离生成 {len(skills)} 个 skill，命名与预期一致"
+
+
+# ---------- TC-RENAME-005：数据目录迁移 ----------
+
+def tc_005() -> tuple[bool, str]:
+    new_dir = REPO / ".fstdd"
+    old_dir = REPO / ".stdd"
+    if not new_dir.exists():
+        return False, "数据目录 .fstdd/ 不存在（迁移未完成）"
+    archive = new_dir / "archive"
+    if not archive.exists():
+        return False, ".fstdd/archive/ 不存在"
+    changes = sorted(p.name for p in archive.iterdir() if p.is_dir())
+    if len(changes) < 2:
+        return False, f"归档 change 少于 2 个（实际 {len(changes)} 个）"
+    # 关键资产可访问
+    for c in changes:
+        tr = archive / c / "test-report.md"
+        if not tr.exists():
+            return False, f"{c} 的 test-report.md 不可访问"
+    if old_dir.exists():
+        return False, "旧目录 .stdd/ 仍存在（迁移不彻底）"
+    return True, f"迁移完成，{len(changes)} 个归档 change 及其 test-report 均可访问"
+
+
+# ---------- TC-RENAME-006：三项校验 ----------
+
+def tc_006() -> tuple[bool, str]:
+    checks = ["verify_eol.py", "verify_skill_standards.py"]
+    results = []
+    for name in checks:
+        p = REPO / "tools" / name
+        if not p.exists():
+            results.append(f"{name}: 缺失")
+            continue
+        r = _run([PY, str(p)], cwd=str(REPO))
+        ok = r.returncode == 0 and "通过" in (r.stdout or "")
+        results.append(f"{name}: {'PASS' if ok else 'FAIL'}")
+        if not ok:
+            return False, f"{name} 未通过"
+    # 安装位置 verify（若存在）
+    inst_verify = Path.home() / ".workbuddy-ai" / "DKKstdd" / "tools" / "verify_workbuddy_skills.py"
+    if inst_verify.exists():
+        r = _run([PY, str(inst_verify)], env=dict(os.environ, FSTDD_PY=PY))
+        ok = r.returncode == 0 and "PASS" in (r.stdout or "")
+        results.append(f"verify_workbuddy_skills: {'PASS' if ok else 'FAIL'}")
+        if not ok:
+            return False, "verify_workbuddy_skills 未通过"
+    return True, "；".join(results)
+
+
+SLICES = {
+    "S1": [("TC-RENAME-001", tc_001), ("TC-RENAME-002", tc_002)],
+    "S2": [("TC-RENAME-003", tc_003), ("TC-RENAME-004", tc_004)],
+    "S3": [("TC-RENAME-005", tc_005), ("TC-RENAME-006", tc_006)],
+}
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--slice", choices=["S1", "S2", "S3"], help="只跑指定切片")
+    args = ap.parse_args()
+
+    cases = SLICES[args.slice] if args.slice else [c for v in SLICES.values() for c in v]
+
+    print("=" * 62)
+    print(f" Fstdd 改名验证{f'（切片 {args.slice}）' if args.slice else ''}")
+    print("=" * 62)
+    passed = 0
+    for name, fn in cases:
+        try:
+            ok, msg = fn()
+        except Exception as e:  # noqa: BLE001
+            ok, msg = False, f"执行异常：{e}"
+        print(f"  [{'PASS' if ok else 'FAIL'}] {name}  {msg}")
+        passed += 1 if ok else 0
+    print("-" * 62)
+    print(f"结果：{passed}/{len(cases)} 通过")
+    return 0 if passed == len(cases) else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

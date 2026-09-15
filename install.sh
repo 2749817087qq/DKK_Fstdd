@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# STDD for WorkBuddy —— 一键安装
+# FSTDD for WorkBuddy —— 一键安装
 #
 # 把「装依赖 → 安装 skill → 校验」串成一条命令，避免漏掉中间步骤。
 #
@@ -7,12 +7,12 @@
 #   ./install.sh                # 交互：缺依赖时询问是否安装
 #   ./install.sh --yes          # 非交互：自动补装缺失依赖
 #   ./install.sh --py /path/to/python
-#   STDD_OUT=/custom/skills ./install.sh
+#   FSTDD_OUT=/custom/skills ./install.sh
 #
 # 环境变量：
-#   STDD_SRC   上游代码目录（默认脚本同级 upstream/）
-#   STDD_OUT   skill 输出目录（默认 ~/.workbuddy-ai/skills）
-#   STDD_PY    指定 Python 解释器
+#   FSTDD_SRC   上游代码目录（默认脚本同级 upstream/）
+#   FSTDD_OUT   skill 输出目录（默认 ~/.workbuddy-ai/skills）
+#   FSTDD_PY    指定 Python 解释器
 set -euo pipefail
 
 # Git for Windows 的 pwd 返回 /c/Users/... 形式，Windows Python 会把它解析成
@@ -21,7 +21,7 @@ _winpath() {
   if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else printf '%s' "$1"; fi
 }
 SCRIPT_DIR="$(_winpath "$(cd "$(dirname "$0")" && pwd)")"
-PY="${STDD_PY:-}"
+PY="${FSTDD_PY:-}"
 AUTO_YES=0
 
 for arg in "$@"; do
@@ -33,7 +33,7 @@ for arg in "$@"; do
 done
 
 echo "=============================================="
-echo " STDD for WorkBuddy —— 安装"
+echo " FSTDD for WorkBuddy —— 安装"
 echo "=============================================="
 echo
 
@@ -98,10 +98,10 @@ if "$PY" "$SCRIPT_DIR/tools/verify_workbuddy_skills.py"; then
   echo "=============================================="
   echo " 安装完成"
   echo "=============================================="
-  echo " skill 目录: ${STDD_OUT:-$HOME/.workbuddy-ai/skills}"
-  echo " 上游资源  : ${STDD_SRC:-$SCRIPT_DIR/upstream}"
+  echo " skill 目录: ${FSTDD_OUT:-$HOME/.workbuddy-ai/skills}"
+  echo " 上游资源  : ${FSTDD_SRC:-$SCRIPT_DIR/upstream}"
   echo
-  echo " 下一步：在 WorkBuddy 中重启或执行 /reload，然后运行 /stdd-understand"
+  echo " 下一步：在 WorkBuddy 中重启或执行 /reload，然后运行 /fstdd-understand"
   exit 0
 else
   echo

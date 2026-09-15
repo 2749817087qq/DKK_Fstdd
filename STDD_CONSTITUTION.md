@@ -1,12 +1,12 @@
-# STDD 流程强制契约 / Process Constitution
+# FSTDD 流程强制契约 / Process Constitution
 
-> V3.0.1 | 本项目启用 STDD 流程管控。以下规则**不可协商、不可跳过**。
-> V3.0.1 | This project enforces STDD process control. The following rules are **non-negotiable**.
+> V3.0.1 | 本项目启用 FSTDD 流程管控。以下规则**不可协商、不可跳过**。
+> V3.0.1 | This project enforces FSTDD process control. The following rules are **non-negotiable**.
 
 ## ⚠️ 核心规则 / Core Rules
 
-### 1. 所有代码修改必须通过 STDD Change
-- 新功能 / 重构 / Bug 修复 → 先 `/stdd-understand <描述>`
+### 1. 所有代码修改必须通过 FSTDD Change
+- 新功能 / 重构 / Bug 修复 → 先 `/fstdd-understand <描述>`
 - **不得在没有 active change 的情况下直接编辑代码**
 - Guard 会自动拦截未经授权的 Write/Edit 操作
 
@@ -21,8 +21,8 @@
 - Gate 3: 用户确认 test-report（质量验收）
 - **不得自行判断"用户可能已经同意了"**
 
-### 4. Agent 操作也受 STDD 管理
-- 多系统协调 / 数据处理 / 部署迁移等 Agent 任务 → 同样需要走 STDD Change
+### 4. Agent 操作也受 FSTDD 管理
+- 多系统协调 / 数据处理 / 部署迁移等 Agent 任务 → 同样需要走 FSTDD Change
 - Agent 操作完成后必须执行 CP 检查点验证（agent verify）
 
 ### 5. TDD 严格执行
@@ -39,8 +39,8 @@
 
 | 命令 | 用途 |
 |------|------|
-| `/stdd-understand <需求>` | 启动新 Change（Phase 1） |
-| `/stdd-spec` | 进入规格设计（Phase 2） |
+| `/fstdd-understand <需求>` | 启动新 Change（Phase 1） |
+| `/fstdd-spec` | 进入规格设计（Phase 2） |
 | `/stdd-continue` | 继续执行当前 Change |
-| `stdd status` | 查看当前 Change 状态 + Guard 状态 |
-| `stdd guard status` | 查看 Guard 运行状态 |
+| `fstdd status` | 查看当前 Change 状态 + Guard 状态 |
+| `fstdd guard status` | 查看 Guard 运行状态 |

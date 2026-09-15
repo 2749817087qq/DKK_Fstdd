@@ -18,7 +18,7 @@ why:
     （Exit Code 1），变更无法提交。更严重的是，真实错误信息被噪音掩盖，
     排障时无法分辨哪条是致命错误。
 
-    附带风险：仓库内 upstream/bin/stdd 等脚本带 shebang，若被转换为 CRLF，
+    附带风险：仓库内 upstream/bin/fstdd 等脚本带 shebang，若被转换为 CRLF，
     shebang 行尾的 \r 会导致解释器路径解析失败（`/usr/bin/env python\r`）。
   motivation: |
     1. 该告警在每次批量新增文件（同步上游、引入 vendor 依赖）时必然复现，不是一次性问题。
@@ -40,7 +40,7 @@ what_changes:
     description: |
       对 4 个处于「索引 LF / 工作区 CRLF」混合状态的文件，删除后按新规则
       checkout 重建，使工作区与索引均为 LF。
-      实测清单：docs/WORKBUDDY_INSTALL_NOTES.md、skills/stdd-fin/SKILL.md、
+      实测清单：docs/WORKBUDDY_INSTALL_NOTES.md、skills/fstdd-fin/SKILL.md、
       tools/verify_workbuddy_skills.py、upstream/.gitignore。
       实测结果：4 个文件全部转为 i/lf + w/lf，全库混合态清零，
       且索引 diff 为 0（文件内容无实质变更，仅工作区行尾归一）。
@@ -103,5 +103,5 @@ success_criteria:
   - "真实仓库执行 git ls-files --eol 后，i/lf + w/crlf 混合态文件数为 0（当前实测 4，须清零）"
   - "真实仓库索引中 i/crlf 文件数为 0（当前实测 0，须保持）"
   - "修复过程产生的索引 diff 为 0（证明仅归一工作区行尾，未改动文件内容）"
-  - "upstream/bin/stdd 保持 LF 行尾，可正常执行 init/new/status"
+  - "upstream/bin/fstdd 保持 LF 行尾，可正常执行 init/new/status"
   - "commit 输出不再被告警淹没，git log 能正常显示新提交"

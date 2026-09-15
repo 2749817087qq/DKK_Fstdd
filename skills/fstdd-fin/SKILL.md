@@ -1,11 +1,11 @@
 ---
-name: stdd-fin
+name: fstdd-fin
 description: |
-  金融系统版 STDD（Spec+Test Driven Development）——代号 FinSTDD，中文名「金融规驱」。
-  把 STDD 四阶段（UNDERSTAND→SPEC→BUILD→DELIVER）与金融科技工程能力（支付、银行集成、
+  金融系统版 FSTDD（Spec+Test Driven Development）——代号 FinFSTDD，中文名「金融规驱」。
+  把 FSTDD 四阶段（UNDERSTAND→SPEC→BUILD→DELIVER）与金融科技工程能力（支付、银行集成、
   PCI DSS / AML / KYC 合规、交易与撮合、风控与反欺诈、开放银行、加密与 DeFi）融合：
   领域知识全部转化为流程中的强制规格项与验收项，而不是事后检查表。
-  触发词：stdd-fin、金融 stdd、FinSTDD、金融规驱、支付系统、银行集成、交易系统、撮合引擎、
+  触发词：fstdd-fin、金融 fstdd、FinFSTDD、金融规驱、支付系统、银行集成、交易系统、撮合引擎、
   风控系统、反欺诈、KYC/AML、开放银行、金融系统研发、fintech 开发。
 stdd_version: "3.0.5-fin.2"
 version: "1.0.0"
@@ -14,17 +14,17 @@ license: |
   本文件为原创重构作品：流程框架、检查项组织方式、测试维度与失败模式均为原创撰写。
   参考来源已在 sources 中署名，本文件**不包含任何第三方 skill 的原文内容**。
 sources: |
-  - 方法论基底: STDD V3.0.5 (MIT) https://github.com/leonai42/stdd
+  - 方法论基底: FSTDD V3.0.5 (MIT) https://github.com/leonai42/stdd
   - 领域视角参考: fintech-engineer v1.0.3 (ClawHub 市场) — 仅参考其领域分类视角，
     已重新组织为自查问题，未复制原文表述；该 skill 本身无开源许可声明，故不转载其内容
   - 行情/投研取数协作: WorkBuddy 内置 wb-finance-skill（仅当需要市场数据时引用其规范）
 ---
 
-# STDD-Fin · 金融规驱
+# FSTDD-Fin · 金融规驱
 
 > **这不是两份文档的拼接。**
 > `fintech-engineer` 给的是「金融系统该有什么」——一堆领域清单；
-> STDD 给的是「怎么保证它真的被做对」——流程与验证。
+> FSTDD 给的是「怎么保证它真的被做对」——流程与验证。
 > 本 skill 把前者**逐条翻译**成后者流程里的**强制规格项与验收项**：
 > 清单上的每一条，要么在 SPEC 阶段变成可测试的规格，要么在 DELIVER 阶段变成打勾项。
 > 落在流程之外的知识 = 不会被执行的知识。
@@ -35,9 +35,9 @@ sources: |
 
 | 场景 | 用谁 |
 |------|------|
-| 建支付系统 / 银行集成 / 交易撮合 / 风控反欺诈 / KYC-AML / 开放银行 / 加密与 DeFi | **本 skill（stdd-fin）** |
+| 建支付系统 / 银行集成 / 交易撮合 / 风控反欺诈 / KYC-AML / 开放银行 / 加密与 DeFi | **本 skill（fstdd-fin）** |
 | 看行情、分析个股、估值建模、给投资建议 | **`wb-finance-skill`**（WorkBuddy 内置） |
-| 通用软件研发（非金融） | `stdd` / `stdd-*` 通用系列 |
+| 通用软件研发（非金融） | `fstdd` / `stdd-*` 通用系列 |
 | 只需金融领域知识清单、不做完整研发流程 | **`fintech-engineer`** 直接用 |
 
 **协作契约**：本 skill 在需要时**继承** `fintech-engineer` 的领域清单作为检查源，
@@ -223,10 +223,10 @@ sources: |
 
 | Skill | 关系 |
 |-------|------|
-| `stdd` | 通用总入口；判定为金融系统研发时路由到本 skill |
-| `stdd-understand/spec/build/deliver` | 通用阶段 skill；本 skill 在其基础上叠加金融约束，**不冲突**：通用流程照走，金融增强项额外执行 |
+| `fstdd` | 通用总入口；判定为金融系统研发时路由到本 skill |
+| `fstdd-understand/spec/build/deliver` | 通用阶段 skill；本 skill 在其基础上叠加金融约束，**不冲突**：通用流程照走，金融增强项额外执行 |
 | `fintech-engineer` | 领域知识源；本 skill 把它翻译成流程内的强制项 |
-| `stdd-upgrade` | 升级通用层；本 skill 为独立文件，不受上游覆盖影响 |
+| `fstdd-upgrade` | 升级通用层；本 skill 为独立文件，不受上游覆盖影响 |
 
 ---
 
@@ -237,10 +237,10 @@ sources: |
 | 资源 | 查找方式 |
 |------|---------|
 | 领域源 skill | 与本 skill **同级目录**下的 `fintech-engineer/` |
-| 通用 STDD skill | WorkBuddy 的 skill 目录下的 `stdd*`（由 DKKstdd 的安装脚本生成） |
-| STDD CLI | 运行 `./install.sh`（或 `install.ps1`）后，路径记录在总入口 skill `stdd/SKILL.md` 的「本机安装位置」一节 |
+| 通用 FSTDD skill | WorkBuddy 的 skill 目录下的 `fstdd*`（由 Fstdd 的安装脚本生成） |
+| FSTDD CLI | 运行 `./install.sh`（或 `install.ps1`）后，路径记录在总入口 skill `fstdd/SKILL.md` 的「本机安装位置」一节 |
 
-若上表中任一资源找不到，说明 STDD 尚未安装 —— 见 DKKstdd 仓库 README 的「快速开始」。
+若上表中任一资源找不到，说明 FSTDD 尚未安装 —— 见 Fstdd 仓库 README 的「快速开始」。
 
 > 本 skill 只做**流程编排与领域约束**，不直接调用 CLI。
-> 具体命令与路径以总入口 skill `stdd` 的记录为准，避免路径在两处硬编码后不一致。
+> 具体命令与路径以总入口 skill `fstdd` 的记录为准，避免路径在两处硬编码后不一致。

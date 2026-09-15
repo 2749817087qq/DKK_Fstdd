@@ -19,10 +19,10 @@ import tempfile
 from pathlib import Path
 
 EXPECTED_RULE = "* text=auto eol=lf"
-CLI_REL = Path("upstream") / "bin" / "stdd"
+CLI_REL = Path("upstream") / "bin" / "fstdd"
 MIXED_FILES = [
     "docs/WORKBUDDY_INSTALL_NOTES.md",
-    "skills/stdd-fin/SKILL.md",
+    "skills/fstdd-fin/SKILL.md",
     "tools/verify_workbuddy_skills.py",
     "upstream/.gitignore",
 ]
@@ -34,7 +34,7 @@ BASELINE_WARN_LINES = 640  # 无规则时实测告警行数（对照基准，随
 #       反之，upstream/（vendor 的上游代码）与 skills/ 等若出现 diff，
 #       才是行尾治理真正该拦截的信号。
 # 精确文件项用于无法用前缀表达的散落文件，新增时必须注明原因。
-# skills/ 只含本项目自研的 stdd-fin（上游代码在 upstream/，不该被改动），
+# skills/ 只含本项目自研的 fstdd-fin（上游代码在 upstream/，不该被改动），
 # 因此其 diff 同样属于正常开发活动。
 ALLOWED_DIFF_PREFIX = ("tools/", "docs/", "skills/")
 ALLOWED_DIFF_EXACT = {
@@ -187,7 +187,7 @@ def tc_006(repo: Path) -> tuple[bool, str]:
             r = subprocess.run([py, str(cli), *cmd], cwd=str(tmp), capture_output=True,
                                text=True, encoding="utf-8", errors="replace")
             if r.returncode != 0:
-                return False, f"`stdd {' '.join(cmd)}` 退出码 {r.returncode}"
+                return False, f"`fstdd {' '.join(cmd)}` 退出码 {r.returncode}"
         return True, "CLI 行尾为 LF 且 init/new/status 均正常"
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -232,7 +232,7 @@ def find_mixed(repo: Path) -> list[str]:
 def normalize(repo: Path, files: list[str]) -> int:
     """把混合态文件的工作区行尾归一为 LF。
 
-    STDD CLI（init / new / canon generate / archive）生成的文件为 CRLF，
+    FSTDD CLI（init / new / canon generate / archive）生成的文件为 CRLF，
     每次执行都会重新引入混合态，因此需要可重复的归一能力，而非一次性手改。
     """
     n = 0

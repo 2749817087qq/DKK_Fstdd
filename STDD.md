@@ -1,4 +1,4 @@
-# STDD (Spec+Test Driven Development) — 通用流程指引 | Universal Guide
+# FSTDD (Spec+Test Driven Development) — 通用流程指引 | Universal Guide
 
 > 此文件可作为项目规则加载到任何 AI 编程平台（Cursor, Copilot, Windsurf, Aider 等）。
 > This file can be loaded as project rules on any AI coding platform (Cursor, Copilot, Windsurf, Aider, etc.).
@@ -9,20 +9,20 @@
 
 ## V2.9.2: 项目级强制门 / Project-Level Enforcement Gate
 
-> **本项目的 `enforce_stdd: true`。所有代码修改（Edit/Write）必须先通过 STDD 流程启动。**
-> **This project has `enforce_stdd: true`. All code modifications MUST go through STDD workflow first.**
+> **本项目的 `enforce_stdd: true`。所有代码修改（Edit/Write）必须先通过 FSTDD 流程启动。**
+> **This project has `enforce_stdd: true`. All code modifications MUST go through FSTDD workflow first.**
 >
 > 如果你收到修改代码的请求，请先回复用户：
-> "本项目启用了 STDD 强制门。请先运行 /stdd-understand 启动变更流程。"
+> "本项目启用了 FSTDD 强制门。请先运行 /fstdd-understand 启动变更流程。"
 >
-> 如果用户明确要求绕过 STDD（如紧急热修复），请在修改完成后补充 `pending-adjustments.yaml` 记录。
+> 如果用户明确要求绕过 FSTDD（如紧急热修复），请在修改完成后补充 `pending-adjustments.yaml` 记录。
 
 ---
 
 ## 核心原则 / Core Principles
 
-STDD 是一套 Spec+Test 双驱动的研发流程，通过 4 个阶段将需求转化为高质量交付。
-STDD is a Spec+Test dual-driven development methodology that transforms requirements into high-quality deliverables through 4 phases (V3.0.5: 6→4 Phase 合并).
+FSTDD 是一套 Spec+Test 双驱动的研发流程，通过 4 个阶段将需求转化为高质量交付。
+FSTDD is a Spec+Test dual-driven development methodology that transforms requirements into high-quality deliverables through 4 phases (V3.0.5: 6→4 Phase 合并).
 
 **三道强制确认门 / Three Mandatory Confirmation Gates**：
 1. Phase 1 结束：用户确认 proposal.md | End of Phase 1: User confirms proposal.md (Gate 1)
@@ -34,7 +34,7 @@ STDD is a Spec+Test dual-driven development methodology that transforms requirem
 - 📋 普通交互模式：Phase 3 按需暂停交互 → Gate 3 等待确认
 
 **V3.0.5 Gate 硬防线 / Gate Hardening**：
-- Gate 确认必须显式声明通道（`stdd gate approve --confirmed-by dialog|file_token|cli`），省略 → exit 2 拒绝
+- Gate 确认必须显式声明通道（`fstdd gate approve --confirmed-by dialog|file_token|cli`），省略 → exit 2 拒绝
 - 每次确认落审计链：confirmed_by(通道) + confirmed_actor(发起者) + confirmed_evidence(证据) + confirmed_at
 - AI 不得静默自跑 approve、不得伪造 evidence；必须先展示确认框、等用户口头确认后执行
 
@@ -91,7 +91,7 @@ Archive to archive/ → merge specs to specs/ → Git commit + tag.
 ## 目录结构 / Directory Structure
 
 ```
-.stdd/              # STDD 系统文件 / System files
+.stdd/              # FSTDD 系统文件 / System files
   experiences/      # 自学习经验库 / Self-learning experience library (V2.5: 5状态生命周期)
 changes/            # 活跃变更 / Active changes
 specs/              # 主规范 / Master specs
@@ -130,7 +130,7 @@ archive/            # 已完成变更 / Completed changes
 
 | 命令 / Command | 说明 / Description |
 |---------------|-------------------|
-| `/stdd-understand` | Phase 1: 需求理解与确认 / Requirement understanding |
-| `/stdd-spec` | Phase 2: 规格设计与测试方案 / Spec & test design |
+| `/fstdd-understand` | Phase 1: 需求理解与确认 / Requirement understanding |
+| `/fstdd-spec` | Phase 2: 规格设计与测试方案 / Spec & test design |
 | `/stdd-continue` | 从当前阶段继续执行 (Phase 3-4) / Continue from current phase |
 | `/stdd-status` | 查看当前变更状态 / View current change status |

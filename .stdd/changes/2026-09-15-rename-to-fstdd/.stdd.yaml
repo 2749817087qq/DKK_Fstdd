@@ -1,0 +1,44 @@
+change_id: 2026-09-15-rename-to-fstdd
+complexity_score: 13
+current_phase: build
+design_adjustments:
+  count: 0
+mode: thorough
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-09-15T22:48:00'
+  pre_auth_note: 用户选择全自动长程模式；Gate 3 仍强制等待确认
+phases:
+  build:
+    status: in_progress
+    slices_completed:
+      "S1":
+        status: done
+        tc_coverage: "2/2"
+        new_tests: 2
+        verified_at: "2026-09-15T23:05:00"
+        note: "标识层替换 375 处（20 文件）；skill 目录改名；TC-001/002 通过"
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-15T22:47:07'
+    confirmed_by: dialog
+    confirmed_evidence: 用户回复：确认
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-15T22:42:05'
+    confirmed_by: dialog
+    confirmed_evidence: 用户回复：Please continue.（在 proposal 展示后）
+    status: completed
+score_confidence: null
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

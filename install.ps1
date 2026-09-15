@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    STDD for WorkBuddy —— 一键安装（Windows / PowerShell）
+    FSTDD for WorkBuddy —— 一键安装（Windows / PowerShell）
 
 .DESCRIPTION
     把「装依赖 → 安装 skill → 校验」串成一条命令，避免漏掉中间步骤。
@@ -18,7 +18,7 @@
     .\install.ps1
     .\install.ps1 -Yes
     .\install.ps1 -Python "C:\Python311\python.exe"
-    $env:STDD_OUT = "D:\skills"; .\install.ps1
+    $env:FSTDD_OUT = "D:\skills"; .\install.ps1
 
 .NOTES
     若提示「禁止运行脚本」，用以下方式之一：
@@ -36,7 +36,7 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 function Write-Step([string]$text) { Write-Host $text -ForegroundColor Cyan }
 
 Write-Host "==============================================" -ForegroundColor Cyan
-Write-Host " STDD for WorkBuddy —— 安装" -ForegroundColor Cyan
+Write-Host " FSTDD for WorkBuddy —— 安装" -ForegroundColor Cyan
 Write-Host "==============================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -101,14 +101,14 @@ if ($LASTEXITCODE -ne 0) {
 Write-Step "[4/4] 校验"
 & $Python (Join-Path $ScriptDir "tools/verify_workbuddy_skills.py")
 if ($LASTEXITCODE -eq 0) {
-    $outDir = if ($env:STDD_OUT) { $env:STDD_OUT } else { Join-Path $HOME ".workbuddy-ai/skills" }
+    $outDir = if ($env:FSTDD_OUT) { $env:FSTDD_OUT } else { Join-Path $HOME ".workbuddy-ai/skills" }
     Write-Host ""
     Write-Host "==============================================" -ForegroundColor Green
     Write-Host " 安装完成" -ForegroundColor Green
     Write-Host "==============================================" -ForegroundColor Green
     Write-Host " skill 目录：$outDir"
     Write-Host ""
-    Write-Host " 下一步：在 WorkBuddy 中重启或执行 /reload，然后运行 /stdd-understand"
+    Write-Host " 下一步：在 WorkBuddy 中重启或执行 /reload，然后运行 /fstdd-understand"
     exit 0
 } else {
     Write-Host ""
