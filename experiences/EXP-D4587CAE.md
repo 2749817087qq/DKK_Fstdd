@@ -10,7 +10,7 @@ sanitized: true
 ---
 ### 5.3 CLI 生成物持续引入 CRLF（根因，已提供自愈手段）
 
-**现象**：`fstdd archive` 之后重跑验证，TC-EOL-003 由 PASS 退化为 FAIL，
+**现象**：`stdd archive` 之后重跑验证，TC-EOL-003 由 PASS 退化为 FAIL，
 出现 4 个新的混合态文件：
 
 ```
@@ -20,7 +20,7 @@ sanitized: true
 .fstdd/specs/eol-governance/spec.md
 ```
 
-**根因**：FSTDD CLI（`init` / `new` / `canon generate` / `archive`）生成的文件
+**根因**：STDD CLI（`init` / `new` / `canon generate` / `archive`）生成的文件
 **使用 CRLF 行尾**。因此 EOL 治理不是「加一次规则就一劳永逸」，而是每次执行 CLI
 之后都可能重新引入混合态。这是原提案未预见到的持续性问题。
 

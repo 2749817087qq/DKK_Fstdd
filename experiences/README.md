@@ -1,6 +1,6 @@
 # 经验库（对外回传）
 
-> 由 `tools/share_experience.py` 导出，共 12 条，导出时间 2026-09-15 21:53
+> 由 `tools/share_experience.py` 导出，共 15 条，导出时间 2026-09-15 23:57
 
 | ID | 标题 | 来源 |
 |---|---|---|
@@ -9,6 +9,9 @@
 | EXP-20260915-A3 | - | EXP-20260915-A3.md |
 | EXP-20260915-A4 | - | EXP-20260915-A4.md |
 | EXP-20260915-A5 | - | EXP-20260915-A5.md |
+| EXP-20260915-A6 | - | EXP-20260915-A6.md |
+| EXP-20260915-B1 | - | EXP-20260915-B1.md |
+| EXP-20260915-B2 | - | EXP-20260915-B2.md |
 | EXP-6D722212 | 5.1 测试设计缺陷（已修正） | 2026-09-15-crlf-eol-governance/test-report.md |
 | EXP-C6A698A8 | 5.2 基准数值偏差（已记录） | 2026-09-15-crlf-eol-governance/test-report.md |
 | EXP-D4587CAE | 5.3 CLI 生成物持续引入 CRLF（根因，已提供自愈手段） | 2026-09-15-crlf-eol-governance/test-report.md |
