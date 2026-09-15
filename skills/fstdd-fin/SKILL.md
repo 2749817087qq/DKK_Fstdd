@@ -40,8 +40,14 @@ sources: |
 | 通用软件研发（非金融） | `fstdd` / `stdd-*` 通用系列 |
 | 只需金融领域知识清单、不做完整研发流程 | **`fintech-engineer`** 直接用 |
 
-**协作契约**：本 skill 在需要时**继承** `fintech-engineer` 的领域清单作为检查源，
-需要市场/财务数据时按 `wb-finance-skill` 的规范取数（优先 `agentic_search`，禁止凭记忆输出数值）。
+**协作契约**：
+
+- **领域清单已内化在本 skill 第 5 节**（金融系统四条主线自查问题），**不依赖任何外部 skill** ——
+  这是为了让本 skill 可以被独立分发与安装。
+- `fintech-engineer`（第三方市场，无开源许可）是**可选的补充视角**：
+  本机已装则可交叉参考；**未装就直接跳过，不影响本 skill 的任何功能**。
+- 需要市场 / 财务数据时，按 `wb-finance-skill` 的规范取数
+  （优先 `agentic_search`，禁止凭记忆输出数值）。
 
 ---
 
@@ -225,7 +231,7 @@ sources: |
 |-------|------|
 | `fstdd` | 通用总入口；判定为金融系统研发时路由到本 skill |
 | `fstdd-understand/spec/build/deliver` | 通用阶段 skill；本 skill 在其基础上叠加金融约束，**不冲突**：通用流程照走，金融增强项额外执行 |
-| `fintech-engineer` | 领域知识源；本 skill 把它翻译成流程内的强制项 |
+| `fintech-engineer` | **可选**的补充视角（第三方市场，无开源许可）；领域清单已内化于第 5 节，未装不影响使用 |
 | `fstdd-upgrade` | 升级通用层；本 skill 为独立文件，不受上游覆盖影响 |
 
 ---
@@ -237,7 +243,7 @@ sources: |
 | 资源 | 查找方式 |
 |------|---------|
 | 通用 FSTDD skill（`fstdd`、`fstdd-understand/spec/build/deliver/upgrade`） | 由 `install.sh` / `install.ps1` 生成，默认落在 `~/.workbuddy-ai/skills/` |
-| 领域源 skill | `fintech-engineer/`，位于 WorkBuddy 的另一个 skill 目录 `~/.workbuddy/skills/` |
+| 领域源 skill（**可选**） | `fintech-engineer/`，第三方市场安装，位于 `~/.workbuddy/skills/`；**未装不影响使用** |
 | FSTDD CLI | 运行 `./install.sh`（或 `install.ps1`）后，路径记录在总入口 skill `fstdd/SKILL.md` 的「本机安装位置」一节 |
 
 > **两个 skill 目录的分工（本机实测）**：

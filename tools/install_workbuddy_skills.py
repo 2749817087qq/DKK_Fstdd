@@ -19,6 +19,14 @@ TOOLS_DIR = Path(__file__).resolve().parent
 INSTALL_ABS = (TOOLS_DIR / "install_workbuddy_skills.py").as_posix()
 VERIFY_ABS = (TOOLS_DIR / "verify_workbuddy_skills.py").as_posix()
 
+# 仓库根（自研 skill 位于 <repo>/skills/ 下，不是上游的 vendor 模板）
+REPO_ROOT = TOOLS_DIR.parent
+
+# 本项目自研的 skill：源文件已含完整 frontmatter，直接复制即可，
+# 不走上游模板的「剥离 frontmatter → 适配 → 重组」流程。
+# 注意：这些是本仓库原创，许可证与上游 MIT 不同，见各文件 frontmatter。
+LOCAL_SKILLS = ["fstdd-fin"]
+
 
 def _check_runtime_deps() -> None:
     """FSTDD CLI 需要 PyYAML 与 Jinja2，缺了会在 init 时才炸，提前提醒。"""
@@ -215,6 +223,19 @@ def main() -> int:
         if f"name: {name}" not in content:
             errors.append(f"{name}: frontmatter name 缺失或不匹配")
 
+        installed.append(name)
+        print(f"[OK] {name} -> {dest_dir / 'SKILL.md'}")
+
+    # 本项目自研的 skill：源已含完整 frontmatter，直接复制（不走上游模板渲染）
+    for name in LOCAL_SKILLS:
+        src_file = REPO_ROOT / "skills" / name / "SKILL.md"
+        if not src_file.exists():
+            print(f"[SKIP] 自研 skill 源文件不存在: {src_file}")
+            continue
+        dest_dir = OUT / name
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        (dest_dir / "SKILL.md").write_text(
+            src_file.read_text(encoding="utf-8"), encoding="utf-8")
         installed.append(name)
         print(f"[OK] {name} -> {dest_dir / 'SKILL.md'}")
 
