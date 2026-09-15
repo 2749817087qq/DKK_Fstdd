@@ -229,6 +229,9 @@ description: |
   负责判断项目是否已初始化 STDD、路由到正确的阶段 skill，并说明 CLI 与静态资源位置。
   触发词：STDD、stdd、spec 驱动开发、测试驱动开发、TDD 流程、规约驱动、四阶段流程、用 STDD 开发。
 stdd_version: "3.0.5"
+version: "3.0.5"
+license: MIT（上游 STDD leonai42/stdd，版权归杭州大道一以科技有限公司；
+  本文件为其在 WorkBuddy 平台的适配版本，含本地安全策略与路径适配）
 source: https://github.com/leonai42/stdd
 ---
 
