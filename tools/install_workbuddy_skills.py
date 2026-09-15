@@ -14,6 +14,11 @@ CLI_ABS = (SRC / "bin" / "stdd").as_posix()
 PY = os.environ.get("STDD_PY", sys.executable)
 PY_CMD = f'"{PY}" "{CLI_ABS}"'
 
+# 本机工具脚本绝对路径：随仓库位置自动定位，避免重装命令指向已删除的旧目录
+TOOLS_DIR = Path(__file__).resolve().parent
+INSTALL_ABS = (TOOLS_DIR / "install_workbuddy_skills.py").as_posix()
+VERIFY_ABS = (TOOLS_DIR / "verify_workbuddy_skills.py").as_posix()
+
 
 def _check_runtime_deps() -> None:
     """STDD CLI 需要 PyYAML 与 Jinja2，缺了会在 init 时才炸，提前提醒。"""
@@ -108,7 +113,7 @@ SECURITY_BLOCK_DELIVER = (
 )
 
 # 升级后必做：硬编码进 upgrade skill 与总入口，防止防线被静默抹掉
-UPGRADE_DUTY = """
+UPGRADE_DUTY = f"""
 ## ⛔ 升级 / 重装后必做（本机硬性规程）
 
 上游升级（`/stdd-upgrade`、重新拉取仓库、手动覆盖 skill 文件）会**直接覆盖本文件**，
@@ -117,8 +122,8 @@ UPGRADE_DUTY = """
 **每次升级后，必须立即执行以下两步，缺一不可：**
 
 ```
-"C:\\Python311\\python.exe" "C:/Users/Administrator/.workbuddy-ai/stdd/tools/install_workbuddy_skills.py"
-"C:\\Python311\\python.exe" "C:/Users/Administrator/.workbuddy-ai/stdd/tools/verify_workbuddy_skills.py"
+"{PY}" "{INSTALL_ABS}"
+"{PY}" "{VERIFY_ABS}"
 ```
 
 - 第 1 步重新生成本机适配后的 skill（含安全策略、绝对路径、Python 解释器绑定）

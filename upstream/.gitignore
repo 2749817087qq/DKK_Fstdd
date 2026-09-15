@@ -40,8 +40,7 @@ htmlcov/
 Thumbs.db
 Desktop.ini
 
-# Project-specific (don't track installed skills in target projects)
-.stdd/platforms/*/skills/
+# [DKKstdd] 原规则 ".stdd/platforms/*/skills/" 已解除：平台 skill 模板属自包含资源，需随仓库分发。
 
 # Website & Playground (deployed separately)
 website/
@@ -56,6 +55,5 @@ STDD_V3_*.md
 # Local presentations
 ppt/
 
-# Local Claude memory
-.claude/memory/
+# [DKKstdd] 原规则 ".claude/memory/" 已解除：本目录下的金融业务知识库为本仓库自有资产，需纳入版本管理。
 .claude/settings.local.json

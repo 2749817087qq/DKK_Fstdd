@@ -233,5 +233,5 @@ sources: |
 - 本 skill：`C:\Users\Administrator\.workbuddy\skills\stdd-fin\SKILL.md`
 - 领域源：`C:\Users\Administrator\.workbuddy\skills\fintech-engineer\`
 - 通用 STDD：`C:\Users\Administrator\.workbuddy-ai\skills\stdd*\`
-- 通用 STDD CLI：`"C:\Python311\python.exe" "C:/Users/Administrator/.workbuddy-ai/stdd/bin/stdd"`
-- 安装说明：`C:\Users\Administrator\.workbuddy-ai\stdd\WORKBUDDY_INSTALL_NOTES.md`
+- 通用 STDD CLI：`"C:\Python311\python.exe" "C:/Users/Administrator/.workbuddy-ai/DKKstdd/upstream/bin/stdd"`
+- 安装说明：`C:\Users\Administrator\.workbuddy-ai\DKKstdd\docs\WORKBUDDY_INSTALL_NOTES.md`
