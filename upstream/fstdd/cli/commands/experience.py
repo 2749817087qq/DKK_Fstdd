@@ -7,6 +7,8 @@ import time
 import tarfile
 import tempfile
 import io
+import threading
+from contextlib import contextmanager
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
@@ -163,54 +165,92 @@ def _get_index_path(exp_dir: Path) -> Path:
     return exp_dir / ".experience-index.yaml"
 
 
-def _load_index(exp_dir: Path) -> dict:
+# 进程内重入计数：同一进程连续 _save_index 不应自锁自。
+_LOCK_DEPTH = 0
+_LOCK_TLS = threading.local()
+
+
+@contextmanager
+def _index_lock(exp_dir: Path, timeout: float = 20.0):
+    """跨进程索引互斥锁（可重入）。
+
+    经验索引是「读-改-写」结构：并发 add/verify/deposit/retire 时必须把整个
+    读改写周期串起来，否则 last_id 会重号、索引条目会互相覆盖。
+    因此这里提供可重入的文件锁，调用方只需包住临界区即可。
+    """
+    global _LOCK_DEPTH
+
+    if getattr(_LOCK_TLS, "depth", 0) > 0:      # 同线程重入：直接放行
+        _LOCK_TLS.depth += 1
+        try:
+            yield
+        finally:
+            _LOCK_TLS.depth -= 1
+        return
+
+    _ensure_dir(exp_dir)
+    lock_path = _get_index_path(exp_dir).with_suffix(".lock")
+    deadline = time.time() + timeout
+    acquired = False
+    while True:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            acquired = True
+            break
+        except FileExistsError:
+            if time.time() >= deadline:
+                # 兜底：清理明显的陈旧锁（持有者已崩溃），否则放弃等待
+                try:
+                    if time.time() - os.path.getmtime(lock_path) > 30:
+                        os.remove(lock_path)
+                        continue
+                except OSError:
+                    pass
+                print("  警告: 经验索引锁等待超时，继续执行可能冲突。", file=sys.stderr)
+                break
+            time.sleep(0.02 + 0.01 * (time.time() % 1))
+
+    _LOCK_TLS.depth = getattr(_LOCK_TLS, "depth", 0) + 1
+    try:
+        yield acquired
+    finally:
+        _LOCK_TLS.depth -= 1
+        if acquired:
+            try:
+                os.remove(lock_path)
+            except OSError:
+                pass
+
+
+def _load_index(exp_dir: Path, _locked: bool = False) -> dict:
     index_path = _get_index_path(exp_dir)
     if not index_path.exists():
-        index = _rebuild_index(exp_dir)
-        _save_index(exp_dir, index)
-        return index
+        if _locked:
+            index = _rebuild_index(exp_dir)
+            _save_index(exp_dir, index)
+            return index
+        with _index_lock(exp_dir):
+            return _load_index(exp_dir, _locked=True)
     with open(index_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {"last_id": 0, "total": 0}
 
 
 def _save_index(exp_dir: Path, index: dict) -> None:
-    _ensure_dir(exp_dir)
-    index_path = _get_index_path(exp_dir)
-    lock_path = index_path.with_suffix(".lock")
-    tmp_path = index_path.with_suffix(".tmp")
-
-    # Acquire lock with retry
-    for attempt in range(5):
+    """原子落盘索引；自带锁，也可安全地被 _index_lock 包住（重入）。"""
+    with _index_lock(exp_dir) as acquired:
+        _ensure_dir(exp_dir)
+        index_path = _get_index_path(exp_dir)
+        tmp_path = index_path.with_suffix(".tmp")
         try:
-            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            os.close(fd)
-            break
-        except FileExistsError:
-            if attempt < 4:
-                time.sleep(0.05 * (attempt + 1))
-            else:
-                # Last attempt: force overwrite stale lock (> 5s old)
-                try:
-                    lock_age = time.time() - os.path.getmtime(lock_path)
-                    if lock_age > 5:
-                        os.remove(lock_path)
-                        fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-                        os.close(fd)
-                        break
-                except OSError:
-                    pass
-                print("  警告: 无法获取经验索引锁，写入可能冲突。")
-                # Fall through to write anyway
-
-    try:
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            yaml.dump(index, f, allow_unicode=True, default_flow_style=False)
-        os.replace(tmp_path, index_path)
-    finally:
-        try:
-            os.remove(lock_path)
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                yaml.dump(index, f, allow_unicode=True, default_flow_style=False)
+            os.replace(tmp_path, index_path)
         except OSError:
-            pass
+            # 极端并发下 Windows 可能瞬时拒绝 replace，退化为直接写
+            with open(index_path, "w", encoding="utf-8") as f:
+                yaml.dump(index, f, allow_unicode=True, default_flow_style=False)
+            print("  警告: 索引原子替换失败，已退化为直接写入。", file=sys.stderr)
 
 
 def _rebuild_index(exp_dir: Path) -> dict:
@@ -341,47 +381,52 @@ def _cmd_add(args: argparse.Namespace, exp_dir: Path) -> None:
         sys.exit(1)
 
     _ensure_dir(exp_dir)
-    index = _load_index(exp_dir)
 
-    eid = _next_id(index)
-    today = datetime.now().strftime("%Y-%m-%d")
+    # 整个「读索引 → 分配 id → 写经验文件 → 更新索引」必须在同一临界区内完成，
+    # 否则并发 add 会分配到重复 id，并互相覆盖索引条目。
+    with _index_lock(exp_dir):
+        index = _load_index(exp_dir, _locked=True)
 
-    frontmatter = {
-        "experience_id": eid,
-        "category": args.category,
-        "pattern": args.pattern,
-        "root_cause": args.root_cause or "",
-        "detection_trigger": args.detection_trigger or "",
-        "fix_template": args.fix_template or "",
-        "language": args.language,
-        "tags": [t.strip() for t in (args.tags or "").split(",") if t.strip()],
-        "occurrences": 1,
-        "severity": args.severity or "medium",
-        "confidence": 0.5,
-        "source_change": args.source_change or "manual",
-        "source_file": "",
-        "lifecycle_state": "discovered",
-        "first_seen": today,
-        "last_seen": today,
-        "community_votes_useful": 0,
-        "community_votes_unuseful": 0,
-        "adoption_count": 0,
-        "project_type": getattr(args, "project_type", None) or _detect_project_type(Path.cwd() / "changes"),
-        # V2.7: provenance tracking
-        "provenance": getattr(args, "provenance", None) or "ai-inferred",
-        "provenance_weight": _provenance_weight(args),
-    }
+        eid = _next_id(index)
+        today = datetime.now().strftime("%Y-%m-%d")
 
-    body = args.body or ""
-    content = f"---\n{yaml.dump(frontmatter, allow_unicode=True, default_flow_style=False)}---\n\n{body}\n"
+        frontmatter = {
+            "experience_id": eid,
+            "category": args.category,
+            "pattern": args.pattern,
+            "root_cause": args.root_cause or "",
+            "detection_trigger": args.detection_trigger or "",
+            "fix_template": args.fix_template or "",
+            "language": args.language,
+            "tags": [t.strip() for t in (args.tags or "").split(",") if t.strip()],
+            "occurrences": 1,
+            "severity": args.severity or "medium",
+            "confidence": 0.5,
+            "source_change": args.source_change or "manual",
+            "source_file": "",
+            "lifecycle_state": "discovered",
+            "first_seen": today,
+            "last_seen": today,
+            "community_votes_useful": 0,
+            "community_votes_unuseful": 0,
+            "adoption_count": 0,
+            "project_type": getattr(args, "project_type", None) or _detect_project_type(Path.cwd() / "changes"),
+            # V2.7: provenance tracking
+            "provenance": getattr(args, "provenance", None) or "ai-inferred",
+            "provenance_weight": _provenance_weight(args),
+        }
 
-    exp_file = exp_dir / f"{eid}.md"
-    exp_file.write_text(content, encoding="utf-8")
+        body = args.body or ""
+        content = f"---\n{yaml.dump(frontmatter, allow_unicode=True, default_flow_style=False)}---\n\n{body}\n"
 
-    _index_add_entry(index, eid, frontmatter)
-    index["last_id"] = index.get("last_id", 0) + 1
-    index["total"] = sum(len(v) for v in index.get("by_category", {}).values())
-    _save_index(exp_dir, index)
+        exp_file = exp_dir / f"{eid}.md"
+        exp_file.write_text(content, encoding="utf-8")
+
+        _index_add_entry(index, eid, frontmatter)
+        # 用已分配的 id 推进 last_id，避免与并发写入互相覆盖
+        index["last_id"] = max(index.get("last_id", 0), int(eid.split("-")[-1]))
+        index["total"] = sum(len(v) for v in index.get("by_category", {}).values())
+        _save_index(exp_dir, index)
 
     print(f" 经验已创建: {eid} ({CATEGORY_LABELS.get(args.category, args.category)})")
 
@@ -682,7 +727,7 @@ def _cmd_verify(args: argparse.Namespace, exp_dir: Path) -> None:
     exp_file.write_text(new_content, encoding="utf-8")
 
     # Update index
-    index = _load_index(exp_dir)
+    index = _load_index(exp_dir, _locked=True)
     _index_remove_entry(index, args.experience_id, current_state)
     _index_add_entry(index, args.experience_id, data)
     _save_index(exp_dir, index)
@@ -719,7 +764,7 @@ def _cmd_deposit(args: argparse.Namespace, exp_dir: Path) -> None:
     new_content = f"---\n{yaml.dump(data, allow_unicode=True, default_flow_style=False)}---\n{body}"
     exp_file.write_text(new_content, encoding="utf-8")
 
-    index = _load_index(exp_dir)
+    index = _load_index(exp_dir, _locked=True)
     _index_remove_entry(index, args.experience_id, current_state)
     _index_add_entry(index, args.experience_id, data)
     _save_index(exp_dir, index)
@@ -752,7 +797,7 @@ def _cmd_retire(args: argparse.Namespace, exp_dir: Path) -> None:
     new_content = f"---\n{yaml.dump(data, allow_unicode=True, default_flow_style=False)}---\n{body}"
     exp_file.write_text(new_content, encoding="utf-8")
 
-    index = _load_index(exp_dir)
+    index = _load_index(exp_dir, _locked=True)
     _index_remove_entry(index, args.experience_id, current_state)
     _index_add_entry(index, args.experience_id, data)
     _save_index(exp_dir, index)
@@ -1071,11 +1116,23 @@ def _share_via_api(eid, content):
 
 def _cmd_search(args, exp_dir):
     """Full-text search experience library."""
+    keyword = getattr(args, "keyword", "")
+    fmt = getattr(args, "format", "table")
+
+    def _empty() -> None:
+        """无命中时的统一出口：JSON 输出空数组（便于脚本消费），table 给出提示。"""
+        if fmt == "json":
+            import json
+            print(json.dumps([], ensure_ascii=False, indent=2))
+        else:
+            print(f"  No results for '{keyword}'")
+
     exp_dir_path = Path(exp_dir)
     if not exp_dir_path.exists() or not list(exp_dir_path.glob("EXP-*.md")):
-        print("  Experience library is empty.")
+        # 库为空时不得往 stdout 打人类可读文案，否则 --format json 无法解析
+        print("  Experience library is empty.", file=sys.stderr)
+        _empty()
         return
-    keyword = getattr(args, "keyword", "")
     cat_filter = getattr(args, "category", None)
     lang_filter = getattr(args, "language", None)
     sev_filter = getattr(args, "severity", None)
@@ -1097,6 +1154,9 @@ def _cmd_search(args, exp_dir):
         pattern = fm.get("pattern", "")
         root_cause = fm.get("root_cause", "")
         kw = keyword.lower()
+        # tags 可能是列表，统一转成可检索字符串
+        tags = fm.get("tags") or []
+        tags_text = " ".join(tags) if isinstance(tags, (list, tuple)) else str(tags)
         score = 0.0
         if kw in pattern.lower():
             score += 3.0
@@ -1104,12 +1164,19 @@ def _cmd_search(args, exp_dir):
             score += 2.0
         if kw in body.lower():
             score += 1.0
+        # 类别 / 语言 / 标签也参与检索：用户常直接按类别名找经验
+        if kw in str(fm.get("category", "")).lower():
+            score += 2.0
+        if kw in tags_text.lower():
+            score += 2.0
+        if kw in str(fm.get("language", "")).lower():
+            score += 1.0
         if score > 0:
             score += fm.get("confidence", 0.5) * 0.5
             score += fm.get("adoption_count", 0) * 0.01
             results.append({"score": score, "eid": fm.get("experience_id", filepath.stem), "fm": fm})
     if not results:
-        print(f"  No results for '{keyword}'")
+        _empty()
         return
     results.sort(key=lambda x: x["score"], reverse=True)
     if fmt == "json":

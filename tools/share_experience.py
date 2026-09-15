@@ -34,6 +34,58 @@ from pathlib import Path
 # 经验包回传目标仓库（可用环境变量覆盖）
 DEFAULT_EXP_REPO = "2749817087qq/Fstdd-experiences"
 
+# Git 远端基址。默认 GitHub；可用 FSTDD_GIT_BASE 覆盖，
+# 例如自建 Git 服务、或本地/file:// 远端（离线联调与回归测试）。
+GIT_BASE = os.environ.get("FSTDD_GIT_BASE", "https://github.com").rstrip("/")
+
+# GitHub API 基址（fork / PR 用）。可用 FSTDD_API_BASE 覆盖，便于离线联调。
+API_BASE = os.environ.get("FSTDD_API_BASE", "https://api.github.com").rstrip("/")
+
+
+SCP_LIKE_RE = re.compile(r"^(?:[\w.-]+@)?[\w.-]+:(?!/)(?!//)\S+$")
+
+
+def is_local_path(s: str) -> bool:
+    """判断给定目标是否是一个「本地/网络文件系统路径」。
+
+    覆盖形态：
+      · POSIX 绝对路径        /home/x/repo.git
+      · Windows 盘符路径      C:\\repos\\x.git  /  C:/repos/x.git
+      · UNC 路径              \\\\server\\share\\x.git
+    """
+    if s.startswith(("/", "\\\\")):
+        return True
+    if len(s) >= 2 and s[1] == ":" and s[0].isalpha():   # C:\... 或 C:/...
+        return True
+    return False
+
+
+def git_remote(repo: str, token: str = "") -> str:
+    """按目标仓库构造可 clone/push 的远端地址。
+
+    repo 允许四种形态：
+      · 已是 URL(https/ssh/git/file) → 原样使用
+      · 本地/网络文件系统路径        → 原样使用（离线联调、自建共享盘）
+      · 本地基址 + owner/name        → 拼接（GIT_BASE 被设为本地路径时）
+      · owner/name                   → 走 GIT_BASE（默认 GitHub）
+    """
+    if re.match(r"^(https?|ssh|git|file)://", repo) or is_local_path(repo):
+        return repo
+    if SCP_LIKE_RE.match(repo):                  # git@host:owner/name
+        return repo
+
+    # GIT_BASE 本身是本地路径：直接把 owner/name 拼成本地远端，
+    # 例如 FSTDD_GIT_BASE=C:/tmp/remotes → C:/tmp/remotes/owner/name.git
+    if is_local_path(GIT_BASE):
+        if GIT_BASE.startswith("\\\\"):          # UNC 基址：手工拼接，避免 Path 规范化出错
+            return GIT_BASE.rstrip("\\/").replace("\\", "/") + "/" + repo + ".git"
+        return str(Path(GIT_BASE) / (repo + ".git")).replace("\\", "/")
+
+    auth = f"{token}@" if token else ""
+    base = GIT_BASE.split("://", 1)
+    scheme, host = (base[0], base[1]) if len(base) == 2 else ("https", GIT_BASE)
+    return f"{scheme}://{auth}{host}/{repo}.git"
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXP_DIR = REPO_ROOT / ".fstdd" / "experiences"
 ARCHIVE_DIR = REPO_ROOT / ".fstdd" / "archive"
@@ -66,15 +118,16 @@ SANITIZE_RULES: list[tuple[re.Pattern, str, str]] = [
     (re.compile(r"\bBearer\s+[A-Za-z0-9._\-]{20,}"), "Bearer <TOKEN>", "Bearer 令牌"),
     # 邮箱
     (re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.]{2,}\b"), "<EMAIL>", "邮箱"),
-    # Windows 绝对路径
-    (re.compile(r"[A-Za-z]:\\{1,2}(?:[^\s\"'`|<>]+\\)*[^\s\"'`|<>]*"), "<PATH>", "Windows 路径"),
-    (re.compile(r"[A-Za-z]:/(?:[^\s\"'`|<>]+/)*[^\s\"'`|<>]*"), "<PATH>", "Windows 路径(POSIX 写法)"),
-    # POSIX 家目录路径
-    (re.compile(r"/(?:home|Users|root)/[^\s\"'`|<>)]+"), "<PATH>", "POSIX 路径"),
     # IPv4
     (re.compile(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"), "<IP>", "IP 地址"),
     # 内网/私有域名
     (re.compile(r"\b(?:[\w-]+\.)+(?:local|internal|corp|lan)\b"), "<DOMAIN>", "内网域名"),
+    # Windows 绝对路径 MUST 排在 URL 之后：否则 `https://github.com/x/y`
+    # 会被盘符规则从中间的 `s:/` 起吞成 `http<PATH>`，公共域名判定随之失效。
+    (re.compile(r"[A-Za-z]:\\{1,2}(?:[^\s\"'`|<>]+\\{1,2})*[^\s\"'`|<>\\]*"), "<PATH>", "Windows 路径"),
+    (re.compile(r"(?<![A-Za-z0-9])[A-Za-z]:/(?:[^\s\"'`|<>/]+/)*[^\s\"'`|<>]*"), "<PATH>", "Windows 路径(POSIX 写法)"),
+    # POSIX 家目录路径
+    (re.compile(r"/(?:home|Users|root)/[^\s\"'`|<>)]+"), "<PATH>", "POSIX 路径"),
 ]
 
 
@@ -204,7 +257,7 @@ def _gh_api(method: str, path: str, token: str, payload=None) -> dict:
     import urllib.error
     import urllib.request
 
-    url = "https://api.github.com" + path
+    url = API_BASE + path
     data = json.dumps(payload).encode("utf-8") if payload is not None else None
     req = urllib.request.Request(url, data=data, method=method)
     req.add_header("Authorization", "Bearer " + token)
@@ -247,7 +300,7 @@ def publish_via_pr(out_dir: Path, repo: str, token: str, dry_run: bool = False) 
         return False
 
     # fork 是异步的，轮询等待其可克隆
-    fork_url = f"https://{token}@github.com/{login}/{name}.git"
+    fork_url = git_remote(f"{login}/{name}", token)
     deadline = time.time() + 45
     cloned = False
     tmp = Path(tempfile.mkdtemp(prefix="exp_pr_"))
@@ -335,7 +388,7 @@ def publish(out_dir: Path, repo: str, token: str) -> tuple[bool, str]:
         return False, "no token"
     tmp = Path(tempfile.mkdtemp(prefix="exp_publish_"))
     try:
-        url = f"https://{token}@github.com/{repo}.git"
+        url = git_remote(repo, token)
         r = subprocess.run(["git", "clone", "-q", url, str(tmp / "repo")],
                            capture_output=True, text=True,
                            encoding="utf-8", errors="replace")
@@ -369,7 +422,7 @@ def publish(out_dir: Path, repo: str, token: str) -> tuple[bool, str]:
                            encoding="utf-8", errors="replace")
         if r.returncode != 0:
             return False, (r.stderr or "")[:300]
-        print(f"[OK] 已推送 {n} 条经验 → https://github.com/{repo}")
+        print(f"[OK] 已推送 {n} 条经验 → {git_remote(repo)}")
         return True, ""
     finally:
         shutil.rmtree(tmp, ignore_errors=True)

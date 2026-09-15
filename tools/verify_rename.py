@@ -252,14 +252,17 @@ def tc_007() -> tuple[bool, str]:
         return False, (f"仍有 {len(leftover)} 个旧名状态文件："
                        f"{leftover[0].relative_to(REPO)}")
 
-    # 当前活跃 change 的状态文件须存在且能被 CLI 识别
-    changes_dir = REPO / ".fstdd" / "changes"
-    if not changes_dir.exists():
-        return False, ".fstdd/changes/ 不存在"
-    active = [d for d in changes_dir.iterdir()
-              if d.is_dir() and (d / expected).exists()]
+    # 状态文件名的检查要覆盖 changes/ 与 archive/ 两处。
+    # 实测踩到：change 归档后 changes/ 变空，只查它会误报
+    # 「没有任何 change 含 .fstdd.yaml」 —— 那是断言缺陷，不是改名问题。
+    active = []
+    for base_name in ("changes", "archive"):
+        d = REPO / ".fstdd" / base_name
+        if not d.exists():
+            continue
+        active += [x for x in d.iterdir() if x.is_dir() and (x / expected).exists()]
     if not active:
-        return False, f"没有任何 change 含 {expected}（CLI 将找不到 change）"
+        return False, f"changes/ 与 archive/ 下均无含 {expected} 的 change"
 
     r = _run([PY, str(CLI), "status"], cwd=str(REPO))
     if r.returncode != 0 or "Change" not in (r.stdout or ""):
