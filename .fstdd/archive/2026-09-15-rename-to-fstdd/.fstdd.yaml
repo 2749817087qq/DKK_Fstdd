@@ -1,0 +1,71 @@
+change_id: 2026-09-15-rename-to-fstdd
+complexity_score: 13
+current_phase: build
+design_adjustments:
+  count: 0
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_note: 用户选择全自动长程模式；Gate 3 仍强制等待确认
+  pre_auth_timestamp: '2026-09-15T22:48:00'
+mode: thorough
+phases:
+  build:
+    all_slices_verified_at: '2026-09-15T23:45:00'
+    confirmed_actor: ai
+    confirmed_at: '2026-09-15T23:44:09'
+    confirmed_by: dialog
+    confirmed_evidence: 用户回复：Please continue.（在 Gate 3 质量验收框展示后）
+    quality_checks:
+      c1_parallel_review: 3 代理完成，5 类真实问题 + 2 条误报
+      c2_full_quality: 三项校验全绿
+      c3_diff_review: 781 文件，无调试残留
+      c4_failure_modes: 8 条经验命中 6 条，全部处理
+      c5_experience_record: 新增 EXP-B1/B2
+      c6_design_adjustments: 4 项偏离已汇总
+      c7_test_report: 已生成
+    slices_completed:
+      S1:
+        new_tests: 2
+        note: 标识层替换 375 处（20 文件）；skill 目录改名；TC-001/002 通过
+        status: done
+        tc_coverage: 2/2
+        verified_at: '2026-09-15T23:05:00'
+      S2:
+        new_tests: 2
+        note: 包改名 upstream/stdd→fstdd；39 文件 273 处 import；CLI 入口改名；TC-003/004 通过
+        status: done
+        tc_coverage: 2/2
+        verified_at: '2026-09-15T23:12:00'
+      S3:
+        new_tests: 4
+        note: 数据目录迁移（根 .stdd + upstream/.stdd）；2205 处引用；安装位置 DKKstdd→Fstdd；skill 重装；Part
+          C 补齐 TC-007/008；TC-005~008 通过
+        status: done
+        tc_coverage: 4/4
+        verified_at: '2026-09-15T23:29:00'
+    status: completed
+    total_tc_coverage: 8/8
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-15T22:47:07'
+    confirmed_by: dialog
+    confirmed_evidence: 用户回复：确认
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-15T22:42:05'
+    confirmed_by: dialog
+    confirmed_evidence: 用户回复：Please continue.（在 proposal 展示后）
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'
