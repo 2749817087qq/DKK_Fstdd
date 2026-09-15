@@ -8,6 +8,8 @@ description: |
   触发词：stdd-fin、金融 stdd、FinSTDD、金融规驱、支付系统、银行集成、交易系统、撮合引擎、
   风控系统、反欺诈、KYC/AML、开放银行、金融系统研发、fintech 开发。
 stdd_version: "3.0.5-fin.2"
+version: "1.0.0"
+agent_created: true
 license: |
   本文件为原创重构作品：流程框架、检查项组织方式、测试维度与失败模式均为原创撰写。
   参考来源已在 sources 中署名，本文件**不包含任何第三方 skill 的原文内容**。
@@ -228,10 +230,17 @@ sources: |
 
 ---
 
-## 8. 本机安装信息
+## 8. 依赖与位置
 
-- 本 skill：`C:\Users\Administrator\.workbuddy\skills\stdd-fin\SKILL.md`
-- 领域源：`C:\Users\Administrator\.workbuddy\skills\fintech-engineer\`
-- 通用 STDD：`C:\Users\Administrator\.workbuddy-ai\skills\stdd*\`
-- 通用 STDD CLI：`"C:\Python311\python.exe" "C:/Users/Administrator/.workbuddy-ai/DKKstdd/upstream/bin/stdd"`
-- 安装说明：`C:\Users\Administrator\.workbuddy-ai\DKKstdd\docs\WORKBUDDY_INSTALL_NOTES.md`
+本 skill 依赖两项外部资源。**位置随安装环境而异**，按下面的方式查找，不要假定固定路径：
+
+| 资源 | 查找方式 |
+|------|---------|
+| 领域源 skill | 与本 skill **同级目录**下的 `fintech-engineer/` |
+| 通用 STDD skill | WorkBuddy 的 skill 目录下的 `stdd*`（由 DKKstdd 的安装脚本生成） |
+| STDD CLI | 运行 `./install.sh`（或 `install.ps1`）后，路径记录在总入口 skill `stdd/SKILL.md` 的「本机安装位置」一节 |
+
+若上表中任一资源找不到，说明 STDD 尚未安装 —— 见 DKKstdd 仓库 README 的「快速开始」。
+
+> 本 skill 只做**流程编排与领域约束**，不直接调用 CLI。
+> 具体命令与路径以总入口 skill `stdd` 的记录为准，避免路径在两处硬编码后不一致。

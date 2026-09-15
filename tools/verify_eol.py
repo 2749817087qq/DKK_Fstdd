@@ -34,7 +34,9 @@ BASELINE_WARN_LINES = 640  # 无规则时实测告警行数（对照基准，随
 #       反之，upstream/（vendor 的上游代码）与 skills/ 等若出现 diff，
 #       才是行尾治理真正该拦截的信号。
 # 精确文件项用于无法用前缀表达的散落文件，新增时必须注明原因。
-ALLOWED_DIFF_PREFIX = ("tools/", "docs/")
+# skills/ 只含本项目自研的 stdd-fin（上游代码在 upstream/，不该被改动），
+# 因此其 diff 同样属于正常开发活动。
+ALLOWED_DIFF_PREFIX = ("tools/", "docs/", "skills/")
 ALLOWED_DIFF_EXACT = {
     "README.md",  # 仓库说明，随变更持续更新
 }
