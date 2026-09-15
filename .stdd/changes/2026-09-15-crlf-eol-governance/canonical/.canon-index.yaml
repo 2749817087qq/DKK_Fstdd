@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-15-crlf-eol-governance: proposals/2026-09-15-crlf-eol-governance.yaml
+specs:
+  agent:
+    2026-09-15-crlf-eol-governance: specs/agent/2026-09-15-crlf-eol-governance.yaml
+  code:
+    2026-09-15-crlf-eol-governance: specs/code/2026-09-15-crlf-eol-governance.yaml
+version: '2.9'

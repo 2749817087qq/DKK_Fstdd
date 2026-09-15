@@ -212,6 +212,36 @@ python tools/verify_workbuddy_skills.py   # FAIL 时禁止继续 DELIVER 相关�
 | 提示 `.stdd/templates/*` 不存在 | 项目未初始化，在项目根目录跑一次 `stdd init` |
 | `all registries unreachable` | 社区经验库网络不可达，非致命，不影响主流程 |
 | 装完 skill 列表里看不到 | 重启 WorkBuddy 或执行 `/reload` |
+| `git add` 刷出成百上千行 `LF will be replaced by CRLF` | 见下方「行尾符（EOL）治理」 |
+
+### 行尾符（EOL）治理
+
+仓库根 `.gitattributes` 声明了 `* text=auto eol=lf`：由 Git 自动判别文本/二进制，
+文本文件统一以 LF 入库与检出。
+
+**为什么需要它**：本机 Git 全局多为 `core.autocrlf=true`。批量新增文件（同步上游、
+引入 vendor 依赖）时，Git 会对每个文本文件输出 `LF will be replaced by CRLF` 告警。
+实测本仓库一次性 vendor 600+ 文件时，告警达 **637 行 / 约 95 KB**，足以把 `git commit`
+的 stderr 完全淹没并导致进程被 SIGTERM 中断。
+
+**规则不能写成 `* -text`**：`-text` 的语义是「关闭一切转换」，会把工作区的 CRLF
+原样写入索引，使索引从 `i/lf` 翻转为 `i/crlf`（实测产生 494 行 diff），与「统一 LF」
+的目标正好相反。正确写法是 `text=auto eol=lf`。
+
+**批量 add 时的建议做法**：
+
+```bash
+# 1) 全库扫描，用数据确认影响面，而不是假定
+git ls-files --eol | grep 'i/lf' | grep 'w/crlf'
+
+# 2) 对扫描出的混合态文件，删掉后按规则重新检出（交给 Git 转换，不要手写脚本）
+rm -f <文件> && git checkout -- <文件>
+
+# 3) 校验（本仓库已内置该脚本，覆盖 7 个用例）
+python tools/verify_eol.py --repo .
+```
+
+脚本退出码非 0 表示有未通过的用例，输出中 `[FAIL]` 行会给出具体原因。
 
 ---
 
