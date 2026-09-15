@@ -51,10 +51,15 @@ def get_stdd_source() -> Path:
         return STDD_SOURCE
     p = Path(__file__).resolve().parent
     while True:
-        if (p / "STDD.md").exists() and (p / "bin").is_dir():
+        # 改名兼容：FSTDD.md（新）优先，STDD.md（旧）回退。
+        # 此前只认 STDD.md，改名后任何未预设 STDD_SOURCE 的调用路径都会
+        # RuntimeError（测试直接 import cmd_init 即触发）。
+        if ((p / "FSTDD.md").exists() or (p / "STDD.md").exists()) and (p / "bin").is_dir():
             return p
         if p.parent == p:
-            raise RuntimeError("Cannot find STDD source root (STDD.md not found)")
+            raise RuntimeError(
+                "Cannot find FSTDD source root (FSTDD.md or STDD.md not found)"
+            )
         p = p.parent
 
 

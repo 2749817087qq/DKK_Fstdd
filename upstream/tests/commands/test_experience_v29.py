@@ -222,9 +222,10 @@ class TestExperienceShare:
             from fstdd.cli.commands.experience import cmd_experience
             args = argparse.Namespace(subcommand="share", experience_id="EXP-2026-0500",
                                       dry_run=False, verbose=0)
-            cmd_experience(args)
-            if captured:
-                assert "<project>/<module>" in captured[0]
+            # 上传通道已永久删除：命令应拒绝（SystemExit）且不向第三方 POST
+            with pytest.raises(SystemExit):
+                cmd_experience(args)
+            assert captured == [], "不得向任何第三方外发经验内容"
         finally:
             shutil.which, requests.post = ow, op
 
@@ -246,9 +247,11 @@ class TestExperienceShare:
             from fstdd.cli.commands.experience import cmd_experience
             args = argparse.Namespace(subcommand="share", experience_id="EXP-2026-0600",
                                       dry_run=False, verbose=0)
-            cmd_experience(args)
+            # 上传通道已永久删除：命令应拒绝，且经验不得被标记为已上传
+            with pytest.raises(SystemExit):
+                cmd_experience(args)
             content = (exp_dir / "EXP-2026-0600.md").read_text(encoding="utf-8")
-            assert "shared" in content
+            assert "shared" not in content
         finally:
             shutil.which, requests.post = ow, op
 
@@ -279,7 +282,9 @@ class TestExperienceSearch:
                                   category=None, language=None, severity=None,
                                   format="table", dry_run=False, verbose=0)
         cmd_experience(args)
-        assert "empty" in capsys.readouterr().out.lower()
+        # 无结果时：table 格式输出人类可读提示；json 格式输出 []（P3）
+        out = capsys.readouterr().out.lower()
+        assert ("no results" in out) or ("empty" in out)
 
     def test_search_keyword(self, temp_project, monkeypatch, capsys):
         monkeypatch.chdir(temp_project)

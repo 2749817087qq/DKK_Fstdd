@@ -37,8 +37,9 @@ def test_get_stdd_source():
     """能找到 STDD 项目根目录（存在 STDD.md）。"""
     source = get_stdd_source()
     assert source.exists()
-    assert (source / "STDD.md").exists()
-    assert (source / "bin" / "stdd").exists()
+    # 改名后：FSTDD.md / bin/fstdd（保留旧名回退断言以兼容）
+    assert (source / "FSTDD.md").exists() or (source / "STDD.md").exists()
+    assert (source / "bin" / "fstdd").exists() or (source / "bin" / "stdd").exists()
 
 
 def test_read_config_from_config_d(tmp_path: Path):

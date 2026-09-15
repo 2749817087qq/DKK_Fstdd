@@ -102,13 +102,15 @@ def cmd_install(args: argparse.Namespace) -> None:
             "is_dir_per_skill": False,
             "skill_filename": None,
         },
-        "cursor": {
-            "source": "STDD.md",
-            "target_base": ".cursor/rules",
-            "description": "Cursor",
-            "single_file": True,
-            "target_name": "stdd.md",
-        },
+          "cursor": {
+              # 改名同步：源文件与目标文件名均改为 FSTDD/fstdd
+              # （此前 source=STDD.md 在改名后找不到源，导致安装直接 sys.exit(1)）
+              "source": "FSTDD.md",
+              "target_base": ".cursor/rules",
+              "description": "Cursor",
+              "single_file": True,
+              "target_name": "fstdd.md",
+          },
         "opencode": {
             "target_base": ".opencode/skills",
             "description": "OpenCode",

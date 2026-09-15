@@ -31,8 +31,10 @@ def test_install_cursor(temp_project: Path, monkeypatch):
     monkeypatch.chdir(temp_project)
     args = argparse.Namespace(platform="cursor", dry_run=False, verbose=0)
     cmd_install(args)
-    target = temp_project / ".cursor" / "rules" / "stdd.md"
-    assert target.exists()
+    # 改名后 Cursor 单文件名为 fstdd.md（旧名 stdd.md 亦接受以兼容）
+    new_target = temp_project / ".cursor" / "rules" / "fstdd.md"
+    old_target = temp_project / ".cursor" / "rules" / "stdd.md"
+    assert new_target.exists() or old_target.exists()
 
 
 def test_install_trae(temp_project: Path, monkeypatch):
