@@ -150,6 +150,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", action="append", help="skill 目录（可多次）")
     ap.add_argument("--fix", action="store_true", help="备份后补齐缺失字段")
+    ap.add_argument("--backup-only", action="store_true",
+                    help="只建立备份快照，不修改任何文件"
+                         "（用于 install 重写 skill 后刷新回滚基准）")
     ap.add_argument("--revert", action="store_true", help="从最新备份恢复")
     args = ap.parse_args()
 
@@ -184,6 +187,18 @@ def main() -> int:
     print()
     print(f"缺失统计: " + ", ".join(f"{k} 缺 {total - have[k]}" for k in REQUIRED))
     print(f"四项齐全: {total - len(todo)}/{total}")
+
+    # --backup-only：安装脚本重写 skill 后，用它刷新回滚基准
+    if args.backup_only:
+        ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        # backup() 期望 (path, missing_keys) 元组列表；此处全部文件都要备份
+        dest = backup([(f, []) for f in files], ts)
+        if dest is None:
+            print("[FAIL] 备份失败（文件数与扫描数不一致）")
+            return 1
+        print(f"\n[备份] 已保存当前状态快照（{len(files)} 个文件）→ {dest}")
+        print("[说明] 未修改任何文件，仅作为 --revert 的回滚基准")
+        return 0
 
     if not todo:
         print("\n[PASS] 全部 skill 元数据齐全")
