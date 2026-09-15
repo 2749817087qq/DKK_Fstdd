@@ -1,0 +1,48 @@
+meta:
+  task_id: "2026-09-15-skill-engineering-standards"
+  change_id: "2026-09-15-skill-engineering-standards"
+  created: "2026-09-15"
+  task_type: code
+  system: "stdd-repo 的 skill 工程规范体系（校验 / 元数据 / 发布清单）"
+
+preconditions:
+  - "当前工作目录为 stdd-repo 仓库根"
+  - "STDD CLI 可用：`C:\\Python311\\python.exe` + DKKstdd/upstream/bin/stdd"
+  - "`--fix` 前确认备份目录可写（~/.workbuddy-ai/backups/）"
+
+steps:
+  - action: "CP-001：在 verify_workbuddy_skills.py 中增加 CLI 端到端冒烟（subprocess 调用 init/new/status）"
+    verify: "grep -c subprocess verify_workbuddy_skills.py；实际执行脚本观察冒烟输出"
+    expect: "subprocess 调用数 > 0，且输出含冒烟通过结果（SC-001）"
+
+  - action: "CP-002：反向验证——临时使 CLI 不可用，再执行校验"
+    verify: "观察退出码"
+    expect: "退出码非 0，输出明确指出冒烟失败（SC-002）"
+
+  - action: "CP-003：实现 check_skill_metadata.py，默认只报告"
+    verify: "记录运行前后全部 40 个 SKILL.md 的哈希"
+    expect: "输出 license 缺 37 / version 缺 23；哈希全部不变（SC-003）"
+
+  - action: "CP-004：执行 --fix（含自动备份）"
+    verify: "检查备份目录文件数 == 待改数；比对正文哈希"
+    expect: "备份完整；四项元数据齐全；正文哈希与备份一致；缺失值为 unknown（SC-004）"
+
+  - action: "CP-005：改造 install 脚本的 frontmatter 生成，重跑安装"
+    verify: "检查 6 个 skill 的 frontmatter 四项"
+    expect: "name/description/version/license 齐全，license 反映真实来源（SC-005）"
+
+  - action: "CP-006：编写 docs/SKILL_RELEASE_CHECKLIST.md"
+    verify: "逐项检查是否含命令与判据"
+    expect: "五项检查各含可执行命令与通过判据（SC-006）"
+
+  - action: "CP-007：真实环境执行改造后的 verify"
+    verify: "观察输出与退出码"
+    expect: "PASS 且退出码 0，输出含冒烟通过（SC-007）"
+
+expected_outcomes:
+  - "verify 具备 CLI 实际执行能力，冒烟失败会 FAIL"
+  - "元数据扫描复现实测结论，默认不改动文件"
+  - "--fix 后全部 40 个 skill 四项齐全，正文零改动，备份可回滚"
+  - "安装器生成的 skill 天生合规"
+  - "发布清单可执行可判据"
+  - "强化后的 verify 在真实环境仍 PASS"

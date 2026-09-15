@@ -9,13 +9,18 @@
 """
 from pathlib import Path
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 
 # 与安装脚本一致：默认自动定位，可用 STDD_SRC / STDD_OUT 覆盖
 SRC = Path(os.environ.get("STDD_SRC", Path(__file__).resolve().parent.parent / "upstream"))
 OUT = Path(os.environ.get("STDD_OUT", Path.home() / ".workbuddy-ai" / "skills"))
 SHARED_ABS = (SRC / ".stdd" / "skills" / "_shared").as_posix()
-CLI_ABS = SRC / "bin" / "stdd"
+# STDD_CLI 用于故障注入测试：指向不可用时校验必须 FAIL，不得静默通过
+CLI_ABS = Path(os.environ.get("STDD_CLI", str(SRC / "bin" / "stdd")))
+PY = os.environ.get("STDD_PY", sys.executable)
 SENTINEL = "STDD_LOCAL_POLICY_NO_UPLOAD_V1"
 
 EXPECTED = [
@@ -26,6 +31,33 @@ EXPECTED = [
     "stdd-deliver",
     "stdd-upgrade",
 ]
+
+
+def smoke_test() -> tuple[bool, str]:
+    """CLI 端到端冒烟：在临时目录实际执行 init / new / status。
+
+    只检查「文件在位」是不够的 —— 文件存在但跑不起来时静态检查照样通过。
+    """
+    if not CLI_ABS.exists():
+        return False, f"CLI 不存在: {CLI_ABS}"
+
+    tmp = Path(tempfile.mkdtemp(prefix="stdd_smoke_"))
+    try:
+        for args in (["init"], ["new", "smoke"], ["status"]):
+            r = subprocess.run(
+                [PY, str(CLI_ABS), *args],
+                cwd=str(tmp), capture_output=True, text=True,
+                encoding="utf-8", errors="replace",
+            )
+            if r.returncode != 0:
+                tail = (r.stderr or r.stdout or "").strip().splitlines()
+                hint = tail[-1] if tail else "无输出"
+                return False, f"`stdd {' '.join(args)}` 退出码 {r.returncode}：{hint}"
+        return True, "init / new / status 均通过"
+    except OSError as e:
+        return False, f"CLI 执行异常（环境问题而非 skill 问题）：{e}"
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def main() -> int:
@@ -71,9 +103,15 @@ def main() -> int:
         if SRC.as_posix() not in text and name != "stdd":
             warns.append(f"{name}: 未发现资源绝对路径（期望含 {SRC.as_posix()}），可能是未经适配的上游原件")
 
+    # 运行时冒烟：确认 CLI 真的能跑，而不只是文件存在
+    smoke_ok, smoke_msg = smoke_test()
+    if not smoke_ok:
+        fails.append(f"CLI 端到端冒烟失败：{smoke_msg}")
+
     print("=" * 60)
     print("STDD 全局 skill 校验")
     print("=" * 60)
+    print(f"  [{'PASS' if smoke_ok else 'FAIL'}] CLI 冒烟：{smoke_msg}")
     for w in warns:
         print(f"  [WARN] {w}")
     if fails:

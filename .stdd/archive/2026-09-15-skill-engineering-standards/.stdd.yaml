@@ -1,0 +1,49 @@
+change_id: 2026-09-15-skill-engineering-standards
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 0
+last_modified: '2026-09-15T10:38:05.307497'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-15T10:38:00'
+    confirmed_by: dialog
+    confirmed_evidence: 用户 Gate 1 选择：确认并以 thorough 模式推进（含 31 个 skill 补全授权）
+    slices_completed:
+      S1:
+        new_tests: 3
+        tc_coverage: TC-SES-001,TC-SES-002,TC-SES-007
+        verified_at: '2026-09-15T10:38:01'
+      S2:
+        new_tests: 3
+        tc_coverage: TC-SES-003,TC-SES-004,TC-SES-005
+        verified_at: '2026-09-15T10:38:01'
+      S3:
+        new_tests: 1
+        tc_coverage: TC-SES-006
+        verified_at: '2026-09-15T10:38:01'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-15T10:37:59'
+    confirmed_by: dialog
+    confirmed_evidence: 用户 Gate 1 选择：确认并以 thorough 模式推进（含 31 个 skill 补全授权）
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-15T10:19:33'
+    confirmed_by: dialog
+    confirmed_evidence: 用户 Gate 1 选择：边界要改——31 个 skill 也补全（允许写入，unknown 优先）
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 7
+  tc_cases: 7
+  test_functions: 7
+version: '3.0'

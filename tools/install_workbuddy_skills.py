@@ -191,7 +191,10 @@ def main() -> int:
             "description: |\n"
             f"  {s['desc']}\n"
             f"  触发词：{s['kw']}\n"
+            'version: "3.0.5"\n'
             'stdd_version: "3.0.5"\n'
+            "license: MIT（上游 STDD leonai42/stdd，版权归杭州大道一以科技有限公司；\n"
+            "  本文件为其在 WorkBuddy 平台的适配版本，含本地安全策略与路径适配）\n"
             "source: https://github.com/leonai42/stdd\n"
             "---\n\n"
         )
