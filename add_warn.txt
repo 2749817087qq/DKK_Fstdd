@@ -1,8 +1,0 @@
-warning: in the working copy of '.claude/settings.local.json', CRLF will be replaced by LF the next time Git touches it
-warning: in the working copy of '.stdd/changes/2026-09-15-crlf-eol-governance/.stdd.yaml', CRLF will be replaced by LF the next time Git touches it
-warning: in the working copy of '.stdd/changes/2026-09-15-crlf-eol-governance/canonical/.canon-index.yaml', CRLF will be replaced by LF the next time Git touches it
-warning: in the working copy of '.stdd/changes/2026-09-15-crlf-eol-governance/canonical/specs/agent/2026-09-15-crlf-eol-governance.yaml', CRLF will be replaced by LF the next time Git touches it
-warning: in the working copy of '.stdd/changes/2026-09-15-crlf-eol-governance/canonical/specs/code/2026-09-15-crlf-eol-governance.yaml', CRLF will be replaced by LF the next time Git touches it
-warning: in the working copy of '.stdd/changes/2026-09-15-crlf-eol-governance/proposal.md', CRLF will be replaced by LF the next time Git touches it
-warning: in the working copy of '.stdd/experiences/.experience-index.yaml', CRLF will be replaced by LF the next time Git touches it
-warning: in the working copy of 'STDD_CONSTITUTION.md', CRLF will be replaced by LF the next time Git touches it
