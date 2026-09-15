@@ -37,32 +37,42 @@ EXTS = {".md", ".py", ".sh", ".ps1", ".yaml", ".yml", ".txt", ".json", ".toml"}
 EXCLUDE_FILES = {"rename_to_fstdd.py", "verify_rename.py"}
 
 # 替换规则 —— **顺序敏感，长串必须在短串之前**。
-# 每条是 (正则模式, 替换值, 标签)。用正则而非字面量，便于给短串加词边界。
+# 每条是 (正则模式, 替换值, 标签)。用正则而非字面量，便于加边界。
+#
+# ⚠️ 左边界 (?<![A-Za-z]) 不可省：
+#   它保证「已经改好的名字」不会被再次匹配。实测缺少它时引擎**非幂等**：
+#     'FSTDD_SRC'        -> 'FFSTDD_SRC'
+#     'fstdd-understand' -> 'ffstdd-understand'
+#   即规则 STDD→FSTDD 会命中自己产物里的 STDD。这与上次失败的成因同类
+#   （规则自匹配），只是从「规则之间」变成了「规则与既有产物之间」。
+# 右边界只在短串规则上需要（见最后一条），长串规则天然不会误伤。
+_L = r"(?<![A-Za-z])"
+
 RULES: list[tuple[str, str, str]] = [
     # 1) skill 名（长串优先）
-    (r"stdd-understand", "fstdd-understand", "skill 名"),
-    (r"stdd-spec", "fstdd-spec", "skill 名"),
-    (r"stdd-build", "fstdd-build", "skill 名"),
-    (r"stdd-deliver", "fstdd-deliver", "skill 名"),
-    (r"stdd-upgrade", "fstdd-upgrade", "skill 名"),
-    (r"stdd-fin", "fstdd-fin", "skill 名"),
-    (r"stdd-slice", "fstdd-slice", "触发词"),
-    (r"stdd-verify", "fstdd-verify", "触发词"),
+    (_L + r"stdd-understand", "fstdd-understand", "skill 名"),
+    (_L + r"stdd-spec", "fstdd-spec", "skill 名"),
+    (_L + r"stdd-build", "fstdd-build", "skill 名"),
+    (_L + r"stdd-deliver", "fstdd-deliver", "skill 名"),
+    (_L + r"stdd-upgrade", "fstdd-upgrade", "skill 名"),
+    (_L + r"stdd-fin", "fstdd-fin", "skill 名"),
+    (_L + r"stdd-slice", "fstdd-slice", "触发词"),
+    (_L + r"stdd-verify", "fstdd-verify", "触发词"),
     # 2) 项目名
     (r"DKKstdd-experiences", "Fstdd-experiences", "仓库名"),
     (r"DKKstdd", "Fstdd", "仓库名"),
     # 3) 环境变量（长串优先于裸 STDD）
-    (r"STDD_LOCAL_POLICY", "FSTDD_LOCAL_POLICY", "哨兵"),
-    (r"STDD_SRC", "FSTDD_SRC", "环境变量"),
-    (r"STDD_OUT", "FSTDD_OUT", "环境变量"),
-    (r"STDD_PY", "FSTDD_PY", "环境变量"),
-    (r"STDD_CLI", "FSTDD_CLI", "环境变量"),
+    (_L + r"STDD_LOCAL_POLICY", "FSTDD_LOCAL_POLICY", "哨兵"),
+    (_L + r"STDD_SRC", "FSTDD_SRC", "环境变量"),
+    (_L + r"STDD_OUT", "FSTDD_OUT", "环境变量"),
+    (_L + r"STDD_PY", "FSTDD_PY", "环境变量"),
+    (_L + r"STDD_CLI", "FSTDD_CLI", "环境变量"),
     # 4) CLI 路径
     (r"bin/stdd", "bin/fstdd", "CLI 入口"),
     (r"bin\\stdd", "bin\\fstdd", "CLI 入口"),
-    # 5) 方法论名（大写，须在环境变量规则之后）
-    (r"STDD", "FSTDD", "方法论名"),
-    # 6) 小写独立标识 —— 词边界保护，且排除已改名的 fstdd 与路径片段
+    # 5) 方法论名（大写，须在环境变量规则之后）—— 加左边界防自匹配
+    (_L + r"STDD", "FSTDD", "方法论名"),
+    # 6) 小写独立标识 —— 左右边界保护，且排除路径片段
     (r"(?<![\w./\\-])stdd(?![\w-])", "fstdd", "独立标识"),
 ]
 

@@ -13,7 +13,7 @@ sanitized: true
 **现象**：首次统计 version 为「17/40 有，缺 23」，check 脚本给出「9/40，缺 31」。
 
 **根因**：首次统计用正则 `^(version|stdd_version):`，把 FSTDD 系列的
-`stdd_version: "3.0.5"` 也算作版本。但那是**上游 FSTDD 的版本号**，
+`stdd_version: "3.0.5"` 也算作版本。但那是**上游 STDD 的版本号**，
 不是 skill 自身版本，混算会得出偏乐观的数字。
 
 **处理**：统一采用严格口径——只认 `version` 字段。修正提案、测试与报告中的

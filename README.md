@@ -28,7 +28,7 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 
 ## 2. 本仓库提供什么
 
-上游 FSTDD 功能完整，但**直接装到 WorkBuddy 上不好用**。本仓库解决的是这段距离：
+上游 STDD 功能完整，但**直接装到 WorkBuddy 上不好用**。本仓库解决的是这段距离：
 
 | 问题 | 解决方式 |
 |------|---------|
@@ -54,7 +54,7 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 ```
 .
 ├── LICENSE                          # 本仓库原创内容的 MIT 许可
-├── UPSTREAM-LICENSE.txt             # 上游 FSTDD 的 MIT 许可原文（合规保留）
+├── UPSTREAM-LICENSE.txt             # 上游 STDD 的 MIT 许可原文（合规保留）
 ├── NOTICE.md                        # 版权与来源声明（重要，对外分发前请读）
 ├── README.md
 ├── tools/
@@ -64,7 +64,7 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 │   └── WORKBUDDY_INSTALL_NOTES.md   # 安装、适配、安全策略、实测验证记录
 ├── skills/
 │   └── fstdd-fin/SKILL.md            # 金融系统版 FSTDD（原创重构）
-└── upstream/                        # 上游 FSTDD V3.0.5 代码（vendor，MIT）
+└── upstream/                        # 上游 STDD V3.0.5 代码（vendor，MIT）
     ├── bin/fstdd                     # CLI 入口
     ├── fstdd/cli/                    # 39 个命令模块
     └── .fstdd/                       # 模板、配置、知识库骨架
@@ -83,7 +83,7 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
   python -c "import yaml, jinja2; print('依赖 OK')"
   ```
 
-- 已获取上游 FSTDD 源码
+- 已获取上游 STDD 源码
 
 ### 安装
 
@@ -342,7 +342,7 @@ python tools/share_experience.py --export --from-archive --publish
 | 内容 | 许可 |
 |------|------|
 | 本仓库原创内容（脚本、文档、`fstdd-fin`） | **MIT**，见 [`LICENSE`](./LICENSE) |
-| 上游 FSTDD V3.0.5 | **MIT**，版权归 杭州大道一以科技有限公司，见 [`UPSTREAM-LICENSE.txt`](./UPSTREAM-LICENSE.txt) |
+| 上游 STDD V3.0.5 | **MIT**，版权归 杭州大道一以科技有限公司，见 [`UPSTREAM-LICENSE.txt`](./UPSTREAM-LICENSE.txt) |
 | `fintech-engineer`（ClawHub，v1.0.3） | **无开源许可** — 本仓库**不含其原文**，仅参考领域分类视角并以原创形式重组，见 `NOTICE.md` |
 | `wb-finance-skill`（WorkBuddy 内置） | 仅协作引用其取数规范，不含其内容 |
 

@@ -148,6 +148,12 @@ def tc_004() -> tuple[bool, str]:
     inst = REPO / "tools" / "install_workbuddy_skills.py"
     if not inst.exists():
         return False, "install 脚本不存在"
+    # 隔离性必须是**可判定的**：记录真实目录测试前的状态，测试后比对。
+    # （上一版这里写的是 `if leaked and ...: pass`，恒真且不做任何检查 —— 空断言。）
+    real = Path.home() / ".workbuddy-ai" / "skills"
+    before = ({d.name: d.stat().st_mtime_ns for d in real.iterdir() if d.is_dir()}
+              if real.exists() else {})
+
     with tempfile.TemporaryDirectory(prefix="rename_inst_") as tmp:
         env = dict(os.environ, FSTDD_OUT=tmp, FSTDD_PY=PY)
         r = _run([PY, str(inst)], env=env)
@@ -159,13 +165,15 @@ def tc_004() -> tuple[bool, str]:
         missing = want - set(skills)
         if missing:
             return False, f"缺少 skill：{', '.join(sorted(missing))}（实际 {len(skills)} 个）"
-        # 隔离性：临时目录外不得有新建的 fstdd-* skill
-        real = Path.home() / ".workbuddy-ai" / "skills"
-        leaked = [d.name for d in real.iterdir() if d.is_dir() and d.name.startswith("fstdd")] \
-            if real.exists() else []
-        if leaked and os.environ.get("FSTDD_OUT") != str(tmp):
-            pass  # 真实目录已有安装属正常（本机场景），仅提示
-    return True, f"隔离生成 {len(skills)} 个 skill，命名与预期一致"
+
+    # 真断言：真实目录在隔离测试期间不得被写入
+    after = ({d.name: d.stat().st_mtime_ns for d in real.iterdir() if d.is_dir()}
+             if real.exists() else {})
+    touched = [k for k in set(before) | set(after)
+               if before.get(k) != after.get(k)]
+    if touched:
+        return False, f"隔离失效：真实目录被写入 {touched[:3]}"
+    return True, f"隔离生成 {len(skills)} 个 skill，且真实目录未被写入"
 
 
 # ---------- TC-RENAME-005：数据目录迁移 ----------
@@ -207,7 +215,7 @@ def tc_006() -> tuple[bool, str]:
         if not ok:
             return False, f"{name} 未通过"
     # 安装位置 verify（若存在）
-    inst_verify = Path.home() / ".workbuddy-ai" / "DKKstdd" / "tools" / "verify_workbuddy_skills.py"
+    inst_verify = Path.home() / ".workbuddy-ai" / "Fstdd" / "tools" / "verify_workbuddy_skills.py"
     if inst_verify.exists():
         r = _run([PY, str(inst_verify)], env=dict(os.environ, FSTDD_PY=PY))
         ok = r.returncode == 0 and "PASS" in (r.stdout or "")
@@ -217,10 +225,71 @@ def tc_006() -> tuple[bool, str]:
     return True, "；".join(results)
 
 
+# ---------- TC-RENAME-007：状态文件名与 CLI 期望一致 ----------
+
+def tc_007() -> tuple[bool, str]:
+    """change 的状态文件名必须是 CLI 期望的名字。
+
+    Part C 评审时发现的盲区：改名只处理了「内容」，漏了「文件名」。
+    CLI 用 `<change>/.fstdd.yaml` 判断目录是否为有效 change，
+    文件名不符时 CLI 找不到任何 change —— 而内容替换全绿，断言毫无察觉。
+    """
+    expected = "." + "fstdd" + ".yaml"
+    stale = "." + "st" + "dd" + ".yaml"
+
+    leftover = [p for p in REPO.rglob(stale)
+                if ".git" not in p.parts and "backup" not in p.parts]
+    if leftover:
+        return False, (f"仍有 {len(leftover)} 个旧名状态文件："
+                       f"{leftover[0].relative_to(REPO)}")
+
+    # 当前活跃 change 的状态文件须存在且能被 CLI 识别
+    changes_dir = REPO / ".fstdd" / "changes"
+    if not changes_dir.exists():
+        return False, ".fstdd/changes/ 不存在"
+    active = [d for d in changes_dir.iterdir()
+              if d.is_dir() and (d / expected).exists()]
+    if not active:
+        return False, f"没有任何 change 含 {expected}（CLI 将找不到 change）"
+
+    r = _run([PY, str(CLI), "status"], cwd=str(REPO))
+    if r.returncode != 0 or "Change" not in (r.stdout or ""):
+        return False, "CLI status 无法识别当前 change"
+    return True, f"{len(active)} 个 change 状态文件命名正确，CLI 可识别"
+
+
+# ---------- TC-RENAME-008：文件名本身也必须改名 ----------
+
+def tc_008() -> tuple[bool, str]:
+    """扫描**文件名**（不只是内容）中的旧标识。
+
+    盲区来源：所有断言都只读文件内容，从不看文件名。
+    结果 `STDD.md`、`STDD_CONSTITUTION.md`、`.stdd.yaml` 这类
+    「文件名旧、内容新」的不一致完全逃过检测。
+    """
+    old = "st" + "dd"
+    skip_dirs = {"upstream", ".git", "backups", "__pycache__", "archive"}
+    hits = []
+    for p in REPO.rglob("*"):
+        if not p.is_file():
+            continue
+        rel = p.relative_to(REPO)
+        if any(part in skip_dirs for part in rel.parts):
+            continue
+        # 文件名（不含扩展名）里出现旧标识
+        stem = p.stem.lower()
+        if old in stem and "fstdd" not in stem:
+            hits.append(str(rel))
+    if hits:
+        return False, f"文件名仍含旧标识（{len(hits)} 个）：{', '.join(sorted(hits)[:5])}"
+    return True, "文件名均已更新"
+
+
 SLICES = {
     "S1": [("TC-RENAME-001", tc_001), ("TC-RENAME-002", tc_002)],
     "S2": [("TC-RENAME-003", tc_003), ("TC-RENAME-004", tc_004)],
-    "S3": [("TC-RENAME-005", tc_005), ("TC-RENAME-006", tc_006)],
+    "S3": [("TC-RENAME-005", tc_005), ("TC-RENAME-006", tc_006),
+           ("TC-RENAME-007", tc_007), ("TC-RENAME-008", tc_008)],
 }
 
 
