@@ -25,6 +25,11 @@ DIRS = [
     ".fstdd/changes",
     ".fstdd/specs",
     ".fstdd/archive",
+    # 借鉴 Spec Kit 分类：项目级脚本 + 记忆/宪法集中，使 .fstdd/ 自包含
+    ".fstdd/scripts",
+    ".fstdd/scripts/bash",
+    ".fstdd/scripts/powershell",
+    ".fstdd/memory",
 ]
 
 FILES_TO_COPY = [
@@ -214,7 +219,7 @@ def _post_init_constitution(project_root: Path) -> None:
     const_path = project_root / "FSTDD_CONSTITUTION.md"
     if const_path.exists():
         return  # don't overwrite existing
-    content = """# STDD 流程强制契约 / Process Constitution
+    content = """# FSTDD 流程强制契约 / Process Constitution
 
 > V3.0.1 | 本项目启用 STDD 流程管控。以下规则**不可协商、不可跳过**。
 > V3.0.1 | This project enforces STDD process control. The following rules are **non-negotiable**.
@@ -248,7 +253,9 @@ def _post_init_constitution(project_root: Path) -> None:
 
 ### 6. 经验闭环
 - Build 阶段发现的失败模式自动记录到 `.fstdd/experiences/`
-- Phase 4 (Deliver) 自动上传经验到社区 + 同步知识图谱
+- **经验数据不外发**：上传第三方社区/服务器的代码通道已永久移除
+- 需要回传时显式执行 python tools/share_experience.py --export --publish
+  （目标为本项目自有仓库，强制脱敏）
 - 每次 Phase 3 (Build) 开始前加载经验库预防已知错误
 
 ## 🔧 常用命令
@@ -262,7 +269,18 @@ def _post_init_constitution(project_root: Path) -> None:
 | `stdd guard status` | 查看 Guard 运行状态 |
 """
     const_path.write_text(content, encoding="utf-8")
+
+    # 同时写入骨架内，使 .fstdd/ 自包含（借鉴 Spec Kit 的 memory/ 分类）
+    mem_dir = project_root / ".fstdd" / "memory"
+    mem_dir.mkdir(parents=True, exist_ok=True)
+    (mem_dir / "FSTDD_CONSTITUTION.md").write_text(content, encoding="utf-8")
     print("  [FSTDD] FSTDD_CONSTITUTION.md 已生成（强制性流程契约）")
+    scripts_dir = project_root / ".fstdd" / "scripts"
+    (scripts_dir / "README.md").write_text(
+        "# 项目级脚本 / Project Scripts\n\n"
+        "借鉴 Spec Kit 的分类：本项目自带的脚本目录。\n"
+        "（FSTDD 的工具脚本位于仓库 tools/，此处供项目级脚本使用）\n",
+        encoding="utf-8")
 
 
 def _post_init_self_check(project_root: Path) -> None:
