@@ -27,8 +27,12 @@ MIXED_FILES = [
     "upstream/.gitignore",
 ]
 BASELINE_WARN_LINES = 640  # 无规则时实测告警行数（对照基准，随文件数浮动）
-# C2 会实质性修改 README.md，其 diff 属预期业务变更，不计入行尾治理的额外变更
-ALLOWED_DIFF = {"README.md"}
+# 本变更有意修改的文件：其 diff 属预期业务变更，不计入「行尾治理引入的额外变更」。
+# 新增白名单项时必须说明原因，避免白名单演变为掩盖问题的黑洞。
+ALLOWED_DIFF = {
+    "README.md",            # C2：补充 EOL 治理说明
+    "tools/verify_eol.py",  # C1：实现 / 迭代验证脚本本身
+}
 
 
 def _git(repo: Path, *args: str, capture: bool = True) -> subprocess.CompletedProcess:
@@ -175,13 +179,46 @@ CASES = [
 ]
 
 
+def find_mixed(repo: Path) -> list[str]:
+    """返回索引为 LF、工作区为 CRLF 的混合态文件清单。"""
+    r = _git(repo, "ls-files", "--eol")
+    return [l.split("\t")[-1] for l in r.stdout.splitlines()
+            if "i/lf" in l and "w/crlf" in l and l.strip()]
+
+
+def normalize(repo: Path, files: list[str]) -> int:
+    """把混合态文件的工作区行尾归一为 LF。
+
+    STDD CLI（init / new / canon generate / archive）生成的文件为 CRLF，
+    每次执行都会重新引入混合态，因此需要可重复的归一能力，而非一次性手改。
+    """
+    n = 0
+    for rel in files:
+        p = repo / rel
+        if not p.exists():
+            continue
+        data = p.read_bytes()
+        if b"\r\n" not in data:
+            continue
+        p.write_bytes(data.replace(b"\r\n", b"\n"))
+        n += 1
+    return n
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo", default=".", help="仓库根路径")
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--fix", action="store_true",
+                    help="先归一混合态文件的行尾，再执行检查")
     args = ap.parse_args()
 
     repo = Path(args.repo).resolve()
+
+    if args.fix:
+        mixed = find_mixed(repo)
+        n = normalize(repo, mixed)
+        print(f"[FIX] 已归一 {n} 个混合态文件（共扫描到 {len(mixed)} 个）")
     results = []
     for tc_id, title, fn in CASES:
         try:

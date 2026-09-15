@@ -231,17 +231,29 @@ python tools/verify_workbuddy_skills.py   # FAIL 时禁止继续 DELIVER 相关�
 **批量 add 时的建议做法**：
 
 ```bash
-# 1) 全库扫描，用数据确认影响面，而不是假定
-git ls-files --eol | grep 'i/lf' | grep 'w/crlf'
+# 一键自愈 + 校验（推荐）：先归一混合态文件，再跑 7 个用例
+python tools/verify_eol.py --fix
 
-# 2) 对扫描出的混合态文件，删掉后按规则重新检出（交给 Git 转换，不要手写脚本）
-rm -f <文件> && git checkout -- <文件>
-
-# 3) 校验（本仓库已内置该脚本，覆盖 7 个用例）
-python tools/verify_eol.py --repo .
+# 只校验不自愈
+python tools/verify_eol.py
 ```
 
 脚本退出码非 0 表示有未通过的用例，输出中 `[FAIL]` 行会给出具体原因。
+`--fix` 幂等，可重复执行。
+
+**注意：这不是一次性问题**。STDD CLI（`init` / `new` / `canon generate` / `archive`）
+生成的文件是 CRLF 行尾，每次执行后都会重新引入混合态。因此建议把
+`verify_eol.py --fix` 作为跑完 CLI 之后的常规动作，或在提交前执行一次。
+
+若需手工处理单个文件：
+
+```bash
+# 全库扫描，用数据确认影响面，而不是假定
+git ls-files --eol | grep 'i/lf' | grep 'w/crlf'
+
+# 对已入库文件，删掉后按规则重新检出（交给 Git 转换，不要手写脚本）
+rm -f <文件> && git checkout -- <文件>
+```
 
 ---
 

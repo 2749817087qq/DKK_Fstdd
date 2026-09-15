@@ -92,15 +92,41 @@ TC-EOL-004 / 005 / 006 在 RED 阶段即为 PASS，符合预期：这三条是**
 差异来自仓库文件数随本变更（新增 `.gitattributes`、`tools/verify_eol.py`）而变动。
 640 作为基准量级仍成立，脚本中已注明「随文件数浮动」，不做硬断言。
 
-### 5.3 上游工具限制（未解决，不阻断）
+### 5.3 CLI 生成物持续引入 CRLF（根因，已提供自愈手段）
 
-`stdd canon generate --type spec` 执行后 `specs/` 目录仍为空，未产出 `spec.md`
-Human View。Canonical YAML 为 V2.9.2 的 AI 主读文档，spec.md 属可选产出，故不阻断。
-建议后续向上游反馈。
+**现象**：`stdd archive` 之后重跑验证，TC-EOL-003 由 PASS 退化为 FAIL，
+出现 4 个新的混合态文件：
+
+```
+.stdd/archive/2026-09-15-crlf-eol-governance/.stdd.yaml
+.stdd/archive/2026-09-15-crlf-eol-governance/proposal.md
+.stdd/archive/2026-09-15-crlf-eol-governance/specs/eol-governance/spec.md
+.stdd/specs/eol-governance/spec.md
+```
+
+**根因**：STDD CLI（`init` / `new` / `canon generate` / `archive`）生成的文件
+**使用 CRLF 行尾**。因此 EOL 治理不是「加一次规则就一劳永逸」，而是每次执行 CLI
+之后都可能重新引入混合态。这是原提案未预见到的持续性问题。
+
+**处理**：为 `tools/verify_eol.py` 增加 `--fix` 模式，扫描混合态文件并将其工作区
+行尾归一为 LF。实测幂等：第二次执行「归一 0 个」且仍为 7/7。
+
+**结论**：`.gitattributes` 解决的是**入库与检出**的行尾一致性；CLI 生成物的行尾
+属于工具侧行为，需靠 `--fix` 周期性自愈，或在未来向上游反馈。
+
+### 5.4 上游工具限制（已澄清，非缺陷）
+
+`canon generate --type spec` 单独执行时 `specs/` 为空。但在 Gate 2 确认后，
+CLI 自动补出了 `specs/eol-governance/spec.md`。原因是 Human View 渲染依赖
+阶段状态推进，而非该命令本身失效——**手动调用时机不对，不是工具 bug**。
+此前记录为「工具限制」属误判，已更正。
 
 ## 六、遗留事项
 
-1. `tools/verify_eol.py` 目前需手动执行，未接入 CI 或 `/stdd-upgrade` 后的自动校验。
-2. 若后续引入必须 CRLF 的 Windows 批处理，需在 `.gitattributes` 追加
-   `*.bat text eol=crlf`，当前仓库无此类文件。
-3. 上游 `canon generate --type spec` 的 Human View 缺失问题待跟踪。
+1. **CLI 生成物行尾**：每次执行 `stdd` CLI 后建议运行
+   `python tools/verify_eol.py --fix` 自愈。根治需上游改用 LF 写文件。
+2. **未接入自动校验**：脚本需手动执行，未接入 CI，也未挂到 `/stdd-upgrade` 之后。
+3. **Windows 批处理**：若后续引入必须 CRLF 的 `.bat`/`.cmd`，需在 `.gitattributes`
+   追加 `*.bat text eol=crlf`；当前仓库无此类文件。
+4. **白名单维护**：`ALLOWED_DIFF` 目前含 `README.md` 与 `tools/verify_eol.py`，
+   后续修改其他文件时需同步评估，避免白名单掩盖真实问题。
