@@ -1,0 +1,22 @@
+change_id: payment
+current_phase: verify
+mode: thorough
+phases:
+  build:
+    slices_completed:
+      '1':
+        new_tests: 5
+        status: done
+        tc_coverage: 5/5
+        verified_at: '2026-07-09'
+    status: completed
+  slice:
+    status: completed
+  spec:
+    confirmed_at: '2026-07-09'
+    status: completed
+  understand:
+    confirmed_at: '2026-07-09'
+    status: completed
+  verify:
+    status: in_progress

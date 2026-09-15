@@ -1,0 +1,11 @@
+meta:
+  capability: api-rate-limit
+requirements:
+- id: REQ-001
+  scenarios:
+  - given: IP 99
+    id: SC-001
+    then: SHALL return 200
+  - given: IP 100
+    id: SC-002
+    then: SHALL return 429

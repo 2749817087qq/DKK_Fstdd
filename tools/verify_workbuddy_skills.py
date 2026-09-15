@@ -8,10 +8,12 @@
     "C:\\Python311\\python.exe" "C:/Users/Administrator/.workbuddy-ai/stdd/tools/verify_workbuddy_skills.py"
 """
 from pathlib import Path
+import os
 import sys
 
-SRC = Path(r"C:\Users\Administrator\.workbuddy-ai\stdd")
-OUT = Path(r"C:\Users\Administrator\.workbuddy-ai\skills")
+# 与安装脚本一致：默认自动定位，可用 STDD_SRC / STDD_OUT 覆盖
+SRC = Path(os.environ.get("STDD_SRC", Path(__file__).resolve().parent.parent / "upstream"))
+OUT = Path(os.environ.get("STDD_OUT", Path.home() / ".workbuddy-ai" / "skills"))
 SHARED_ABS = (SRC / ".stdd" / "skills" / "_shared").as_posix()
 CLI_ABS = SRC / "bin" / "stdd"
 SENTINEL = "STDD_LOCAL_POLICY_NO_UPLOAD_V1"
@@ -36,7 +38,10 @@ def main() -> int:
         import yaml  # noqa: F401
         import jinja2  # noqa: F401
     except ModuleNotFoundError as e:
-        fails.append(f"当前解释器缺少依赖 {e.name}，请改用 C:\\Python311\\python.exe")
+        fails.append(
+            f"当前解释器缺少依赖 {e.name}。请 pip install pyyaml jinja2，"
+            f"或用 STDD_PY 指定已装依赖的解释器"
+        )
 
     for name in EXPECTED:
         f = OUT / name / "SKILL.md"
@@ -63,8 +68,8 @@ def main() -> int:
         if ".stdd/skills/_shared/" in text and SHARED_ABS not in text:
             fails.append(f"{name}: 残留未替换的相对路径 .stdd/skills/_shared/")
 
-        if "C:/Users/Administrator/.workbuddy-ai/stdd" not in text and name != "stdd":
-            warns.append(f"{name}: 未发现本机绝对资源路径，可能是未经适配的上游原件")
+        if SRC.as_posix() not in text and name != "stdd":
+            warns.append(f"{name}: 未发现资源绝对路径（期望含 {SRC.as_posix()}），可能是未经适配的上游原件")
 
     print("=" * 60)
     print("STDD 全局 skill 校验")

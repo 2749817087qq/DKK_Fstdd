@@ -1,0 +1,15 @@
+checks:
+  agent_spec: 3
+  bash_in_change: 2
+  cp_checkpoints: 3
+  cross_check: 2
+level: 4
+mission: CRM发票->财务入账->通知客户。三系统Agent协调。
+mode: standard
+name: agent
+task_type: agent
+tasks:
+- agent_spec.yaml含3个CP
+- 'cross_check: CRM客户名==财务科目所有者'
+- Bash/WebFetch在active change内
+- stdd agent verify验证CP

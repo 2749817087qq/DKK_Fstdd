@@ -1,0 +1,10 @@
+batch_id: '2026-06-11'
+batch_type: monthly
+closed_at: '2026-06-11T18:20:22.455979'
+created_at: '2026-06-11T18:15:30'
+description: 更新官网到V2.9并追加白皮书下载功能
+items:
+- added_at: '2026-06-11T18:20:04.034328'
+  description: 更新官网页面：V2.5→V2.9全面升级，新增白皮书下载功能、三档执行模式、智能门禁等V2.9特性展示
+max_items: 5
+mode: batch

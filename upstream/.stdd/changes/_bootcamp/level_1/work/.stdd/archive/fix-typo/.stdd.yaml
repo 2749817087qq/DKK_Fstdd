@@ -1,0 +1,30 @@
+change_id: fix-typo
+change_name: fix-typo
+current_phase: deliver
+last_modified: '2026-07-09T00:42:02.794206'
+mode: lightweight
+phases:
+  build:
+    confirmed_at: '2026-07-09T00:41:51.481047'
+    slices_completed:
+      '1':
+        new_tests: 0
+        status: done
+        tc_coverage: 1/1
+        verified_at: '2026-07-09'
+    status: completed
+  deliver:
+    status: in_progress
+  slice:
+    confirmed_at: '2026-07-09T00:41:34.344246'
+    status: completed
+  spec:
+    confirmed_at: '2026-07-09T00:41:33'
+    status: completed
+  understand:
+    confirmed_at: '2026-07-09T00:41:22'
+    status: completed
+  verify:
+    confirmed_at: '2026-07-09T00:42:02'
+    status: completed
+status: archived

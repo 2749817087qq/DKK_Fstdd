@@ -1,0 +1,20 @@
+checks:
+  canonical_yaml: 1
+  design_md: 2
+  gate2: 1
+  mode_selection: 1
+  slice_analysis: 1
+  specs_dir: 2
+  test_plan: 2
+level: 2
+mission: 'API限流: 单IP每分钟100次，超限429'
+mode: standard
+name: standard
+tasks:
+- design.md
+- specs/ + GIVEN/WHEN/THEN/SHALL
+- test-plan.md + TC-ID
+- proposal.yaml + spec.yaml
+- slices.md + tasks.md
+- Step 8 模式选择
+- Gate 2确认

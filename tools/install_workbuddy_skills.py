@@ -1,16 +1,32 @@
 # -*- coding: utf-8 -*-
 """把 STDD (leonai42/stdd V3.0.5) 的 skill 层安装为 WorkBuddy 全局 skill。"""
 from pathlib import Path
+import os
 import re
 import sys
 
-SRC = Path(r"C:\Users\Administrator\.workbuddy-ai\stdd")
-OUT = Path(r"C:\Users\Administrator\.workbuddy-ai\skills")
+# 上游代码：随本仓库 vendor 在 upstream/ 下，故默认按脚本位置自动定位。
+# 也可用环境变量覆盖：STDD_SRC / STDD_OUT / STDD_PY
+SRC = Path(os.environ.get("STDD_SRC", Path(__file__).resolve().parent.parent / "upstream"))
+OUT = Path(os.environ.get("STDD_OUT", Path.home() / ".workbuddy-ai" / "skills"))
 SHARED_ABS = (SRC / ".stdd" / "skills" / "_shared").as_posix()
 CLI_ABS = (SRC / "bin" / "stdd").as_posix()
-# 系统 Python 3.11 已自带 PyYAML 6.0.2 + Jinja2 3.1.6（STDD 运行时依赖），managed 3.13 缺 PyYAML
-PY = r"C:\Python311\python.exe"
+PY = os.environ.get("STDD_PY", sys.executable)
 PY_CMD = f'"{PY}" "{CLI_ABS}"'
+
+
+def _check_runtime_deps() -> None:
+    """STDD CLI 需要 PyYAML 与 Jinja2，缺了会在 init 时才炸，提前提醒。"""
+    missing = []
+    for mod in ("yaml", "jinja2"):
+        try:
+            __import__(mod)
+        except ModuleNotFoundError:
+            missing.append(mod)
+    if missing:
+        print(f"[WARN] 解释器 {PY} 缺少依赖: {', '.join(missing)}")
+        print(f"       请执行: \"{PY}\" -m pip install pyyaml jinja2")
+        print("       或设置 STDD_PY 指向已装依赖的解释器")
 
 SKILLS = [
     dict(
@@ -132,6 +148,12 @@ def apply_deliver_policy(body: str, errors: list) -> str:
 
 
 def main() -> int:
+    _check_runtime_deps()
+    if not SRC.exists():
+        print(f"[FAIL] 未找到上游代码: {SRC}")
+        print("       请确认 upstream/ 存在，或用 STDD_SRC 指定路径")
+        return 1
+
     src_skills = SRC / ".stdd" / "skills"
     installed = []
     errors = []

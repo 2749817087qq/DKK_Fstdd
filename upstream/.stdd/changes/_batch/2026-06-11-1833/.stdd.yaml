@@ -1,0 +1,10 @@
+batch_id: 2026-06-11-1833
+batch_type: monthly
+closed_at: '2026-06-11T18:35:01.934855'
+created_at: '2026-06-11T18:33:49'
+description: 修复wp_note JS引号bug+更新CN文本
+items:
+- added_at: '2026-06-11T18:35:01.642968'
+  description: 修复wp_note中内层双引号截断JS字符串导致中英文切换失效
+max_items: 5
+mode: batch

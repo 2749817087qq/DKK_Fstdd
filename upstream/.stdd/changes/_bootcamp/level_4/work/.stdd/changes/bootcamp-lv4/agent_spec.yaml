@@ -1,0 +1,6 @@
+agent_task_id: task-001
+checkpoints:
+- assertions:
+  - target: crm.balance
+    value: 8000
+  id: CP-1

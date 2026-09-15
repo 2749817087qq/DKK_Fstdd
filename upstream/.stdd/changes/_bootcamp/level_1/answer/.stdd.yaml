@@ -1,0 +1,24 @@
+change_id: fix-typo
+current_phase: deliver
+mode: lightweight
+phases:
+  build:
+    slices_completed:
+      '1':
+        new_tests: 0
+        status: done
+        tc_coverage: 1/1
+        verified_at: '2026-07-09'
+    status: completed
+  deliver:
+    status: completed
+  slice:
+    status: completed
+  spec:
+    status: completed
+  understand:
+    confirmed_at: '2026-07-09'
+    status: completed
+  verify:
+    confirmed_at: '2026-07-09'
+    status: completed

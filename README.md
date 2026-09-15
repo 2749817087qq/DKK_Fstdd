@@ -43,9 +43,9 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 
 | 内容 | 在哪 |
 |------|------|
-| 方法论、模板、CLI、`.stdd/` 骨架 | **上游仓库**（需自行 clone） |
-| 适配层脚本、安装文档、`stdd-fin` | **本仓库** |
-| 生成的 6 个 skill（`stdd`、`stdd-understand/spec/build/deliver/upgrade`） | **运行时生成物**，不在本仓库 |
+| 方法论、模板、CLI、`.stdd/` 骨架 | `upstream/`（vendor 自上游，MIT 许可与版权原样保留） |
+| 适配层脚本、安装文档、`stdd-fin` | 本仓库 `tools/` `docs/` `skills/` |
+| 生成的 6 个 skill（`stdd`、`stdd-understand/spec/build/deliver/upgrade`） | **运行时生成物**，由安装脚本产生 |
 
 ---
 
@@ -62,8 +62,12 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 │   └── verify_workbuddy_skills.py   # 校验哨兵与路径适配是否仍在位
 ├── docs/
 │   └── WORKBUDDY_INSTALL_NOTES.md   # 安装、适配、安全策略、实测验证记录
-└── skills/
-    └── stdd-fin/SKILL.md            # 金融系统版 STDD（原创重构）
+├── skills/
+│   └── stdd-fin/SKILL.md            # 金融系统版 STDD（原创重构）
+└── upstream/                        # 上游 STDD V3.0.5 代码（vendor，MIT）
+    ├── bin/stdd                     # CLI 入口
+    ├── stdd/cli/                    # 39 个命令模块
+    └── .stdd/                       # 模板、配置、知识库骨架
 ```
 
 ---
@@ -84,29 +88,32 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 ### 安装
 
 ```bash
-# 1. 克隆上游（本仓库不含上游代码）
-git clone https://github.com/leonai42/stdd.git
-
-# 2. 克隆本仓库
+# 只需克隆本仓库 —— 上游代码已 vendor 在 upstream/ 下，不必单独获取
 git clone https://github.com/2749817087qq/DKKstdd.git
-```
+cd DKKstdd
 
-编辑 `DKKstdd/tools/install_workbuddy_skills.py` 顶部的三个常量，**改成你本机的实际路径**：
-
-```python
-SRC = Path(r"C:\Users\Administrator\.workbuddy-ai\stdd")   # 步骤 1 克隆的位置
-OUT = Path(r"C:\Users\Administrator\.workbuddy-ai\skills")  # WorkBuddy 用户级 skill 目录
-PY  = r"C:\Python311\python.exe"                            # 具备 PyYAML/Jinja2 的解释器
-```
-
-然后运行：
-
-```bash
-# 3. 生成全局 skill
+# 生成全局 skill
 python tools/install_workbuddy_skills.py
 
-# 4. 校验（输出 [PASS] 才算装好）
+# 校验（输出 [PASS] 才算装好）
 python tools/verify_workbuddy_skills.py
+```
+
+### 路径说明
+
+脚本的三个路径按以下顺序确定，一般**无需手工修改**：
+
+| 路径 | 默认值 | 覆盖方式 |
+|------|--------|---------|
+| `SRC` 上游代码 | 脚本同级 `upstream/` | 环境变量 `STDD_SRC` |
+| `OUT` skill 目录 | `~/.workbuddy-ai/skills` | 环境变量 `STDD_OUT` |
+| `PY` 解释器 | 当前 `sys.executable` | 环境变量 `STDD_PY` |
+
+若当前解释器缺 PyYAML / Jinja2，脚本会打印 `[WARN]` 并提示安装命令；
+也可直接指定已装依赖的解释器：
+
+```bash
+STDD_PY=/path/to/python tools/install_workbuddy_skills.py
 ```
 
 > 安装脚本是**幂等**的，重复运行不会叠加错乱，可放心重跑。

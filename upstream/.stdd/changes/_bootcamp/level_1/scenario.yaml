@@ -1,0 +1,20 @@
+checks:
+  archive_cli: 2
+  gate_cli: 3
+  no_manual_yaml: 2
+  phase_cli: 3
+forbidden:
+- 手动编辑 .stdd.yaml
+- 跳过 Gate
+- 直接 commit
+level: 1
+mission: '修复 README.md 拼写错误: Recieve -> Receive'
+mode: lightweight
+name: lightweight
+tasks:
+- 创建 Change
+- 用 CLI 推进 Phase
+- Gate 1 CLI确认
+- 修改文件
+- Gate 3 CLI确认
+- archive CLI归档

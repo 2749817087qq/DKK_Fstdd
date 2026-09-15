@@ -1,0 +1,14 @@
+agent_task_id: task-001
+checkpoints:
+- assertions:
+  - operator: equals
+    target: crm.balance
+    value: 8000
+  description: CRM余额更新
+  id: CP-1
+- cross_check:
+    operator: equals
+    source: crm.customer_name
+    target: finance.account_owner
+  description: 财务入账
+  id: CP-2
