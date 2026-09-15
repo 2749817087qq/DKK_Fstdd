@@ -26,6 +26,14 @@ phases:
         new_tests: 2
         verified_at: "2026-09-15T23:12:00"
         note: "包改名 upstream/stdd→fstdd；39 文件 273 处 import；CLI 入口改名；TC-003/004 通过"
+      "S3":
+        status: done
+        tc_coverage: "2/2"
+        new_tests: 2
+        verified_at: "2026-09-15T23:29:00"
+        note: "数据目录迁移（根 .stdd + upstream/.stdd）；2205 处引用；安装位置 DKKstdd→Fstdd；skill 重装；TC-005/006 通过"
+    all_slices_verified_at: "2026-09-15T23:29:00"
+    total_tc_coverage: "6/6"
   deliver:
     status: pending
   spec:
