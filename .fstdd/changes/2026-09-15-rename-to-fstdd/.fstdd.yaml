@@ -28,12 +28,20 @@ phases:
         note: "包改名 upstream/stdd→fstdd；39 文件 273 处 import；CLI 入口改名；TC-003/004 通过"
       "S3":
         status: done
-        tc_coverage: "2/2"
-        new_tests: 2
+        tc_coverage: "4/4"
+        new_tests: 4
         verified_at: "2026-09-15T23:29:00"
-        note: "数据目录迁移（根 .stdd + upstream/.stdd）；2205 处引用；安装位置 DKKstdd→Fstdd；skill 重装；TC-005/006 通过"
-    all_slices_verified_at: "2026-09-15T23:29:00"
-    total_tc_coverage: "6/6"
+        note: "数据目录迁移（根 .stdd + upstream/.stdd）；2205 处引用；安装位置 DKKstdd→Fstdd；skill 重装；Part C 补齐 TC-007/008；TC-005~008 通过"
+    all_slices_verified_at: "2026-09-15T23:45:00"
+    total_tc_coverage: "8/8"
+    quality_checks:
+      c1_parallel_review: "3 代理完成，5 类真实问题 + 2 条误报"
+      c2_full_quality: "三项校验全绿"
+      c3_diff_review: "781 文件，无调试残留"
+      c4_failure_modes: "8 条经验命中 6 条，全部处理"
+      c5_experience_record: "新增 EXP-B1/B2"
+      c6_design_adjustments: "4 项偏离已汇总"
+      c7_test_report: "已生成"
   deliver:
     status: pending
   spec:
