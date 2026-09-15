@@ -36,7 +36,21 @@ def backup_root() -> Path:
 PY = sys.executable
 # 源码在 stdd-repo（开发源），但实际运行的是安装位置 Fstdd。
 # 在 stdd-repo 里直接跑 verify 会因 FSTDD_SRC 指向副本的 upstream 而误判。
-INSTALLED_TOOLS = Path.home() / ".workbuddy-ai" / "Fstdd" / "tools"
+def _installed_tools() -> Path:
+    """安装位置的工具目录。
+
+    优先稳定副本（可用 FSTDD_INST_DIR 覆盖），回退旧位置（.workbuddy-ai/Fstdd）。
+    硬编码单一路径会在仓库迁移后恒定误报 FAIL。
+    """
+    cands = [Path(os.environ.get("FSTDD_INST_DIR", "D:/Programs/DKK_Fstdd")),
+             Path.home() / ".workbuddy-ai" / "Fstdd"]
+    for d in cands:
+        if (d / "tools" / "verify_workbuddy_skills.py").exists():
+            return d / "tools"
+    return cands[-1] / "tools"
+
+
+INSTALLED_TOOLS = _installed_tools()
 SKILL_DIRS = [
     Path.home() / ".workbuddy-ai" / "skills",
     Path.home() / ".workbuddy" / "skills",
@@ -221,7 +235,8 @@ def tc_005(repo: Path) -> tuple[bool, str]:
     """安装器生成的 6 个 FSTDD skill 天生合规"""
     bad = []
     for name in FSTDD_SKILLS:
-        f = Path.home() / ".workbuddy-ai" / "skills" / name / "SKILL.md"
+        # WorkBuddy 实际加载的是 ~/.workbuddy/skills（内核不加载 .workbuddy-ai）
+        f = Path.home() / ".workbuddy" / "skills" / name / "SKILL.md"
         if not f.exists():
             bad.append(f"{name}: 缺失")
             continue

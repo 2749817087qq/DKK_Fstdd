@@ -16,7 +16,8 @@ import tempfile
 
 # 与安装脚本一致：默认自动定位，可用 FSTDD_SRC / FSTDD_OUT 覆盖
 SRC = Path(os.environ.get("FSTDD_SRC", Path(__file__).resolve().parent.parent / "upstream"))
-OUT = Path(os.environ.get("FSTDD_OUT", Path.home() / ".workbuddy-ai" / "skills"))
+# 与 install_workbuddy_skills.py 保持一致：WorkBuddy 实际加载的是 ~/.workbuddy/skills
+OUT = Path(os.environ.get("FSTDD_OUT", Path.home() / ".workbuddy" / "skills"))
 SHARED_ABS = (SRC / ".fstdd" / "skills" / "_shared").as_posix()
 # FSTDD_CLI 用于故障注入测试：指向不可用时校验必须 FAIL，不得静默通过
 CLI_ABS = Path(os.environ.get("FSTDD_CLI", str(SRC / "bin" / "fstdd")))

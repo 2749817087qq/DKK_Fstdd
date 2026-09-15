@@ -163,7 +163,8 @@ def tc_004() -> tuple[bool, str]:
         return False, "install 脚本不存在"
     # 隔离性必须是**可判定的**：记录真实目录测试前的状态，测试后比对。
     # （上一版这里写的是 `if leaked and ...: pass`，恒真且不做任何检查 —— 空断言。）
-    real = Path.home() / ".workbuddy-ai" / "skills"
+    # WorkBuddy 实际加载的用户级 skill 目录（内核不加载 .workbuddy-ai）
+    real = Path.home() / ".workbuddy" / "skills"
     before = ({d.name: d.stat().st_mtime_ns for d in real.iterdir() if d.is_dir()}
               if real.exists() else {})
 
@@ -227,9 +228,12 @@ def tc_006() -> tuple[bool, str]:
         results.append(f"{name}: {'PASS' if ok else 'FAIL'}")
         if not ok:
             return False, f"{name} 未通过"
-    # 安装位置 verify（若存在）
-    inst_verify = Path.home() / ".workbuddy-ai" / "Fstdd" / "tools" / "verify_workbuddy_skills.py"
-    if inst_verify.exists():
+    # 安装位置 verify：优先稳定副本（可用 FSTDD_INST_DIR 覆盖），回退旧位置
+    _rel = Path("tools") / "verify_workbuddy_skills.py"
+    _cands = [Path(os.environ.get("FSTDD_INST_DIR", "D:/Programs/DKK_Fstdd")),
+              Path.home() / ".workbuddy-ai" / "Fstdd"]
+    inst_verify = next((d / _rel for d in _cands if (d / _rel).exists()), None)
+    if inst_verify:
         r = _run([PY, str(inst_verify)], env=dict(os.environ, FSTDD_PY=PY))
         ok = r.returncode == 0 and "PASS" in (r.stdout or "")
         results.append(f"verify_workbuddy_skills: {'PASS' if ok else 'FAIL'}")

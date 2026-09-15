@@ -8,7 +8,11 @@ import sys
 # 上游代码：随本仓库 vendor 在 upstream/ 下，故默认按脚本位置自动定位。
 # 也可用环境变量覆盖：FSTDD_SRC / FSTDD_OUT / FSTDD_PY
 SRC = Path(os.environ.get("FSTDD_SRC", Path(__file__).resolve().parent.parent / "upstream"))
-OUT = Path(os.environ.get("FSTDD_OUT", Path.home() / ".workbuddy-ai" / "skills"))
+# 默认输出目录必须是 WorkBuddy **实际加载** 的用户级 skill 目录。
+# 实测（2026-09-16）：WorkBuddy 内核 cli/dist/codebuddy.js 中 `.workbuddy-ai` 出现 0 次，
+# 它加载的是 ~/.workbuddy/skills（以及 ~/.codebuddy/skills、项目级 .codebuddy/skills）。
+# 此前默认值写成 .workbuddy-ai/skills，导致装完不被加载（等于白装）。
+OUT = Path(os.environ.get("FSTDD_OUT", Path.home() / ".workbuddy" / "skills"))
 SHARED_ABS = (SRC / ".fstdd" / "skills" / "_shared").as_posix()
 CLI_ABS = (SRC / "bin" / "fstdd").as_posix()
 PY = os.environ.get("FSTDD_PY", sys.executable)
@@ -306,7 +310,8 @@ FSTDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
 {UPGRADE_DUTY}
 """
     (entry_dir / "SKILL.md").write_text(entry, encoding="utf-8")
-    if SENTINEL not in entry or "Python311" not in entry:
+    # 检查真实解释器路径是否写入，而非硬编码 "Python311"（换任何非 311 解释器都会恒定误报 FAIL）
+    if SENTINEL not in entry or PY not in entry:
         errors.append("fstdd: 总入口缺少安全策略或升级规程说明")
     installed.append("fstdd")
     print(f"[OK] fstdd -> {entry_dir / 'SKILL.md'}")
