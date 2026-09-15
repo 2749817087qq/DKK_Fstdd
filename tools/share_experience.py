@@ -104,6 +104,8 @@ FILE_EXTS = {
     "exe", "log", "cfg", "ini", "toml", "rst", "html", "htm", "css", "js",
     "ts", "go", "rs", "java", "c", "h", "cpp", "hpp", "lock", "bak", "tmp",
     "png", "jpg", "jpeg", "gif", "svg", "pdf", "zip", "tar", "gz", "whl",
+    # 运行时/系统文件：实测踩到 /tmp/t.sock 被当成域名替换成 <DOMAIN>
+    "sock", "pid", "so", "dll", "dylib", "conf", "service", "socket",
 }
 
 # 脱敏规则：(正则, 替换, 说明)
