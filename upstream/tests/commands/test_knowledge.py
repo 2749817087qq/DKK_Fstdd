@@ -148,7 +148,7 @@ last_seen: "2026-07-01"
     from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="merge", verbose=0, dry_run=False)
     # Mock community fetch to return None
-    with patch("stdd.cli.commands.knowledge._fetch_community_graph", return_value=None):
+    with patch("fstdd.cli.commands.knowledge._fetch_community_graph", return_value=None):
         cmd_knowledge(ns)
 
     captured = capsys.readouterr()
@@ -213,7 +213,7 @@ last_seen: "2026-07-02"
 
     from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="merge", verbose=0, dry_run=False)
-    with patch("stdd.cli.commands.knowledge._fetch_community_graph", return_value=None):
+    with patch("fstdd.cli.commands.knowledge._fetch_community_graph", return_value=None):
         cmd_knowledge(ns)
 
     captured = capsys.readouterr()
@@ -238,7 +238,7 @@ def test_knowledge_merge_network_fallback(temp_project, monkeypatch, capsys):
 
     from fstdd.cli.commands.knowledge import cmd_knowledge
     ns = argparse.Namespace(subcommand="merge", verbose=0, dry_run=False)
-    with patch("stdd.cli.commands.knowledge._fetch_community_graph", return_value=None):
+    with patch("fstdd.cli.commands.knowledge._fetch_community_graph", return_value=None):
         cmd_knowledge(ns)
 
     captured = capsys.readouterr()
