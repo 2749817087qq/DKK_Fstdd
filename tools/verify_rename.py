@@ -40,10 +40,19 @@ EXCLUDE_FILES = {
     "rename_to_fstdd.py",   # 替换引擎：其规则表就是由旧名构成的
     "verify_rename.py",     # 断言脚本：内含检测用字面量
 }
-# 允许出现的旧名例外（第三方署名、许可证原文等）
+# 允许出现的旧名例外。
+#
+# 这些不是"残留"，而是**必须保留的事实**：
+# 上游项目本身叫 STDD（不是 FSTDD），MIT 要求署名忠于事实。
+# 把「上游 STDD」改成「上游 FSTDD」属于歪曲署名 —— 实测曾误改 8 处。
+#
+# 白名单必须精确：过宽会掩盖真实残留，过窄会误报。
 ALLOWED_OLD_MENTIONS = [
-    "github.com/leonai42/stdd",      # 上游署名（NOTICE/LICENSE 必须保留）
-    "leonai42/stdd",
+    "github.com/leonai42/stdd",      # 上游仓库地址
+    "leonai42/stdd",                 # 上游仓库简称
+    "上游 STDD",                      # 上游项目名（README/NOTICE/LICENSE）
+    "上游的 STDD",
+    "STDD V3.0.5",                   # 上游版本号
 ]
 
 
