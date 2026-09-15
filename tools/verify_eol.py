@@ -126,19 +126,38 @@ def tc_005(repo: Path) -> tuple[bool, str]:
             由 100644 变 100755，renormalize 暂存该变更，本用例会误报为
             「行尾治理引入的变更」—— 实际上与行尾无关。
     """
-    _git(repo, "add", "--renormalize", ".")
-    r = _git(repo, "diff", "--cached", "--diff-filter=M", "--name-only")
-    candidates = [l for l in r.stdout.splitlines() if l.strip()]
+    # 本用例需要执行有副作用的命令（add --renormalize 会改写索引）。
+    # 退出时必须精确恢复索引 —— 不能用 `git reset`，那会连用户**已暂存**的内容
+    # 一起清空（实测导致 commit 变成 no changes added）。
+    # 因此直接备份/还原 .git/index 文件。
+    import shutil as _shutil
 
-    # 过滤纯模式变更：逐文件检查 diff 中是否存在真实内容行
-    changed = []
-    for f in candidates:
-        d = _git(repo, "diff", "--cached", "--", f)
-        body = [ln for ln in d.stdout.splitlines()
-                if ln.startswith(("+", "-")) and not ln.startswith(("+++", "---"))
-                and not ln.startswith(("old mode", "new mode"))]
-        if body:
-            changed.append(f)
+    index = repo / ".git" / "index"
+    backup = None
+    if index.exists():
+        backup = index.with_suffix(".index.verifybak")
+        _shutil.copy2(index, backup)
+
+    _git(repo, "add", "--renormalize", ".")
+    try:
+        r = _git(repo, "diff", "--cached", "--diff-filter=M", "--name-only")
+        candidates = [l for l in r.stdout.splitlines() if l.strip()]
+
+        # 过滤纯模式变更：逐文件检查 diff 中是否存在真实内容行
+        changed = []
+        for f in candidates:
+            d = _git(repo, "diff", "--cached", "--", f)
+            body = [ln for ln in d.stdout.splitlines()
+                    if ln.startswith(("+", "-")) and not ln.startswith(("+++", "---"))
+                    and not ln.startswith(("old mode", "new mode"))]
+            if body:
+                changed.append(f)
+    finally:
+        # 精确还原索引：既消除本用例的副作用，也不影响用户已暂存的内容。
+        # 用 os.replace 原子恢复（移动而非删除）—— unlink 会触发安全删除拦截。
+        if backup is not None and backup.exists():
+            import os as _os
+            _os.replace(str(backup), str(index))
     unexpected = [f for f in changed if not _is_allowed_diff(f)]
     if unexpected:
         return False, (f"行尾治理引入了 {len(unexpected)} 个非预期变更："
