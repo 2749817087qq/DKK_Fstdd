@@ -6,68 +6,68 @@ from pathlib import Path
 # ── 模块级常量：供 upgrade.py 等模块导入复用 ──
 
 DIRS = [
-    ".stdd/skills",
-    ".stdd/skills/_shared",
-    ".stdd/templates",
-    ".stdd/templates/canonical",
-    ".stdd/templates/human-view",
-    ".stdd/standards",
-    ".stdd/config.d",
-    ".stdd/experiences",
-    ".stdd/onboarding",
-    ".stdd/platforms/claude-code/skills",
-    ".stdd/platforms/workbuddy/skills",
-    ".stdd/platforms/trae/skills",
-    ".stdd/canonical/proposals",
-    ".stdd/canonical/specs",
-    ".stdd/canonical/designs",
-    ".stdd/agent_tests",
-    ".stdd/changes",
-    ".stdd/specs",
-    ".stdd/archive",
+    ".fstdd/skills",
+    ".fstdd/skills/_shared",
+    ".fstdd/templates",
+    ".fstdd/templates/canonical",
+    ".fstdd/templates/human-view",
+    ".fstdd/standards",
+    ".fstdd/config.d",
+    ".fstdd/experiences",
+    ".fstdd/onboarding",
+    ".fstdd/platforms/claude-code/skills",
+    ".fstdd/platforms/workbuddy/skills",
+    ".fstdd/platforms/trae/skills",
+    ".fstdd/canonical/proposals",
+    ".fstdd/canonical/specs",
+    ".fstdd/canonical/designs",
+    ".fstdd/agent_tests",
+    ".fstdd/changes",
+    ".fstdd/specs",
+    ".fstdd/archive",
 ]
 
 FILES_TO_COPY = [
     # Config
-    ".stdd/config.d/project.yaml",
-    ".stdd/config.d/gates.yaml",
-    ".stdd/config.d/long_range.yaml",
-    ".stdd/config.d/quality.yaml",
-    ".stdd/config.d/lite.yaml",
-    ".stdd/config.d/experience.yaml",
-    ".stdd/config.d/knowledge.yaml",
-    ".stdd/config.d/guard.yaml",
+    ".fstdd/config.d/project.yaml",
+    ".fstdd/config.d/gates.yaml",
+    ".fstdd/config.d/long_range.yaml",
+    ".fstdd/config.d/quality.yaml",
+    ".fstdd/config.d/lite.yaml",
+    ".fstdd/config.d/experience.yaml",
+    ".fstdd/config.d/knowledge.yaml",
+    ".fstdd/config.d/guard.yaml",
     # Skills
-    ".stdd/skills/understand.md",
-    ".stdd/skills/spec.md",
-    ".stdd/skills/build.md",
-    ".stdd/skills/deliver.md",
-    ".stdd/skills/upgrade.md",
-    ".stdd/skills/_shared/version-check.md",
+    ".fstdd/skills/understand.md",
+    ".fstdd/skills/spec.md",
+    ".fstdd/skills/build.md",
+    ".fstdd/skills/deliver.md",
+    ".fstdd/skills/upgrade.md",
+    ".fstdd/skills/_shared/version-check.md",
     # Human View templates
-    ".stdd/templates/proposal.md",
-    ".stdd/templates/design.md",
-    ".stdd/templates/spec.md",
-    ".stdd/templates/test-plan.md",
-    ".stdd/templates/tasks.md",
-    ".stdd/templates/slices.md",
-    ".stdd/templates/design-adjustments.md",
-    ".stdd/templates/test-report.md",
-    ".stdd/templates/phase-context.md",
-    ".stdd/templates/spec-draft.md",
-    ".stdd/templates/long-range-auth.md",
-    ".stdd/templates/human-view/proposal-brief.md",
+    ".fstdd/templates/proposal.md",
+    ".fstdd/templates/design.md",
+    ".fstdd/templates/spec.md",
+    ".fstdd/templates/test-plan.md",
+    ".fstdd/templates/tasks.md",
+    ".fstdd/templates/slices.md",
+    ".fstdd/templates/design-adjustments.md",
+    ".fstdd/templates/test-report.md",
+    ".fstdd/templates/phase-context.md",
+    ".fstdd/templates/spec-draft.md",
+    ".fstdd/templates/long-range-auth.md",
+    ".fstdd/templates/human-view/proposal-brief.md",
     # Canonical YAML templates (dual-track system)
-    ".stdd/templates/canonical/proposal.yaml",
-    ".stdd/templates/canonical/spec.yaml",
-    ".stdd/templates/canonical/agent_spec.yaml",
-    ".stdd/templates/canonical/design-adjustments.yaml",
-    ".stdd/templates/canonical/pending-adjustments.yaml",
+    ".fstdd/templates/canonical/proposal.yaml",
+    ".fstdd/templates/canonical/spec.yaml",
+    ".fstdd/templates/canonical/agent_spec.yaml",
+    ".fstdd/templates/canonical/design-adjustments.yaml",
+    ".fstdd/templates/canonical/pending-adjustments.yaml",
     # Onboarding (V3.0.1)
-    ".stdd/onboarding/AI_OPERATING_MANUAL.yaml",
-    ".stdd/onboarding/AI_OPERATING_MANUAL.md",
+    ".fstdd/onboarding/AI_OPERATING_MANUAL.yaml",
+    ".fstdd/onboarding/AI_OPERATING_MANUAL.md",
     # Standards
-    ".stdd/standards/python.md",
+    ".fstdd/standards/python.md",
     # Project docs
     "STDD.md",
     "AGENTS.md",
@@ -75,18 +75,18 @@ FILES_TO_COPY = [
 
 # Config files that should be MERGED (not overwritten) during upgrade.
 CONFIG_MERGE_FILES = [
-    ".stdd/config.d/project.yaml",
+    ".fstdd/config.d/project.yaml",
 ]
 
 # All config files under config.d/
 CONFIG_ALL_FILES = [
-    ".stdd/config.d/project.yaml",
-    ".stdd/config.d/gates.yaml",
-    ".stdd/config.d/long_range.yaml",
-    ".stdd/config.d/quality.yaml",
+    ".fstdd/config.d/project.yaml",
+    ".fstdd/config.d/gates.yaml",
+    ".fstdd/config.d/long_range.yaml",
+    ".fstdd/config.d/quality.yaml",
 ]
 
-# Platforms with skills directories under .stdd/platforms/
+# Platforms with skills directories under .fstdd/platforms/
 PLATFORMS = ["claude-code", "workbuddy", "trae"]
 
 
@@ -116,10 +116,10 @@ def cmd_init(args: argparse.Namespace) -> None:
             else:
                 print(f"   (缺失源文件: {f})")
         for platform in PLATFORMS:
-            platform_skills = stdd_source / ".stdd" / "platforms" / platform / "skills"
+            platform_skills = stdd_source / ".fstdd" / "platforms" / platform / "skills"
             if platform_skills.exists():
                 for skill_file in platform_skills.iterdir():
-                    dst = project_root / ".stdd" / "platforms" / platform / "skills" / skill_file.name
+                    dst = project_root / ".fstdd" / "platforms" / platform / "skills" / skill_file.name
                     if force or not dst.exists():
                         print(f"   复制: {dst}")
         print(" [DRY-RUN] 文件系统未发生变化")
@@ -142,10 +142,10 @@ def cmd_init(args: argparse.Namespace) -> None:
                 skipped += 1
 
     for platform in PLATFORMS:
-        platform_skills = stdd_source / ".stdd" / "platforms" / platform / "skills"
+        platform_skills = stdd_source / ".fstdd" / "platforms" / platform / "skills"
         if platform_skills.exists():
             for skill_file in platform_skills.iterdir():
-                dst = project_root / ".stdd" / "platforms" / platform / "skills" / skill_file.name
+                dst = project_root / ".fstdd" / "platforms" / platform / "skills" / skill_file.name
                 if force or not dst.exists():
                     shutil.copy2(skill_file, dst)
                     copied += 1
@@ -155,7 +155,7 @@ def cmd_init(args: argparse.Namespace) -> None:
     logger.info("STDD 初始化完成，已复制 %d 个文件", copied)
     print("STDD 初始化完成")
     print(f"   项目根目录: {project_root}")
-    print(f"   已创建 .stdd/ 目录、changes/、specs/、archive/、agent_tests/")
+    print(f"   已创建 .fstdd/ 目录、changes/、specs/、archive/、agent_tests/")
     if force and skipped > 0:
         print(f"   已复制 {copied} 个文件, 跳过 {skipped} 个已存在文件（使用 --force 覆盖）")
     print()
@@ -247,7 +247,7 @@ def _post_init_constitution(project_root: Path) -> None:
 - 每个 Slice 必须通过 per-slice 验证才能进入下一个 Slice
 
 ### 6. 经验闭环
-- Build 阶段发现的失败模式自动记录到 `.stdd/experiences/`
+- Build 阶段发现的失败模式自动记录到 `.fstdd/experiences/`
 - Phase 4 (Deliver) 自动上传经验到社区 + 同步知识图谱
 - 每次 Phase 3 (Build) 开始前加载经验库预防已知错误
 
@@ -284,7 +284,7 @@ def _post_init_self_check(project_root: Path) -> None:
     else:
         print("    Guard: ⚠️ 未检测到 Claude Code 配置（其他平台请手动安装: stdd guard init）")
     # Check experiences
-    exp_dir = project_root / ".stdd" / "experiences"
+    exp_dir = project_root / ".fstdd" / "experiences"
     exp_count = len(list(exp_dir.glob("EXP-*.md"))) if exp_dir.exists() else 0
     print(f"    经验库: {'✅ ' + str(exp_count) + ' 条' if exp_count > 0 else '⚠️ 空（手动拉取: stdd experience pull）'}")
     print(f"    Agent验证: ✅ agent_tests/ 已创建")

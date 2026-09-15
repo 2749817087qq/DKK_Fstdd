@@ -9,7 +9,7 @@
 #### Scenario: SC-AUDIT-001
 
 - **GIVEN** 用户确认 Gate 1 且 AI 带 --confirmed-by dialog --evidence "用户：确认" 运行 approve
-- **WHEN** 检查 .stdd.yaml 的 phases.understand
+- **WHEN** 检查 .fstdd.yaml 的 phases.understand
 - **THEN** 该 phase SHALL 包含 confirmed_at, confirmed_by=dialog, confirmed_evidence="用户：确认"
 - **AND** confirmed_actor SHALL 存在（ai 或 user，由调用上下文推断）
 

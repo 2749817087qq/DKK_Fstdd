@@ -26,7 +26,7 @@
 
 1. **skill 格式**：上游 WorkBuddy 安装器写 `~/.workbuddy/skills/*.md`（单文件），与本机实际目录
    `~/.workbuddy-ai/skills/<name>/SKILL.md` 不一致，已改为 WorkBuddy 标准目录格式。
-2. **路径固化**：skill 正文里 `.stdd/skills/_shared/*.md`、`python bin/stdd` 均为项目相对路径，
+2. **路径固化**：skill 正文里 `.fstdd/skills/_shared/*.md`、`python bin/stdd` 均为项目相对路径，
    全局安装后不可解析，已全部替换为绝对路径
    （`C:/Users/Administrator/.workbuddy-ai/stdd/...`）。
 3. **Python 解释器**：STDD CLI 依赖 PyYAML + Jinja2。managed Python 3.13 无 PyYAML，
@@ -38,9 +38,9 @@
 - **经验自动上传：默认禁用**。`stdd-deliver` 的 Step 2.8 会把项目沉淀的经验上传到 STDD 外部社区 Git 仓库，
   属数据外发。已在 skill 中插入禁用声明，仅当用户显式要求时才执行
   （手动命令：`stdd experience share <EXP-ID>`）。
-- **联网升级**：`stdd-upgrade` 会从 `raw.githubusercontent.com` 拉取文件覆盖本地 `.stdd/` 静态资源，
+- **联网升级**：`stdd-upgrade` 会从 `raw.githubusercontent.com` 拉取文件覆盖本地 `.fstdd/` 静态资源，
   属用户主动触发行为，未做改动。
-- 未启用仓库自带的 `.stdd/hooks/*.py` 生命周期钩子，也未启用 `deploy/server-api.py`。
+- 未启用仓库自带的 `.fstdd/hooks/*.py` 生命周期钩子，也未启用 `deploy/server-api.py`。
 
 ## 4. 升级后必做（硬性规程，不可跳过）
 
@@ -86,7 +86,7 @@
 
 在沙箱项目执行 `init` → `new` → `status`：
 
-- `init`：成功，生成 `.stdd/` 骨架、STDD.md、AGENTS.md、STDD_CONSTITUTION.md，Guard 已激活
+- `init`：成功，生成 `.fstdd/` 骨架、STDD.md、AGENTS.md、STDD_CONSTITUTION.md，Guard 已激活
 - `new smoke-test`：成功，生成 change 骨架 + canonical YAML（proposal/specs）
 - `status`：成功，输出四阶段 pending 状态
 

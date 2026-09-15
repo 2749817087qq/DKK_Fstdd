@@ -83,7 +83,7 @@ Phase 3 SLICE 技能 SHALL 升级为五步智能分析流程。
 
 #### Scenario: 增强模板字段
 
-- **GIVEN** AI 读取增强后的 `.stdd/templates/slices.md`
+- **GIVEN** AI 读取增强后的 `.fstdd/templates/slices.md`
 - **WHEN** 生成切片计划
 - **THEN** 模板 SHALL 包含列：`# | Priority | Risk | Est. Effort | Parallel Group | TC Coverage | Implementation | Dependency | Rationale`
 - **AND** Risk 列 SHALL 使用 🟢 Low / 🟡 Med / 🔴 High 色标

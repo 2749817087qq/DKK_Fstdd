@@ -31,7 +31,7 @@ STDD 是一套从实战中提炼的高质量研发流程系统。其核心理念
 │  └─ bin/stdd (Python 635行)              │
 │                                          │
 │  Artifact Layer (产物管理)                 │
-│  └─ changes/ specs/ archive/ .stdd.yaml  │
+│  └─ changes/ specs/ archive/ .fstdd.yaml  │
 └─────────────────────────────────────────┘
 ```
 
@@ -109,15 +109,15 @@ shutil.move(str(change_dir), str(archive_dir))  # 步骤1：移动目录
 
 目录先移动后处理，若 specs 合并或状态更新失败，数据已迁移但状态损坏。建议：先合并 specs，状态更新，最后移动目录。
 
-**P0-3: `.stdd.yaml` 无版本字段**
+**P0-3: `.fstdd.yaml` 无版本字段**
 
-`cmd_new` 第 149-163 行生成的 `.stdd.yaml` 无版本号。当前格式的任何变更都会破坏已有 change 的兼容性。
+`cmd_new` 第 149-163 行生成的 `.fstdd.yaml` 无版本号。当前格式的任何变更都会破坏已有 change 的兼容性。
 
 #### 中等问题
 
 **P1-1: 自身规范违反**（多个位置）
 
-CLI 脚本未遵循自身 `.stdd/standards/python.md`：
+CLI 脚本未遵循自身 `.fstdd/standards/python.md`：
 
 | 规范要求 | 实际状况 |
 |----------|----------|
@@ -339,7 +339,7 @@ trigger_keywords: ["stdd-build", "stdd build", "spec-driven", "tdd"]
 | 风险 | 严重度 | 可能性 | 缓解建议 |
 |------|--------|--------|----------|
 | CLI Bug 导致数据丢失（archive） | 高 | 中 | 立即修复 Bug1，增加原子性保护 |
-| .stdd.yaml 兼容性断裂 | 中 | 中 | 增加 version 字段和迁移框架 |
+| .fstdd.yaml 兼容性断裂 | 中 | 中 | 增加 version 字段和迁移框架 |
 | 平台 Skill 与核心不同步 | 中 | 高 | 建立自动同步机制或单一来源 |
 | 用户学习曲线过陡 | 中 | 中 | 增加示例项目和快速入门教程 |
 | AI 对极简模板的填充偏差 | 低 | 高 | 模板增加内嵌示例 |
@@ -352,7 +352,7 @@ trigger_keywords: ["stdd-build", "stdd build", "spec-driven", "tdd"]
 ### 短期（V1.2.1，1-2天）
 
 1. 修复 archive 目录名 Bug
-2. .stdd.yaml 增加 version 字段
+2. .fstdd.yaml 增加 version 字段
 3. 修复 validate 正则逻辑（统一改为 `<`）
 4. 修复 trace 增加 specs/ 搜索
 5. 统一版本号（config.yaml 改为 1.2.0）

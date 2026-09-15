@@ -109,7 +109,7 @@ Gate 顺序强制，不可跳过。三道通道等价。
 ```
 问题探索→读模板→起草proposal.yaml→自动审查→复杂度评分→Gate1确认
 ```
-产出: proposal.yaml, .stdd.yaml。复杂度: 6维度0-17分。0-3=轻量,4-7=标准,8+=彻底。
+产出: proposal.yaml, .fstdd.yaml。复杂度: 6维度0-17分。0-3=轻量,4-7=标准,8+=彻底。
 
 ### Phase 2: SPEC
 ```
@@ -214,7 +214,7 @@ version:"2.9" proposals:{} designs:{} specs:{code:{},agent:{}}
 
 ---
 
-## .stdd.yaml 完整字段
+## .fstdd.yaml 完整字段
 
 | 字段 | 类型 | 默认 | 写 | 读 |
 |------|------|------|----|-----|

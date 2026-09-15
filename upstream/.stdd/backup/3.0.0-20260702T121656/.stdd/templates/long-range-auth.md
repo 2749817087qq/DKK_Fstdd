@@ -47,7 +47,7 @@
 → [ ] 授权：`pip install` 依赖安装、外部 API 调用（如有）
 
 ### B6. 文件读取
-→ [ ] 授权：读取 `.stdd/templates/`、`.stdd/config.d/`、`.stdd/standards/`、已有源码
+→ [ ] 授权：读取 `.fstdd/templates/`、`.fstdd/config.d/`、`.fstdd/standards/`、已有源码
 
 ### B7. Git 只读操作
 → [ ] 授权：`git diff`、`git log`、`git status` 等只读 git 操作
@@ -65,8 +65,8 @@
 授权确认后，系统将自动配置 Claude Code 项目级权限（`.claude/settings.local.json`），添加以下规则以确保 Phase 3-5 无需逐项手动确认：
 
 - **Bash 规则**：`pytest`, `ruff`, `python`, `pip`, `git`, `mkdir`, `cp`, `ls`
-- **文件写入规则**：`Write` / `Edit` 操作覆盖 `changes/`, `app/`, `tests/`, `.stdd/`, `.claude/skills/` 目录
-- **文件读取规则**：`Read` `.stdd/` 下配置、`*.md`、`*.yaml`、`*.py`、`*.json`
+- **文件写入规则**：`Write` / `Edit` 操作覆盖 `changes/`, `app/`, `tests/`, `.fstdd/`, `.claude/skills/` 目录
+- **文件读取规则**：`Read` `.fstdd/` 下配置、`*.md`、`*.yaml`、`*.py`、`*.json`
 - **搜索规则**：`Glob`、`Grep`
 - **Skill 调用规则**：`stdd-slice`, `stdd-build`, `stdd-verify`, `stdd-deliver`
 

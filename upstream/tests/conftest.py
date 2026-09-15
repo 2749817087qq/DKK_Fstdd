@@ -8,20 +8,20 @@ from datetime import date
 @pytest.fixture
 def temp_project(tmp_path: Path) -> Path:
     """创建最小 STDD 项目骨架。"""
-    (tmp_path / ".stdd").mkdir(parents=True)
-    (tmp_path / ".stdd" / "changes").mkdir(parents=True)
-    (tmp_path / ".stdd" / "specs").mkdir(parents=True)
-    (tmp_path / ".stdd" / "archive").mkdir(parents=True)
-    (tmp_path / ".stdd" / "templates").mkdir()
-    (tmp_path / ".stdd" / "skills").mkdir()
+    (tmp_path / ".fstdd").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "changes").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "specs").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "archive").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "templates").mkdir()
+    (tmp_path / ".fstdd" / "skills").mkdir()
     return tmp_path
 
 
 @pytest.fixture
 def sample_change(temp_project: Path) -> Path:
-    """创建带 .stdd.yaml 和基本文件的示例 change 目录。"""
+    """创建带 .fstdd.yaml 和基本文件的示例 change 目录。"""
     today = date.today().isoformat()
-    change_dir = temp_project / ".stdd" / "changes" / f"{today}-test-feature"
+    change_dir = temp_project / ".fstdd" / "changes" / f"{today}-test-feature"
     change_dir.mkdir(parents=True)
     (change_dir / "specs").mkdir()
 
@@ -37,7 +37,7 @@ def sample_change(temp_project: Path) -> Path:
             "deliver": {"status": "pending"},
         },
     }
-    with open(change_dir / ".stdd.yaml", "w", encoding="utf-8") as f:
+    with open(change_dir / ".fstdd.yaml", "w", encoding="utf-8") as f:
         yaml.dump(state, f, allow_unicode=True, default_flow_style=False)
 
     (change_dir / "proposal.md").write_text("# Proposal\n\nTest proposal", encoding="utf-8")
@@ -78,7 +78,7 @@ def sample_change_with_specs(sample_change: Path) -> Path:
 def archived_change(temp_project: Path) -> Path:
     """在 archive 中创建已归档的 change。"""
     today = date.today().isoformat()
-    archive_dir = temp_project / ".stdd" / "archive" / f"{today}-archived-feature"
+    archive_dir = temp_project / ".fstdd" / "archive" / f"{today}-archived-feature"
     archive_dir.mkdir(parents=True)
     state = {
         "version": "2.0",
@@ -92,6 +92,6 @@ def archived_change(temp_project: Path) -> Path:
             "deliver": {"status": "completed"},
         },
     }
-    with open(archive_dir / ".stdd.yaml", "w", encoding="utf-8") as f:
+    with open(archive_dir / ".fstdd.yaml", "w", encoding="utf-8") as f:
         yaml.dump(state, f, allow_unicode=True, default_flow_style=False)
     return archive_dir

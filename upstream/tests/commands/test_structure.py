@@ -41,7 +41,7 @@ class TestStructureMerge:
     """TC-CSUM-002"""
 
     def test_merge_creates_index(self, tmp_path, monkeypatch):
-        """merge creates .stdd/code-structure/index.md."""
+        """merge creates .fstdd/code-structure/index.md."""
         change_dir = tmp_path / "changes" / "test-change"
         change_dir.mkdir(parents=True)
         (change_dir / "app.py").write_text("print('hello')", encoding="utf-8")
@@ -55,11 +55,11 @@ class TestStructureMerge:
         # Then merge
         _dispatch(argparse.Namespace(action="merge", target="test-change"))
 
-        index_file = tmp_path / ".stdd" / "code-structure" / "index.md"
+        index_file = tmp_path / ".fstdd" / "code-structure" / "index.md"
         assert index_file.exists()
-        yaml_file = tmp_path / ".stdd" / "code-structure" / ".structure-index.yaml"
+        yaml_file = tmp_path / ".fstdd" / "code-structure" / ".structure-index.yaml"
         assert yaml_file.exists()
-        deltas_dir = tmp_path / ".stdd" / "code-structure" / "deltas"
+        deltas_dir = tmp_path / ".fstdd" / "code-structure" / "deltas"
         assert list(deltas_dir.glob("*.md"))
 
 

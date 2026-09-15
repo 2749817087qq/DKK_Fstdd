@@ -21,7 +21,7 @@ def cmd_archive(args: argparse.Namespace) -> None:
 
     dry_run = getattr(args, "dry_run", False)
 
-    state_file = change_dir / ".stdd.yaml"
+    state_file = change_dir / ".fstdd.yaml"
     if state_file.exists():
         with open(state_file, "r", encoding="utf-8") as f:
             state = yaml.safe_load(f) or {}
@@ -34,7 +34,7 @@ def cmd_archive(args: argparse.Namespace) -> None:
             print("     用 'stdd phase advance' 推进到 build，完成后再次归档。")
             sys.exit(1)
 
-    archive_dir = project_root / ".stdd" / "archive" / change_dir.name
+    archive_dir = project_root / ".fstdd" / "archive" / change_dir.name
     if archive_dir.exists():
         print(f" 归档目录已存在: archive/{change_dir.name}")
         sys.exit(1)
@@ -42,12 +42,12 @@ def cmd_archive(args: argparse.Namespace) -> None:
     if dry_run:
         print(f"[dry-run] 将移动 {change_dir.name} -> archive/{change_dir.name}")
         print(f"[dry-run] 将合并 specs 到 specs/")
-        print(f"[dry-run] 将更新 .stdd.yaml status=archived")
+        print(f"[dry-run] 将更新 .fstdd.yaml status=archived")
         return
 
     # 合并 specs（在移动前，失败时源不受影响）
     archive_specs = change_dir / "specs"
-    main_specs = project_root / ".stdd" / "specs"
+    main_specs = project_root / ".fstdd" / "specs"
     if archive_specs.exists() and not args.skip_specs:
         for spec_file in archive_specs.rglob("*.md"):
             rel_path = spec_file.relative_to(archive_specs)

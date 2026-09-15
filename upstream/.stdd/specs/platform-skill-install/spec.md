@@ -8,7 +8,7 @@
 
 ### Scenario: SC-PSI-001 — SKILL_META 包含 upgrade 条目
 
-- **GIVEN** STDD 源码 `.stdd/skills/upgrade.md` 存在
+- **GIVEN** STDD 源码 `.fstdd/skills/upgrade.md` 存在
 - **WHEN** 执行 `stdd install <任意平台>`
 - **THEN** `SKILL_META["upgrade"]` SHALL 存在，包含 `name: "stdd-upgrade"`、`description`、`keywords` 字段
 - **AND** `stdd-upgrade/SKILL.md` SHALL 被安装到目标平台的技能目录

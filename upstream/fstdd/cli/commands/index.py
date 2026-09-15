@@ -48,14 +48,14 @@ def _detect_language(project_root: Path) -> str:
 def _scan_changes(project_root: Path) -> dict:
     """Scan changes/ directory."""
     changes = {}
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         return changes
 
     for change_dir in sorted(changes_dir.iterdir()):
         if not change_dir.is_dir():
             continue
-        stdd_yaml = change_dir / ".stdd.yaml"
+        stdd_yaml = change_dir / ".fstdd.yaml"
         phase = "unknown"
         if stdd_yaml.exists():
             try:
@@ -75,7 +75,7 @@ def _scan_changes(project_root: Path) -> dict:
 def _scan_capabilities(project_root: Path) -> dict:
     """Scan specs/ directory for capabilities."""
     caps = {}
-    specs_dir = project_root / ".stdd" / "specs"
+    specs_dir = project_root / ".fstdd" / "specs"
     if not specs_dir.exists():
         return caps
 

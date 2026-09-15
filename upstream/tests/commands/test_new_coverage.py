@@ -22,10 +22,10 @@ class TestNewParallel:
         subprocess.run(["git", "commit", "-m", "init"], cwd=repo, capture_output=True)
 
         # Setup STDD structure
-        (repo / ".stdd").mkdir()
-        (repo / ".stdd" / "templates").mkdir(parents=True)
+        (repo / ".fstdd").mkdir()
+        (repo / ".fstdd" / "templates").mkdir(parents=True)
         for tmpl in ["proposal.md", "design.md", "test-plan.md"]:
-            (repo / ".stdd" / "templates" / tmpl).write_text(f"# {tmpl}", encoding="utf-8")
+            (repo / ".fstdd" / "templates" / tmpl).write_text(f"# {tmpl}", encoding="utf-8")
 
         monkeypatch.chdir(repo)
 
@@ -52,7 +52,7 @@ class TestNewParallel:
         subprocess.run(["git", "add", "."], cwd=repo, capture_output=True)
         subprocess.run(["git", "commit", "-m", "init"], cwd=repo, capture_output=True)
 
-        (repo / ".stdd").mkdir()
+        (repo / ".fstdd").mkdir()
         monkeypatch.chdir(repo)
 
         from fstdd.cli.commands.new import cmd_new

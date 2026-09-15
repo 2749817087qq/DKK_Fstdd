@@ -11,7 +11,7 @@ from pathlib import Path
 class TestExpProvenance:
     def test_add_default_provenance(self, tmp_path, monkeypatch):
         """New experience defaults to ai-inferred."""
-        exp_dir = tmp_path / ".stdd" / "experiences"
+        exp_dir = tmp_path / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
         from fstdd.cli.commands.experience import cmd_experience
@@ -30,7 +30,7 @@ class TestExpProvenance:
 
     def test_export_publish_sets_shared_and_tar(self, tmp_path, monkeypatch):
         """Export --publish creates tar.gz and sets lifecycle to shared."""
-        exp_dir = tmp_path / ".stdd" / "experiences"
+        exp_dir = tmp_path / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
         from fstdd.cli.commands.experience import cmd_experience
@@ -58,10 +58,10 @@ class TestExpProvenance:
 
     def test_pull_no_packs_configured(self, tmp_path, monkeypatch, capsys):
         """Pull with no packs configured gives helpful error."""
-        exp_dir = tmp_path / ".stdd" / "experiences"
+        exp_dir = tmp_path / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True)
         # Setup config with registries but no matching pack
-        config_dir = tmp_path / ".stdd" / "config.d"
+        config_dir = tmp_path / ".fstdd" / "config.d"
         config_dir.mkdir(parents=True)
         (config_dir / "experience.yaml").write_text(yaml.dump({
             "community": {"registries": [], "packs": []}
@@ -81,9 +81,9 @@ class TestExpProvenance:
 class TestCIMoreCoverage:
     def test_anchoring_financial_requires_l4(self, tmp_path, monkeypatch):
         """Financial change requires L4 anchoring."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test-fin"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test-fin"
         change_dir.mkdir(parents=True)
-        canon_dir = tmp_path / ".stdd" / "canonical" / "proposals"
+        canon_dir = tmp_path / ".fstdd" / "canonical" / "proposals"
         canon_dir.mkdir(parents=True)
         (canon_dir / "test-fin.yaml").write_text(yaml.dump({
             "critical": {"is_critical": True, "risk_assessment": {"financial": True}},
@@ -96,9 +96,9 @@ class TestCIMoreCoverage:
 
     def test_anchoring_cross_system_requires_l2(self, tmp_path, monkeypatch):
         """Cross-system change with L1 fails."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test-xs"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test-xs"
         change_dir.mkdir(parents=True)
-        canon_dir = tmp_path / ".stdd" / "canonical" / "proposals"
+        canon_dir = tmp_path / ".fstdd" / "canonical" / "proposals"
         canon_dir.mkdir(parents=True)
         (canon_dir / "test-xs.yaml").write_text(yaml.dump({
             "critical": {"is_critical": True, "risk_assessment": {"cross_system": True}},
@@ -111,9 +111,9 @@ class TestCIMoreCoverage:
 
     def test_slice_completion_no_evidence(self, tmp_path, monkeypatch):
         """Slice marked done but no verified_at triggers warning (legacy phase4 key)."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test"
         change_dir.mkdir(parents=True)
-        (change_dir / ".stdd.yaml").write_text(yaml.dump({
+        (change_dir / ".fstdd.yaml").write_text(yaml.dump({
             "phase4": {"slices_completed": {
                 "1": {"status": "done", "new_tests": 0}
             }}
@@ -125,9 +125,9 @@ class TestCIMoreCoverage:
 
     def test_slice_completion_new_key_with_evidence(self, tmp_path, monkeypatch):
         """V3.0.5: canonical key phases.build.slices_completed passes with full evidence."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test"
         change_dir.mkdir(parents=True)
-        (change_dir / ".stdd.yaml").write_text(yaml.dump({
+        (change_dir / ".fstdd.yaml").write_text(yaml.dump({
             "phases": {"build": {"slices_completed": {
                 "1": {"status": "done", "tc_coverage": "3/3", "new_tests": 3,
                       "verified_at": "2026-08-17T10:00:00"}
@@ -153,7 +153,7 @@ class TestAgentMoreCoverage:
 
     def test_dry_run_displays_checkpoints(self, tmp_path, monkeypatch, capsys):
         """Dry-run shows checkpoints without executing."""
-        canon_dir = tmp_path / ".stdd" / "canonical" / "specs" / "agent"
+        canon_dir = tmp_path / ".fstdd" / "canonical" / "specs" / "agent"
         canon_dir.mkdir(parents=True)
         (canon_dir / "test.yaml").write_text(yaml.dump({
             "meta": {"task_id": "test", "system": "test"},
@@ -178,7 +178,7 @@ class TestAgentMoreCoverage:
 class TestTraceMoreCoverage:
     def test_trace_with_test_plan(self, tmp_path, monkeypatch, capsys):
         """Trace finds TC in test-plan."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test"
         change_dir.mkdir(parents=True)
         (change_dir / "test-plan.md").write_text(
             "| **ID** | TC-TEST-001 | **P0** | test | test | test |", encoding="utf-8")

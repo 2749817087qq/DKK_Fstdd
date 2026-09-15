@@ -80,8 +80,8 @@ Archive to archive/ → merge specs to specs/ → Git commit + tag.
 
 ## 关键规则 / Key Rules
 
-1. **模板先行 / Template First**：编写任何文档前，必须先读取 `.stdd/templates/` 中的对应模板。Must read the template before generating any document.
-2. **开发规范 / Dev Standards**：Phase 3 (BUILD) 开始前，必须先读取 `.stdd/standards/<language>.md`。Must read language standard before Phase 3.
+1. **模板先行 / Template First**：编写任何文档前，必须先读取 `.fstdd/templates/` 中的对应模板。Must read the template before generating any document.
+2. **开发规范 / Dev Standards**：Phase 3 (BUILD) 开始前，必须先读取 `.fstdd/standards/<language>.md`。Must read language standard before Phase 3.
 3. **Spec→Test 映射 / Mapping**：GIVEN→Arrange, WHEN→Act, THEN→Assert。
 4. **垂直切片 / Vertical Slice**：每次只实现一个 spec Scenario → 1+ 测试 → 1 个实现单元。One spec Scenario → 1+ tests → 1 implementation unit per slice.
 5. **测试覆盖 / Test Coverage**：新行为必须有测试；测试验证行为而非实现。New behavior must have tests; tests verify behavior not implementation.
@@ -91,7 +91,7 @@ Archive to archive/ → merge specs to specs/ → Git commit + tag.
 ## 目录结构 / Directory Structure
 
 ```
-.stdd/              # STDD 系统文件 / System files
+.fstdd/              # STDD 系统文件 / System files
   experiences/      # 自学习经验库 / Self-learning experience library (V2.5: 5状态生命周期)
 changes/            # 活跃变更 / Active changes
 specs/              # 主规范 / Master specs
@@ -102,7 +102,7 @@ archive/            # 已完成变更 / Completed changes
 
 ## 文档模板 / Document Templates
 
-所有模板位于 / All templates at `.stdd/templates/`：
+所有模板位于 / All templates at `.fstdd/templates/`：
 - `proposal.md` — 变更提案 / Change proposal
 - `design.md` — 技术设计 / Technical design
 - `spec.md` — 行为规格 (GIVEN/WHEN/THEN) / Behavior spec
@@ -117,7 +117,7 @@ archive/            # 已完成变更 / Completed changes
 
 ## 开发规范 / Development Standards
 
-位于 / Located at `.stdd/standards/`：
+位于 / Located at `.fstdd/standards/`：
 - `python.md` — Python 开发规范 / Python dev standard（V1.0 起）
 - `java.md` — Java / Spring Boot 规范（V2.3 新增）
 - `go.md` — Go 标准布局规范（V2.3 新增）

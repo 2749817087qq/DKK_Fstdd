@@ -12,7 +12,7 @@ def test_archive_completed_change(sample_change: Path, monkeypatch):
     monkeypatch.chdir(sample_change.parent.parent.parent)
 
     # 标记为 verify 完成
-    state_file = sample_change / ".stdd.yaml"
+    state_file = sample_change / ".fstdd.yaml"
     with open(state_file, "r", encoding="utf-8") as f:
         state = yaml.safe_load(f)
     state["phases"]["build"]["status"] = "completed"
@@ -31,7 +31,7 @@ def test_archive_dry_run(sample_change: Path, monkeypatch):
     """--dry-run 预览但不执行。"""
     monkeypatch.chdir(sample_change.parent.parent.parent)
 
-    state_file = sample_change / ".stdd.yaml"
+    state_file = sample_change / ".fstdd.yaml"
     with open(state_file, "r", encoding="utf-8") as f:
         state = yaml.safe_load(f)
     state["phases"]["build"]["status"] = "completed"
@@ -58,7 +58,7 @@ def test_archive_with_specs_merge(sample_change_with_specs: Path, monkeypatch):
     """归档时合并 specs 到主 specs/。"""
     monkeypatch.chdir(sample_change_with_specs.parent.parent.parent)
 
-    state_file = sample_change_with_specs / ".stdd.yaml"
+    state_file = sample_change_with_specs / ".fstdd.yaml"
     with open(state_file, "r", encoding="utf-8") as f:
         state = yaml.safe_load(f)
     state["phases"]["build"]["status"] = "completed"

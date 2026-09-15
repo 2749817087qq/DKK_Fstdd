@@ -274,7 +274,7 @@ Language-specific development standards are auto-loaded before Phase 3 (BUILD) b
 
 ```
 STDD Repository                          Your Project (after init)
-├── .stdd/                                ├── .stdd/
+├── .fstdd/                                ├── .fstdd/
 │   ├── skills/          # 4 phase skills │   ├── skills/templates/standards/
 │   ├── skills/_shared/  # DRY fragments  │   ├── config.d/        # Modular config
 │   ├── templates/       # 9 doc templates│   └── platforms/       # Platform adapters

@@ -41,7 +41,7 @@ def cmd_abort(args: argparse.Namespace) -> None:
         return
 
     # 确保 archive/aborted/ 目录存在
-    aborted_dir = project_root / ".stdd" / "archive" / "aborted"
+    aborted_dir = project_root / ".fstdd" / "archive" / "aborted"
     aborted_dir.mkdir(parents=True, exist_ok=True)
 
     dest = aborted_dir / change_dir.name
@@ -51,7 +51,7 @@ def cmd_abort(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     # 更新状态
-    state_file = change_dir / ".stdd.yaml"
+    state_file = change_dir / ".fstdd.yaml"
     if state_file.exists():
         with open(state_file, "r", encoding="utf-8") as f:
             state = yaml.safe_load(f) or {}

@@ -30,7 +30,7 @@ STDD SHALL 在 Phase 4 BUILD 完成后、进入 Phase 5 之前，由 AI 自动�
 
 ### Requirement: DELIVER 时合并到项目索引 <!-- confidence: high -->
 
-STDD SHALL 在 Phase 6 DELIVER 时将 code-structure-delta.md 合并到 `.stdd/code-structure/index.md`。
+STDD SHALL 在 Phase 6 DELIVER 时将 code-structure-delta.md 合并到 `.fstdd/code-structure/index.md`。
 
 **证据来源**：proposal.md `Capabilities > New > code-structure-summary`
 
@@ -38,29 +38,29 @@ STDD SHALL 在 Phase 6 DELIVER 时将 code-structure-delta.md 合并到 `.stdd/c
 
 - **GIVEN** Phase 6 DELIVER 正在执行
 - **WHEN** `stdd deliver` 运行
-- **THEN** CLI SHALL 复制 delta 到 `.stdd/code-structure/deltas/`
+- **THEN** CLI SHALL 复制 delta 到 `.fstdd/code-structure/deltas/`
 - **AND** 解析 delta 提取结构化数据更新 `.structure-index.yaml`
 - **AND** 基于最新 index.yaml 重新生成 index.md（追加新 change 的模块 + 更新修改模块的描述）
 - **AND** 更新 index.md 头部的 "最后更新" 时间戳和 git HEAD
 
 #### Scenario: 首次合并时初始化目录 <!-- confidence: high -->
 
-- **GIVEN** 项目首次执行 DELIVER，`.stdd/code-structure/` 不存在
+- **GIVEN** 项目首次执行 DELIVER，`.fstdd/code-structure/` 不存在
 - **WHEN** `stdd deliver` 执行
-- **THEN** CLI SHALL 创建 `.stdd/code-structure/` 目录及所有子文件
+- **THEN** CLI SHALL 创建 `.fstdd/code-structure/` 目录及所有子文件
 - **AND** 生成初始的 index.md 和 .structure-index.yaml
 
 ---
 
 ### Requirement: 新 change 自动读取代码结构索引 <!-- confidence: high -->
 
-STDD SHALL 在新 change 的 Phase 1/2 阶段自动读取 `.stdd/code-structure/index.md` 以加速代码结构理解。
+STDD SHALL 在新 change 的 Phase 1/2 阶段自动读取 `.fstdd/code-structure/index.md` 以加速代码结构理解。
 
 **证据来源**：proposal.md `Capabilities > New > code-structure-summary`
 
 #### Scenario: Phase 1 读取索引辅助 proposal <!-- confidence: medium -->
 
-- **GIVEN** `.stdd/code-structure/index.md` 存在且状态为 FRESH（< 7 天）
+- **GIVEN** `.fstdd/code-structure/index.md` 存在且状态为 FRESH（< 7 天）
 - **WHEN** 新 change 的 Phase 1 UNDERSTAND 开始
 - **THEN** AI SHALL 在执行 Step -1 时读取 index.md
 - **AND** 在 proposal 的 Impact 评估中引用 "相关现有模块"（来自 index.md）
@@ -74,7 +74,7 @@ STDD SHALL 在新 change 的 Phase 1/2 阶段自动读取 `.stdd/code-structure/
 
 #### Scenario: 索引不存在时静默跳过 <!-- confidence: high -->
 
-- **GIVEN** `.stdd/code-structure/` 目录不存在（新项目或未执行过 DELIVER）
+- **GIVEN** `.fstdd/code-structure/` 目录不存在（新项目或未执行过 DELIVER）
 - **WHEN** Phase 1 开始
 - **THEN** AI SHALL 按照 V2.5 行为正常执行（从头扫描文件系统）
 - **AND** 不输出任何错误或警告

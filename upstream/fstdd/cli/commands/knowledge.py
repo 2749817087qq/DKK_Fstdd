@@ -23,7 +23,7 @@ def _get_knowledge_dir(project_root: Path) -> Path:
     from ..utils import read_config
     config = read_config(project_root)
     kconfig = config.get("knowledge", {})
-    return project_root / kconfig.get("dir", ".stdd/knowledge")
+    return project_root / kconfig.get("dir", ".fstdd/knowledge")
 
 
 def _get_graph_path(project_root: Path) -> Path:
@@ -196,7 +196,7 @@ def cmd_knowledge_merge(args: argparse.Namespace) -> None:
         print("  社区图谱不可用，仅生成本地图谱")
 
     # 2. Scan local experiences
-    exp_dir = project_root / ".stdd" / "experiences"
+    exp_dir = project_root / ".fstdd" / "experiences"
     experiences = _load_experiences(exp_dir)
     if not experiences:
         print("  本地无待合并经验")
@@ -397,7 +397,7 @@ def cmd_knowledge_fix(args: argparse.Namespace) -> None:
     # Experience IDs are like EXP-2026-0001, nodes are like KG-001
     # We match by searching for the experience pattern in node descriptions
     # First, try to load the actual experience to get its pattern
-    exp_dir = Path.cwd() / ".stdd" / "experiences"
+    exp_dir = Path.cwd() / ".fstdd" / "experiences"
     exp_pattern = ""
     exp_file = exp_dir / f"{exp_id}.md"
     if exp_file.exists():

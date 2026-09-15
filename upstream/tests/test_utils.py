@@ -44,7 +44,7 @@ def test_get_stdd_source():
 def test_read_config_from_config_d(tmp_path: Path):
     """从 config.d/ 读取配置。"""
     import yaml
-    config_d = tmp_path / ".stdd" / "config.d"
+    config_d = tmp_path / ".fstdd" / "config.d"
     config_d.mkdir(parents=True)
     (config_d / "project.yaml").write_text(yaml.dump({
         "project": {"name": "test"}, "stdd_version": "2.8"
@@ -62,9 +62,9 @@ def test_read_config_from_config_d(tmp_path: Path):
 def test_read_config_legacy_fallback(tmp_path: Path):
     """config.d/ 不存在时 fallback 到 config.yaml。"""
     import yaml
-    (tmp_path / ".stdd").mkdir()
+    (tmp_path / ".fstdd").mkdir()
     legacy = {"project": {"name": "test"}, "stdd_version": "1.0"}
-    with open(tmp_path / ".stdd" / "config.yaml", "w", encoding="utf-8") as f:
+    with open(tmp_path / ".fstdd" / "config.yaml", "w", encoding="utf-8") as f:
         yaml.dump(legacy, f)
     config = read_config(tmp_path)
     assert config["project"]["name"] == "test"
@@ -75,11 +75,11 @@ def test_read_config_non_dict_yaml(temp_project: Path, monkeypatch):
     """config.d/ 中非 dict 文件被跳过并警告。"""
     from fstdd.cli.utils import read_config, setup_logging
     setup_logging(0)
-    (temp_project / ".stdd" / "config.d").mkdir(parents=True, exist_ok=True)
+    (temp_project / ".fstdd" / "config.d").mkdir(parents=True, exist_ok=True)
     # 创建一个包含 YAML 列表的配置文件
-    (temp_project / ".stdd" / "config.d" / "list.yaml").write_text("- item1\n- item2\n", encoding="utf-8")
+    (temp_project / ".fstdd" / "config.d" / "list.yaml").write_text("- item1\n- item2\n", encoding="utf-8")
     # 同时创建一个有效的 dict 配置
-    (temp_project / ".stdd" / "config.d" / "valid.yaml").write_text("key: value\n", encoding="utf-8")
+    (temp_project / ".fstdd" / "config.d" / "valid.yaml").write_text("key: value\n", encoding="utf-8")
 
     config = read_config(temp_project)
     # 有效配置应该被加载

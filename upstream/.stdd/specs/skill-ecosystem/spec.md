@@ -7,14 +7,14 @@
 
 ### Requirement: Skill 目录结构重构 <!-- confidence: high -->
 
-STDD SHALL 将 `.stdd/skills/` 从平铺 6 个文件重构为按领域分类的四级目录树。
+STDD SHALL 将 `.fstdd/skills/` 从平铺 6 个文件重构为按领域分类的四级目录树。
 
 **证据来源**：proposal.md `Capabilities > Modified > skill-directory`
 
 #### Scenario: 目录结构升级 <!-- confidence: high -->
 
 - **GIVEN** STDD V2.7 已安装
-- **WHEN** 查看 `.stdd/skills/` 目录
+- **WHEN** 查看 `.fstdd/skills/` 目录
 - **THEN** 目录 SHALL 包含 core/（6 个阶段 Skill）、languages/（语言专项 Skill）、workflow/（工作流辅助 Skill）、tools/（工具集成 Skill）四个子目录
 - **AND** `_shared/` 目录 SHALL 保留用于共享模板和工具
 
@@ -67,7 +67,7 @@ STDD SHALL 新增 search-first 和 skill-create 两个工作流 Skill。
 - **GIVEN** 用户执行 `stdd skill create my-pattern --type language`
 - **WHEN** CLI 交互式收集 Skill 元信息
 - **THEN** 系统 SHALL 基于模板在 `languages/my-pattern/` 下生成 `SKILL.md` 骨架
-- **AND** 自动关联对应的语言规范文件（`.stdd/standards/<lang>.md`）
+- **AND** 自动关联对应的语言规范文件（`.fstdd/standards/<lang>.md`）
 
 ---
 

@@ -97,7 +97,7 @@
 
 - **经验库 (Experience Library)** — 5 态生命周期(discovered→verified→deposited→shared/merged→retired)的 AI 编程经验管理系统。
 - **Phase Context** — 跨 Session 恢复文件，记录关键决策和当前状态。
-- **Resume Context** — .stdd.yaml 中的恢复字段。
+- **Resume Context** — .fstdd.yaml 中的恢复字段。
 - **State Freshness** — 比较 git HEAD 判断恢复状态是否有效。
 - **Hook（生命周期钩子）** — SessionStart / PreCompact / Stop 三个自动触发脚本。
 
@@ -210,7 +210,7 @@ UNDERSTAND(1) → SPEC(2) → SLICE(3) → BUILD(4) → VERIFY(5) → DELIVER(6)
 - 识别干系人和约束条件
 
 **Step 2: 读取模板**
-- 读取 `.stdd/templates/canonical/proposal.yaml`（V2.9.2 YAML-First）
+- 读取 `.fstdd/templates/canonical/proposal.yaml`（V2.9.2 YAML-First）
 
 **Step 3: 起草 proposal.yaml**
 - 按 Canonical proposal.yaml 模板填写：
@@ -240,7 +240,7 @@ UNDERSTAND(1) → SPEC(2) → SLICE(3) → BUILD(4) → VERIFY(5) → DELIVER(6)
 
 #### 产出物
 
-- `proposal.md`（或 proposal.yaml）+ `.stdd.yaml` 状态更新（understand → completed）
+- `proposal.md`（或 proposal.yaml）+ `.fstdd.yaml` 状态更新（understand → completed）
 
 ---
 
@@ -293,7 +293,7 @@ UNDERSTAND(1) → SPEC(2) → SLICE(3) → BUILD(4) → VERIFY(5) → DELIVER(6)
 
 #### 产出物
 
-`design.md`, `spec.yaml`(coding), `agent_spec.yaml`, `test-plan.md`, `.stdd.yaml` 更新
+`design.md`, `spec.yaml`(coding), `agent_spec.yaml`, `test-plan.md`, `.fstdd.yaml` 更新
 
 ---
 
@@ -327,7 +327,7 @@ UNDERSTAND(1) → SPEC(2) → SLICE(3) → BUILD(4) → VERIFY(5) → DELIVER(6)
 
 #### 产出物
 
-`slices.md`（切片执行计划）、`tasks.md`（任务清单）、`.stdd.yaml` 更新
+`slices.md`（切片执行计划）、`tasks.md`（任务清单）、`.fstdd.yaml` 更新
 
 ---
 
@@ -345,8 +345,8 @@ UNDERSTAND(1) → SPEC(2) → SLICE(3) → BUILD(4) → VERIFY(5) → DELIVER(6)
 #### Step 0: 加载资源
 
 1. 读取 `project.yaml` → 获取语言
-2. 加载语言标准 `.stdd/standards/<lang>.md`
-3. 加载项目规则 `.stdd/rules/<lang>/*.md`
+2. 加载语言标准 `.fstdd/standards/<lang>.md`
+3. 加载项目规则 `.fstdd/rules/<lang>/*.md`
 4. 加载 phase-context.md（如有）
 5. 加载经验库匹配条目（最多 10 条）
 6. 生成代码结构 delta：`stdd structure delta <change>`
@@ -388,7 +388,7 @@ UNDERSTAND(1) → SPEC(2) → SLICE(3) → BUILD(4) → VERIFY(5) → DELIVER(6)
 
 #### 产出物
 
-代码文件、`pending-adjustments.yaml`、`.stdd.yaml` 更新
+代码文件、`pending-adjustments.yaml`、`.fstdd.yaml` 更新
 
 ---
 
@@ -414,7 +414,7 @@ UNDERSTAND(1) → SPEC(2) → SLICE(3) → BUILD(4) → VERIFY(5) → DELIVER(6)
 
 **Step 1: 测试执行**
 
-按 `.stdd/config.d/quality.yaml` 配置顺序执行：
+按 `.fstdd/config.d/quality.yaml` 配置顺序执行：
 
 1. `pytest` — 单元测试 + 覆盖率（默认目标 80%）
 2. `coverage` — 覆盖率报告
@@ -452,7 +452,7 @@ UNDERSTAND(1) → SPEC(2) → SLICE(3) → BUILD(4) → VERIFY(5) → DELIVER(6)
 
 #### 产出物
 
-`test-report.md`, `design-adjustments.yaml/.md`, `.stdd.yaml` 更新
+`test-report.md`, `design-adjustments.yaml/.md`, `.fstdd.yaml` 更新
 
 ---
 
@@ -617,7 +617,7 @@ Spec Scenario "用户登录成功"
 - `stdd trace <tc-id>` — 追踪 TC-ID 的四层链路
 - `stdd diff [name]` — Spec↔Test↔Code 覆盖差异表
 
-#### .stdd.yaml traceability 字段
+#### .fstdd.yaml traceability 字段
 
 ```yaml
 traceability:
@@ -633,7 +633,7 @@ traceability:
 #### 启用条件
 
 - Gate 2 之后可选
-- `.stdd.yaml` 中 `long_range.enabled: true`
+- `.fstdd.yaml` 中 `long_range.enabled: true`
 - 对 Phase 3-5 进行预授权
 
 #### 预授权范围（来自 long_range.yaml）
@@ -683,7 +683,7 @@ traceability:
 ```
 changes/_batch/
   <batch-id>/
-    .stdd.yaml          # batch_id, batch_type, items, closed_at
+    .fstdd.yaml          # batch_id, batch_type, items, closed_at
     items/              # 微变更项
     archive-summary.md  # 闭合时生成
 ```
@@ -725,7 +725,7 @@ batch:
 #### 状态新鲜度
 
 `stdd state --resume` 自动比较：
-- `.stdd.yaml` 中 `state_freshness.git_head`
+- `.fstdd.yaml` 中 `state_freshness.git_head`
 - 当前 `git rev-parse --short HEAD`
 
 不一致时输出 `STALE` 警告。
@@ -739,7 +739,7 @@ batch:
 | Hook | 触发时机 | 脚本 | 行为 |
 |------|---------|------|------|
 | **SessionStart** | Session 启动 | `session-start.py` | 扫描 changes/，打印 active change 状态行 |
-| **PreCompact** | Claude Code 上下文压缩前 | `pre-compact.py` | 保存 `.stdd.yaml` 的 last_modified 时间戳 |
+| **PreCompact** | Claude Code 上下文压缩前 | `pre-compact.py` | 保存 `.fstdd.yaml` 的 last_modified 时间戳 |
 | **Stop** | Session 结束 | `session-end.py` | 报告经验库统计，建议 `stdd experience curate` |
 
 #### 安装
@@ -755,9 +755,9 @@ stdd hooks uninstall           # 移除 Hook 配置
 ```json
 {
   "hooks": {
-    "SessionStart": "python .stdd/hooks/session-start.py",
-    "PreCompact": "python .stdd/hooks/pre-compact.py",
-    "Stop": "python .stdd/hooks/session-end.py"
+    "SessionStart": "python .fstdd/hooks/session-start.py",
+    "PreCompact": "python .fstdd/hooks/pre-compact.py",
+    "Stop": "python .fstdd/hooks/session-end.py"
   }
 }
 ```
@@ -1063,16 +1063,16 @@ interface:
 |------|------|------|------|
 | Y | 可被 AI 精确消费 | Canonical YAML | `proposal.yaml` |
 | H | 人类可读 | Human View MD | `proposal.md` |
-| F | 功能文件 | 模板/配置 | `.stdd/templates/` |
+| F | 功能文件 | 模板/配置 | `.fstdd/templates/` |
 | T | 临时 | 中间产物 | `pending-adjustments.yaml` |
 | C | 累积 | 跨 Change 累加 | `.canon-index.yaml` |
-| L | 生命周期 | 状态/进度 | `.stdd.yaml` |
+| L | 生命周期 | 状态/进度 | `.fstdd.yaml` |
 
 ---
 
 ### Ch30 Canonical YAML 格式规范
 
-Canonical YAML 共 5 个核心 schema + 1 个索引文件，位于 `.stdd/templates/canonical/`。
+Canonical YAML 共 5 个核心 schema + 1 个索引文件，位于 `.fstdd/templates/canonical/`。
 
 #### 1. proposal.yaml — 变更提案
 
@@ -1261,7 +1261,7 @@ stdd experience curate pack         # 打包官方经验包
 #### 目录结构
 
 ```
-.stdd/code-structure/
+.fstdd/code-structure/
   index.md               # 累积索引
   .structure-index.yaml  # 元数据
   deltas/<change>.md     # 每 change 的 delta
@@ -1304,7 +1304,7 @@ stdd structure graph               # ASCII 依赖树
 stdd skill create <name> --type language|workflow|tools
 ```
 
-生成 `.stdd/skills/<category>/<name>/SKILL.md`。
+生成 `.fstdd/skills/<category>/<name>/SKILL.md`。
 
 #### 平台同步
 
@@ -1366,7 +1366,7 @@ stdd skill create <name> --type language|workflow|tools
 
 **功能：** 初始化 STDD 到当前项目。
 
-**创建：** `.stdd/`（skills/templates/standards/config.d/platforms）、`changes/`、`specs/`、`archive/`、`STDD.md`、`AGENTS.md`
+**创建：** `.fstdd/`（skills/templates/standards/config.d/platforms）、`changes/`、`specs/`、`archive/`、`STDD.md`、`AGENTS.md`
 
 **`--force`**：覆盖已存在文件。
 
@@ -1411,7 +1411,7 @@ stdd skill create <name> --type language|workflow|tools
 
 **名称规则：** `^[a-zA-Z0-9][-a-zA-Z0-9_.]{1,49}$`（2-50 字符，字母数字开头）
 
-**创建：** `proposal.md`, `design.md`, `test-plan.md`, `specs/`, `.stdd.yaml`
+**创建：** `proposal.md`, `design.md`, `test-plan.md`, `specs/`, `.fstdd.yaml`
 
 **`--parallel`**：同时创建 explore + research 并行 git worktree（长程模式双实例启动）。
 
@@ -1625,7 +1625,7 @@ stdd skill create <name> --type language|workflow|tools
 #### 目录布局
 
 ```
-.stdd/
+.fstdd/
   config.d/
     project.yaml       # 项目元数据
     gates.yaml         # Gate 定义
@@ -1749,7 +1749,7 @@ pass@k:
 
 ```yaml
 experience:
-  dir: ".stdd/experiences"
+  dir: ".fstdd/experiences"
   auto_record: true           # Phase 5 自动记录经验
   auto_load:
     enabled: true
@@ -1818,7 +1818,7 @@ task_types:
 ### Ch52 version.yaml + 全局注册表
 
 ```yaml
-# .stdd/version.yaml
+# .fstdd/version.yaml
 stdd_version: "2.9.3"
 locked: false
 installed_at: "2026-06-05T18:25:27"
@@ -1826,7 +1826,7 @@ upgraded_at: "2026-06-05T21:05:22"
 source_path: "D:/mycode/stdd"
 ```
 
-#### 全局注册表 `~/.stdd/projects.yaml`
+#### 全局注册表 `~/.fstdd/projects.yaml`
 
 ```yaml
 registry_version: 1
@@ -1847,7 +1847,7 @@ projects:
 #### 设计原则
 
 - **核心与适配器分离**：STDD 核心（CLI + Skill + 配置）平台无关，每平台一个薄适配层
-- **Skill 生成机制**：`stdd install` 从 `.stdd/skills/` 生成平台特定格式
+- **Skill 生成机制**：`stdd install` 从 `.fstdd/skills/` 生成平台特定格式
 
 #### 平台特定调用
 
@@ -1901,18 +1901,18 @@ projects:
 
 | 语言 | 文件 | 内容 |
 |------|------|------|
-| Python | `.stdd/standards/python.md` | 类型注解、async/await、CancelledError 处理 |
-| Java | `.stdd/standards/java.md` | Spring Boot、JPA、异常处理 |
-| Go | `.stdd/standards/go.md` | 错误处理、goroutine、context |
-| Rust | `.stdd/standards/rust.md` | Cargo、所有权、unsafe |
-| TypeScript | `.stdd/standards/typescript.md` | Node.js、async、类型安全 |
+| Python | `.fstdd/standards/python.md` | 类型注解、async/await、CancelledError 处理 |
+| Java | `.fstdd/standards/java.md` | Spring Boot、JPA、异常处理 |
+| Go | `.fstdd/standards/go.md` | 错误处理、goroutine、context |
+| Rust | `.fstdd/standards/rust.md` | Cargo、所有权、unsafe |
+| TypeScript | `.fstdd/standards/typescript.md` | Node.js、async、类型安全 |
 
 Phase 4 Step 0 自动按 `project.language` 加载对应标准。
 
 #### Rules 目录
 
 ```
-.stdd/rules/
+.fstdd/rules/
   common/
     tdd.md              # TDD 红绿重构规则
     git-workflow.md     # Git 提交规范
@@ -2046,7 +2046,7 @@ Phase 4 Step 0 自动按 `project.language` 加载对应标准。
 
 ```
 项目根目录/
-├── .stdd/                          # STDD 系统目录
+├── .fstdd/                          # STDD 系统目录
 │   ├── version.yaml                #   C: 版本信息
 │   ├── config.d/                   #   C: 配置模块（6 文件）
 │   ├── skills/                     #   F: Phase Skill 定义
@@ -2178,7 +2178,7 @@ A: `stdd experience export --publish`。社区注册表在 GitHub Releases + Git
 
 ---
 
-### AppD .stdd.yaml 完整字段参考
+### AppD .fstdd.yaml 完整字段参考
 
 | 字段 | 类型 | 默认值 | 写入端 | 读取端 |
 |------|------|--------|--------|--------|

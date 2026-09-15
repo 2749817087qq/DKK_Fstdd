@@ -11,7 +11,7 @@ description: "STDD Phase 1: 需求理解与确认 — 将模糊需求转化为�
 ## 前置条件
 
 - 用户提出了需求或问题描述
-- 项目已初始化 STDD（存在 `.stdd/` 目录）
+- 项目已初始化 STDD（存在 `.fstdd/` 目录）
 
 ## 执行流程
 
@@ -26,7 +26,7 @@ description: "STDD Phase 1: 需求理解与确认 — 将模糊需求转化为�
 
 ### Step 2: 读取模板
 
-先读取模板文件：`.stdd/templates/proposal.md`
+先读取模板文件：`.fstdd/templates/proposal.md`
 
 严格按照模板的章节结构和字段定义起草 proposal。
 
@@ -34,7 +34,7 @@ description: "STDD Phase 1: 需求理解与确认 — 将模糊需求转化为�
 
 **V2.9.2 Canonical-First**：优先起草 `proposal.yaml`（Canonical YAML），`proposal.md` 从 YAML 渲染生成。
 
-先读取模板：`.stdd/templates/canonical/proposal.yaml`
+先读取模板：`.fstdd/templates/canonical/proposal.yaml`
 
 按模板起草 proposal.yaml：
 - **meta**：change_id, title, created, status
@@ -73,14 +73,14 @@ description: "STDD Phase 1: 需求理解与确认 — 将模糊需求转化为�
 
 在提交用户确认之前，基于 proposal 的复杂度自动计算评分并建议执行模式：
 
-1. **计算复杂度评分**（0-17 分，详见 `.stdd/config.d/lite.yaml`）：
+1. **计算复杂度评分**（0-17 分，详见 `.fstdd/config.d/lite.yaml`）：
    - 预估文件数 (0-3) + 预估行数 (0-3) + Capability 数 (0-2) + 风险等级 (0-4) + 数据/API (0-2) + 安全 (0-3)
 2. **映射到模式**：
    - 0-3 → `lightweight`（微变更，1-3 文件、<50 行）
    - 4-7 → `standard`（标准变更）
    - 8+ → `thorough`（大型/关键变更）
 3. **在 Gate 1 确认时展示模式建议**，允许用户调整
-4. 模式确认后写入 `.stdd.yaml`（`mode`, `task_type`, `complexity_score`, `score_confidence: preliminary`）
+4. 模式确认后写入 `.fstdd.yaml`（`mode`, `task_type`, `complexity_score`, `score_confidence: preliminary`）
 
 ---
 
@@ -120,20 +120,20 @@ description: "STDD Phase 1: 需求理解与确认 — 将模糊需求转化为�
 
 **确认前不生成文件。**
 
-> 确认门模板参见: `.stdd/skills/_shared/confirm-gate.md`
+> 确认门模板参见: `.fstdd/skills/_shared/confirm-gate.md`
 
 ### Step 5: 生成终版 proposal.md
 
 用户确认后：
 1. 创建 change 目录：`changes/<YYYY-MM-DD>-<name>/`
 2. 写入 `proposal.md`
-3. 初始化 `.stdd.yaml` 状态文件（phase: understand → completed）
+3. 初始化 `.fstdd.yaml` 状态文件（phase: understand → completed）
 4. 提示用户：Phase 1 完成，可以执行 `Phase 2: SPEC`
 
 ## 产出物
 
 - `changes/<date>-<name>/proposal.md` — 经用户确认的变更提案
-- `changes/<date>-<name>/.stdd.yaml` — 变更状态文件
+- `changes/<date>-<name>/.fstdd.yaml` — 变更状态文件
 
 ## 质量检查
 

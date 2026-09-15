@@ -160,7 +160,7 @@ def _count_batch_files_so_far(project_root: Path) -> int:
 def _find_open_batch(project_root: Path):
     """Find the currently open (unclosed) batch. Returns (batch_dir, batch_data) or (None, None)."""
     import yaml as _yaml
-    batches_dir = project_root / ".stdd" / "changes" / "_batch"
+    batches_dir = project_root / ".fstdd" / "changes" / "_batch"
     if not batches_dir.is_dir():
         return None, None
 
@@ -169,7 +169,7 @@ def _find_open_batch(project_root: Path):
         key=lambda d: d.stat().st_mtime,
         reverse=True,
     ):
-        stdd_yaml = batch_dir / ".stdd.yaml"
+        stdd_yaml = batch_dir / ".fstdd.yaml"
         if stdd_yaml.exists():
             data = _yaml.safe_load(stdd_yaml.read_text(encoding="utf-8"))
             if data and not data.get("closed_at"):
@@ -184,7 +184,7 @@ def _is_zombie(change_dir: Path) -> bool:
     """Check if a change is zombie (stale > ZOMBIE_DAYS without phase progress)."""
     import yaml as _yaml
     from datetime import datetime as _dt, timedelta as _td
-    stdd_yaml = change_dir / ".stdd.yaml"
+    stdd_yaml = change_dir / ".fstdd.yaml"
     if not stdd_yaml.exists():
         return False
     data = _yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
@@ -203,7 +203,7 @@ def _is_zombie(change_dir: Path) -> bool:
 def _find_active_change(project_root: Path) -> tuple:
     """Find the most recent active change. Returns (change_dir, phase) or (None, None).
     V3.0.1: Zombie changes (stale > 7 days) are skipped."""
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.is_dir():
         return None, None
 
@@ -212,7 +212,7 @@ def _find_active_change(project_root: Path) -> tuple:
         key=lambda d: d.stat().st_mtime,
         reverse=True,
     ):
-        stdd_yaml = change_dir / ".stdd.yaml"
+        stdd_yaml = change_dir / ".fstdd.yaml"
         if stdd_yaml.exists():
             import yaml
             data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8"))
@@ -241,7 +241,7 @@ def _find_active_change(project_root: Path) -> tuple:
                     key=lambda d: d.stat().st_mtime,
                     reverse=True,
                 ):
-                    stdd_yaml = child_dir / ".stdd.yaml"
+                    stdd_yaml = child_dir / ".fstdd.yaml"
                     if stdd_yaml.exists():
                         import yaml
                         data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8"))
@@ -279,12 +279,12 @@ def _is_gate_token_path(file_path: str) -> bool:
 
 
 def _is_state_confirmation_edit(project_root: Path, file_path: str, content: str) -> bool:
-    """V3.0.5: .stdd.yaml 内容含 confirmed_at/confirmed_by → 阻断直接篡改确认字段。
+    """V3.0.5: .fstdd.yaml 内容含 confirmed_at/confirmed_by → 阻断直接篡改确认字段。
 
     确认字段必须走 'stdd gate approve' CLI 通道（写审计链），不许 AI 用 Edit/Write 直接篡改。
     拿不到内容（content 空）→ 不阻断（fail-open）。
     """
-    if not file_path.endswith(".stdd.yaml"):
+    if not file_path.endswith(".fstdd.yaml"):
         return False
     if not content:
         return False
@@ -295,7 +295,7 @@ def _is_workflow_artifact(project_root: Path, change_dir: Path, file_path: str) 
     """V3.0.5: understand/spec 阶段放行的 YAML-first 流程产出物。
 
     change 内 canonical/ 下任何文件 + design.md/test-plan.md/proposal.md + specs/ 下 spec.md。
-    .stdd.yaml 由 CLI 管理，不算流程产出物（不放行，避免旁路）。
+    .fstdd.yaml 由 CLI 管理，不算流程产出物（不放行，避免旁路）。
     """
     try:
         p = Path(file_path)
@@ -345,7 +345,7 @@ def _check_phase_integrity(data: dict, current_phase: str) -> tuple:
             return False, (
                 f"Phase 完整性异常：当前 phase='{current_phase}' 但 "
                 f"Phase '{prev}' 状态为 '{prev_status}'（应为 'completed'）。"
-                " 请用 'stdd phase advance' 逐步推进，不要手动修改 .stdd.yaml。"
+                " 请用 'stdd phase advance' 逐步推进，不要手动修改 .fstdd.yaml。"
             )
 
     # Check required gate phases have confirmed_at
@@ -496,13 +496,13 @@ def _check_phase_integrity_guard(project_root: Path) -> list[str]:
     import yaml as _yaml
     from datetime import datetime as _dt
     warnings = []
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         return warnings
     for change_dir in sorted(changes_dir.iterdir()):
         if change_dir.name.startswith("_") or change_dir.name.startswith("."):
             continue
-        state_file = change_dir / ".stdd.yaml"
+        state_file = change_dir / ".fstdd.yaml"
         if not state_file.exists():
             continue
         state = _yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
@@ -550,12 +550,12 @@ def _check_agent_ops(operation: str, project_root: Path) -> tuple[bool, str]:
     agent_tools = {"Bash", "WebFetch", "WebSearch", "Task", "NotebookEdit"}
     if operation not in agent_tools:
         return True, ""
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         return True, ""
-    active_changes = [d for d in (project_root / ".stdd" / "changes").iterdir()
+    active_changes = [d for d in (project_root / ".fstdd" / "changes").iterdir()
                       if d.is_dir() and not d.name.startswith("_") and not d.name.startswith(".")
-                      and (d / ".stdd.yaml").exists()]
+                      and (d / ".fstdd.yaml").exists()]
     if active_changes:
         return True, ""
     return False, f"  [STDD Guard] Agent 操作 ({operation}) 需要在 active change 中执行。请先 /stdd-understand。"
@@ -564,10 +564,10 @@ def _check_agent_ops(operation: str, project_root: Path) -> tuple[bool, str]:
 def _check_inertia(project_root: Path) -> str | None:
     """V3.0.1: Check if previous changes skipped gates. Returns warning if escalation needed."""
     import yaml as _yaml
-    archives = sorted((project_root / ".stdd" / "archive").iterdir(), reverse=True) if (project_root / ".stdd" / "archive").exists() else []
+    archives = sorted((project_root / ".fstdd" / "archive").iterdir(), reverse=True) if (project_root / ".fstdd" / "archive").exists() else []
     skip_count = 0
     for arch_dir in archives[:3]:
-        state_file = arch_dir / ".stdd.yaml"
+        state_file = arch_dir / ".fstdd.yaml"
         if not state_file.exists():
             continue
         state = _yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
@@ -598,7 +598,7 @@ def cmd_guard_check(args: argparse.Namespace) -> int:
 
     # Check if enforce_stdd is enabled
     enforce = True
-    config_file = project_root / ".stdd" / "config.d" / "project.yaml"
+    config_file = project_root / ".fstdd" / "config.d" / "project.yaml"
     if config_file.exists():
         import yaml
         config = yaml.safe_load(config_file.read_text(encoding="utf-8"))
@@ -608,13 +608,13 @@ def cmd_guard_check(args: argparse.Namespace) -> int:
         return 0
 
     # V3.0.5: --hook-stdin 路径感知 — 硬阻断（任何 phase）：
-    #   GATE token 写入必须人工；.stdd.yaml 确认字段直接篡改必须走 CLI
+    #   GATE token 写入必须人工；.fstdd.yaml 确认字段直接篡改必须走 CLI
     if hook_path:
         if _is_gate_token_path(hook_path):
             _guard_report(args, "🚫 GATE<N>_APPROVED token 必须由用户人工创建，AI 不得写入。")
             return 2
         if _is_state_confirmation_edit(project_root, hook_path, hook_content):
-            _guard_report(args, "🚫 不得直接修改 .stdd.yaml 确认字段；请走 'stdd gate approve' CLI 通道。")
+            _guard_report(args, "🚫 不得直接修改 .fstdd.yaml 确认字段；请走 'stdd gate approve' CLI 通道。")
             return 2
 
     # find active change
@@ -622,7 +622,7 @@ def cmd_guard_check(args: argparse.Namespace) -> int:
 
     # Full STDD change: check phase integrity + task_type permissions
     if active_dir:
-        stdd_yaml = active_dir / ".stdd.yaml"
+        stdd_yaml = active_dir / ".fstdd.yaml"
         if stdd_yaml.exists():
             import yaml
             change_data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
@@ -724,7 +724,7 @@ def cmd_guard_status(args: argparse.Namespace) -> None:
     batch_dir, batch_data = _find_open_batch(project_root)
     active_dir, phase = _find_active_change(project_root)
 
-    config_file = project_root / ".stdd" / "config.d" / "project.yaml"
+    config_file = project_root / ".fstdd" / "config.d" / "project.yaml"
     enforce = True
     allow_bypass = False
     if config_file.exists():
@@ -741,7 +741,7 @@ def cmd_guard_status(args: argparse.Namespace) -> None:
     task_type = "code"
     editable = (phase in _EDITABLE_PHASES if phase else False) or (batch_dir is not None)
     if active_dir:
-        stdd_yaml = active_dir / ".stdd.yaml"
+        stdd_yaml = active_dir / ".fstdd.yaml"
         if stdd_yaml.exists():
             change_data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
             task_type = change_data.get("task_type", "code") or "code"

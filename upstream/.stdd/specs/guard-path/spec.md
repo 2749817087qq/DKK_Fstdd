@@ -28,14 +28,14 @@
 - **WHEN** 尝试用 Edit/Write 工具写 app/foo.py（非流程产出物）
 - **THEN** guard SHALL 返回 2 阻断（understand 非可编辑阶段）
 
-### Requirement: guard 阻断 AI 直接写 GATE<N>_APPROVED token 文件与篡改 .stdd.yaml 确认字段
+### Requirement: guard 阻断 AI 直接写 GATE<N>_APPROVED token 文件与篡改 .fstdd.yaml 确认字段
 
 #### Scenario: SC-GUARD-004
 
 - **GIVEN** 任何 phase
 - **WHEN** 尝试用 Edit/Write 工具写 changes/<c>/GATE3_APPROVED
 - **THEN** guard SHALL 返回 2 阻断（token 必须由用户人工创建）
-- **AND** 写 .stdd.yaml 且内容含 confirmed_at/confirmed_by SHALL 返回 2 阻断
+- **AND** 写 .fstdd.yaml 且内容含 confirmed_at/confirmed_by SHALL 返回 2 阻断
 
 #### Scenario: SC-GUARD-005
 

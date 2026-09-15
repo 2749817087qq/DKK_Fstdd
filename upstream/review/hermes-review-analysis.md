@@ -95,7 +95,7 @@ if changes_dir.exists():
 | # | 建议 | 优先级 | 核实结果 |
 |---|------|--------|----------|
 | 1 | 修复 archive 目录名 Bug | 🔴 高 | **确认**，`args.name` → `change_dir.name` |
-| 2 | `.stdd.yaml` 增加 version 字段 | 🔴 高 | **确认**，`cmd_new` 生成的状态文件无版本号 |
+| 2 | `.fstdd.yaml` 增加 version 字段 | 🔴 高 | **确认**，`cmd_new` 生成的状态文件无版本号 |
 | 3 | 增加 `stdd rollback` 命令 | 🔴 高 | **确认**，当前无从 archive 恢复的机制 |
 | 4 | 增加 `stdd diff` 命令 | 🔴 高 | **确认**，当前无 spec↔test↔code 差异对比 |
 | 5 | 修复 validate 正则逻辑 | 🟡 中 | **部分确认**，问题存在但 Hermes 修复建议有误 |
@@ -155,7 +155,7 @@ Hermes 评审聚焦于 CLI 和模板，但遗漏了以下重要问题：
 | 优先级 | 建议项 | 行动 |
 |--------|--------|------|
 | P0 | Bug 1: archive 目录名 | 立即修复 |
-| P0 | `.stdd.yaml` 版本字段 | 立即添加 |
+| P0 | `.fstdd.yaml` 版本字段 | 立即添加 |
 | P1 | Bug 2: validate 正则（修正方案） | 统一改为 `<` |
 | P1 | Bug 3: trace 搜索范围 | 增加 specs/ 搜索 |
 | P1 | init --force | 增加选项 |

@@ -1,5 +1,5 @@
 experience:
-  dir: .stdd/experiences
+  dir: .fstdd/experiences
   auto_record:
     enabled: true
     min_confidence: 0.5

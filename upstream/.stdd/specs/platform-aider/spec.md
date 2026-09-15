@@ -8,10 +8,10 @@
 
 #### Scenario: Aider 约定文件存在且内容完整
 
-- **GIVEN** `.stdd/platforms/aider/` 目录存在
+- **GIVEN** `.fstdd/platforms/aider/` 目录存在
 - **WHEN** 用户将 `CONVENTIONS.md` 和 `.aider.conf.yml` 复制到项目根目录
 - **THEN** `CONVENTIONS.md` SHALL 包含：编码规范引用、测试规范要求、命名约定、错误处理原则
-- **AND** `.aider.conf.yml` SHALL 包含：`read` 字段引用 `CONVENTIONS.md` 和 `.stdd/standards/` 规范文件
+- **AND** `.aider.conf.yml` SHALL 包含：`read` 字段引用 `CONVENTIONS.md` 和 `.fstdd/standards/` 规范文件
 
 #### Scenario: Aider 根据约定调整代码行为
 

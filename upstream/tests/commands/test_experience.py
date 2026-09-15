@@ -20,14 +20,14 @@ def _make_args(subcommand, **kwargs):
 
 
 def _setup_experiences_dir(project_root: Path) -> Path:
-    """Create .stdd/experiences directory and config files in a temp project."""
-    (project_root / ".stdd" / "experiences").mkdir(parents=True, exist_ok=True)
-    (project_root / ".stdd" / "config.d").mkdir(parents=True, exist_ok=True)
+    """Create .fstdd/experiences directory and config files in a temp project."""
+    (project_root / ".fstdd" / "experiences").mkdir(parents=True, exist_ok=True)
+    (project_root / ".fstdd" / "config.d").mkdir(parents=True, exist_ok=True)
 
-    exp_config = project_root / ".stdd" / "config.d" / "experience.yaml"
+    exp_config = project_root / ".fstdd" / "config.d" / "experience.yaml"
     exp_config.write_text("""
 experience:
-  dir: .stdd/experiences
+  dir: .fstdd/experiences
   auto_record:
     enabled: true
     min_confidence: 0.5
@@ -50,17 +50,17 @@ experience:
     auto_generate: true
 """, encoding="utf-8")
 
-    proj_config = project_root / ".stdd" / "config.d" / "project.yaml"
+    proj_config = project_root / ".fstdd" / "config.d" / "project.yaml"
     proj_config.write_text("""
 paths:
   archive_dir: archive
   changes_dir: changes
-  experiences_dir: .stdd/experiences
-  platforms_dir: .stdd/platforms
-  skills_dir: .stdd/skills
+  experiences_dir: .fstdd/experiences
+  platforms_dir: .fstdd/platforms
+  skills_dir: .fstdd/skills
   specs_dir: specs
-  standards_dir: .stdd/standards
-  templates_dir: .stdd/templates
+  standards_dir: .fstdd/standards
+  templates_dir: .fstdd/templates
 project:
   language: python
   name: stdd
@@ -72,7 +72,7 @@ stdd_version: '2.0'
     (project_root / "changes").mkdir(exist_ok=True)
     (project_root / "specs").mkdir(exist_ok=True)
     (project_root / "archive").mkdir(exist_ok=True)
-    return project_root / ".stdd" / "experiences"
+    return project_root / ".fstdd" / "experiences"
 
 
 class TestExperienceAdd:
@@ -416,7 +416,7 @@ class TestExperiencePull:
         """TC-COM-009: All registries unreachable exits with error."""
         exp_dir = _setup_experiences_dir(tmp_path)
         # Add community config
-        exp_config = tmp_path / ".stdd" / "config.d" / "experience.yaml"
+        exp_config = tmp_path / ".fstdd" / "config.d" / "experience.yaml"
         content = exp_config.read_text(encoding="utf-8") + """
 community:
   registries:
@@ -872,12 +872,12 @@ class TestExperienceGracefulDegradation:
     """TC-EXP-001, TC-EXP-002: Graceful degradation when experiences dir missing or empty."""
 
     def test_list_no_experiences_dir_returns_empty(self, tmp_path, monkeypatch):
-        """TC-EXP-001: New project without .stdd/experiences/ dir returns empty list, no crash."""
-        # Create .stdd/ and config but NOT experiences/ dir
-        (tmp_path / ".stdd" / "config.d").mkdir(parents=True)
-        (tmp_path / ".stdd" / "config.d" / "experience.yaml").write_text("""
+        """TC-EXP-001: New project without .fstdd/experiences/ dir returns empty list, no crash."""
+        # Create .fstdd/ and config but NOT experiences/ dir
+        (tmp_path / ".fstdd" / "config.d").mkdir(parents=True)
+        (tmp_path / ".fstdd" / "config.d" / "experience.yaml").write_text("""
 experience:
-  dir: .stdd/experiences
+  dir: .fstdd/experiences
   auto_record:
     enabled: true
     min_confidence: 0.5
@@ -904,11 +904,11 @@ experience:
     def test_list_empty_experiences_dir_returns_zero(self, tmp_path, monkeypatch):
         """TC-EXP-002: Empty experiences directory shows 0 entries."""
         # Create empty experiences dir (no EXP-*.md files, no .experience-index.yaml)
-        (tmp_path / ".stdd" / "experiences").mkdir(parents=True)
-        (tmp_path / ".stdd" / "config.d").mkdir(parents=True)
-        (tmp_path / ".stdd" / "config.d" / "experience.yaml").write_text("""
+        (tmp_path / ".fstdd" / "experiences").mkdir(parents=True)
+        (tmp_path / ".fstdd" / "config.d").mkdir(parents=True)
+        (tmp_path / ".fstdd" / "config.d" / "experience.yaml").write_text("""
 experience:
-  dir: .stdd/experiences
+  dir: .fstdd/experiences
   auto_record:
     enabled: true
     min_confidence: 0.5

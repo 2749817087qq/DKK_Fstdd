@@ -8,7 +8,7 @@ from datetime import datetime
 
 
 def _get_structure_dir(project_root: Path) -> Path:
-    return project_root / ".stdd" / "code-structure"
+    return project_root / ".fstdd" / "code-structure"
 
 
 def _ensure_structure_dir(project_root: Path):
@@ -44,7 +44,7 @@ def cmd_structure_delta(args):
         "## 变更文件",
         "",
     ]
-    # List all files in change directory (excluding .stdd.yaml and .md files)
+    # List all files in change directory (excluding .fstdd.yaml and .md files)
     for f in sorted(change_dir.rglob("*")):
         if f.is_file() and f.suffix not in (".md", ".yaml", ".yml"):
             rel = f.relative_to(change_dir)
@@ -58,7 +58,7 @@ def cmd_structure_delta(args):
 
 
 def cmd_structure_merge(args):
-    """Merge delta into .stdd/code-structure/index.md."""
+    """Merge delta into .fstdd/code-structure/index.md."""
     project_root = Path.cwd()
     _ensure_structure_dir(project_root)
     change_name = args.target
@@ -103,7 +103,7 @@ def cmd_structure_merge(args):
         f.write(delta_content)
         f.write("\n---\n")
 
-    print(f"  Merged {change_name} into .stdd/code-structure/index.md")
+    print(f"  Merged {change_name} into .fstdd/code-structure/index.md")
 
 
 def cmd_structure_rebuild(args):

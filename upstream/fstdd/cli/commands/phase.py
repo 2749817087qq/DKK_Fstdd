@@ -20,13 +20,13 @@ def _find_change(project_root: Path, name: str = None) -> Path:
 
     V3.0.5: 顶层无活跃 change 时，回退查 open batch 的子 change（批级管线）。
     """
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.is_dir():
         return None
     if name:
         return changes_dir / name
     candidates = sorted(
-        [d for d in changes_dir.iterdir() if d.is_dir() and d.name != "_batch" and (d / ".stdd.yaml").exists()],
+        [d for d in changes_dir.iterdir() if d.is_dir() and d.name != "_batch" and (d / ".fstdd.yaml").exists()],
         key=lambda d: d.stat().st_mtime, reverse=True,
     )
     if candidates:
@@ -42,7 +42,7 @@ def _find_change(project_root: Path, name: str = None) -> Path:
         children_dir = batch_dir / "changes"
         if children_dir.is_dir():
             children = sorted(
-                [d for d in children_dir.iterdir() if d.is_dir() and (d / ".stdd.yaml").exists()],
+                [d for d in children_dir.iterdir() if d.is_dir() and (d / ".fstdd.yaml").exists()],
                 key=lambda d: d.stat().st_mtime, reverse=True,
             )
             if children:
@@ -61,9 +61,9 @@ def cmd_phase(args: argparse.Namespace) -> None:
         print("  No change found.")
         sys.exit(1)
 
-    stdd_yaml = change_dir / ".stdd.yaml"
+    stdd_yaml = change_dir / ".fstdd.yaml"
     if not stdd_yaml.exists():
-        print(f"  .stdd.yaml not found in {change_dir.name}")
+        print(f"  .fstdd.yaml not found in {change_dir.name}")
         sys.exit(1)
 
     data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8"))
@@ -118,7 +118,7 @@ def cmd_phase(args: argparse.Namespace) -> None:
             slices = data.get("phases", {}).get("build", {}).get("slices_completed", {})
             if not slices:
                 print("  ❌ BUILD → DELIVER 需要 per-slice 验证证据链。")
-                print("     请确保每个 Slice 的 .stdd.yaml 中包含 tc_coverage/new_tests/verified_at")
+                print("     请确保每个 Slice 的 .fstdd.yaml 中包含 tc_coverage/new_tests/verified_at")
                 sys.exit(1)
             for sid, sdata in slices.items():
                 tc = sdata.get("tc_coverage", "")

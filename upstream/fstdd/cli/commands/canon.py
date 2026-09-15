@@ -10,18 +10,18 @@ from datetime import datetime
 def _get_canon_dir(project_root: Path, change_name: str = None) -> Path:
     """Get canonical directory. Defaults to changes/<change>/canonical/ (V2.9)."""
     if change_name:
-        return project_root / ".stdd" / "changes" / change_name / "canonical"
-    return project_root / ".stdd" / "canonical"
+        return project_root / ".fstdd" / "changes" / change_name / "canonical"
+    return project_root / ".fstdd" / "canonical"
 
 
 def _find_current_change(project_root: Path) -> str:
     """Find the most recent change directory name."""
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.is_dir():
         return None
-    # Return most recently modified change that has a .stdd.yaml
+    # Return most recently modified change that has a .fstdd.yaml
     candidates = sorted(
-        [d for d in changes_dir.iterdir() if d.is_dir() and (d / ".stdd.yaml").exists()],
+        [d for d in changes_dir.iterdir() if d.is_dir() and (d / ".fstdd.yaml").exists()],
         key=lambda d: d.stat().st_mtime,
         reverse=True,
     )
@@ -123,7 +123,7 @@ def cmd_canon_init(args):
     # V2.9.4: Read task_type to skip irrelevant spec dirs
     task_type = "code"
     if change_name:
-        stdd_yaml_path = project_root / ".stdd" / "changes" / change_name / ".stdd.yaml"
+        stdd_yaml_path = project_root / ".fstdd" / "changes" / change_name / ".fstdd.yaml"
         if stdd_yaml_path.exists():
             try:
                 change_data = yaml.safe_load(stdd_yaml_path.read_text(encoding="utf-8"))
@@ -245,7 +245,7 @@ def _generate_spec(project_root: Path, yaml_file: Path, output_dir: Path = None)
     change_id = data.get("meta", {}).get("change_id", yaml_file.stem)
     capability = data.get("meta", {}).get("capability", yaml_file.stem)
     if output_dir is None:
-        change_dir = project_root / ".stdd" / "changes" / change_id
+        change_dir = project_root / ".fstdd" / "changes" / change_id
         output_dir = change_dir
     specs_dir = output_dir / "specs" / capability
     specs_dir.mkdir(parents=True, exist_ok=True)
@@ -301,7 +301,7 @@ def _generate_one(project_root: Path, change_id: str, gen_type: str,
 
     # Build Human View from template or direct mapping
     if output_dir is None:
-        change_dir = project_root / ".stdd" / "changes" / change_id
+        change_dir = project_root / ".fstdd" / "changes" / change_id
     else:
         change_dir = output_dir
     change_dir.mkdir(parents=True, exist_ok=True)
@@ -370,7 +370,7 @@ def cmd_canon_verify(args):
         print(f"  Error: canonical/proposals/{args.change_name}.yaml not found")
         sys.exit(1)
 
-    md_file = project_root / ".stdd" / "changes" / args.change_name / "proposal.md"
+    md_file = project_root / ".fstdd" / "changes" / args.change_name / "proposal.md"
     if not md_file.exists():
         print(f"  Warning: changes/{args.change_name}/proposal.md not found — nothing to verify")
         sys.exit(0)

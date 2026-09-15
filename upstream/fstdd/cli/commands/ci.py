@@ -296,7 +296,7 @@ def _cmd_check_failures(args: argparse.Namespace, project_root: Path) -> None:
 def check_files_exist(change_dir: Path, _project_root: Path) -> tuple[str, str]:
     """(a) Check required files exist."""
     missing = []
-    for f in ["proposal.md", "design.md", "test-plan.md", ".stdd.yaml"]:
+    for f in ["proposal.md", "design.md", "test-plan.md", ".fstdd.yaml"]:
         if not (change_dir / f).exists():
             missing.append(f)
     if missing:
@@ -398,8 +398,8 @@ def check_scope_creep(change_dir: Path, _project_root: Path) -> tuple[str, str]:
     for fp in changed_paths:
         fp = fp.strip()
         # A file is in-scope if it's under one of the capability spec dirs
-        # or in common dirs like .stdd/, tests/, etc.
-        common_dirs = {".stdd/", "tests/", "docs/", ".github/"}
+        # or in common dirs like .fstdd/, tests/, etc.
+        common_dirs = {".fstdd/", "tests/", "docs/", ".github/"}
         is_common = any(fp.startswith(d) for d in common_dirs)
         is_cap = any(f"specs/{c}/" in fp or f"commands/{c}" in fp for c in caps)
         if not is_common and not is_cap:
@@ -578,7 +578,7 @@ def check_anchoring_missing(change_dir: Path, project_root: Path) -> tuple[str, 
     """(l) Check critical Change has sufficient anchoring level (V2.7)."""
     import yaml as _yaml
     # Check for canonical proposal
-    canon_file = project_root / ".stdd" / "canonical" / "proposals" / f"{change_dir.name}.yaml"
+    canon_file = project_root / ".fstdd" / "canonical" / "proposals" / f"{change_dir.name}.yaml"
     if not canon_file.exists():
         return ("SKIP", "(l) canonical proposal not found — cannot check anchoring")
 
@@ -611,9 +611,9 @@ def check_anchoring_missing(change_dir: Path, project_root: Path) -> tuple[str, 
 @_register_check
 def check_slice_completion(change_dir: Path, project_root: Path) -> tuple[str, str]:
     """Check that all slices marked 'done' have evidence (V2.7 post-mortem P4-3)."""
-    stdd_yaml = change_dir / ".stdd.yaml"
+    stdd_yaml = change_dir / ".fstdd.yaml"
     if not stdd_yaml.exists():
-        return ("SKIP", ".stdd.yaml 不存在")
+        return ("SKIP", ".fstdd.yaml 不存在")
 
     import yaml as _yaml
     state = _yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}

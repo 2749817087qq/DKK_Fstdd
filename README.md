@@ -33,7 +33,7 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 | 问题 | 解决方式 |
 |------|---------|
 | 上游安装器输出到 `~/.workbuddy/skills/*.md`（单文件），而 WorkBuddy 实际加载 `~/.workbuddy-ai/skills/<name>/SKILL.md` | 改为目录格式 |
-| skill 正文里的项目相对路径（`.stdd/skills/_shared/*`、`python bin/fstdd`）全局安装后解析不了 | 安装时固化为绝对路径 |
+| skill 正文里的项目相对路径（`.fstdd/skills/_shared/*`、`python bin/fstdd`）全局安装后解析不了 | 安装时固化为绝对路径 |
 | CLI 依赖 PyYAML / Jinja2，系统默认解释器可能没有 | 绑定到具备依赖的解释器 |
 | Deliver 阶段会**自动向外部社区仓库上传项目经验**（数据外发） | 默认禁用 + 哨兵标记 + 校验脚本 |
 | **升级会静默覆盖 skill，把上述策略全部抹掉** | 三层防护 + 升级后强制重跑规程 |
@@ -43,7 +43,7 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 
 | 内容 | 在哪 |
 |------|------|
-| 方法论、模板、CLI、`.stdd/` 骨架 | `upstream/`（vendor 自上游，MIT 许可与版权原样保留） |
+| 方法论、模板、CLI、`.fstdd/` 骨架 | `upstream/`（vendor 自上游，MIT 许可与版权原样保留） |
 | 适配层脚本、安装文档、`fstdd-fin` | 本仓库 `tools/` `docs/` `skills/` |
 | 生成的 6 个 skill（`fstdd`、`fstdd-understand/spec/build/deliver/upgrade`） | **运行时生成物**，由安装脚本产生 |
 
@@ -67,7 +67,7 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 └── upstream/                        # 上游 FSTDD V3.0.5 代码（vendor，MIT）
     ├── bin/fstdd                     # CLI 入口
     ├── fstdd/cli/                    # 39 个命令模块
-    └── .stdd/                       # 模板、配置、知识库骨架
+    └── .fstdd/                       # 模板、配置、知识库骨架
 ```
 
 ---
@@ -144,7 +144,7 @@ FSTDD_PY=/path/to/python tools/install_workbuddy_skills.py
 python "C:/路径/stdd/bin/fstdd" init
 ```
 
-生成 `.stdd/` 骨架、模板与项目状态文件。**未初始化的项目，流程无法完整执行。**
+生成 `.fstdd/` 骨架、模板与项目状态文件。**未初始化的项目，流程无法完整执行。**
 
 ---
 
@@ -227,7 +227,7 @@ python tools/verify_workbuddy_skills.py   # FAIL 时禁止继续 DELIVER 相关�
 | `ModuleNotFoundError: No module named 'yaml'` | 当前解释器缺 PyYAML。换装了依赖的解释器，或 `pip install pyyaml jinja2` |
 | `verify` 报「残留未替换的 `python bin/fstdd`」 | skill 文件被上游原件覆盖了，重跑安装脚本 |
 | `verify` 报哨兵缺失 | 同上，且说明上传防线已失效，**先修复再继续 DELIVER** |
-| 提示 `.stdd/templates/*` 不存在 | 项目未初始化，在项目根目录跑一次 `fstdd init` |
+| 提示 `.fstdd/templates/*` 不存在 | 项目未初始化，在项目根目录跑一次 `fstdd init` |
 | `all registries unreachable` | 社区经验库网络不可达，非致命，不影响主流程 |
 | 装完 skill 列表里看不到 | 重启 WorkBuddy 或执行 `/reload` |
 | `git add` 刷出成百上千行 `LF will be replaced by CRLF` | 见下方「行尾符（EOL）治理」 |
@@ -299,7 +299,7 @@ python tools/share_experience.py --export --from-archive --publish   # 导出并
 ```
 
 - **目标仓库**：`2749817087qq/Fstdd-experiences`（可用 `--repo` 或 `EXP_REPO` 覆盖）
-- **经验来源**：`.stdd/experiences/EXP-*.md`，以及已归档 change 的 `test-report.md`
+- **经验来源**：`.fstdd/experiences/EXP-*.md`，以及已归档 change 的 `test-report.md`
 - **强制脱敏**：导出前自动替换绝对路径、IP、内网域名、凭证、邮箱（`--no-sanitize` 可关闭，但不建议）
 
 ### 自动化

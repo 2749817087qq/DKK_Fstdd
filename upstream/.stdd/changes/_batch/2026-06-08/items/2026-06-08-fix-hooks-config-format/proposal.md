@@ -4,7 +4,7 @@
 
 `/doctor` 发现三个生命周期 hook（SessionStart/PreCompact/Stop）因配置格式错误被 Claude Code 静默忽略，从 2026-06-06 部署以来从未执行过。
 
-**根因**：`stdd hooks install` 将 hook 值写为字符串（`"python .stdd/hooks/xxx.py"`），但 Claude Code 要求 array-of-matchers 格式 `[{hooks: [{type: "command", command: "..."}]}]`。测试只验证 key 存在不验证 value 类型，install 后无自动校验，三道防线全部失守。
+**根因**：`stdd hooks install` 将 hook 值写为字符串（`"python .fstdd/hooks/xxx.py"`），但 Claude Code 要求 array-of-matchers 格式 `[{hooks: [{type: "command", command: "..."}]}]`。测试只验证 key 存在不验证 value 类型，install 后无自动校验，三道防线全部失守。
 
 **经验依据**：EXP-2026-0008（配置写入-验证缺口）、EXP-2026-0009（关键基础设施静默失败）。
 

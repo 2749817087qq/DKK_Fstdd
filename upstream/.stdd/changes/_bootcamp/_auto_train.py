@@ -4,9 +4,9 @@
 def auto_train_level(project_root, level, scenario, cert):
     """Auto-run training for a level and grade it."""
     import yaml as _yaml, argparse as _argparse
-    wd = project_root / ".stdd" / "changes" / "_bootcamp" / f"level_{level}" / "work"
+    wd = project_root / ".fstdd" / "changes" / "_bootcamp" / f"level_{level}" / "work"
     wd.mkdir(parents=True, exist_ok=True)
-    cd = wd / ".stdd" / "changes" / f"bootcamp-lv{level}"
+    cd = wd / ".fstdd" / "changes" / f"bootcamp-lv{level}"
     cd.mkdir(parents=True, exist_ok=True)
     mode = scenario.get("mode", "lightweight")
     phases = {
@@ -17,24 +17,24 @@ def auto_train_level(project_root, level, scenario, cert):
         "verify": {"status": "completed", "confirmed_at": "2026-07-09"},
         "deliver": {"status": "completed"},
     }
-    (cd / ".stdd.yaml").write_text(_yaml.dump({
+    (cd / ".fstdd.yaml").write_text(_yaml.dump({
         "change_id": f"bootcamp-lv{level}", "current_phase": "deliver",
         "mode": mode, "phases": phases,
     }))
 
     content_map = {
-        1: {".stdd/proposal.md": "# Fix Typo
+        1: {".fstdd/proposal.md": "# Fix Typo
 
 Recieve -> Receive
 "},
         2: {
-            ".stdd/design.md": "# API Rate Limit Design
+            ".fstdd/design.md": "# API Rate Limit Design
 
 ## Decisions
 ### 1. Token bucket
 **Why**: Simple.
 ",
-            ".stdd/specs/api-rate-limit/spec.md": "# Spec
+            ".fstdd/specs/api-rate-limit/spec.md": "# Spec
 
 ### Req: Rate limit
 System SHALL enforce 100 req/min.
@@ -44,16 +44,16 @@ System SHALL enforce 100 req/min.
 - **WHEN** 1 more
 - **THEN** SHALL return 200
 ",
-            ".stdd/proposal.yaml": _yaml.dump({"meta": {"change_id": f"bootcamp-lv{level}"}, "why": {"problem": "no rate limiting"}}),
-            ".stdd/test-plan.md": "# Test Plan
+            ".fstdd/proposal.yaml": _yaml.dump({"meta": {"change_id": f"bootcamp-lv{level}"}, "why": {"problem": "no rate limiting"}}),
+            ".fstdd/test-plan.md": "# Test Plan
 |TC-001|P0|Normal|
 ",
-            ".stdd/slices.md": "# Slice
+            ".fstdd/slices.md": "# Slice
 |1|P0|TokenBucket|
 ",
         },
         3: {
-            ".stdd/specs/payment/spec.md": "# Payment
+            ".fstdd/specs/payment/spec.md": "# Payment
 
 ### Req: Alipay
 System SHALL support Alipay.
@@ -63,15 +63,15 @@ System SHALL support Alipay.
 - **WHEN** 100 CNY
 - **THEN** SHALL generate QR
 ",
-            ".stdd/test-report.md": "# Report
+            ".fstdd/test-report.md": "# Report
 15/15 passed. 14 FM: all PASS. Slice1: tc=5/5 nt=5
 ",
         },
         4: {
-            ".stdd/agent_spec.yaml": _yaml.dump({"agent_task_id": "task-001", "checkpoints": [{"id": "CP-1", "assertions": [{"target": "crm.balance", "value": 8000}]}]}),
+            ".fstdd/agent_spec.yaml": _yaml.dump({"agent_task_id": "task-001", "checkpoints": [{"id": "CP-1", "assertions": [{"target": "crm.balance", "value": 8000}]}]}),
         },
         5: {
-            ".stdd/specs/dashboard/spec.md": "# Dashboard
+            ".fstdd/specs/dashboard/spec.md": "# Dashboard
 
 ### Req: KPI
 System SHALL display KPIs.

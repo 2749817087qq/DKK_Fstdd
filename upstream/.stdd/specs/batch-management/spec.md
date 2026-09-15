@@ -52,7 +52,7 @@ BATCH-REQ-002: SHALL 支持手动和自动闭合批次。
 GIVEN 当前批次 `changes/_batch/2026-06-05/` 有 5 个 item，未闭合
 WHEN 用户执行 `stdd batch close`
 THEN SHALL 生成 `archive-summary.md`
-AND SHALL 设置 `.stdd.yaml` 中 `closed_at` 时间戳
+AND SHALL 设置 `.fstdd.yaml` 中 `closed_at` 时间戳
 
 ### Scenario: 闭合后新变更创建不同名批次
 

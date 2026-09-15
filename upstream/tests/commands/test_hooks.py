@@ -9,9 +9,9 @@ class TestHooksInstall:
     """TC-EFFI-003"""
 
     def test_install_creates_scripts_and_config(self, tmp_path, monkeypatch):
-        """Hook install creates .stdd/hooks/ scripts and updates settings.json."""
+        """Hook install creates .fstdd/hooks/ scripts and updates settings.json."""
         # Arrange
-        (tmp_path / ".stdd").mkdir(parents=True)
+        (tmp_path / ".fstdd").mkdir(parents=True)
         claude_dir = tmp_path / ".claude"
         claude_dir.mkdir(parents=True)
         (claude_dir / "settings.local.json").write_text("{}", encoding="utf-8")
@@ -25,7 +25,7 @@ class TestHooksInstall:
         cmd_hooks_install(args)
 
         # Assert: scripts created
-        hooks_dir = tmp_path / ".stdd" / "hooks"
+        hooks_dir = tmp_path / ".fstdd" / "hooks"
         assert hooks_dir.exists()
         assert (hooks_dir / "session-start.py").exists()
         assert (hooks_dir / "pre-compact.py").exists()
@@ -61,7 +61,7 @@ class TestHooksInstall:
 
     def test_install_skips_existing_without_force(self, tmp_path, monkeypatch, capsys):
         """Second install without --force skips existing scripts."""
-        hooks_dir = tmp_path / ".stdd" / "hooks"
+        hooks_dir = tmp_path / ".fstdd" / "hooks"
         hooks_dir.mkdir(parents=True)
         (hooks_dir / "session-start.py").write_text("# existing", encoding="utf-8")
 
@@ -80,7 +80,7 @@ class TestHooksInstall:
 
     def test_install_force_overwrites(self, tmp_path, monkeypatch):
         """Install with --force overwrites existing scripts."""
-        hooks_dir = tmp_path / ".stdd" / "hooks"
+        hooks_dir = tmp_path / ".fstdd" / "hooks"
         hooks_dir.mkdir(parents=True)
         original = hooks_dir / "session-start.py"
         original.write_text("# old script", encoding="utf-8")
@@ -100,7 +100,7 @@ class TestHooksInstall:
 
     def test_status_shows_installed(self, tmp_path, monkeypatch, capsys):
         """Status command shows installed hooks."""
-        hooks_dir = tmp_path / ".stdd" / "hooks"
+        hooks_dir = tmp_path / ".fstdd" / "hooks"
         hooks_dir.mkdir(parents=True)
         (hooks_dir / "test-hook.py").write_text("# test", encoding="utf-8")
         monkeypatch.chdir(tmp_path)

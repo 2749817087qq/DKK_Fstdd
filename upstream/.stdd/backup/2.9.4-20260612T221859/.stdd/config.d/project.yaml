@@ -1,12 +1,12 @@
 paths:
   archive_dir: archive
   changes_dir: changes
-  platforms_dir: .stdd/platforms
-  skills_dir: .stdd/skills
+  platforms_dir: .fstdd/platforms
+  skills_dir: .fstdd/skills
   specs_dir: specs
-  standards_dir: .stdd/standards
-  templates_dir: .stdd/templates
-  experiences_dir: .stdd/experiences
+  standards_dir: .fstdd/standards
+  templates_dir: .fstdd/templates
+  experiences_dir: .fstdd/experiences
 project:
   language: python
   name: stdd

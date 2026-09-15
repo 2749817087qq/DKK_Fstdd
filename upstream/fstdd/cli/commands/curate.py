@@ -18,7 +18,7 @@ def _read_community_config(project_root: Path) -> dict:
 
 
 def _get_curation_dir(project_root: Path) -> Path:
-    d = project_root / ".stdd" / "curation"
+    d = project_root / ".fstdd" / "curation"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -285,7 +285,7 @@ def cmd_curate_pack(args: argparse.Namespace, project_root: Path) -> None:
         return
 
     pack_name = f"experience-{language}-{version}"
-    tar_path = project_root / ".stdd" / "curation" / f"{pack_name}.tar.gz"
+    tar_path = project_root / ".fstdd" / "curation" / f"{pack_name}.tar.gz"
 
     index = {"last_id": 0, "total": len(curated), "by_category": {}, "by_language": {}, "by_lifecycle": {}, "by_severity": {}}
 

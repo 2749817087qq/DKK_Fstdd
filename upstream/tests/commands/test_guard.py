@@ -21,10 +21,10 @@ class TestFindActiveChange:
 
     def test_finds_change_with_current_phase(self, tmp_path):
         """REQ: 应识别使用 current_phase 字段的 change（new.py 的标准格式）。"""
-        changes_dir = tmp_path / ".stdd" / "changes"
+        changes_dir = tmp_path / ".fstdd" / "changes"
         change_dir = changes_dir / "2026-06-06-test-fix"
         change_dir.mkdir(parents=True)
-        (change_dir / ".stdd.yaml").write_text(yaml.dump({
+        (change_dir / ".fstdd.yaml").write_text(yaml.dump({
             "status": "active",
             "current_phase": "build",
         }), encoding="utf-8")
@@ -36,10 +36,10 @@ class TestFindActiveChange:
 
     def test_finds_change_with_legacy_phase(self, tmp_path):
         """向后兼容：也识别使用 phase 字段的旧格式 change，并归一化旧阶段（verify→build）。"""
-        changes_dir = tmp_path / ".stdd" / "changes"
+        changes_dir = tmp_path / ".fstdd" / "changes"
         change_dir = changes_dir / "2026-06-05-old-format"
         change_dir.mkdir(parents=True)
-        (change_dir / ".stdd.yaml").write_text(yaml.dump({
+        (change_dir / ".fstdd.yaml").write_text(yaml.dump({
             "status": "active",
             "phase": "verify",
         }), encoding="utf-8")
@@ -51,10 +51,10 @@ class TestFindActiveChange:
 
     def test_skips_batch_directory(self, tmp_path):
         """REQ: _batch 目录不应被识别为 active change。"""
-        changes_dir = tmp_path / ".stdd" / "changes"
+        changes_dir = tmp_path / ".fstdd" / "changes"
         batch_dir = changes_dir / "_batch" / "2026-06-06"
         batch_dir.mkdir(parents=True)
-        (batch_dir / ".stdd.yaml").write_text(yaml.dump({
+        (batch_dir / ".fstdd.yaml").write_text(yaml.dump({
             "mode": "batch",
             "batch_id": "2026-06-06",
             "closed_at": None,
@@ -70,10 +70,10 @@ class TestFindActiveChange:
 
     def test_current_phase_has_priority_over_legacy_phase(self, tmp_path):
         """current_phase 优先于 phase。"""
-        changes_dir = tmp_path / ".stdd" / "changes"
+        changes_dir = tmp_path / ".fstdd" / "changes"
         change_dir = changes_dir / "2026-06-06-both"
         change_dir.mkdir(parents=True)
-        (change_dir / ".stdd.yaml").write_text(yaml.dump({
+        (change_dir / ".fstdd.yaml").write_text(yaml.dump({
             "status": "active",
             "current_phase": "build",
             "phase": "understand",
@@ -87,9 +87,9 @@ class TestFindOpenBatch:
     """Test _find_open_batch. Returns (batch_dir, batch_data) tuple."""
 
     def test_finds_open_batch(self, tmp_path):
-        batches_dir = tmp_path / ".stdd" / "changes" / "_batch" / "2026-06-06"
+        batches_dir = tmp_path / ".fstdd" / "changes" / "_batch" / "2026-06-06"
         batches_dir.mkdir(parents=True)
-        (batches_dir / ".stdd.yaml").write_text(yaml.dump({
+        (batches_dir / ".fstdd.yaml").write_text(yaml.dump({
             "mode": "batch",
             "batch_id": "2026-06-06",
             "closed_at": None,
@@ -100,9 +100,9 @@ class TestFindOpenBatch:
         assert batch_dir.name == "2026-06-06"
 
     def test_skips_closed_batch(self, tmp_path):
-        batches_dir = tmp_path / ".stdd" / "changes" / "_batch" / "2026-06-05"
+        batches_dir = tmp_path / ".fstdd" / "changes" / "_batch" / "2026-06-05"
         batches_dir.mkdir(parents=True)
-        (batches_dir / ".stdd.yaml").write_text(yaml.dump({
+        (batches_dir / ".fstdd.yaml").write_text(yaml.dump({
             "mode": "batch",
             "batch_id": "2026-06-05",
             "closed_at": "2026-06-05T12:00:00",
@@ -161,18 +161,18 @@ class TestGuardHookStdin:
 
     def _setup_change(self, tmp_path, current_phase="build", done=("understand", "spec")):
         """Create active change. done = 已完成的 phase（用于 integrity）。"""
-        changes_dir = tmp_path / ".stdd" / "changes"
+        changes_dir = tmp_path / ".fstdd" / "changes"
         change_dir = changes_dir / "2026-06-06-path-test"
         change_dir.mkdir(parents=True)
-        (tmp_path / ".stdd" / "config.d").mkdir(parents=True)
-        (tmp_path / ".stdd" / "config.d" / "project.yaml").write_text(
+        (tmp_path / ".fstdd" / "config.d").mkdir(parents=True)
+        (tmp_path / ".fstdd" / "config.d" / "project.yaml").write_text(
             yaml.dump({"project": {"name": "t", "language": "python"}, "enforce_stdd": True}),
             encoding="utf-8")
         phases = {p: {"status": "completed" if p in done else "pending"}
                   for p in ("understand", "spec", "build", "deliver")}
         for p in done:
             phases[p]["confirmed_at"] = f"2026-06-06T1{len(done)}:00:00"
-        (change_dir / ".stdd.yaml").write_text(yaml.dump({
+        (change_dir / ".fstdd.yaml").write_text(yaml.dump({
             "change_id": "2026-06-06-path-test", "status": "active",
             "current_phase": current_phase, "task_type": "code", "version": "3.0",
             "phases": phases,
@@ -188,9 +188,9 @@ class TestGuardHookStdin:
         assert cmd_guard_check(self._make_args(hook_stdin=True)) == 2
 
     def test_blocks_state_confirmation_edit(self, tmp_path, monkeypatch):
-        """SC-GUARD-004: .stdd.yaml 内容含 confirmed_at/by → exit 2."""
+        """SC-GUARD-004: .fstdd.yaml 内容含 confirmed_at/by → exit 2."""
         change_dir = self._setup_change(tmp_path, "build")
-        self._stdin_json(monkeypatch, "Write", str(change_dir / ".stdd.yaml"),
+        self._stdin_json(monkeypatch, "Write", str(change_dir / ".fstdd.yaml"),
                          content="confirmed_at: 2026-06-06T10:00:00\nconfirmed_by: dialog\n")
         monkeypatch.chdir(tmp_path)
         from fstdd.cli.commands.guard import cmd_guard_check

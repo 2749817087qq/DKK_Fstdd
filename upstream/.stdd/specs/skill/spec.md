@@ -4,18 +4,18 @@
 
 ### Requirement: 核心 Skill 作为平台 Skill 的唯一来源
 
-`stdd install` 命令 SHALL 从核心 Skill（`.stdd/skills/`）读取内容，根据平台模板生成平台 Skill，不再依赖手动维护的 `.stdd/platforms/*/skills/` 副本。
+`stdd install` 命令 SHALL 从核心 Skill（`.fstdd/skills/`）读取内容，根据平台模板生成平台 Skill，不再依赖手动维护的 `.fstdd/platforms/*/skills/` 副本。
 
 #### Scenario: install 从核心 Skill 生成 Claude Code 版本
 
-- **GIVEN** `.stdd/skills/spec.md` 核心 Skill 内容已更新
+- **GIVEN** `.fstdd/skills/spec.md` 核心 Skill 内容已更新
 - **WHEN** 用户执行 `stdd install claude-code`
 - **THEN** 生成的 `.claude/skills/stdd-spec/SKILL.md` SHALL 包含核心 Skill 的完整内容
 - **AND** frontmatter SHALL 包含 `name: stdd-spec` 和对应描述
 
 #### Scenario: install 从核心 Skill 生成 WorkBuddy 版本
 
-- **GIVEN** `.stdd/skills/spec.md` 核心 Skill 内容已更新
+- **GIVEN** `.fstdd/skills/spec.md` 核心 Skill 内容已更新
 - **WHEN** 用户执行 `stdd install workbuddy`
 - **THEN** 生成的 Skill SHALL 包含 `trigger_keywords` 的 YAML frontmatter
 - **AND** 内容 SHALL 与核心 Skill 一致

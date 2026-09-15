@@ -43,7 +43,7 @@ EDITABLE_PHASES_BY_TYPE = {
 EDITABLE_PHASES = {"build", "deliver"}
 
 # Legacy 6-phase active states → normalized to the merged 4-phase model.
-# Old `.stdd.yaml` state files (archive, bootcamp samples) used slice/verify.
+# Old `.fstdd.yaml` state files (archive, bootcamp samples) used slice/verify.
 LEGACY_PHASE_MAP = {
     "slice": "build",
     "verify": "build",

@@ -93,8 +93,8 @@ The white paper content is based on V2.9.3 source code. If discrepancies are fou
 
 - **Experience Library** (经验库) — 5-state lifecycle (discovered→verified→deposited→shared/merged→retired) AI coding experience management system.
 - **Phase Context** — Cross-session recovery file. AI updates at end of each phase with key decisions, current state, and next actions.
-- **Resume Context** — Recovery fields stored in .stdd.yaml.
-- **State Freshness** — Compares saved git HEAD in .stdd.yaml with current HEAD to determine if resume state is still valid.
+- **Resume Context** — Recovery fields stored in .fstdd.yaml.
+- **State Freshness** — Compares saved git HEAD in .fstdd.yaml with current HEAD to determine if resume state is still valid.
 - **Hook** (生命周期钩子) — Three auto-triggered scripts: SessionStart (load state on startup) / PreCompact (save before compaction) / Stop (persist on exit).
 
 #### Other
@@ -158,7 +158,7 @@ Define(Specify) → Execute(Execute) → Verify(Verify) → Learn(Learn)
 4. **User-Confirmation-Driven** (Gate确认驱动): Three Gates cannot be skipped; confirmation authority rests with the user
 5. **Template-First** (模板先行): All deliverables start from 17 templates, ensuring structural consistency
 6. **Vertical Slicing** (垂直切片): Slice by function (end-to-end increment), not by layer
-7. **Test Coverage Mandate** (强制测试覆盖): Every Scenario must have a corresponding test; tracked in .stdd.yaml's traceability.tc_cases
+7. **Test Coverage Mandate** (强制测试覆盖): Every Scenario must have a corresponding test; tracked in .fstdd.yaml's traceability.tc_cases
 8. **Behavior-Not-Implementation** (行为测试): Test "what the system should do" (behavior), not "how it does it internally" (implementation)
 9. **Self-Learning** (经验自学习): Extract experiences from failures; auto-load matching experiences in subsequent Phase 2 for prevention
 
@@ -247,7 +247,7 @@ Transform vague requirements into a clear, verifiable change proposal.
 - Identify stakeholders and constraints
 
 **Step 2: Read Template**
-- Read `.stdd/templates/canonical/proposal.yaml` (V2.9.2 YAML-First)
+- Read `.fstdd/templates/canonical/proposal.yaml` (V2.9.2 YAML-First)
 
 **Step 3: Draft proposal.yaml**
 - Fill in the Canonical proposal.yaml template:
@@ -277,7 +277,7 @@ Transform vague requirements into a clear, verifiable change proposal.
 
 #### Deliverables
 
-- `proposal.md` (or proposal.yaml) + `.stdd.yaml` updated (understand → completed)
+- `proposal.md` (or proposal.yaml) + `.fstdd.yaml` updated (understand → completed)
 
 ---
 
@@ -330,7 +330,7 @@ Transform the proposal into testable behavior specs and verification specs.
 
 #### Deliverables
 
-`design.md`, `spec.yaml` (coding), `agent_spec.yaml`, `test-plan.md`, `.stdd.yaml` updated
+`design.md`, `spec.yaml` (coding), `agent_spec.yaml`, `test-plan.md`, `.fstdd.yaml` updated
 
 ---
 
@@ -364,7 +364,7 @@ Decompose spec into independently implementable development slices, determine ex
 
 #### Deliverables
 
-`slices.md` (slice execution plan), `tasks.md` (task checklist), `.stdd.yaml` updated
+`slices.md` (slice execution plan), `tasks.md` (task checklist), `.fstdd.yaml` updated
 
 ---
 
@@ -382,8 +382,8 @@ Implement slice by slice, passing tests at each step.
 #### Step 0: Load Resources
 
 1. Read `project.yaml` → get language
-2. Load language standard `.stdd/standards/<lang>.md`
-3. Load project rules `.stdd/rules/<lang>/*.md`
+2. Load language standard `.fstdd/standards/<lang>.md`
+3. Load project rules `.fstdd/rules/<lang>/*.md`
 4. Load phase-context.md (if exists)
 5. Load matching experience entries (max 10)
 6. Generate code structure delta: `stdd structure delta <change>`
@@ -425,7 +425,7 @@ After all parallel-group slices complete, merge verification: no conflicts, no r
 
 #### Deliverables
 
-Code files, `pending-adjustments.yaml`, `.stdd.yaml` updated
+Code files, `pending-adjustments.yaml`, `.fstdd.yaml` updated
 
 ---
 
@@ -451,7 +451,7 @@ Lightweight mode: 1 agent only.
 
 **Step 1: Test Execution**
 
-Execute per `.stdd/config.d/quality.yaml` configuration, in order:
+Execute per `.fstdd/config.d/quality.yaml` configuration, in order:
 
 1. `pytest` — unit tests + coverage (default target 80%)
 2. `coverage` — coverage report
@@ -489,7 +489,7 @@ Present test-report.md + design-adjustments.md to user.
 
 #### Deliverables
 
-`test-report.md`, `design-adjustments.yaml/.md`, `.stdd.yaml` updated
+`test-report.md`, `design-adjustments.yaml/.md`, `.fstdd.yaml` updated
 
 ---
 
@@ -654,7 +654,7 @@ Spec Scenario "User login success"
 - `stdd trace <tc-id>` — Trace TC-ID across four layers
 - `stdd diff [name]` — Spec↔Test↔Code coverage gap table
 
-#### .stdd.yaml traceability Fields
+#### .fstdd.yaml traceability Fields
 
 ```yaml
 traceability:
@@ -670,7 +670,7 @@ traceability:
 #### Enabling Conditions
 
 - Optional after Gate 2
-- `.stdd.yaml` key: `long_range.enabled: true`
+- `.fstdd.yaml` key: `long_range.enabled: true`
 - Pre-authorizes Phase 3-5
 
 #### Pre-Authorization Scope (from long_range.yaml)
@@ -720,7 +720,7 @@ In lightweight mode, each micro-fix as a separate change directory would cause d
 ```
 changes/_batch/
   <batch-id>/
-    .stdd.yaml          # batch_id, batch_type, items, closed_at
+    .fstdd.yaml          # batch_id, batch_type, items, closed_at
     items/              # Micro-change items
     archive-summary.md  # Generated on close
 ```
@@ -762,7 +762,7 @@ batch:
 #### State Freshness
 
 `stdd state --resume` auto-compares:
-- `.stdd.yaml` key: `state_freshness.git_head`
+- `.fstdd.yaml` key: `state_freshness.git_head`
 - Current `git rev-parse --short HEAD`
 
 Outputs `STALE` warning when mismatch detected.
@@ -776,7 +776,7 @@ Outputs `STALE` warning when mismatch detected.
 | Hook | Trigger | Script | Behavior |
 |------|---------|--------|----------|
 | **SessionStart** | Session start | `session-start.py` | Scan changes/, print active change status line |
-| **PreCompact** | Claude Code context before compaction | `pre-compact.py` | Save `.stdd.yaml` last_modified timestamp |
+| **PreCompact** | Claude Code context before compaction | `pre-compact.py` | Save `.fstdd.yaml` last_modified timestamp |
 | **Stop** | Session end | `session-end.py` | Report experience library stats, suggest `stdd experience curate` |
 
 #### Installation
@@ -792,9 +792,9 @@ stdd hooks uninstall          # Remove hook configuration
 ```json
 {
   "hooks": {
-    "SessionStart": "python .stdd/hooks/session-start.py",
-    "PreCompact": "python .stdd/hooks/pre-compact.py",
-    "Stop": "python .stdd/hooks/session-end.py"
+    "SessionStart": "python .fstdd/hooks/session-start.py",
+    "PreCompact": "python .fstdd/hooks/pre-compact.py",
+    "Stop": "python .fstdd/hooks/session-end.py"
   }
 }
 ```
@@ -1096,16 +1096,16 @@ Provide reference implementation code (baseline implementation) that AI starts f
 |------|--------|---------|---------|
 | Y | AI-Precisely Consumable | Canonical YAML | `proposal.yaml` |
 | H | Human-Readable | Human View MD | `proposal.md` |
-| F | Functional File | Template/Config | `.stdd/templates/` |
+| F | Functional File | Template/Config | `.fstdd/templates/` |
 | T | Temporary | Intermediate artifact | `pending-adjustments.yaml` |
 | C | Cumulative | Cross-Change accumulated | `.canon-index.yaml` |
-| L | Lifecycle | State/Progress | `.stdd.yaml` |
+| L | Lifecycle | State/Progress | `.fstdd.yaml` |
 
 ---
 
 ### Ch30 Canonical YAML Format Specification
 
-Canonical YAML has 5 core schemas + 1 index file, located in `.stdd/templates/canonical/`.
+Canonical YAML has 5 core schemas + 1 index file, located in `.fstdd/templates/canonical/`.
 
 #### 1. proposal.yaml — Change Proposal
 
@@ -1294,7 +1294,7 @@ Each change generates a delta → merge into cumulative index. AI understands pr
 #### Directory Structure
 
 ```
-.stdd/code-structure/
+.fstdd/code-structure/
   index.md               # Cumulative index
   .structure-index.yaml  # Metadata
   deltas/<change>.md     # Per-change delta
@@ -1337,7 +1337,7 @@ stdd structure graph               # ASCII dependency tree
 stdd skill create <name> --type language|workflow|tools
 ```
 
-Generates `.stdd/skills/<category>/<name>/SKILL.md`.
+Generates `.fstdd/skills/<category>/<name>/SKILL.md`.
 
 #### Platform Sync
 
@@ -1395,7 +1395,7 @@ All commands support:
 
 **Purpose:** Initialize STDD in current project.
 
-**Creates:** `.stdd/` (skills/templates/standards/config.d/platforms), `changes/`, `specs/`, `archive/`, `STDD.md`, `AGENTS.md`
+**Creates:** `.fstdd/` (skills/templates/standards/config.d/platforms), `changes/`, `specs/`, `archive/`, `STDD.md`, `AGENTS.md`
 
 **`--force`:** Overwrite existing files.
 
@@ -1440,7 +1440,7 @@ All commands support:
 
 **Name rules:** `^[a-zA-Z0-9][-a-zA-Z0-9_.]{1,49}$` (2-50 chars, starts with alphanumeric)
 
-**Creates:** `proposal.md`, `design.md`, `test-plan.md`, `specs/`, `.stdd.yaml`
+**Creates:** `proposal.md`, `design.md`, `test-plan.md`, `specs/`, `.fstdd.yaml`
 
 **`--parallel`:** Also creates explore + research parallel git worktrees (long-range dual-instance launch).
 
@@ -1654,7 +1654,7 @@ Three-level auto-fix (see Ch23 for details).
 #### Directory Layout
 
 ```
-.stdd/
+.fstdd/
   config.d/
     project.yaml       # Project metadata
     gates.yaml         # Gate definitions
@@ -1778,7 +1778,7 @@ pass@k:
 
 ```yaml
 experience:
-  dir: ".stdd/experiences"
+  dir: ".fstdd/experiences"
   auto_record: true           # Phase 5 auto-record experiences
   auto_load:
     enabled: true
@@ -1847,7 +1847,7 @@ task_types:
 ### Ch52 version.yaml + Global Registry
 
 ```yaml
-# .stdd/version.yaml
+# .fstdd/version.yaml
 stdd_version: "2.9.3"
 locked: false
 installed_at: "2026-06-05T18:25:27"
@@ -1855,7 +1855,7 @@ upgraded_at: "2026-06-05T21:05:22"
 source_path: "D:/mycode/stdd"
 ```
 
-#### Global Registry `~/.stdd/projects.yaml`
+#### Global Registry `~/.fstdd/projects.yaml`
 
 ```yaml
 registry_version: 1
@@ -1876,7 +1876,7 @@ projects:
 #### Design Principles
 
 - **Core separated from adapters**: STDD core (CLI + Skill + Config) is platform-agnostic; one thin adapter per platform
-- **Skill generation mechanism**: `stdd install` generates platform-specific format from `.stdd/skills/`
+- **Skill generation mechanism**: `stdd install` generates platform-specific format from `.fstdd/skills/`
 
 #### Platform-Specific Invocation
 
@@ -1930,18 +1930,18 @@ projects:
 
 | Language | File | Content |
 |----------|------|---------|
-| Python | `.stdd/standards/python.md` | Type annotations, async/await, CancelledError handling |
-| Java | `.stdd/standards/java.md` | Spring Boot, JPA, exception handling |
-| Go | `.stdd/standards/go.md` | Error handling, goroutine, context |
-| Rust | `.stdd/standards/rust.md` | Cargo, ownership, unsafe |
-| TypeScript | `.stdd/standards/typescript.md` | Node.js, async, type safety |
+| Python | `.fstdd/standards/python.md` | Type annotations, async/await, CancelledError handling |
+| Java | `.fstdd/standards/java.md` | Spring Boot, JPA, exception handling |
+| Go | `.fstdd/standards/go.md` | Error handling, goroutine, context |
+| Rust | `.fstdd/standards/rust.md` | Cargo, ownership, unsafe |
+| TypeScript | `.fstdd/standards/typescript.md` | Node.js, async, type safety |
 
 Phase 4 Step 0 auto-loads the matching standard by `project.language`.
 
 #### Rules Directory
 
 ```
-.stdd/rules/
+.fstdd/rules/
   common/
     tdd.md              # TDD RED→GREEN→REFACTOR rules
     git-workflow.md     # Git commit conventions
@@ -2071,7 +2071,7 @@ Phase 4 Step 0 auto-loads the matching standard by `project.language`.
 
 ```
 project/
-├── .stdd/                          # STDD System Directory
+├── .fstdd/                          # STDD System Directory
 │   ├── version.yaml                #   C: Version info
 │   ├── config.d/                   #   C: Config modules (6 files)
 │   ├── skills/                     #   F: Phase Skill definitions
@@ -2203,7 +2203,7 @@ A: `stdd experience export --publish`. Community registry on GitHub Releases + G
 
 ---
 
-### AppD .stdd.yaml Complete Field Reference
+### AppD .fstdd.yaml Complete Field Reference
 
 | Field | Type | Default | Writer | Reader |
 |-------|------|---------|--------|--------|

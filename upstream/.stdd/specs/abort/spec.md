@@ -12,7 +12,7 @@
 - **AND** 用户输入 `/stdd-abort` 或"放弃当前变更"
 - **WHEN** 系统确认后
 - **THEN** 系统 SHALL 将 change 目录移动到 archive/aborted/
-- **AND** 系统 SHALL 更新 .stdd.yaml 状态为 aborted
+- **AND** 系统 SHALL 更新 .fstdd.yaml 状态为 aborted
 - **AND** 系统 SHALL 提示用户变更已放弃
 
 #### Scenario: 用户取消放弃操作

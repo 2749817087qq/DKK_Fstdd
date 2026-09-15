@@ -8,7 +8,7 @@ workbuddy 平台下的 6 个 skill 文件 SHALL 与 claude-code 平台版本在�
 
 #### Scenario: workbuddy skill 文件内容等同 claude-code gold source
 
-- **GIVEN** `.stdd/platforms/claude-code/skills/` 包含 V2.2 完整的 6 个 skill 文件
+- **GIVEN** `.fstdd/platforms/claude-code/skills/` 包含 V2.2 完整的 6 个 skill 文件
 - **WHEN** 对比 workbuddy 和 claude-code 对应文件的内容
 - **THEN** workbuddy 每个 skill 文件 SHALL 包含 claude-code 对应文件的所有 V2.2 关键特征
 - **AND** 关键特征 SHALL 包括：Step 0 多路并行评审、11类失败模式(a-k)、长程模式运行协议、强制步骤清单、Gate review 结果展示、覆盖率诊断配置、E2E配置、模式选择强制化、长程权限配置、自动衔接指令、降级条件检测
@@ -28,7 +28,7 @@ trae 平台下的 6 个 skill 文件 SHALL 与 claude-code 平台版本在内容
 
 #### Scenario: trae skill 文件内容等同 claude-code gold source
 
-- **GIVEN** `.stdd/platforms/claude-code/skills/` 包含 V2.2 完整的 6 个 skill 文件
+- **GIVEN** `.fstdd/platforms/claude-code/skills/` 包含 V2.2 完整的 6 个 skill 文件
 - **WHEN** 对比 trae 和 claude-code 对应文件的内容
 - **THEN** trae 每个 skill 文件 SHALL 包含 claude-code 对应文件的所有 V2.2 关键特征
 - **AND** 关键特征 SHALL 与 workbuddy 同步要求相同（11 项特征清单）

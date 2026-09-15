@@ -20,9 +20,9 @@ def _make_args(subcommand="approve", **kwargs):
 
 
 def _setup_gate_project(tmp_path, gates_confirmed=None):
-    """Create project with change directory and .stdd.yaml."""
-    (tmp_path / ".stdd" / "config.d").mkdir(parents=True, exist_ok=True)
-    (tmp_path / ".stdd" / "config.d" / "gates.yaml").write_text("""\
+    """Create project with change directory and .fstdd.yaml."""
+    (tmp_path / ".fstdd" / "config.d").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".fstdd" / "config.d" / "gates.yaml").write_text("""\
 gates:
   phase1_understand:
     required: true
@@ -36,7 +36,7 @@ confirmation:
     - file_token
     - cli
 """, encoding="utf-8")
-    (tmp_path / ".stdd" / "config.d" / "project.yaml").write_text("""\
+    (tmp_path / ".fstdd" / "config.d" / "project.yaml").write_text("""\
 paths:
   changes_dir: changes
   archive_dir: archive
@@ -45,8 +45,8 @@ project:
   name: test
 stdd_version: '2.0'
 """, encoding="utf-8")
-    (tmp_path / ".stdd" / "changes").mkdir(exist_ok=True)
-    change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-gate-test"
+    (tmp_path / ".fstdd" / "changes").mkdir(exist_ok=True)
+    change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-gate-test"
     change_dir.mkdir(parents=True)
 
     phases = {
@@ -70,7 +70,7 @@ stdd_version: '2.0'
         "phases": phases,
         "traceability": {"spec_scenarios": 3, "tc_cases": 3, "test_functions": 0},
     }
-    (change_dir / ".stdd.yaml").write_text(
+    (change_dir / ".fstdd.yaml").write_text(
         yaml.dump(state, allow_unicode=True, default_flow_style=False),
         encoding="utf-8"
     )
@@ -93,7 +93,7 @@ class TestGateConfirm:
         captured = capsys.readouterr()
         assert "Gate 1 confirmed" in captured.out
 
-        data = yaml.safe_load((change_dir / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["phases"]["understand"]["confirmed_at"] is not None
         assert data["phases"]["understand"]["status"] == "completed"
 
@@ -110,7 +110,7 @@ class TestGateConfirm:
         assert "already confirmed" in captured.out
 
         # confirmed_at should not change
-        data = yaml.safe_load((change_dir / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["phases"]["understand"]["confirmed_at"] == "2026-01-01T10:00:00"
 
     def test_gate_order_validation(self, tmp_path, monkeypatch):
@@ -149,7 +149,7 @@ class TestGateConfirm:
         captured = capsys.readouterr()
         assert "Gate 3 confirmed" in captured.out
 
-        data = yaml.safe_load((change_dir / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["phases"]["build"]["confirmed_at"] is not None
         assert data["phases"]["build"]["status"] == "completed"
 
@@ -167,7 +167,7 @@ class TestGateConfirm:
         captured = capsys.readouterr()
         assert "Gate 2 confirmed" in captured.out
 
-        data = yaml.safe_load((change_dir / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["phases"]["spec"]["confirmed_at"] is not None
 
     def test_file_token_and_cli_equivalent(self, tmp_path, monkeypatch, capsys):
@@ -346,7 +346,7 @@ class TestGateHardDefense:
             cmd_gate(args)
         assert exc_info.value.code == 2
 
-        data = yaml.safe_load((change_dir / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert "confirmed_at" not in data["phases"]["understand"]
 
     def test_dialog_channel_writes_audit_chain(self, tmp_path, monkeypatch, capsys):
@@ -362,7 +362,7 @@ class TestGateHardDefense:
         captured = capsys.readouterr()
         assert "Gate 1 confirmed" in captured.out
 
-        data = yaml.safe_load((change_dir / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         u = data["phases"]["understand"]
         assert u["confirmed_by"] == "dialog"
         assert u["confirmed_evidence"] == "用户：确认"
@@ -377,7 +377,7 @@ class TestGateHardDefense:
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=1, confirmed_by="dialog")
         cmd_gate(args)
-        data = yaml.safe_load((change_dir / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["phases"]["understand"]["confirmed_actor"] == "ai"
 
         # env 强制 user 发起者
@@ -386,7 +386,7 @@ class TestGateHardDefense:
         monkeypatch.setenv("STDD_CONFIRM_ACTOR", "user")
         args2 = _make_args("approve", name="2026-01-01-gate-test", gate=1, confirmed_by="dialog")
         cmd_gate(args2)
-        data2 = yaml.safe_load((change_dir2 / ".stdd.yaml").read_text(encoding="utf-8"))
+        data2 = yaml.safe_load((change_dir2 / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data2["phases"]["understand"]["confirmed_actor"] == "user"
 
     def test_file_token_without_token_rejected(self, tmp_path, monkeypatch):
@@ -430,7 +430,7 @@ class TestGateHardDefense:
         captured = capsys.readouterr()
         assert "confirmed_by=file_token" in captured.out
 
-        data = yaml.safe_load((change_dir / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["phases"]["spec"]["confirmed_by"] == "file_token"
 
     def test_invalid_confirmed_by_rejected(self, tmp_path, monkeypatch):

@@ -11,16 +11,16 @@ stdd_version: "2.9.5"
 
 ### Step 0: 版本自检
 
-先读取并执行版本自检步骤：`.stdd/skills/_shared/version-check.md`
+先读取并执行版本自检步骤：`.fstdd/skills/_shared/version-check.md`
 
-> 检查项目 `.stdd/version.yaml` 与技能版本是否一致。落后时告警但不阻断执行。
+> 检查项目 `.fstdd/version.yaml` 与技能版本是否一致。落后时告警但不阻断执行。
 
 ---
 
 ## 前置条件
 
 - Phase 3 已完成（tasks.md + slices.md 已生成）
-- `.stdd.yaml` 中 `phases.slice.status == "completed"`
+- `.fstdd.yaml` 中 `phases.slice.status == "completed"`
 
 ## 执行模式
 
@@ -29,9 +29,9 @@ stdd_version: "2.9.5"
 - **普通模式**：仅在遇到阻塞或重大设计偏离时暂停与用户交互。
 - **长程模式**：所有偏离和阻塞自动处理并记录，全程不中断。仅在触发降级条件时暂停。
 
-进入本阶段时，先读取 `.stdd.yaml` 中的 `long_range.mode` 确定当前模式。
+进入本阶段时，先读取 `.fstdd.yaml` 中的 `long_range.mode` 确定当前模式。
 
-**长程退出检测**：在每个切片开始前，检查用户最新消息是否包含"切换普通模式"或"退出长程"。如检测到，更新 `.stdd.yaml` 中 `long_range.mode: normal`，当前切片完成后暂停等待用户确认，后续切片按普通模式交互。
+**长程退出检测**：在每个切片开始前，检查用户最新消息是否包含"切换普通模式"或"退出长程"。如检测到，更新 `.fstdd.yaml` 中 `long_range.mode: normal`，当前切片完成后暂停等待用户确认，后续切片按普通模式交互。
 
 ## 长程模式运行协议（仅在 `long_range.mode == "full_auto"` 时适用）
 
@@ -47,7 +47,7 @@ stdd_version: "2.9.5"
 | 1 | **每个 Step 必须执行** — 长程模式跳过的是授权交互（AskUserQuestion），不是流程步骤 | **EVERY Step MUST be executed** — long-range skips authorization (AskUserQuestion), NOT process steps |
 | 2 | **Step 1.4 切片验证不可跳过** — 每个切片必须通过 TC 覆盖 + 产出物核对 + 测试通过三项检查 | **Step 1.4 slice verification CANNOT be skipped** — every slice MUST pass TC coverage + deliverable check + test pass |
 | 3 | **每个切片必须有新增测试** — 如果 test-plan 中本切片有 TC，新增测试数必须 > 0 | **EVERY slice MUST have new tests** — if test-plan has TCs for this slice, new test count MUST be > 0 |
-| 4 | **进度标记必须有证据** — .stdd.yaml 的 slice done 必须关联 tc_coverage / new_tests / verified_at | **Progress markers MUST be evidence-backed** — slice done requires tc_coverage / new_tests / verified_at |
+| 4 | **进度标记必须有证据** — .fstdd.yaml 的 slice done 必须关联 tc_coverage / new_tests / verified_at | **Progress markers MUST be evidence-backed** — slice done requires tc_coverage / new_tests / verified_at |
 | 5 | **降级触发覆盖静默失败** — 切片 TC 覆盖率为 0 → WARNING；连续 3 个切片无新增测试 → DEGRADE | **Degradation covers silent failures** — 0 TC coverage → WARNING; 3 consecutive slices with 0 new tests → DEGRADE |
 | 6 | **禁止占位符标记完成** — 产出物为 [TODO] 或骨架占位符的切片不能标记为 done | **NEVER mark placeholders as done** — slices with [TODO] output CANNOT be marked complete |
 
@@ -87,7 +87,7 @@ stdd_version: "2.9.5"
 
 3. **如果建议重置**：
    - 确认当前 phase-context.md 已更新到最新状态
-   - 确认 .stdd.yaml 的 state_freshness 已更新
+   - 确认 .fstdd.yaml 的 state_freshness 已更新
    - 向用户输出重置建议和 `stdd state --resume` 结果
 
 4. **如果选择继续**（或不满足重置条件）：
@@ -101,10 +101,10 @@ stdd_version: "2.9.5"
 
 在开始编码之前，**必须先读取开发规范**：
 
-1. 读取 `.stdd/config.d/project.yaml` → 获取 `project.language`
-2. 读取 `.stdd/standards/<language>.md`（如 `python.md`）
+1. 读取 `.fstdd/config.d/project.yaml` → 获取 `project.language`
+2. 读取 `.fstdd/standards/<language>.md`（如 `python.md`）
 3. 学习：命名规范、类型注解要求、异步规则、错误处理模式、测试规范
-4. **V2.9: 加载 `.stdd/rules/`**：读取 `.stdd/rules/common/*.md` 和 `.stdd/rules/<language>/*.md`，将 TDD、安全、Git 工作流等规则注入编码上下文
+4. **V2.9: 加载 `.fstdd/rules/`**：读取 `.fstdd/rules/common/*.md` 和 `.fstdd/rules/<language>/*.md`，将 TDD、安全、Git 工作流等规则注入编码上下文
 5. **V2.9: 执行代码结构摘要**：
    - 执行 `python bin/stdd structure delta <change>` 记录本 change 的代码结构变化
    - 这将生成/更新项目级的代码结构索引，随项目成长变得越来越有价值
@@ -120,7 +120,7 @@ stdd_version: "2.9.5"
    - 匹配同类型或 `project_type: null`（通配，V2.4 兼容）的经验 → 加载
    - `project_type` 不匹配的经验 → 跳过
    - 输出摘要：`已加载 <N> 条匹配经验（<project_type>），过滤 <M> 条不匹配`
-4. 根据当前 change 的 capabilities 和 spec，选出模式文本（pattern/root_cause/detection_trigger）与当前工作最相关的经验（默认加载最多 10 条，可从 `.stdd/config.d/experience.yaml` 的 `auto_load.max_experiences` 读取）
+4. 根据当前 change 的 capabilities 和 spec，选出模式文本（pattern/root_cause/detection_trigger）与当前工作最相关的经验（默认加载最多 10 条，可从 `.fstdd/config.d/experience.yaml` 的 `auto_load.max_experiences` 读取）
 5. 将匹配的经验内容（pattern + root_cause + fix_template）主动注入编码上下文
 6. 编码时对照经验库检查：
    - 模式匹配 → 参考 fix_template 预防已知错误
@@ -135,7 +135,7 @@ stdd_version: "2.9.5"
 
 #### Step 1.1: RED — 编写测试
 
-**V2.9 模式缩放**：先检查 `.stdd.yaml` 中的 `mode` 字段。
+**V2.9 模式缩放**：先检查 `.fstdd.yaml` 中的 `mode` 字段。
 
 *lightweight 模式*：
 1. 从 spec 中找到 bug 复现点或优化验证点
@@ -204,7 +204,7 @@ stdd_version: "2.9.5"
 
 4. **更新状态**（仅在全部通过后）：
    ```yaml
-   # .stdd.yaml
+   # .fstdd.yaml
    phase4:
      slices_completed:
        "<N>":
@@ -249,7 +249,7 @@ stdd_version: "2.9.5"
 如果在实现过程中发现 spec/design 需要调整：
 
 **小的偏离**（不改变接口和行为语义）：
-- 记录到 `pending-adjustments.yaml`（V2.9.2: Canonical YAML 格式，按 `.stdd/templates/canonical/pending-adjustments.yaml` 模板）
+- 记录到 `pending-adjustments.yaml`（V2.9.2: Canonical YAML 格式，按 `.fstdd/templates/canonical/pending-adjustments.yaml` 模板）
 - 检查偏离是否命中经验库中的已知模式 → 如命中，引用 EXP-ID
 - 继续执行（两种模式行为一致）
 

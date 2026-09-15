@@ -10,7 +10,7 @@ class TestSkillCreate:
     def test_create_language_skill(self, tmp_path, monkeypatch):
         """TC-SKIL-001: skill create generates SKILL.md with correct structure."""
         # Arrange
-        (tmp_path / ".stdd" / "skills" / "languages").mkdir(parents=True)
+        (tmp_path / ".fstdd" / "skills" / "languages").mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.skill import cmd_skill_create
@@ -21,7 +21,7 @@ class TestSkillCreate:
         cmd_skill_create(args)
 
         # Assert
-        skill_file = tmp_path / ".stdd" / "skills" / "languages" / "test-patterns" / "SKILL.md"
+        skill_file = tmp_path / ".fstdd" / "skills" / "languages" / "test-patterns" / "SKILL.md"
         assert skill_file.exists()
         content = skill_file.read_text(encoding="utf-8")
         assert "name: test-patterns" in content
@@ -33,7 +33,7 @@ class TestSkillCreate:
 
     def test_create_workflow_skill(self, tmp_path, monkeypatch):
         """Skill create with type=workflow goes to correct directory."""
-        (tmp_path / ".stdd" / "skills" / "workflow").mkdir(parents=True)
+        (tmp_path / ".fstdd" / "skills" / "workflow").mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.skill import cmd_skill_create
@@ -42,14 +42,14 @@ class TestSkillCreate:
 
         cmd_skill_create(args)
 
-        skill_file = tmp_path / ".stdd" / "skills" / "workflow" / "my-workflow" / "SKILL.md"
+        skill_file = tmp_path / ".fstdd" / "skills" / "workflow" / "my-workflow" / "SKILL.md"
         assert skill_file.exists()
         content = skill_file.read_text(encoding="utf-8")
         assert "category: workflow" in content
 
     def test_create_tools_skill(self, tmp_path, monkeypatch):
         """Skill create with type=tools goes to correct directory."""
-        (tmp_path / ".stdd" / "skills" / "tools").mkdir(parents=True)
+        (tmp_path / ".fstdd" / "skills" / "tools").mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.skill import cmd_skill_create
@@ -58,14 +58,14 @@ class TestSkillCreate:
 
         cmd_skill_create(args)
 
-        skill_file = tmp_path / ".stdd" / "skills" / "tools" / "docker-build" / "SKILL.md"
+        skill_file = tmp_path / ".fstdd" / "skills" / "tools" / "docker-build" / "SKILL.md"
         assert skill_file.exists()
         content = skill_file.read_text(encoding="utf-8")
         assert "category: tools" in content
 
     def test_duplicate_skill_exits(self, tmp_path, monkeypatch):
         """Creating duplicate skill exits with error."""
-        skill_dir = tmp_path / ".stdd" / "skills" / "languages" / "existing"
+        skill_dir = tmp_path / ".fstdd" / "skills" / "languages" / "existing"
         skill_dir.mkdir(parents=True)
         (skill_dir / "SKILL.md").write_text("# existing", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
@@ -80,7 +80,7 @@ class TestSkillCreate:
 
     def test_dispatch_routes_create(self, tmp_path, monkeypatch):
         """_dispatch routes to create correctly."""
-        (tmp_path / ".stdd" / "skills" / "languages").mkdir(parents=True)
+        (tmp_path / ".fstdd" / "skills" / "languages").mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.skill import _dispatch
@@ -88,7 +88,7 @@ class TestSkillCreate:
         args = argparse.Namespace(action="create", name="dispatch-test", type="language")
 
         _dispatch(args)
-        skill_file = tmp_path / ".stdd" / "skills" / "languages" / "dispatch-test" / "SKILL.md"
+        skill_file = tmp_path / ".fstdd" / "skills" / "languages" / "dispatch-test" / "SKILL.md"
         assert skill_file.exists()
 
     def test_dispatch_unknown_action(self, tmp_path, monkeypatch):

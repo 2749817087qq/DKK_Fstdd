@@ -26,7 +26,7 @@ STDD SHALL 支持 `stdd install codex` 命令，将 STDD 6 阶段 skill 部署�
 - **WHEN** Codex CLI 和 Claude Code 分别启动并加载 skills
 - **THEN** Codex CLI SHALL 读取 `.codex/skills/`（Codex 路径）
 - **AND** Claude Code SHALL 读取 `.claude/skills/`（Claude Code 路径）
-- **AND** 两个平台的 skill 内容 SHALL 来自同一 master（`.stdd/skills/`）
+- **AND** 两个平台的 skill 内容 SHALL 来自同一 master（`.fstdd/skills/`）
 
 #### Scenario: 安装后 AGENTS.md 包含 STDD 引用 <!-- confidence: medium -->
 

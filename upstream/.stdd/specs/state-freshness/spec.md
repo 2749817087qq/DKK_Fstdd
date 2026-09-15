@@ -5,22 +5,22 @@
 
 ## ADDED Requirements
 
-### Requirement: .stdd.yaml 状态新鲜度字段 <!-- confidence: high -->
+### Requirement: .fstdd.yaml 状态新鲜度字段 <!-- confidence: high -->
 
-`.stdd.yaml` SHALL 新增 state_freshness 字段块，记录状态确认时间、git HEAD 和关键文件哈希。
+`.fstdd.yaml` SHALL 新增 state_freshness 字段块，记录状态确认时间、git HEAD 和关键文件哈希。
 
 **证据来源**：proposal.md `Capabilities > New > state-freshness`
 
 #### Scenario: Phase 切换时更新新鲜度 <!-- confidence: high -->
 
 - **GIVEN** Phase 4 BUILD 完成，即将进入 Phase 5
-- **WHEN** AI 更新 `.stdd.yaml` 的 active_phase
+- **WHEN** AI 更新 `.fstdd.yaml` 的 active_phase
 - **THEN** AI SHALL 同时更新 state_freshness：verified_at=当前时间、git_head=当前HEAD、key_files_hash=关键产出物的SHA256
 - **AND** key_files_hash SHALL 至少包含 phase-context.md 和 test-report.md（如有）
 
 #### Scenario: 状态新鲜度显示 <!-- confidence: high -->
 
-- **GIVEN** `.stdd.yaml` 的 state_freshness.verified_at 为 2 小时前
+- **GIVEN** `.fstdd.yaml` 的 state_freshness.verified_at 为 2 小时前
 - **WHEN** 执行 `stdd state --resume`
 - **THEN** 输出 SHALL 显示 "🟢 状态: FRESH — 最近更新于 2 小时前"
 

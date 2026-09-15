@@ -10,9 +10,9 @@ class TestStateFreshness:
 
     def test_resume_with_freshness_fresh(self, tmp_path, monkeypatch, capsys):
         """--resume shows FRESH when git HEAD matches."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test"
         change_dir.mkdir(parents=True)
-        stdd_yaml = change_dir / ".stdd.yaml"
+        stdd_yaml = change_dir / ".fstdd.yaml"
         stdd_yaml.write_text(yaml.dump({
             "change_name": "test",
             "active_phase": 4,
@@ -36,10 +36,10 @@ class TestStateFreshness:
         assert "FRESH" in captured.out
 
     def test_resume_with_v25_format(self, tmp_path, monkeypatch, capsys):
-        """V2.5 format .stdd.yaml (no state_freshness) still works."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test"
+        """V2.5 format .fstdd.yaml (no state_freshness) still works."""
+        change_dir = tmp_path / ".fstdd" / "changes" / "test"
         change_dir.mkdir(parents=True)
-        stdd_yaml = change_dir / ".stdd.yaml"
+        stdd_yaml = change_dir / ".fstdd.yaml"
         # V2.5 format: no active_phase, no state_freshness
         stdd_yaml.write_text(yaml.dump({
             "change_name": "test",
@@ -60,9 +60,9 @@ class TestStateFreshness:
 
     def test_set_new_field(self, tmp_path, monkeypatch):
         """--set active_phase works."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test"
         change_dir.mkdir(parents=True)
-        stdd_yaml = change_dir / ".stdd.yaml"
+        stdd_yaml = change_dir / ".fstdd.yaml"
         stdd_yaml.write_text(yaml.dump({
             "resume_context": "old", "last_modified": "2026-01-01T00:00:00"
         }), encoding="utf-8")
@@ -79,9 +79,9 @@ class TestStateFreshness:
 
     def test_set_unknown_field(self, tmp_path, monkeypatch):
         """--set with invalid field exits."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test"
         change_dir.mkdir(parents=True)
-        (change_dir / ".stdd.yaml").write_text("resume_context: test\n", encoding="utf-8")
+        (change_dir / ".fstdd.yaml").write_text("resume_context: test\n", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.state import cmd_state
@@ -98,9 +98,9 @@ class TestStateDefault:
 
     def test_default_display(self, tmp_path, monkeypatch, capsys):
         """Default state display shows active_phase and resume_context."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test"
         change_dir.mkdir(parents=True)
-        stdd_yaml = change_dir / ".stdd.yaml"
+        stdd_yaml = change_dir / ".fstdd.yaml"
         stdd_yaml.write_text(yaml.dump({
             "active_phase": 5,
             "resume_context": "testing defaults",

@@ -144,9 +144,9 @@ class TestExperienceCoverage:
 class TestCICoverage:
     def test_check_anchoring_critical(self, tmp_path, monkeypatch):
         """Anchoring check for critical change."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test-crit"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test-crit"
         change_dir.mkdir(parents=True)
-        canon_dir = tmp_path / ".stdd" / "canonical" / "proposals"
+        canon_dir = tmp_path / ".fstdd" / "canonical" / "proposals"
         canon_dir.mkdir(parents=True)
         (canon_dir / "test-crit.yaml").write_text(yaml.dump({
             "critical": {"is_critical": True, "risk_assessment": {"safety_critical": True}},
@@ -160,9 +160,9 @@ class TestCICoverage:
 
     def test_check_anchoring_non_critical(self, tmp_path, monkeypatch):
         """Anchoring check passes for non-critical change."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test-noncrit"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test-noncrit"
         change_dir.mkdir(parents=True)
-        canon_dir = tmp_path / ".stdd" / "canonical" / "proposals"
+        canon_dir = tmp_path / ".fstdd" / "canonical" / "proposals"
         canon_dir.mkdir(parents=True)
         (canon_dir / "test-noncrit.yaml").write_text(yaml.dump({
             "critical": {"is_critical": False},
@@ -176,9 +176,9 @@ class TestCICoverage:
 
     def test_check_slice_completion(self, tmp_path, monkeypatch):
         """Slice completion check with evidence (legacy phase4 key fallback)."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test"
         change_dir.mkdir(parents=True)
-        (change_dir / ".stdd.yaml").write_text(yaml.dump({
+        (change_dir / ".fstdd.yaml").write_text(yaml.dump({
             "phase4": {"slices_completed": {
                 "1": {"status": "done", "tc_coverage": "4/4", "new_tests": 4,
                       "verified_at": "2026-06-03T10:00:00"}
@@ -192,9 +192,9 @@ class TestCICoverage:
 
     def test_check_slice_completion_new_key(self, tmp_path, monkeypatch):
         """V3.0.5: canonical phases.build.slices_completed key passes."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test"
         change_dir.mkdir(parents=True)
-        (change_dir / ".stdd.yaml").write_text(yaml.dump({
+        (change_dir / ".fstdd.yaml").write_text(yaml.dump({
             "phases": {"build": {"slices_completed": {
                 "1": {"status": "done", "tc_coverage": "2/2", "new_tests": 2,
                       "verified_at": "2026-08-17T10:00:00"}
@@ -212,7 +212,7 @@ class TestCICoverage:
 class TestProposalCoverage:
     def test_validate_missing_capabilities(self, tmp_path, monkeypatch):
         """Validate with missing capabilities field."""
-        canon_dir = tmp_path / ".stdd" / "canonical" / "proposals"
+        canon_dir = tmp_path / ".fstdd" / "canonical" / "proposals"
         canon_dir.mkdir(parents=True)
         (canon_dir / "test.yaml").write_text(yaml.dump({
             "meta": {"change_id": "test"}
@@ -278,7 +278,7 @@ class TestTraceCoverage:
 
 def _setup_exp_dir(tmp_path: Path) -> Path:
     """Setup minimal experience directory."""
-    exp_dir = tmp_path / ".stdd" / "experiences"
+    exp_dir = tmp_path / ".fstdd" / "experiences"
     exp_dir.mkdir(parents=True)
     monkeypatch = pytest.MonkeyPatch()
     monkeypatch.chdir(tmp_path)

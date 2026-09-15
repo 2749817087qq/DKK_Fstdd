@@ -12,7 +12,7 @@ import sys
 
 SRC = Path(r"C:\Users\Administrator\.workbuddy-ai\stdd")
 OUT = Path(r"C:\Users\Administrator\.workbuddy-ai\skills")
-SHARED_ABS = (SRC / ".stdd" / "skills" / "_shared").as_posix()
+SHARED_ABS = (SRC / ".fstdd" / "skills" / "_shared").as_posix()
 CLI_ABS = SRC / "bin" / "stdd"
 SENTINEL = "STDD_LOCAL_POLICY_NO_UPLOAD_V1"
 
@@ -60,8 +60,8 @@ def main() -> int:
         if "python bin/stdd" in text:
             fails.append(f"{name}: 残留未替换的 `python bin/stdd`")
 
-        if ".stdd/skills/_shared/" in text and SHARED_ABS not in text:
-            fails.append(f"{name}: 残留未替换的相对路径 .stdd/skills/_shared/")
+        if ".fstdd/skills/_shared/" in text and SHARED_ABS not in text:
+            fails.append(f"{name}: 残留未替换的相对路径 .fstdd/skills/_shared/")
 
         if "C:/Users/Administrator/.workbuddy-ai/stdd" not in text and name != "stdd":
             warns.append(f"{name}: 未发现本机绝对资源路径，可能是未经适配的上游原件")

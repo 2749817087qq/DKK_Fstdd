@@ -17,14 +17,14 @@ class TestExperienceExtract:
 
     def test_extract_no_test_report(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
-        (temp_project / ".stdd" / "changes" / "2026-06-01-test").mkdir(parents=True)
+        (temp_project / ".fstdd" / "changes" / "2026-06-01-test").mkdir(parents=True)
         from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="extract", dry_run=False, verbose=0)
         cmd_experience(args)
 
     def test_extract_with_test_report(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
-        change_dir = temp_project / ".stdd" / "changes" / "2026-06-12-test-extract"
+        change_dir = temp_project / ".fstdd" / "changes" / "2026-06-12-test-extract"
         change_dir.mkdir(parents=True)
         test_report = change_dir / "test-report.md"
         test_report.write_text("""# Test Report
@@ -43,23 +43,23 @@ class TestExperienceExtract:
 | test_process | PASS |
 | test_api | FAIL (flaky) |
 """, encoding="utf-8")
-        (temp_project / ".stdd" / "experiences").mkdir(parents=True, exist_ok=True)
-        config_dir = temp_project / ".stdd" / "config.d"
+        (temp_project / ".fstdd" / "experiences").mkdir(parents=True, exist_ok=True)
+        config_dir = temp_project / ".fstdd" / "config.d"
         config_dir.mkdir(parents=True, exist_ok=True)
-        (config_dir / "experience.yaml").write_text("experience:\n  dir: .stdd/experiences\n", encoding="utf-8")
+        (config_dir / "experience.yaml").write_text("experience:\n  dir: .fstdd/experiences\n", encoding="utf-8")
         (config_dir / "project.yaml").write_text("project:\n  name: test\n  language: python\n", encoding="utf-8")
 
         from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="extract", dry_run=False, verbose=0)
         cmd_experience(args)
-        exp_dir = temp_project / ".stdd" / "experiences"
+        exp_dir = temp_project / ".fstdd" / "experiences"
         drafts = list(exp_dir.glob("EXP-*.md"))
         assert len(drafts) >= 1, f"Expected >=1 draft, got {len(drafts)}"
         assert "discovered" in drafts[0].read_text(encoding="utf-8")
 
     def test_extract_low_value_filtered(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
-        change_dir = temp_project / ".stdd" / "changes" / "2026-06-12-test-filter"
+        change_dir = temp_project / ".fstdd" / "changes" / "2026-06-12-test-filter"
         change_dir.mkdir(parents=True)
         (change_dir / "test-report.md").write_text("""# Report
 | Category | Status | Description |
@@ -67,11 +67,11 @@ class TestExperienceExtract:
 | context_loss | PASS | OK |
 | tool_misuse | PASS | OK |
 """, encoding="utf-8")
-        exp_dir = temp_project / ".stdd" / "experiences"
+        exp_dir = temp_project / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True, exist_ok=True)
-        config_dir = temp_project / ".stdd" / "config.d"
+        config_dir = temp_project / ".fstdd" / "config.d"
         config_dir.mkdir(parents=True, exist_ok=True)
-        (config_dir / "experience.yaml").write_text("experience:\n  dir: .stdd/experiences\n", encoding="utf-8")
+        (config_dir / "experience.yaml").write_text("experience:\n  dir: .fstdd/experiences\n", encoding="utf-8")
         (config_dir / "project.yaml").write_text("project:\n  name: test\n  language: python\n", encoding="utf-8")
 
         from fstdd.cli.commands.experience import cmd_experience
@@ -107,14 +107,14 @@ class TestExperienceReview:
 
     def test_review_no_drafts(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
-        (temp_project / ".stdd" / "experiences").mkdir(parents=True)
+        (temp_project / ".fstdd" / "experiences").mkdir(parents=True)
         from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="review", dry_run=False, verbose=0)
         cmd_experience(args)
 
     def test_review_quit(self, temp_project, monkeypatch, capsys):
         monkeypatch.chdir(temp_project)
-        exp_dir = temp_project / ".stdd" / "experiences"
+        exp_dir = temp_project / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True)
         self._make_draft(exp_dir, "EXP-2026-0101")
         self._make_draft(exp_dir, "EXP-2026-0102")
@@ -137,7 +137,7 @@ class TestExperienceReview:
 
     def test_review_local_only(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
-        exp_dir = temp_project / ".stdd" / "experiences"
+        exp_dir = temp_project / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True)
         self._make_draft(exp_dir, "EXP-2026-0201")
         import builtins
@@ -154,7 +154,7 @@ class TestExperienceReview:
 
     def test_review_delete(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
-        exp_dir = temp_project / ".stdd" / "experiences"
+        exp_dir = temp_project / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True)
         self._make_draft(exp_dir, "EXP-2026-0301")
         import builtins
@@ -192,7 +192,7 @@ class TestExperienceShare:
 
     def test_share_not_found(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
-        (temp_project / ".stdd" / "experiences").mkdir(parents=True)
+        (temp_project / ".fstdd" / "experiences").mkdir(parents=True)
         from fstdd.cli.commands.experience import cmd_experience
         args = argparse.Namespace(subcommand="share", experience_id="EXP-NOTFOUND",
                                   dry_run=False, verbose=0)
@@ -201,7 +201,7 @@ class TestExperienceShare:
 
     def test_share_sanitize(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
-        exp_dir = temp_project / ".stdd" / "experiences"
+        exp_dir = temp_project / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True)
         self._make_exp(exp_dir, "EXP-2026-0500", include_path=True)
         import shutil, requests
@@ -230,7 +230,7 @@ class TestExperienceShare:
 
     def test_share_api_success(self, temp_project, monkeypatch):
         monkeypatch.chdir(temp_project)
-        exp_dir = temp_project / ".stdd" / "experiences"
+        exp_dir = temp_project / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True)
         self._make_exp(exp_dir, "EXP-2026-0600")
         import shutil, requests
@@ -283,7 +283,7 @@ class TestExperienceSearch:
 
     def test_search_keyword(self, temp_project, monkeypatch, capsys):
         monkeypatch.chdir(temp_project)
-        exp_dir = temp_project / ".stdd" / "experiences"
+        exp_dir = temp_project / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True)
         self._make_exp(exp_dir, "EXP-2026-1001", pattern="Database connection timeout",
                       root_cause="Connection pool exhausted")
@@ -300,7 +300,7 @@ class TestExperienceSearch:
 
     def test_search_with_filters(self, temp_project, monkeypatch, capsys):
         monkeypatch.chdir(temp_project)
-        exp_dir = temp_project / ".stdd" / "experiences"
+        exp_dir = temp_project / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True)
         self._make_exp(exp_dir, "EXP-2026-2001", category="cascading_errors",
                       pattern="Timeout in db", language="python")
@@ -320,7 +320,7 @@ class TestExperienceSearch:
 
     def test_search_no_results(self, temp_project, monkeypatch, capsys):
         monkeypatch.chdir(temp_project)
-        exp_dir = temp_project / ".stdd" / "experiences"
+        exp_dir = temp_project / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True)
         self._make_exp(exp_dir, "EXP-2026-3001", pattern="Test pattern")
         from fstdd.cli.commands.experience import cmd_experience
@@ -333,7 +333,7 @@ class TestExperienceSearch:
 
     def test_search_json_format(self, temp_project, monkeypatch, capsys):
         monkeypatch.chdir(temp_project)
-        exp_dir = temp_project / ".stdd" / "experiences"
+        exp_dir = temp_project / ".fstdd" / "experiences"
         exp_dir.mkdir(parents=True)
         self._make_exp(exp_dir, "EXP-2026-4001", pattern="Test json output")
         from fstdd.cli.commands.experience import cmd_experience

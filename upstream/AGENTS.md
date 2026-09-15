@@ -11,7 +11,7 @@ STDD V3.0 — 14 failure mode checks + cross-project knowledge graph + Agent beh
 ## 目录结构 / Directory Structure
 
 ```
-.stdd/                  # STDD 核心系统 / Core system
+.fstdd/                  # STDD 核心系统 / Core system
   skills/               # 4 个阶段 Skill 文件 / 4 phase skill files
     _shared/            # DRY 共享片段（确认门/模式选择/长程授权）
   templates/            # 10 个文档模板 / 10 document templates
@@ -38,7 +38,7 @@ archive/                # 已完成变更 / Completed changes
 ## 开发约定 / Development Conventions
 
 - STDD 自身使用 STDD 流程开发 / STDD is built using STDD methodology
-- Python 辅助脚本遵循 `.stdd/standards/python.md` 规范
+- Python 辅助脚本遵循 `.fstdd/standards/python.md` 规范
 - 模板和 Skill 文件使用中英双语编写 / Templates and skills are bilingual (CN+EN)
 - 所有文档变更需经过 Phase 2 规格设计 + 用户确认 / All doc changes go through Phase 2 + user confirmation
 

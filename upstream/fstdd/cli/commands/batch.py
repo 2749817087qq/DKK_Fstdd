@@ -35,7 +35,7 @@ except ImportError:
 
 def _get_batches_dir(project_root: Path) -> Path:
     """Get _batch directory path."""
-    return project_root / ".stdd" / "changes" / "_batch"
+    return project_root / ".fstdd" / "changes" / "_batch"
 
 
 def _find_open_batch(project_root: Path) -> Path:
@@ -50,7 +50,7 @@ def _find_open_batch(project_root: Path) -> Path:
         key=lambda d: d.stat().st_mtime,
         reverse=True,
     ):
-        stdd_yaml = batch_dir / ".stdd.yaml"
+        stdd_yaml = batch_dir / ".fstdd.yaml"
         if stdd_yaml.exists():
             data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8"))
             if data and not data.get("closed_at"):
@@ -61,7 +61,7 @@ def _find_open_batch(project_root: Path) -> Path:
 def _read_batch_config(project_root: Path) -> dict:
     """Read batch config from lite.yaml (V3.0.5: max_items 不再硬编码 5)."""
     import yaml
-    lite_path = project_root / ".stdd" / "config.d" / "lite.yaml"
+    lite_path = project_root / ".fstdd" / "config.d" / "lite.yaml"
     if not lite_path.exists():
         return {"max_items": 20}
     try:
@@ -100,7 +100,7 @@ def _create_batch(project_root: Path, strategy: str = "monthly") -> Path:
     batch_cfg = _read_batch_config(project_root)
     max_items = int(batch_cfg.get("max_items", 20) or 20)
 
-    stdd_yaml = batch_dir / ".stdd.yaml"
+    stdd_yaml = batch_dir / ".fstdd.yaml"
     stdd_yaml.write_text(yaml.dump({
         "mode": "batch",
         "batch_type": strategy,
@@ -128,7 +128,7 @@ def _close_batch(batch_dir: Path) -> None:
     import yaml
     now = datetime.now().isoformat()
 
-    stdd_yaml = batch_dir / ".stdd.yaml"
+    stdd_yaml = batch_dir / ".fstdd.yaml"
     data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) if stdd_yaml.exists() else {}
     data["closed_at"] = now
     stdd_yaml.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False), encoding="utf-8")
@@ -182,13 +182,13 @@ def _cmd_batch_open(project_root: Path, description: str = "", strategy: str = "
 
     # V2.9.4: Warn if an active STDD change exists (batch should not replace full flow)
     import yaml as _yaml
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if changes_dir.is_dir():
         for cd in sorted(
             [d for d in changes_dir.iterdir() if d.is_dir() and d.name != "_batch"],
             key=lambda d: d.stat().st_mtime, reverse=True,
         ):
-            stdd_yaml = cd / ".stdd.yaml"
+            stdd_yaml = cd / ".fstdd.yaml"
             if stdd_yaml.exists():
                 cd_data = _yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
                 phase = cd_data.get("current_phase") or cd_data.get("phase", "")
@@ -208,7 +208,7 @@ def _cmd_batch_open(project_root: Path, description: str = "", strategy: str = "
 
     if description:
         import yaml
-        stdd_yaml = batch_dir / ".stdd.yaml"
+        stdd_yaml = batch_dir / ".fstdd.yaml"
         data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8"))
         data["description"] = description
         stdd_yaml.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False), encoding="utf-8")
@@ -235,7 +235,7 @@ def _cmd_batch_add(project_root: Path, description: str) -> None:
 
     import yaml
     import subprocess
-    stdd_yaml = batch / ".stdd.yaml"
+    stdd_yaml = batch / ".fstdd.yaml"
     data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8"))
 
     # V2.9.4/V3.0.5: Check git diff scope — >5 warn, >10 block (对齐 guard 5-warn/10-block)
@@ -288,7 +288,7 @@ def _cmd_batch_archive(project_root: Path) -> None:
         for d in batches_dir.iterdir():
             if not d.is_dir():
                 continue
-            stdd_yaml = d / ".stdd.yaml"
+            stdd_yaml = d / ".fstdd.yaml"
             if stdd_yaml.exists():
                 data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8"))
                 if data and data.get("closed_at"):
@@ -303,7 +303,7 @@ def _cmd_batch_archive(project_root: Path) -> None:
         _close_batch(batch)
 
     # Move to archive
-    archive_dir = project_root / ".stdd" / "archive"
+    archive_dir = project_root / ".fstdd" / "archive"
     archive_dir.mkdir(exist_ok=True)
 
     dest = archive_dir / batch.name
@@ -315,7 +315,7 @@ def _cmd_batch_archive(project_root: Path) -> None:
 
     # Generate an archive index entry
     import yaml
-    stdd_yaml = dest / ".stdd.yaml"
+    stdd_yaml = dest / ".fstdd.yaml"
     items_count = 0
     if stdd_yaml.exists():
         data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8"))
@@ -336,7 +336,7 @@ def _cmd_batch_status(project_root: Path) -> None:
         return
 
     import yaml
-    data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
+    data = yaml.safe_load((batch / ".fstdd.yaml").read_text(encoding="utf-8"))
     items = data.get("items", [])
     desc = data.get("description", "")
     print(f"  批次: {batch.name}")
@@ -377,7 +377,7 @@ def _cmd_batch_list(project_root: Path) -> None:
 
     print(f"  批次列表 ({len(batches)}):")
     for b in batches:
-        stdd_yaml = b / ".stdd.yaml"
+        stdd_yaml = b / ".fstdd.yaml"
         desc = ""
         n_items = 0
         status = "?"
@@ -405,7 +405,7 @@ def _cmd_batch_close(project_root: Path, force: bool = False) -> None:
 
     # V2.9.4: Lightweight guard — warn if closing a near-empty young batch
     if not force:
-        stdd_yaml = batch / ".stdd.yaml"
+        stdd_yaml = batch / ".fstdd.yaml"
         if stdd_yaml.exists():
             data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8"))
             items = data.get("items", [])
@@ -429,12 +429,12 @@ def _cmd_batch_close(project_root: Path, force: bool = False) -> None:
 
 def _read_batch_state(batch: Path) -> dict:
     import yaml
-    return yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8")) or {}
+    return yaml.safe_load((batch / ".fstdd.yaml").read_text(encoding="utf-8")) or {}
 
 
 def _write_batch_state(batch: Path, data: dict) -> None:
     import yaml
-    (batch / ".stdd.yaml").write_text(
+    (batch / ".fstdd.yaml").write_text(
         yaml.dump(data, allow_unicode=True, default_flow_style=False),
         encoding="utf-8")
 
@@ -475,7 +475,7 @@ def _cmd_batch_proposal(project_root: Path, batch: Path, description: str = "") 
     # design.md — copy template if available
     design_md = batch / "design.md"
     if not design_md.exists():
-        tmpl = project_root / ".stdd" / "templates" / "design.md"
+        tmpl = project_root / ".fstdd" / "templates" / "design.md"
         if tmpl.exists():
             shutil.copy2(tmpl, design_md)
         else:
@@ -583,7 +583,7 @@ def _cmd_batch_child_add(project_root: Path, batch: Path, name: str, description
         "design_adjustments": {"count": 0},
         "traceability": {"spec_scenarios": 0, "tc_cases": 0, "test_functions": 0},
     }
-    (child_dir / ".stdd.yaml").write_text(
+    (child_dir / ".fstdd.yaml").write_text(
         yaml.dump(child_state, allow_unicode=True, default_flow_style=False),
         encoding="utf-8")
 
@@ -607,7 +607,7 @@ def _cmd_batch_child_add(project_root: Path, batch: Path, name: str, description
 
     print(f"  ✅ 子 change 已创建: {child_dir.name}")
     print(f"     从 build 阶段起步（继承批级 Gate 1/2）")
-    print(f"     在子 change 内完成 TDD 实现，证据写入其 .stdd.yaml")
+    print(f"     在子 change 内完成 TDD 实现，证据写入其 .fstdd.yaml")
 
 
 def _cmd_batch_deliver(project_root: Path, batch: Path,
@@ -639,7 +639,7 @@ def _cmd_batch_deliver(project_root: Path, batch: Path,
     total_new = 0
     incomplete = []
     for child in children:
-        stdd_yaml = child / ".stdd.yaml"
+        stdd_yaml = child / ".fstdd.yaml"
         if not stdd_yaml.exists():
             incomplete.append(child.name)
             continue
@@ -794,7 +794,7 @@ def _cmd_batch_child_list(batch: Path) -> None:
         return
     print(f"  子 change ({len(children)}):")
     for c in children:
-        stdd_yaml = c / ".stdd.yaml"
+        stdd_yaml = c / ".fstdd.yaml"
         phase = "?"
         if stdd_yaml.exists():
             data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}

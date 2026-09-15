@@ -11,7 +11,7 @@ description: "STDD Phase 2: 规格设计与测试方案 — 将 proposal 转化�
 ## 前置条件
 
 - Phase 1 已完成（proposal.md 经用户确认）
-- `.stdd.yaml` 中 `phases.understand.status == "completed"`
+- `.fstdd.yaml` 中 `phases.understand.status == "completed"`
 
 ## 执行流程
 
@@ -35,7 +35,7 @@ description: "STDD Phase 2: 规格设计与测试方案 — 将 proposal 转化�
 
 ### Step 3: 生成技术设计（design.md）
 
-先读取模板：`.stdd/templates/design.md`
+先读取模板：`.fstdd/templates/design.md`
 
 按模板生成 design.md：
 - **Context**：当前技术背景和约束
@@ -52,8 +52,8 @@ description: "STDD Phase 2: 规格设计与测试方案 — 将 proposal 转化�
 
 #### Step 4a: 读取 YAML 模板
 
-- Coding 任务：读取 `.stdd/templates/canonical/spec.yaml`（行为规格）
-- 所有任务：读取 `.stdd/templates/canonical/agent_spec.yaml`（验证规格）
+- Coding 任务：读取 `.fstdd/templates/canonical/spec.yaml`（行为规格）
+- 所有任务：读取 `.fstdd/templates/canonical/agent_spec.yaml`（验证规格）
 
 #### Step 4b: 生成 spec.yaml（coding 任务）
 
@@ -109,7 +109,7 @@ description: "STDD Phase 2: 规格设计与测试方案 — 将 proposal 转化�
 
 ### Step 5: 生成测试方案（test-plan.md）
 
-先读取模板：`.stdd/templates/test-plan.md`
+先读取模板：`.fstdd/templates/test-plan.md`
 
 从 specs 映射生成 test-plan.md：
 
@@ -209,7 +209,7 @@ AND: <附加结果>      →   额外的 Assert
 
 **未确认前，绝对不允许进入 Phase 3。**
 
-> 确认门模板参见: `.stdd/skills/_shared/confirm-gate.md`
+> 确认门模板参见: `.fstdd/skills/_shared/confirm-gate.md`
 
 ### Step 7: 写入文件
 
@@ -222,14 +222,14 @@ AND: <附加结果>      →   额外的 Assert
    - 执行 `python bin/stdd canon init --change <change>` 创建 canonical 目录结构
    - 为每个 capability 生成 `agent_spec.yaml`
    - 执行 `python bin/stdd canon generate --all` 生成带 source_hash 的 Human View
-5. 更新 `.stdd.yaml`（phase: spec → completed, confirmed_at 时间戳）
+5. 更新 `.fstdd.yaml`（phase: spec → completed, confirmed_at 时间戳）
 6. **V2.9: 生成 Phase Context**：写入 `phase-context.md`，包含本 Phase 的关键决策、用户关注点、产出物清单
 
 ### Step 8: 【强制】执行模式选择（Gate 2 之后）
 
 Phase 2 文档已锁定。在进入 Phase 3 之前，**必须**选择 Phase 3-5 的执行模式。此步骤不可跳过。
 
-无论 `.stdd/config.d/long_range.yaml` 中 `recommended` 配置如何，必须使用 AskUserQuestion 向用户展示模式选择：
+无论 `.fstdd/config.d/long_range.yaml` 中 `recommended` 配置如何，必须使用 AskUserQuestion 向用户展示模式选择：
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -254,7 +254,7 @@ Phase 2 文档已锁定。在进入 Phase 3 之前，**必须**选择 Phase 3-5 
 
 #### Step 8a: 长程模式 — 一次性预授权
 
-1. 读取模板：`.stdd/templates/long-range-auth.md`
+1. 读取模板：`.fstdd/templates/long-range-auth.md`
 2. **扫描 Phase 3-5 潜在交互点**：
    - 分析 `design.md` 中的技术决策，识别可能的偏离风险点
    - 分析 `test-plan.md` 中的测试范围，识别可能的技术阻塞点
@@ -303,14 +303,14 @@ C. Gate 确认
    - 读取 `.claude/settings.local.json`
    - 使用 Edit 工具在 `permissions.allow` 数组中添加以下规则：
      - Bash 规则：`Bash(pytest *)`, `Bash(ruff *)`, `Bash(python *)`, `Bash(pip *)`, `Bash(git *)`, `Bash(mkdir *)`, `Bash(cp *)`, `Bash(ls *)`
-     - 文件规则：`Write(changes/**)`, `Edit(changes/**)`, `Write(app/**)`, `Edit(app/**)`, `Write(tests/**)`, `Edit(tests/**)`, `Write(.stdd/**)`, `Edit(.stdd/**)`, `Write(.claude/skills/**)`, `Edit(.claude/skills/**)`
-     - 读取规则：`Read(.stdd/**)`, `Read(**/*.md)`, `Read(**/*.yaml)`, `Read(**/*.py)`, `Read(**/*.json)`
+     - 文件规则：`Write(changes/**)`, `Edit(changes/**)`, `Write(app/**)`, `Edit(app/**)`, `Write(tests/**)`, `Edit(tests/**)`, `Write(.fstdd/**)`, `Edit(.fstdd/**)`, `Write(.claude/skills/**)`, `Edit(.claude/skills/**)`
+     - 读取规则：`Read(.fstdd/**)`, `Read(**/*.md)`, `Read(**/*.yaml)`, `Read(**/*.py)`, `Read(**/*.json)`
      - 搜索规则：`Glob(**)`, `Grep(**)`
      - Skill 规则：`Skill(stdd-slice)`, `Skill(stdd-build)`, `Skill(stdd-verify)`, `Skill(stdd-deliver)`
    - 此步骤将概念性预授权转化为 Claude Code 的实际工具权限，消除长程模式下的交互框
    - 权限配置仅修改项目级 `settings.local.json`，不影响全局配置
 6. 用户确认全部授权后：
-   - 更新 `.stdd.yaml`，记录长程模式状态：
+   - 更新 `.fstdd.yaml`，记录长程模式状态：
      ```yaml
      long_range:
        enabled: true
@@ -323,7 +323,7 @@ C. Gate 确认
 
 #### Step 8b: 普通模式 — 直接启动
 
-1. 更新 `.stdd.yaml`：
+1. 更新 `.fstdd.yaml`：
    ```yaml
    long_range:
      enabled: false
@@ -337,7 +337,7 @@ C. Gate 确认
 - `design.md` — 技术设计文档
 - `specs/<capability>/spec.md` — 行为规格
 - `test-plan.md` — 测试方案（含 TC-ID 映射、覆盖矩阵、回归风险）
-- `.stdd.yaml` — 更新状态（含 long_range 模式选择结果）
+- `.fstdd.yaml` — 更新状态（含 long_range 模式选择结果）
 
 ## 质量检查
 

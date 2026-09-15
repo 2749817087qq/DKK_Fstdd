@@ -12,13 +12,13 @@
 - **WHEN** 运行 stdd gate approve --gate 1 且省略 --confirmed-by
 - **THEN** 命令 SHALL 以 exit 2 拒绝，且不写入 confirmed_at
 - **AND** stderr SHALL 提示合法的 --confirmed-by 通道值 (dialog|file_token|cli)
-- **AND** .stdd.yaml 的 phases.understand.confirmed_at SHALL 保持为空
+- **AND** .fstdd.yaml 的 phases.understand.confirmed_at SHALL 保持为空
 
 #### Scenario: SC-GATE-002
 
 - **GIVEN** 用户已口头确认 Gate 1
 - **WHEN** 运行 stdd gate approve --gate 1 --confirmed-by dialog --evidence "用户：确认"
-- **THEN** 命令 SHALL 成功确认，.stdd.yaml 写入 phases.understand.confirmed_at
+- **THEN** 命令 SHALL 成功确认，.fstdd.yaml 写入 phases.understand.confirmed_at
 - **AND** phases.understand.confirmed_by SHALL 为 dialog
 - **AND** phases.understand.confirmed_evidence SHALL 为传入的 evidence 原文
 

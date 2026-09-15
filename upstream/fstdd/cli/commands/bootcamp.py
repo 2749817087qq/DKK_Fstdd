@@ -42,7 +42,7 @@ LEVELS = {
     },
 }
 
-CERT_PATH = ".stdd/.bootcamp_certified"
+CERT_PATH = ".fstdd/.bootcamp_certified"
 
 
 def _get_cert_path(project_root: Path) -> Path:
@@ -109,7 +109,7 @@ def cmd_bootcamp_start(args: argparse.Namespace) -> None:
 
     # Load scenario
     import yaml
-    scenario_path = project_root / ".stdd" / "changes" / "_bootcamp" / f"level_{start_level}" / "scenario.yaml"
+    scenario_path = project_root / ".fstdd" / "changes" / "_bootcamp" / f"level_{start_level}" / "scenario.yaml"
     scenario = {}
     if scenario_path.exists():
         scenario = yaml.safe_load(scenario_path.read_text(encoding="utf-8")) or {}
@@ -242,7 +242,7 @@ def cmd_bootcamp_grade(args: argparse.Namespace) -> None:
     cert = _load_cert(project_root)
 
     # Scan answer/ for expected files, search recursively in work/ by filename
-    bootcamp_dir = project_root / ".stdd" / "changes" / "_bootcamp" / f"level_{lv}"
+    bootcamp_dir = project_root / ".fstdd" / "changes" / "_bootcamp" / f"level_{lv}"
     answer_dir = bootcamp_dir / "answer"
     work_dir = bootcamp_dir / "work"
     if not answer_dir.exists():

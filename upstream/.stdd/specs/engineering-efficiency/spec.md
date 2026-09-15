@@ -80,14 +80,14 @@ STDD SHALL 提供 3 个 Claude Code 生命周期 hooks 和对应的 Python 脚�
 
 - **GIVEN** `.claude/settings.json` 已配置 session-start hook
 - **WHEN** 新 Claude Code session 启动且当前目录为 STDD 项目
-- **THEN** hook 脚本 SHALL 读取 `.stdd.yaml` 获取 active_phase
+- **THEN** hook 脚本 SHALL 读取 `.fstdd.yaml` 获取 active_phase
 - **AND** 输出结构化恢复提示（change_name、当前阶段、最后动作、phase-context 路径）
 
 #### Scenario: PreCompact 保存关键上下文 <!-- confidence: high -->
 
 - **GIVEN** 上下文即将被压缩
 - **WHEN** PreCompact hook 触发
-- **THEN** hook 脚本 SHALL 确保 `.stdd.yaml` 和 `phase-context.md` 已更新至最新状态
+- **THEN** hook 脚本 SHALL 确保 `.fstdd.yaml` 和 `phase-context.md` 已更新至最新状态
 - **AND** 输出 "状态已保存到文件系统" 的确认信息
 
 #### Scenario: Stop hook 持久化经验 <!-- confidence: medium -->
@@ -110,5 +110,5 @@ STDD SHALL 提供 3 个 Claude Code 生命周期 hooks 和对应的 Python 脚�
 - **WHEN** 执行 `stdd hooks install`
 - **THEN** 系统 SHALL 读取 `.claude/settings.json`（不存在则创建）
 - **AND** 在 hooks 字段中注入 3 个 STDD hook 定义
-- **AND** 将 Python hook 脚本复制到 `.stdd/hooks/` 目录
+- **AND** 将 Python hook 脚本复制到 `.fstdd/hooks/` 目录
 - **AND** 不覆盖用户已有的其他 hooks 配置

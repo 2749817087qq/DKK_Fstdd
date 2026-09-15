@@ -17,9 +17,9 @@ def _make_args(subcommand=None, **kwargs):
 
 
 def _setup_state_project(tmp_path, with_state=True):
-    """Create project with a change directory and .stdd.yaml."""
-    (tmp_path / ".stdd" / "config.d").mkdir(parents=True, exist_ok=True)
-    (tmp_path / ".stdd" / "config.d" / "project.yaml").write_text("""\
+    """Create project with a change directory and .fstdd.yaml."""
+    (tmp_path / ".fstdd" / "config.d").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".fstdd" / "config.d" / "project.yaml").write_text("""\
 paths:
   changes_dir: changes
   archive_dir: archive
@@ -48,7 +48,7 @@ stdd_version: '2.0'
             },
             "traceability": {"spec_scenarios": 5, "tc_cases": 5, "test_functions": 0},
         }
-        (change_dir / ".stdd.yaml").write_text(
+        (change_dir / ".fstdd.yaml").write_text(
             yaml.dump(state, allow_unicode=True, default_flow_style=False),
             encoding="utf-8"
         )
@@ -60,7 +60,7 @@ class TestSessionResume:
     """TC-SR-001 ~ 004: Session resume context read/write."""
 
     def test_write_resume_context(self, tmp_path, monkeypatch):
-        """TC-SR-001: Write 4 resume fields to .stdd.yaml."""
+        """TC-SR-001: Write 4 resume fields to .fstdd.yaml."""
         change_dir = _setup_state_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 
@@ -71,14 +71,14 @@ class TestSessionResume:
                              active_slice="2",
                              last_action="implemented cmd_verify")
 
-        data = yaml.safe_load((change_dir / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["resume_context"] == "slice-2-halfway"
         assert data["active_slice"] == "2"
         assert data["last_action"] == "implemented cmd_verify"
         assert "last_modified" in data
 
     def test_backward_compatibility(self, tmp_path, monkeypatch):
-        """TC-SR-002: Read V2.4 format .stdd.yaml returns None for new fields."""
+        """TC-SR-002: Read V2.4 format .fstdd.yaml returns None for new fields."""
         change_dir = _setup_state_project(tmp_path)
         monkeypatch.chdir(tmp_path)
 

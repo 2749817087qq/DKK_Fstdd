@@ -18,19 +18,19 @@ def _make_args(action="status", description="", strategy="monthly", force=False,
 
 def _setup_env(tmp_path: Path):
     """Create minimal STDD project."""
-    (tmp_path / ".stdd" / "config.d").mkdir(parents=True)
-    (tmp_path / ".stdd" / "config.d" / "lite.yaml").write_text(
+    (tmp_path / ".fstdd" / "config.d").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "config.d" / "lite.yaml").write_text(
         yaml.dump({"batch": {"strategy": "monthly", "max_items": 20, "auto_close": True}},
                   allow_unicode=True),
         encoding="utf-8",
     )
-    (tmp_path / ".stdd" / "config.d" / "project.yaml").write_text(
+    (tmp_path / ".fstdd" / "config.d" / "project.yaml").write_text(
         yaml.dump({"project": {"name": "t", "language": "python"}, "enforce_stdd": True}),
         encoding="utf-8",
     )
-    (tmp_path / ".stdd" / "changes" / "_batch").mkdir(parents=True)
-    (tmp_path / ".stdd" / "templates").mkdir(parents=True)
-    (tmp_path / ".stdd" / "templates" / "design.md").write_text("# Design", encoding="utf-8")
+    (tmp_path / ".fstdd" / "changes" / "_batch").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "templates").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "templates" / "design.md").write_text("# Design", encoding="utf-8")
 
 
 class TestBatchPipeline:
@@ -47,7 +47,7 @@ class TestBatchPipeline:
         cmd_batch(_make_args("open", "批量修复UI bug"))
         batch = _find_open_batch(tmp_path)
         assert batch is not None
-        data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((batch / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["current_phase"] == "understand"
         assert set(data["phases"].keys()) == {"understand", "spec", "build", "deliver"}
 
@@ -62,7 +62,7 @@ class TestBatchPipeline:
         captured = capsys.readouterr()
         assert "Gate 1" in captured.out
         assert (batch / "proposal.md").exists()  # Gate 自动生成
-        data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((batch / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["current_phase"] == "spec"
         assert data["phases"]["understand"]["status"] == "completed"
 
@@ -83,7 +83,7 @@ class TestBatchPipeline:
         captured = capsys.readouterr()
         assert "Gate 2" in captured.out
         assert (batch / "specs" / "rate-limit" / "spec.md").exists()  # Gate 自动生成 spec.md
-        data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((batch / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["current_phase"] == "build"
 
         # 5. child add — 从 build 起步，继承批级 confirmed_at
@@ -91,7 +91,7 @@ class TestBatchPipeline:
         children = list((batch / "changes").iterdir())
         assert len(children) == 1
         child = children[0]
-        cdata = yaml.safe_load((child / ".stdd.yaml").read_text(encoding="utf-8"))
+        cdata = yaml.safe_load((child / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert cdata["current_phase"] == "build"
         assert cdata["parent_batch"] == batch.name
         assert cdata["phases"]["understand"]["status"] == "completed"
@@ -103,7 +103,7 @@ class TestBatchPipeline:
             "1": {"status": "done", "tc_coverage": "5/5", "new_tests": 5,
                   "verified_at": "2026-08-17T10:00:00"}
         }
-        (child / ".stdd.yaml").write_text(
+        (child / ".fstdd.yaml").write_text(
             yaml.dump(cdata, allow_unicode=True, default_flow_style=False), encoding="utf-8")
         (child / "test-report.md").write_text("# 子change测试报告", encoding="utf-8")
 
@@ -115,13 +115,13 @@ class TestBatchPipeline:
         assert report.exists()
         content = report.read_text(encoding="utf-8")
         assert "累计测试: 5" in content
-        data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((batch / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["current_phase"] == "deliver"
 
         # 8. close + archive
         cmd_batch(_make_args("close", force=True))
         cmd_batch(_make_args("archive"))
-        assert (tmp_path / ".stdd" / "archive" / batch.name).exists()
+        assert (tmp_path / ".fstdd" / "archive" / batch.name).exists()
 
     def test_child_requires_gate2(self, tmp_path, monkeypatch, capsys):
         """Gate 2 未通过时 child add 被拒。"""
@@ -146,9 +146,9 @@ class TestBatchPipeline:
         from fstdd.cli.commands.gate import _confirm_gate
         _confirm_gate(1, batch, confirmed_by="test")
         _confirm_gate(2, batch, confirmed_by="test")
-        data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((batch / ".fstdd.yaml").read_text(encoding="utf-8"))
         data["current_phase"] = "build"
-        (batch / ".stdd.yaml").write_text(
+        (batch / ".fstdd.yaml").write_text(
             yaml.dump(data, allow_unicode=True, default_flow_style=False), encoding="utf-8")
 
         cmd_batch(_make_args("child", child_action="add", name="wip", description="x"))
@@ -176,9 +176,9 @@ class TestBatchPipelineGuard:
         from fstdd.cli.commands.gate import _confirm_gate
         _confirm_gate(1, batch, confirmed_by="test")
         _confirm_gate(2, batch, confirmed_by="test")
-        data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((batch / ".fstdd.yaml").read_text(encoding="utf-8"))
         data["current_phase"] = "build"
-        (batch / ".stdd.yaml").write_text(
+        (batch / ".fstdd.yaml").write_text(
             yaml.dump(data, allow_unicode=True, default_flow_style=False), encoding="utf-8")
         cmd_batch(_make_args("child", child_action="add", name="c1", description="x"))
 
@@ -207,13 +207,13 @@ class TestBatchHardDefense:
         cmd_batch(_make_args("gate", gate=2, confirmed_by=""))
         captured = capsys.readouterr()
         assert "confirmed_by" in captured.out
-        data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((batch / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["current_phase"] == "spec"  # Gate 2 未推进
 
     def test_batch_gate_audit_field(self, tmp_path, monkeypatch):
         """TC-BATCH-102: 批级 gate 带 dialog → confirmed_by=dialog 落审计字段."""
         batch = self._open_and_gate1(tmp_path, monkeypatch)
-        data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((batch / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["phases"]["understand"]["confirmed_by"] == "dialog"
 
     def test_batch_deliver_requires_channel(self, tmp_path, monkeypatch, capsys):
@@ -226,7 +226,7 @@ class TestBatchHardDefense:
         cmd_batch(_make_args("deliver", confirmed_by=""))
         captured = capsys.readouterr()
         assert "Gate 3 确认通道声明" in captured.out
-        data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((batch / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert "confirmed_at" not in data["phases"]["build"]
 
     def test_batch_deliver_gate3_audit_field(self, tmp_path, monkeypatch, capsys):
@@ -236,16 +236,16 @@ class TestBatchHardDefense:
         cmd_batch(_make_args("gate", gate=2))
         cmd_batch(_make_args("child", child_action="add", name="c1", description="x"))
         child = list((batch / "changes").iterdir())[0]
-        cdata = yaml.safe_load((child / ".stdd.yaml").read_text(encoding="utf-8"))
+        cdata = yaml.safe_load((child / ".fstdd.yaml").read_text(encoding="utf-8"))
         cdata["phases"]["build"]["status"] = "completed"
-        (child / ".stdd.yaml").write_text(
+        (child / ".fstdd.yaml").write_text(
             yaml.dump(cdata, allow_unicode=True, default_flow_style=False), encoding="utf-8")
         (child / "test-report.md").write_text("# report", encoding="utf-8")
 
         cmd_batch(_make_args("deliver", confirmed_by="dialog", evidence="用户：确认"))
         captured = capsys.readouterr()
         assert "批级交付完成" in captured.out
-        data = yaml.safe_load((batch / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((batch / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["phases"]["build"]["confirmed_by"] == "dialog"
         assert data["phases"]["build"]["confirmed_evidence"] == "用户：确认"
 
@@ -256,7 +256,7 @@ class TestBatchHardDefense:
         cmd_batch(_make_args("gate", gate=2))
         cmd_batch(_make_args("child", child_action="add", name="c1", description="x"))
         child = list((batch / "changes").iterdir())[0]
-        cdata = yaml.safe_load((child / ".stdd.yaml").read_text(encoding="utf-8"))
+        cdata = yaml.safe_load((child / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert cdata["phases"]["understand"]["confirmed_by"] == "dialog"
         assert cdata["phases"]["spec"]["confirmed_by"] == "dialog"
         assert cdata["phases"]["understand"]["confirmed_actor"] in ("ai", "user")

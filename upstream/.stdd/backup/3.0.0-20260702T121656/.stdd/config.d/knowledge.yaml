@@ -2,7 +2,7 @@
 
 knowledge:
   # 图谱存储路径（相对于项目根目录）
-  dir: ".stdd/knowledge"
+  dir: ".fstdd/knowledge"
   graph_file: "knowledge-graph.yaml"
 
   # 合并策略

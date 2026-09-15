@@ -31,7 +31,7 @@
 
 #### Scenario: 根据质量配置调整生成内容
 
-- **GIVEN** `.stdd/config.d/quality.yaml` 中 coverage_target 设为 85，python_version 设为 "3.12"
+- **GIVEN** `.fstdd/config.d/quality.yaml` 中 coverage_target 设为 85，python_version 设为 "3.12"
 - **WHEN** 生成 GitHub Actions workflow
 - **THEN** workflow YAML SHALL 使用 Python 3.12
 - **AND** SHALL 包含 `--cov-fail-under=85` 参数
@@ -58,7 +58,7 @@
 
 - **GIVEN** check-failures 发现了 2 个问题
 - **WHEN** 检查完成
-- **THEN** 系统 SHALL 按 `.stdd/templates/failure-check-report.md` 格式输出报告
+- **THEN** 系统 SHALL 按 `.fstdd/templates/failure-check-report.md` 格式输出报告
 - **AND** 每个问题 SHALL 标注对应的失败模式类别（a-k）
 
 #### Scenario: 明确标注覆盖边界

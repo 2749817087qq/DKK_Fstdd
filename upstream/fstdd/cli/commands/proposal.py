@@ -142,11 +142,11 @@ def _parse_checkboxes(text: str) -> list:
 
 def cmd_proposal_validate(args):
     """Validate proposal.yaml field completeness."""
-    canon_dir = Path.cwd() / ".stdd" / "canonical" / "proposals"
+    canon_dir = Path.cwd() / ".fstdd" / "canonical" / "proposals"
     yaml_file = canon_dir / f"{args.change_name}.yaml"
 
     if not yaml_file.exists():
-        print(f"  .stdd/canonical/proposals/{args.change_name}.yaml not found")
+        print(f"  .fstdd/canonical/proposals/{args.change_name}.yaml not found")
         sys.exit(1)
 
     data = yaml.safe_load(yaml_file.read_text(encoding="utf-8"))
@@ -170,16 +170,16 @@ def cmd_proposal_validate(args):
             print(f"  Error: {e}")
         sys.exit(1)
 
-    print(f"  .stdd/canonical/proposals/{args.change_name}.yaml validation passed")
+    print(f"  .fstdd/canonical/proposals/{args.change_name}.yaml validation passed")
 
 
 def cmd_proposal_show(args):
     """Display proposal.yaml in human-readable format."""
-    canon_dir = Path.cwd() / ".stdd" / "canonical" / "proposals"
+    canon_dir = Path.cwd() / ".fstdd" / "canonical" / "proposals"
     yaml_file = canon_dir / f"{args.change_name}.yaml"
 
     if not yaml_file.exists():
-        print(f"  .stdd/canonical/proposals/{args.change_name}.yaml not found")
+        print(f"  .fstdd/canonical/proposals/{args.change_name}.yaml not found")
         sys.exit(1)
 
     data = yaml.safe_load(yaml_file.read_text(encoding="utf-8"))

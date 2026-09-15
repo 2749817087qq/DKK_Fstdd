@@ -11,17 +11,17 @@ def test_new_valid_name(temp_project: Path, monkeypatch):
     """有效的 change 名称创建成功。"""
     monkeypatch.chdir(temp_project)
     # 需要 templates 目录
-    (temp_project / ".stdd" / "templates").mkdir(parents=True, exist_ok=True)
+    (temp_project / ".fstdd" / "templates").mkdir(parents=True, exist_ok=True)
     for t in ["proposal", "design", "test-plan"]:
-        (temp_project / ".stdd" / "templates" / f"{t}.md").write_text(f"# {t}", encoding="utf-8")
+        (temp_project / ".fstdd" / "templates" / f"{t}.md").write_text(f"# {t}", encoding="utf-8")
 
     args = argparse.Namespace(name="my-feature", dry_run=False, verbose=0)
     cmd_new(args)
 
-    changes = list((temp_project / ".stdd" / "changes").iterdir())
+    changes = list((temp_project / ".fstdd" / "changes").iterdir())
     assert len(changes) == 1
     assert changes[0].name.endswith("my-feature")
-    assert (changes[0] / ".stdd.yaml").exists()
+    assert (changes[0] / ".fstdd.yaml").exists()
     # V3.0.5 (YAML-first): proposal.md 不再复制 — Canonical YAML 是源头，MD 由 Gate 1 生成
     assert not (changes[0] / "proposal.md").exists()
     canon_yaml = changes[0] / "canonical" / "proposals" / f"{changes[0].name}.yaml"
@@ -55,24 +55,24 @@ def test_new_dry_run(temp_project: Path, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert "[DRY-RUN]" in captured.out
     # 未创建 change 目录
-    changes = list((temp_project / ".stdd" / "changes").iterdir())
+    changes = list((temp_project / ".fstdd" / "changes").iterdir())
     assert len(changes) == 0
 
 
 def test_new_version_field(temp_project: Path, monkeypatch):
-    """cmd_new 生成的 .stdd.yaml 使用 4-phase schema version 3.0（V3.0.5）。"""
+    """cmd_new 生成的 .fstdd.yaml 使用 4-phase schema version 3.0（V3.0.5）。"""
     monkeypatch.chdir(temp_project)
-    (temp_project / ".stdd" / "templates").mkdir(parents=True, exist_ok=True)
+    (temp_project / ".fstdd" / "templates").mkdir(parents=True, exist_ok=True)
     for t in ["proposal", "design", "test-plan"]:
-        (temp_project / ".stdd" / "templates" / f"{t}.md").write_text(f"# {t}", encoding="utf-8")
+        (temp_project / ".fstdd" / "templates" / f"{t}.md").write_text(f"# {t}", encoding="utf-8")
 
     args = argparse.Namespace(name="ver-check", dry_run=False, verbose=0)
     cmd_new(args)
 
     import yaml
-    changes = list((temp_project / ".stdd" / "changes").iterdir())
+    changes = list((temp_project / ".fstdd" / "changes").iterdir())
     assert len(changes) == 1
-    state_file = changes[0] / ".stdd.yaml"
+    state_file = changes[0] / ".fstdd.yaml"
     with open(state_file, "r", encoding="utf-8") as f:
         state = yaml.safe_load(f)
     assert state["version"] == "3.0"

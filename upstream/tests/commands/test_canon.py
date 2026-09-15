@@ -12,9 +12,9 @@ class TestCanonicalDataModel:
         """TC-CANON-001 (V3.0.5 reversal): init scaffolds Canonical YAML；Human View MD 从 YAML 生成（YAML-first，MD→YAML 已废弃）。"""
         # Arrange
         change_name = "2026-08-17-yaml-first"
-        change_dir = tmp_path / ".stdd" / "changes" / change_name
+        change_dir = tmp_path / ".fstdd" / "changes" / change_name
         change_dir.mkdir(parents=True)
-        (change_dir / ".stdd.yaml").write_text("task_type: code\n", encoding="utf-8")
+        (change_dir / ".fstdd.yaml").write_text("task_type: code\n", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.proposal import cmd_proposal_init
@@ -29,7 +29,7 @@ class TestCanonicalDataModel:
         assert "DEPRECATED" in captured.out
 
         # Assert — Canonical YAML 是源头（change-level canonical/）
-        canon_dir = tmp_path / ".stdd" / "changes" / change_name / "canonical"
+        canon_dir = tmp_path / ".fstdd" / "changes" / change_name / "canonical"
         yaml_file = canon_dir / "proposals" / f"{change_name}.yaml"
         assert yaml_file.exists(), f"Expected {yaml_file} to exist"
         data = yaml.safe_load(yaml_file.read_text(encoding="utf-8"))
@@ -39,7 +39,7 @@ class TestCanonicalDataModel:
         from fstdd.cli.commands.canon import cmd_canon_generate
         args2 = argparse.Namespace(change_name=change_name, type="proposal", all=False)
         cmd_canon_generate(args2)
-        proposal_md = tmp_path / ".stdd" / "changes" / change_name / "proposal.md"
+        proposal_md = tmp_path / ".fstdd" / "changes" / change_name / "proposal.md"
         assert proposal_md.exists()
         content = proposal_md.read_text(encoding="utf-8")
         assert "source_hash" in content
@@ -47,7 +47,7 @@ class TestCanonicalDataModel:
 
     def test_proposal_validate_missing_field(self, tmp_path, monkeypatch):
         """TC-CANON-002: Validation exits non-zero on missing required field."""
-        canon_dir = tmp_path / ".stdd" / "canonical" / "proposals"
+        canon_dir = tmp_path / ".fstdd" / "canonical" / "proposals"
         canon_dir.mkdir(parents=True)
         # Missing 'why.problem'
         bad_yaml = canon_dir / "test.yaml"
@@ -68,9 +68,9 @@ class TestCanonicalDataModel:
 
     def test_pure_markdown_mode_backward_compatible(self, tmp_path, monkeypatch):
         """TC-CANON-005: No canonical/ dir → V2.5 behavior preserved."""
-        change_dir = tmp_path / ".stdd" / "changes" / "test"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test"
         change_dir.mkdir(parents=True)
-        (change_dir / ".stdd.yaml").write_text("active_phase: 1\n", encoding="utf-8")
+        (change_dir / ".fstdd.yaml").write_text("active_phase: 1\n", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.state import cmd_state
@@ -87,10 +87,10 @@ class TestCanonicalDataModel:
     def test_project_index_update(self, tmp_path, monkeypatch):
         """TC-CANON-004: project-index.yaml generated with changes/capabilities/modules."""
         # Create minimal project structure
-        (tmp_path / ".stdd").mkdir(parents=True, exist_ok=True)
-        (tmp_path / ".stdd" / "changes").mkdir()
-        (tmp_path / ".stdd" / "specs" / "rate-limiting").mkdir(parents=True)
-        (tmp_path / ".stdd" / "specs" / "rate-limiting" / "spec.md").write_text("# spec", encoding="utf-8")
+        (tmp_path / ".fstdd").mkdir(parents=True, exist_ok=True)
+        (tmp_path / ".fstdd" / "changes").mkdir()
+        (tmp_path / ".fstdd" / "specs" / "rate-limiting").mkdir(parents=True)
+        (tmp_path / ".fstdd" / "specs" / "rate-limiting" / "spec.md").write_text("# spec", encoding="utf-8")
 
         monkeypatch.chdir(tmp_path)
         from fstdd.cli.commands.index import cmd_index_update
@@ -145,7 +145,7 @@ class TestDualTrackFoundation:
 
         cmd_canon_init(args)
 
-        canon = tmp_path / ".stdd" / "canonical"
+        canon = tmp_path / ".fstdd" / "canonical"
         assert canon.exists()
         assert (canon / "proposals").is_dir()
         assert (canon / "designs").is_dir()
@@ -156,7 +156,7 @@ class TestDualTrackFoundation:
     def test_canon_generate_creates_human_view(self, tmp_path, monkeypatch):
         """TC-DUAL-002: canon generate creates proposal.md with source_hash."""
         # Set up canonical proposal
-        canon_dir = tmp_path / ".stdd" / "canonical" / "proposals"
+        canon_dir = tmp_path / ".fstdd" / "canonical" / "proposals"
         canon_dir.mkdir(parents=True)
         proposal_yaml = canon_dir / "test.yaml"
         proposal_yaml.write_text(yaml.dump({
@@ -168,7 +168,7 @@ class TestDualTrackFoundation:
         }), encoding="utf-8")
 
         # Create human-view template
-        tmpl_dir = tmp_path / ".stdd" / "templates" / "human-view"
+        tmpl_dir = tmp_path / ".fstdd" / "templates" / "human-view"
         tmpl_dir.mkdir(parents=True)
         (tmpl_dir / "proposal-brief.md").write_text("""# {{ meta.title }}
 
@@ -187,7 +187,7 @@ class TestDualTrackFoundation:
 """, encoding="utf-8")
 
         # Create changes dir
-        (tmp_path / ".stdd" / "changes" / "test").mkdir(parents=True)
+        (tmp_path / ".fstdd" / "changes" / "test").mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.canon import cmd_canon_generate
@@ -196,7 +196,7 @@ class TestDualTrackFoundation:
 
         cmd_canon_generate(args)
 
-        result = tmp_path / ".stdd" / "changes" / "test" / "proposal.md"
+        result = tmp_path / ".fstdd" / "changes" / "test" / "proposal.md"
         assert result.exists()
         content = result.read_text(encoding="utf-8")
         assert "source_hash" in content
@@ -222,7 +222,7 @@ class TestAgentSpec:
     def test_agent_spec_format_validation(self, tmp_path, monkeypatch, capsys):
         """TC-CANON-003: agent spec dry-run displays CPs and assertions."""
         # Create agent_spec
-        canon_dir = tmp_path / ".stdd" / "canonical" / "specs" / "agent"
+        canon_dir = tmp_path / ".fstdd" / "canonical" / "specs" / "agent"
         canon_dir.mkdir(parents=True)
         agent_spec = canon_dir / "deploy-test.yaml"
         agent_spec.write_text(yaml.dump({

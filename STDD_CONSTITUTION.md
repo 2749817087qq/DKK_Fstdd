@@ -31,7 +31,7 @@
 - 每个 Slice 必须通过 per-slice 验证才能进入下一个 Slice
 
 ### 6. 经验闭环
-- Build 阶段发现的失败模式自动记录到 `.stdd/experiences/`
+- Build 阶段发现的失败模式自动记录到 `.fstdd/experiences/`
 - Phase 4 (Deliver) 自动上传经验到社区 + 同步知识图谱
 - 每次 Phase 3 (Build) 开始前加载经验库预防已知错误
 

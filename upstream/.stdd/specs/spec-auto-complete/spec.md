@@ -66,7 +66,7 @@ Phase 2 SPEC 技能 SHALL 从 proposal 结构化字段自动生成 spec 草稿�
 
 #### Scenario: 模板包含置信度字段
 
-- **GIVEN** AI 读取 `.stdd/templates/spec-draft.md`
+- **GIVEN** AI 读取 `.fstdd/templates/spec-draft.md`
 - **WHEN** 生成 spec 草稿
 - **THEN** 模板 SHALL 在每个 Requirement 和 Scenario 旁包含置信度标记位
 - **AND** SHALL 要求 AI 记录每个 ✓ 的来源字段

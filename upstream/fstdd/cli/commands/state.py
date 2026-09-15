@@ -1,4 +1,4 @@
-"""stdd state — Read/write resume context fields in .stdd.yaml (V2.5)."""
+"""stdd state — Read/write resume context fields in .fstdd.yaml (V2.5)."""
 
 import argparse
 import sys
@@ -14,7 +14,7 @@ RESUME_FIELDS = ["resume_context", "active_slice", "last_action", "last_modified
 
 def _find_change_dir(name: str | None, project_root: Path) -> Path | None:
     """Find change directory by name (most recent if None)."""
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         return None
     if name:
@@ -25,12 +25,12 @@ def _find_change_dir(name: str | None, project_root: Path) -> Path | None:
 
 
 def read_resume_context(change_dir: Path) -> dict:
-    """Read resume fields from .stdd.yaml with backward compatibility.
+    """Read resume fields from .fstdd.yaml with backward compatibility.
 
     Returns dict with resume_context, active_slice, last_action, last_modified.
     Values are None for missing fields (V2.4 compatibility).
     """
-    state_file = change_dir / ".stdd.yaml"
+    state_file = change_dir / ".fstdd.yaml"
     if not state_file.exists():
         return {k: None for k in RESUME_FIELDS}
 
@@ -42,13 +42,13 @@ def read_resume_context(change_dir: Path) -> dict:
 
 
 def write_resume_context(change_dir: Path, **kwargs) -> None:
-    """Write resume fields to .stdd.yaml. Only writes specified keys.
+    """Write resume fields to .fstdd.yaml. Only writes specified keys.
 
     Usage: write_resume_context(change_dir, resume_context="...", active_slice=2)
     """
-    state_file = change_dir / ".stdd.yaml"
+    state_file = change_dir / ".fstdd.yaml"
     if not state_file.exists():
-        print(f"  .stdd.yaml not found in {change_dir}")
+        print(f"  .fstdd.yaml not found in {change_dir}")
         return
 
     data = yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
@@ -74,7 +74,7 @@ def cmd_state(args: argparse.Namespace) -> None:
 
     if getattr(args, "resume", False):
         ctx = read_resume_context(change_dir)
-        state_file = change_dir / ".stdd.yaml"
+        state_file = change_dir / ".fstdd.yaml"
         data = yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
 
         # --compact: single-line machine-readable output, cross-platform
@@ -161,9 +161,9 @@ def cmd_state(args: argparse.Namespace) -> None:
         return
 
     # Default: show full state
-    state_file = change_dir / ".stdd.yaml"
+    state_file = change_dir / ".fstdd.yaml"
     if not state_file.exists():
-        print(f"  .stdd.yaml not found in {change_dir}")
+        print(f"  .fstdd.yaml not found in {change_dir}")
         sys.exit(1)
     data = yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
     print(f"  State for {change_dir.name}:")

@@ -21,11 +21,11 @@ You are assisting with development in a project that follows STDD (Spec+Test Dri
 ### 2. 编码规范
 
 Read the project's language standard file before generating code:
-- Python: `.stdd/standards/python.md`
-- Java: `.stdd/standards/java.md`
-- Go: `.stdd/standards/go.md`
-- Rust: `.stdd/standards/rust.md`
-- TypeScript: `.stdd/standards/typescript.md`
+- Python: `.fstdd/standards/python.md`
+- Java: `.fstdd/standards/java.md`
+- Go: `.fstdd/standards/go.md`
+- Rust: `.fstdd/standards/rust.md`
+- TypeScript: `.fstdd/standards/typescript.md`
 
 Key conventions:
 - Use the project's configured formatter and linter
@@ -67,6 +67,6 @@ Before marking code as complete, verify:
 
 ### References
 
-- STDD methodology: see `.stdd/skills/` for full per-phase instructions
-- Language standards: `.stdd/standards/<language>.md`
-- Test plan template: `.stdd/templates/test-plan.md`
+- STDD methodology: see `.fstdd/skills/` for full per-phase instructions
+- Language standards: `.fstdd/standards/<language>.md`
+- Test plan template: `.fstdd/templates/test-plan.md`

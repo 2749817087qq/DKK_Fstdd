@@ -24,7 +24,7 @@ def cmd_new(args: argparse.Namespace) -> None:
 
     today = date.today().isoformat()
     dir_name = f"{today}-{change_name}"
-    change_dir = project_root / ".stdd" / "changes" / dir_name
+    change_dir = project_root / ".fstdd" / "changes" / dir_name
 
     if change_dir.exists():
         print(f" Change 目录已存在: changes/{dir_name}")
@@ -37,7 +37,7 @@ def cmd_new(args: argparse.Namespace) -> None:
         print(f"   创建 specs 子目录: changes/{dir_name}/specs")
         print(f"   复制模板: design.md, test-plan.md")
         print(f"   Scaffold Canonical YAML: canonical/proposals/, specs/code/ (YAML-first)")
-        print(f"   创建状态文件: changes/{dir_name}/.stdd.yaml")
+        print(f"   创建状态文件: changes/{dir_name}/.fstdd.yaml")
         print(f"   状态版本: 3.0, 状态: active")
         print(" [DRY-RUN] 文件系统未发生变化")
         return
@@ -45,7 +45,7 @@ def cmd_new(args: argparse.Namespace) -> None:
     (change_dir / "specs").mkdir(parents=True)
 
     # V3.0.5 (YAML-first): proposal.md 不再复制 — Gate 1 时从 canonical YAML 自动生成。
-    templates_dir = project_root / ".stdd" / "templates"
+    templates_dir = project_root / ".fstdd" / "templates"
     for tmpl_name in ["design", "test-plan"]:
         tmpl = templates_dir / f"{tmpl_name}.md"
         if tmpl.exists():
@@ -69,7 +69,7 @@ def cmd_new(args: argparse.Namespace) -> None:
         "design_adjustments": {"count": 0},
         "traceability": {"spec_scenarios": 0, "tc_cases": 0, "test_functions": 0},
     }
-    with open(change_dir / ".stdd.yaml", "w", encoding="utf-8") as f:
+    with open(change_dir / ".fstdd.yaml", "w", encoding="utf-8") as f:
         yaml.dump(state, f, allow_unicode=True, default_flow_style=False)
 
     # V3.0.5 (YAML-first): scaffold Canonical YAML 模板（AI 只写 YAML，MD 由 Gate 自动生成）
@@ -89,7 +89,7 @@ def cmd_new(args: argparse.Namespace) -> None:
     print(f"   模板已就绪: design.md, test-plan.md")
     print(f"   Canonical YAML: canonical/proposals/{dir_name}.yaml + specs/code/ (YAML-first)")
     print(f"   proposal.md 将在 Gate 1 自动生成")
-    print(f"   状态文件: .stdd.yaml")
+    print(f"   状态文件: .fstdd.yaml")
 
     # V2.8: Two-Instance Kickoff
     if getattr(args, "parallel", False):

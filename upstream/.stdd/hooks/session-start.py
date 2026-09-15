@@ -7,18 +7,18 @@ from datetime import datetime
 
 def main():
     project_root = Path.cwd()
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
 
     # ── V3.0.1: New project detection ──
-    archive_dir = project_root / ".stdd" / "archive"
+    archive_dir = project_root / ".fstdd" / "archive"
     completed_changes = 0
     if archive_dir.exists():
         completed_changes = len([d for d in archive_dir.iterdir()
                                  if d.is_dir() and not d.name.startswith(".")
-                                 and (d / ".stdd.yaml").exists()])
+                                 and (d / ".fstdd.yaml").exists()])
 
     # V3.0.2: Check for upgrade notes (AI self-learning)
-    notes_path = project_root / ".stdd" / "UPGRADE_NOTES.yaml"
+    notes_path = project_root / ".fstdd" / "UPGRADE_NOTES.yaml"
     is_new_project = completed_changes == 0
 
     if is_new_project or notes_path.exists():
@@ -34,12 +34,12 @@ def main():
                     print(f"[STDD Guard]    {ch['version']}: {ch['title']}")
             except Exception:
                 pass
-        manual = project_root / ".stdd" / "onboarding" / "AI_OPERATING_MANUAL.yaml"
+        manual = project_root / ".fstdd" / "onboarding" / "AI_OPERATING_MANUAL.yaml"
         if manual.exists():
-            print("[STDD Guard]   📖 请阅读 AI 操作手册: .stdd/onboarding/AI_OPERATING_MANUAL.yaml")
+            print("[STDD Guard]   📖 请阅读 AI 操作手册: .fstdd/onboarding/AI_OPERATING_MANUAL.yaml")
             print("[STDD Guard]   📋 完成自检清单（self_check 章节，8 道题）")
         if notes_path.exists():
-            print("[STDD Guard]   📝 版本变更: .stdd/UPGRADE_NOTES.yaml")
+            print("[STDD Guard]   📝 版本变更: .fstdd/UPGRADE_NOTES.yaml")
             notes_path.unlink()  # one-time, don't repeat
         print()
 
@@ -51,7 +51,7 @@ def main():
             continue
         if change_dir.name.startswith("_") or change_dir.name.startswith("."):
             continue
-        stdd_yaml = change_dir / ".stdd.yaml"
+        stdd_yaml = change_dir / ".fstdd.yaml"
         if stdd_yaml.exists():
             state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
             phase = state.get("active_phase", "?")
@@ -76,14 +76,14 @@ def main():
 def _check_zombie_changes(project_root: Path) -> None:
     """Warn about zombie changes (>7 days inactive)."""
     from datetime import datetime, timedelta
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         return
     zombies = []
     for d in sorted(changes_dir.iterdir()):
         if not d.is_dir() or d.name.startswith("_") or d.name.startswith("."):
             continue
-        yf = d / ".stdd.yaml"
+        yf = d / ".fstdd.yaml"
         if not yf.exists():
             continue
         data = yaml.safe_load(yf.read_text(encoding="utf-8")) or {}

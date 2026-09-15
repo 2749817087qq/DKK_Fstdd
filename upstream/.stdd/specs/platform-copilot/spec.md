@@ -8,10 +8,10 @@
 
 #### Scenario: Copilot 指令文件存在且内容完整
 
-- **GIVEN** `.stdd/platforms/copilot/` 目录存在
+- **GIVEN** `.fstdd/platforms/copilot/` 目录存在
 - **WHEN** 用户将 `copilot-instructions.md` 复制到项目 `.github/` 目录
 - **THEN** 指令文件 SHALL 包含：STDD 流程概述、测试优先原则（RED→GREEN→REFACTOR）、编码规范引用、Commit 规范
-- **AND** 指令文件 SHALL 引用 `.stdd/standards/` 中的语言规范文件
+- **AND** 指令文件 SHALL 引用 `.fstdd/standards/` 中的语言规范文件
 
 #### Scenario: Copilot 根据指令调整代码生成行为
 

@@ -8,7 +8,7 @@
 
 #### Scenario: 用户使用短名称归档 change
 
-- **GIVEN** change 目录 `changes/2026-05-14-my-feature/` 存在，含有效 .stdd.yaml
+- **GIVEN** change 目录 `changes/2026-05-14-my-feature/` 存在，含有效 .fstdd.yaml
 - **WHEN** 用户执行 `stdd archive my-feature`
 - **THEN** 系统 SHALL 归档到 `archive/2026-05-14-my-feature/`
 - **AND** 系统 SHALL NOT 归档到 `archive/my-feature/`
@@ -28,7 +28,7 @@ archive 操作 SHALL 按"合并 specs → 更新状态 → 移动目录"的顺�
 - **GIVEN** change 目录存在且 VERIFY 已完成
 - **WHEN** 用户执行 `stdd archive my-feature --yes`
 - **THEN** 系统 SHALL 先合并 specs 到 `specs/` 目录
-- **AND** 系统 SHALL 更新 .stdd.yaml 状态为 archived
+- **AND** 系统 SHALL 更新 .fstdd.yaml 状态为 archived
 - **AND** 系统 SHALL 最后移动 change 目录到 archive/
 
 #### Scenario: specs 合并失败时保护源目录
@@ -133,13 +133,13 @@ status 命令 SHALL 显示当前 change 的长程/普通模式状态。
 
 #### Scenario: 长程模式状态显示
 
-- **GIVEN** .stdd.yaml 中 `long_range.mode` 为 `full_auto`
+- **GIVEN** .fstdd.yaml 中 `long_range.mode` 为 `full_auto`
 - **WHEN** 用户执行 `stdd status`
 - **THEN** 系统 SHALL 显示"🚀 全自动长程模式"
 
 #### Scenario: 未设置模式时显示默认
 
-- **GIVEN** .stdd.yaml 中不存在 `long_range` 字段
+- **GIVEN** .fstdd.yaml 中不存在 `long_range` 字段
 - **WHEN** 用户执行 `stdd status`
 - **THEN** 系统 SHALL 显示"📋 普通交互模式（默认）"
 
@@ -211,7 +211,7 @@ status 命令 SHALL 显示当前 change 的长程/普通模式状态。
 - **AND** changes/ 下无同名目录
 - **WHEN** 用户执行 `stdd rollback my-feature`
 - **THEN** 系统 SHALL 将目录移回 changes/2026-05-14-my-feature/
-- **AND** 系统 SHALL 更新 .stdd.yaml 状态为 active
+- **AND** 系统 SHALL 更新 .fstdd.yaml 状态为 active
 
 #### Scenario: 目标已存在时拒绝恢复
 

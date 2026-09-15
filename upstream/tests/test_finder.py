@@ -48,17 +48,17 @@ def test_no_changes_dir(tmp_path: Path):
 
 
 def test_directory_without_state_file(temp_project: Path):
-    """目录存在但无 .stdd.yaml 时不应匹配。"""
-    d = temp_project / ".stdd" / "changes" / "2026-01-01-no-state"
+    """目录存在但无 .fstdd.yaml 时不应匹配。"""
+    d = temp_project / ".fstdd" / "changes" / "2026-01-01-no-state"
     d.mkdir(parents=True)
     result = find_change_dir("no-state", temp_project)
     assert result is None
 
 
 def test_exact_match_no_state_file(temp_project: Path):
-    """精确匹配但无 .stdd.yaml 返回 None。"""
+    """精确匹配但无 .fstdd.yaml 返回 None。"""
     # 创建无状态文件的目录
-    d = temp_project / ".stdd" / "changes" / "2026-01-01-no-state"
+    d = temp_project / ".fstdd" / "changes" / "2026-01-01-no-state"
     d.mkdir(parents=True)
     result = find_change_dir("2026-01-01-no-state", temp_project)
     assert result is None

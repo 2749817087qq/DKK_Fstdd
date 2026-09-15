@@ -20,7 +20,7 @@ def test_rollback_success(archived_change: Path, monkeypatch):
     assert not archived_change.exists()
 
     # 验证状态已更新为 active
-    with open(restored / ".stdd.yaml", "r", encoding="utf-8") as f:
+    with open(restored / ".fstdd.yaml", "r", encoding="utf-8") as f:
         state = yaml.safe_load(f)
     assert state["status"] == "active"
 
@@ -32,7 +32,7 @@ def test_rollback_conflict(archived_change: Path, monkeypatch):
     # 在 changes/ 下创建同名目录
     conflict_dir = archived_change.parent.parent / "changes" / archived_change.name
     conflict_dir.mkdir(parents=True)
-    (conflict_dir / ".stdd.yaml").write_text("status: active", encoding="utf-8")
+    (conflict_dir / ".fstdd.yaml").write_text("status: active", encoding="utf-8")
 
     name_part = archived_change.name.split("-", 3)[-1]
     args = argparse.Namespace(name=name_part, dry_run=False, verbose=0)
@@ -64,7 +64,7 @@ def test_rollback_no_archive_dir(temp_project: Path, monkeypatch):
     """没有 archive/ 目录时报错。"""
     monkeypatch.chdir(temp_project)
     # 确保 archive 目录不存在
-    archive = temp_project / ".stdd" / "archive"
+    archive = temp_project / ".fstdd" / "archive"
     if archive.exists():
         import shutil
         shutil.rmtree(archive)

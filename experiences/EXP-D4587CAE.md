@@ -14,10 +14,10 @@ sanitized: true
 出现 4 个新的混合态文件：
 
 ```
-.stdd/archive/2026-09-15-crlf-eol-governance/.stdd.yaml
-.stdd/archive/2026-09-15-crlf-eol-governance/proposal.md
-.stdd/archive/2026-09-15-crlf-eol-governance/specs/eol-governance/spec.md
-.stdd/specs/eol-governance/spec.md
+.fstdd/archive/2026-09-15-crlf-eol-governance/.fstdd.yaml
+.fstdd/archive/2026-09-15-crlf-eol-governance/proposal.md
+.fstdd/archive/2026-09-15-crlf-eol-governance/specs/eol-governance/spec.md
+.fstdd/specs/eol-governance/spec.md
 ```
 
 **根因**：FSTDD CLI（`init` / `new` / `canon generate` / `archive`）生成的文件

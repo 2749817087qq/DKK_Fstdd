@@ -23,7 +23,7 @@
 
 1. skill 安装格式适配：上游 WorkBuddy 安装器输出 `~/.workbuddy/skills/*.md`（单文件），
    本适配改为 WorkBuddy 实际加载的目录格式 `~/.workbuddy-ai/skills/<name>/SKILL.md`。
-2. 路径固化：skill 正文中的项目相对路径（`.stdd/skills/_shared/*`、`python bin/fstdd`）
+2. 路径固化：skill 正文中的项目相对路径（`.fstdd/skills/_shared/*`、`python bin/fstdd`）
    改为绝对路径，使其可在全局安装位置工作。
 3. 运行时绑定：CLI 调用绑定到具备 PyYAML / Jinja2 依赖的 Python 解释器。
 4. 安全策略：默认禁用「经验自动上传社区」步骤（该步骤会向外部仓库外发项目数据），

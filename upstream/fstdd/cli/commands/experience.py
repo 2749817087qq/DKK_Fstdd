@@ -151,7 +151,7 @@ SANITIZE_PATTERNS = [
 def _get_experiences_dir(project_root: Path) -> Path:
     from ..utils import read_config
     config = read_config(project_root)
-    exp_dir = config.get("experience", {}).get("dir", ".stdd/experiences")
+    exp_dir = config.get("experience", {}).get("dir", ".fstdd/experiences")
     return project_root / exp_dir
 
 
@@ -776,7 +776,7 @@ def _cmd_extract(args, exp_dir):
     """Auto-extract experience drafts from test-report.md of current change."""
     from ..utils import read_config
     project_root = Path.cwd()
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         print("  No changes/ directory, skipping extraction.")
         return

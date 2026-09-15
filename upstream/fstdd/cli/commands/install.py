@@ -27,7 +27,7 @@ SKILL_META = {
     },
     "upgrade": {
         "name": "stdd-upgrade",
-        "description": "STDD 技能层升级 — 同步项目 .stdd/ 快照与全局技能版本，无需 Python CLI",
+        "description": "STDD 技能层升级 — 同步项目 .fstdd/ 快照与全局技能版本，无需 Python CLI",
         "keywords": ["stdd-upgrade", "升级", "upgrade", "版本同步"],
     },
 }
@@ -139,7 +139,7 @@ def cmd_install(args: argparse.Namespace) -> None:
             target_dir = Path.home() / cfg["target_base"] if cfg.get("target_is_home") else project_root / cfg["target_base"]
             print(f"   复制文件: {cfg.get('source')} -> {target_dir / cfg.get('target_name', cfg['source'])}")
         else:
-            core_skills_dir = stdd_source / ".stdd" / "skills"
+            core_skills_dir = stdd_source / ".fstdd" / "skills"
             if cfg.get("target_is_home"):
                 target_base = Path.home() / cfg["home_subdir"]
             else:
@@ -166,7 +166,7 @@ def cmd_install(args: argparse.Namespace) -> None:
         logger.info("已安装 STDD 到 %s", cfg["description"])
         print(f" 已安装 STDD 到 {cfg['description']}: {target_dir / cfg.get('target_name', cfg['source'])}")
     else:
-        core_skills_dir = stdd_source / ".stdd" / "skills"
+        core_skills_dir = stdd_source / ".fstdd" / "skills"
         if not core_skills_dir.exists():
             print(f" 核心 Skill 目录不存在: {core_skills_dir}")
             sys.exit(1)

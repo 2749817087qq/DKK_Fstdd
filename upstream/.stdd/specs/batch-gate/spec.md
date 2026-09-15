@@ -11,7 +11,7 @@
 - **GIVEN** 一个 open batch 处于 spec 阶段（Gate 2 待确认）
 - **WHEN** 运行 stdd batch gate --gate 2 且省略 --confirmed-by
 - **THEN** 命令 SHALL 拒绝并提示需要 --confirmed-by 通道声明
-- **AND** .stdd.yaml 的批级 confirmed_at SHALL 保持为空
+- **AND** .fstdd.yaml 的批级 confirmed_at SHALL 保持为空
 
 #### Scenario: SC-BATCH-002
 

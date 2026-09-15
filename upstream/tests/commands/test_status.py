@@ -32,9 +32,9 @@ def test_status_nonexistent_change(temp_project: Path, monkeypatch):
 
 
 def test_status_missing_state_file(temp_project: Path, monkeypatch):
-    """缺少 .stdd.yaml 时报告错误。"""
+    """缺少 .fstdd.yaml 时报告错误。"""
     monkeypatch.chdir(temp_project)
-    d = temp_project / ".stdd" / "changes" / "2026-01-01-no-state"
+    d = temp_project / ".fstdd" / "changes" / "2026-01-01-no-state"
     d.mkdir(parents=True)
     args = argparse.Namespace(name="2026-01-01-no-state", dry_run=False, verbose=0)
     with pytest.raises(SystemExit):

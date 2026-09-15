@@ -30,16 +30,16 @@ def get_logger() -> logging.Logger:
     return _logger
 
 
-# V3.0.2: Standard STDD subdirectories (all under .stdd/)
+# V3.0.2: Standard STDD subdirectories (all under .fstdd/)
 def get_stdd_dir(project_root: Path, subdir: str) -> Path:
-    """Get a STDD subdirectory path (under .stdd/)."""
-    return project_root / ".stdd" / subdir
+    """Get a STDD subdirectory path (under .fstdd/)."""
+    return project_root / ".fstdd" / subdir
 
 
 # V3.0.2: Resolution with fallback for migrated projects  
 def resolve_stdd_path(project_root, subdir):
-    """Get STDD path, preferring .stdd/ but falling back to root level."""
-    new_path = project_root / '.stdd' / subdir
+    """Get STDD path, preferring .fstdd/ but falling back to root level."""
+    new_path = project_root / '.fstdd' / subdir
     old_path = project_root / subdir
     if new_path.exists(): return new_path
     if old_path.exists(): return old_path
@@ -60,7 +60,7 @@ def get_stdd_source() -> Path:
 
 def read_config(project_root: Path) -> Dict[str, Any]:
     config: Dict[str, Any] = {}
-    config_d = project_root / ".stdd" / "config.d"
+    config_d = project_root / ".fstdd" / "config.d"
     if config_d.is_dir():
         for cfg_file in sorted(config_d.glob("*.yaml")):
             import yaml
@@ -72,11 +72,11 @@ def read_config(project_root: Path) -> Dict[str, Any]:
                     get_logger().warning("config.d/%s 不是 dict 类型，已跳过", cfg_file.name)
         if config:
             get_logger().info("从 config.d/ 加载配置 (%d 个文件)", len(list(config_d.glob("*.yaml"))))
-            legacy = project_root / ".stdd" / "config.yaml"
+            legacy = project_root / ".fstdd" / "config.yaml"
             if legacy.exists():
                 get_logger().warning("检测到旧 config.yaml，建议删除（config.d/ 已生效）")
             return config
-    legacy = project_root / ".stdd" / "config.yaml"
+    legacy = project_root / ".fstdd" / "config.yaml"
     if legacy.exists():
         import yaml
         with open(legacy, "r", encoding="utf-8") as f:
@@ -103,8 +103,8 @@ def get_source_version() -> Optional[str]:
 
 
 def get_project_version(project_root: Path) -> Optional[str]:
-    """Read version from .stdd/version.yaml (preferred) or fallback to project.yaml."""
-    version_file = project_root / ".stdd" / "version.yaml"
+    """Read version from .fstdd/version.yaml (preferred) or fallback to project.yaml."""
+    version_file = project_root / ".fstdd" / "version.yaml"
     if version_file.exists():
         try:
             import yaml
@@ -145,11 +145,11 @@ def try_version_check(project_root: Path) -> None:
     Never raises — any exception is silently ignored.
     """
     try:
-        if not (project_root / ".stdd").is_dir():
+        if not (project_root / ".fstdd").is_dir():
             return
 
         # Check lock status
-        version_file = project_root / ".stdd" / "version.yaml"
+        version_file = project_root / ".fstdd" / "version.yaml"
         if version_file.exists():
             import yaml
             data = yaml.safe_load(version_file.read_text(encoding="utf-8"))

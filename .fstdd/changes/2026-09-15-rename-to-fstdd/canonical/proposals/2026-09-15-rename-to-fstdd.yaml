@@ -1,0 +1,103 @@
+# 2026-09-15-rename-to-fstdd.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-09-15-rename-to-fstdd"
+  title: "项目改名为 Fstdd（F=Fin）并独立于上游"
+  created: "2026-09-15T22:40:53.535980"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    本项目当前名为 DKKstdd，其 skill 名、CLI 命令名、数据目录、Python 包名
+    全部沿用上游 STDD 的命名。本机曾并存另一套同名实现
+    （vsem-azamat/stdd，plugin build v0.11.0），两套都叫 stdd、
+    都用 .fstdd/ 目录、都提供 stdd CLI，混装会互相干扰。
+    手工改名尝试已证明风险：364 处替换后第一处验证即失败
+    （STDD_SRC → FSTDD_SRC → FFSTDD_SRC 双重替换，环境变量全部失效）。
+  motivation: |
+    1. 明确区分：Fstdd 作为独立项目标识，避免与同名实现混淆
+    2. 定位清晰：F=Fin，项目定位为金融场景研发流程
+    3. 独立发展：不再跟随上游，可自由演进
+
+what_changes:
+  - id: C1
+    description: "skill 名 stdd-* → fstdd-*（6 个：fstdd、fstdd-understand/spec/build/deliver/upgrade）"
+    type: modified
+  - id: C2
+    description: "CLI 入口 upstream/bin/stdd → upstream/bin/fstdd"
+    type: modified
+  - id: C3
+    description: "环境变量 STDD_SRC/STDD_OUT/STDD_PY/STDD_CLI → FSTDD_*"
+    type: modified
+  - id: C4
+    description: "哨兵 STDD_LOCAL_POLICY_NO_UPLOAD_V1 → FSTDD_LOCAL_POLICY_EXPERIENCE_UPLOAD_V1"
+    type: modified
+  - id: C5
+    description: "数据目录 .fstdd/ → .fstdd/（含现有数据迁移）"
+    type: modified
+  - id: C6
+    description: "Python 包 upstream/stdd/ → upstream/fstdd/"
+    type: modified
+  - id: C7
+    description: "项目名 DKKstdd → Fstdd（含 README/NOTICE 等文档）"
+    type: modified
+  - id: C8
+    description: "移除上游同步机制（upgrade skill 改为自管理版本）"
+    type: removed
+
+capabilities:
+  new:
+    - name: "独立命名空间"
+      description: "全部标识使用 fstdd/FSTDD 前缀，与同名 STDD 实现彻底区分"
+  modified:
+    - name: "skill 集合"
+      description: "6 个 skill 由 stdd-* 更名为 fstdd-*，触发词同步更新"
+    - name: "CLI"
+      description: "入口与 Python 包更名为 fstdd，内部 import 路径同步调整"
+
+constraints:
+  - "现有 .fstdd/ 数据必须可迁移，两个已归档 change（crlf-eol-governance、skill-engineering-standards）不得丢失"
+  - "改名后 install / verify / CLI 三项必须仍可用"
+  - "替换必须避免双重匹配（STDD_SRC 不得变成 FFSTDD_SRC）"
+  - "upstream/ 内部的包名改动必须保持 Python import 自洽"
+
+stakeholders:
+  - "D哥（项目所有者，决定改名范围与上游关系）"
+
+risk_areas:
+  - capability: "独立命名空间"
+    risk: "全局替换可能误伤非标识用途的 stdd 字样（注释、变量名、URL）"
+    mitigation: "分层推进（先标识层、后包与目录），每层改完立即实测；替换规则按长串优先排序"
+  - capability: "CLI"
+    risk: "Python 包改名后 import 断裂，导致 CLI 完全不可用"
+    mitigation: "包改名单独成切片，改完立即跑 fstdd --help 与 init/new/status 冒烟"
+  - capability: "skill 集合"
+    risk: "数据目录改名后旧数据不可读，历史 change 丢失"
+    mitigation: "迁移前完整备份（bundle），迁移后验证两个归档 change 可列出"
+
+non_goals:
+  - "不改动方法论内容（四阶段 UNDERSTAND→SPEC→BUILD→DELIVER 与 3 道 Gate 保持不变）"
+  - "不引入 vsem-azamat/stdd 的 10 个细粒度 skill"
+  - "不修改上游代码的功能逻辑，仅改标识与路径"
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L1
+  reference_changes: []
+  anchor_implementations: []
+
+success_criteria:
+  - "SC1: 环境变量名恰为 FSTDD_SRC / FSTDD_OUT / FSTDD_PY / FSTDD_CLI，且全仓库不存在 FFSTDD_ 形式"
+  - "SC2: upstream/bin/fstdd --help 可执行，usage 行显示 fstdd"
+  - "SC3: install 脚本生成 6 个 fstdd-* skill 目录，verify 输出 PASS"
+  - "SC4: 除 upstream/ 与 .git 外，无残留的独立 stdd 标识（grep 词边界验证）"
+  - "SC5: 数据目录迁移后，fstdd status 可列出两个已归档 change"
+  - "SC6: 三项校验（verify_eol / verify_skill_standards / verify_workbuddy_skills）全部通过"

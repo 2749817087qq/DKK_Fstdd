@@ -6,7 +6,7 @@ import sys
 
 SRC = Path(r"C:\Users\Administrator\.workbuddy-ai\stdd")
 OUT = Path(r"C:\Users\Administrator\.workbuddy-ai\skills")
-SHARED_ABS = (SRC / ".stdd" / "skills" / "_shared").as_posix()
+SHARED_ABS = (SRC / ".fstdd" / "skills" / "_shared").as_posix()
 CLI_ABS = (SRC / "bin" / "stdd").as_posix()
 # 系统 Python 3.11 已自带 PyYAML 6.0.2 + Jinja2 3.1.6（STDD 运行时依赖），managed 3.13 缺 PyYAML
 PY = r"C:\Python311\python.exe"
@@ -43,7 +43,7 @@ SKILLS = [
     dict(
         key="upgrade",
         name="stdd-upgrade",
-        desc="STDD 技能层升级：从官方仓库同步 .stdd/ 静态资源快照与全局技能版本，处理版本漂移与锁定状态。",
+        desc="STDD 技能层升级：从官方仓库同步 .fstdd/ 静态资源快照与全局技能版本，处理版本漂移与锁定状态。",
         kw="stdd-upgrade、STDD 升级、升级 stdd、同步 stdd 版本、stdd 版本漂移",
     ),
 ]
@@ -59,7 +59,7 @@ def strip_frontmatter(text: str) -> str:
 
 
 def adapt(body: str) -> str:
-    body = body.replace(".stdd/skills/_shared/", SHARED_ABS + "/")
+    body = body.replace(".fstdd/skills/_shared/", SHARED_ABS + "/")
     body = body.replace("python bin/stdd", PY_CMD)
     body = body.replace("`stdd ", "`" + PY_CMD + " ")
     body = body.replace("`python \"{CLI_ABS}\"`".format(CLI_ABS=CLI_ABS), "`" + PY_CMD + "`")
@@ -132,7 +132,7 @@ def apply_deliver_policy(body: str, errors: list) -> str:
 
 
 def main() -> int:
-    src_skills = SRC / ".stdd" / "skills"
+    src_skills = SRC / ".fstdd" / "skills"
     installed = []
     errors = []
 
@@ -155,7 +155,7 @@ def main() -> int:
             f"> 静态资源与共享片段根目录：`{SRC.as_posix()}`\n"
             f"> CLI 入口：`{PY_CMD}`（该解释器已具备 PyYAML / Jinja2 依赖）\n"
             "> 首次在某项目使用 STDD 前，需先在该项目根目录执行初始化："
-            f'`{PY_CMD} init` —— 生成 `.stdd/` 骨架、模板与项目状态文件。\n\n'
+            f'`{PY_CMD} init` —— 生成 `.fstdd/` 骨架、模板与项目状态文件。\n\n'
         )
 
         fm = (
@@ -180,8 +180,8 @@ def main() -> int:
             errors.append(f"{name}: 安全策略哨兵缺失（{SENTINEL}）")
         if "python bin/stdd" in content:
             errors.append(f"{name}: 残留未替换的 `python bin/stdd`")
-        if ".stdd/skills/_shared/" in content and SHARED_ABS not in content:
-            errors.append(f"{name}: 残留未替换的相对路径 .stdd/skills/_shared/")
+        if ".fstdd/skills/_shared/" in content and SHARED_ABS not in content:
+            errors.append(f"{name}: 残留未替换的相对路径 .fstdd/skills/_shared/")
         if f"name: {name}" not in content:
             errors.append(f"{name}: frontmatter name 缺失或不匹配")
 
@@ -231,8 +231,8 @@ STDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
 {PY_CMD} init
 ```
 
-生成 `.stdd/` 骨架（模板、config.d、rules、knowledge 等）与项目状态文件。
-未初始化的项目，阶段 skill 中引用的 `.stdd/templates/*`、`.stdd/config.d/*` 将不存在，流程无法完整执行。
+生成 `.fstdd/` 骨架（模板、config.d、rules、knowledge 等）与项目状态文件。
+未初始化的项目，阶段 skill 中引用的 `.fstdd/templates/*`、`.fstdd/config.d/*` 将不存在，流程无法完整执行。
 
 ## 路由规则
 
@@ -241,13 +241,13 @@ STDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
 3. 规格已确认，要实现（切片 + TDD + 验证） → `stdd-build`
 4. 验证通过，要归档交付 → `stdd-deliver`
 5. 提示版本漂移或要升级 → `stdd-upgrade`
-6. **当前项目没有 `.stdd/` 目录时，一律先执行初始化再进入任何阶段。**
+6. **当前项目没有 `.fstdd/` 目录时，一律先执行初始化再进入任何阶段。**
 
 ## 安全提示（本机策略）
 
 - `stdd-deliver` 的 Step 2.8「经验自动上传社区」默认**禁用**（会向外部仓库外发项目经验），
   仅当用户显式要求时才执行。该策略带哨兵标记 `{SENTINEL}`，可被校验脚本检测。
-- `stdd-upgrade` 会从 `raw.githubusercontent.com` 拉取文件覆盖本地 `.stdd/` 静态资源，属用户主动触发的联网行为。
+- `stdd-upgrade` 会从 `raw.githubusercontent.com` 拉取文件覆盖本地 `.fstdd/` 静态资源，属用户主动触发的联网行为。
 
 {UPGRADE_DUTY}
 """

@@ -13,9 +13,9 @@
 
 #### Scenario: Dart 规范文件存在 <!-- confidence: high -->
 
-- **GIVEN** `.stdd/standards/` 目录存在
+- **GIVEN** `.fstdd/standards/` 目录存在
 - **WHEN** Phase 4 Step 0 读取 `project.language == "dart"` 的开发规范
-- **THEN** 系统 SHALL 读取 `.stdd/standards/dart.md` 文件
+- **THEN** 系统 SHALL 读取 `.fstdd/standards/dart.md` 文件
 - **AND** 该文件 SHALL 包含：代码风格（dart format/dart analyze/lints/命名）、类型系统（空安全/sealed class/extension type/Record/Pattern）、并发模型（Future/async-await/Stream/Isolate）、错误处理（try-catch/Result 模式/Error vs Exception）、日志（package:logging/Flutter DevTools）、测试规范（flutter test/WidgetTester/Golden test/mock/Mocktail）、审查清单 共 7 个章节
 
 #### Scenario: Flutter 特有约定 <!-- confidence: high -->
@@ -34,7 +34,7 @@ Dart 规范 SHALL 与其他语言规范共享相同的 7 章顶级结构。
 
 #### Scenario: 七章结构完整 <!-- confidence: high -->
 
-- **GIVEN** `.stdd/standards/python.md` 包含 7 个章节
+- **GIVEN** `.fstdd/standards/python.md` 包含 7 个章节
 - **WHEN** 对比 Dart 规范和 Python 规范的章节结构
 - **THEN** Dart 规范 SHALL 包含：代码风格、类型系统、并发模型、错误处理、日志、测试规范、审查清单 共 7 个顶级章节
 - **AND** 各章节内容 SHALL 根据 Dart/Flutter 生态定制

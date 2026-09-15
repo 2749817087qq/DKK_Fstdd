@@ -14,13 +14,13 @@ def _make_args(action="status", description="", strategy="monthly", force=False)
 
 def _setup_batch_env(tmp_path: Path, strategy="monthly"):
     """Create minimal STDD project with lite.yaml config."""
-    (tmp_path / ".stdd" / "config.d").mkdir(parents=True)
-    (tmp_path / ".stdd" / "config.d" / "lite.yaml").write_text(
+    (tmp_path / ".fstdd" / "config.d").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "config.d" / "lite.yaml").write_text(
         yaml.dump({"batch": {"strategy": strategy, "max_items": 20, "auto_close": True}},
                   allow_unicode=True),
         encoding="utf-8",
     )
-    (tmp_path / ".stdd" / "changes" / "_batch").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "changes" / "_batch").mkdir(parents=True)
 
 
 class TestBatchCreate:
@@ -37,9 +37,9 @@ class TestBatchCreate:
         assert batch_dir.exists()
         assert batch_dir.name.startswith("2026-")
         assert (batch_dir / "items").is_dir()
-        assert (batch_dir / ".stdd.yaml").exists()
+        assert (batch_dir / ".fstdd.yaml").exists()
 
-        data = yaml.safe_load((batch_dir / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((batch_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["batch_type"] == "monthly"
         assert data["closed_at"] is None
 
@@ -73,7 +73,7 @@ class TestBatchClose:
         summary = batch_dir / "archive-summary.md"
         assert summary.exists()
 
-        data = yaml.safe_load((batch_dir / ".stdd.yaml").read_text(encoding="utf-8"))
+        data = yaml.safe_load((batch_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["closed_at"] is not None
 
 
@@ -181,5 +181,5 @@ class TestBatchNoBatch:
         cmd_batch(_make_args("archive"))
 
         # After archive, batch should be in archive/
-        archive_dir = tmp_path / ".stdd" / "archive"
+        archive_dir = tmp_path / ".fstdd" / "archive"
         assert archive_dir.exists()

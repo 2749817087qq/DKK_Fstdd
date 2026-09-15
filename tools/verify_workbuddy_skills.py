@@ -17,7 +17,7 @@ import tempfile
 # 与安装脚本一致：默认自动定位，可用 FSTDD_SRC / FSTDD_OUT 覆盖
 SRC = Path(os.environ.get("FSTDD_SRC", Path(__file__).resolve().parent.parent / "upstream"))
 OUT = Path(os.environ.get("FSTDD_OUT", Path.home() / ".workbuddy-ai" / "skills"))
-SHARED_ABS = (SRC / ".stdd" / "skills" / "_shared").as_posix()
+SHARED_ABS = (SRC / ".fstdd" / "skills" / "_shared").as_posix()
 # FSTDD_CLI 用于故障注入测试：指向不可用时校验必须 FAIL，不得静默通过
 CLI_ABS = Path(os.environ.get("FSTDD_CLI", str(SRC / "bin" / "fstdd")))
 PY = os.environ.get("FSTDD_PY", sys.executable)
@@ -97,8 +97,8 @@ def main() -> int:
         if "python bin/fstdd" in text:
             fails.append(f"{name}: 残留未替换的 `python bin/fstdd`")
 
-        if ".stdd/skills/_shared/" in text and SHARED_ABS not in text:
-            fails.append(f"{name}: 残留未替换的相对路径 .stdd/skills/_shared/")
+        if ".fstdd/skills/_shared/" in text and SHARED_ABS not in text:
+            fails.append(f"{name}: 残留未替换的相对路径 .fstdd/skills/_shared/")
 
         if SRC.as_posix() not in text and name != "fstdd":
             warns.append(f"{name}: 未发现资源绝对路径（期望含 {SRC.as_posix()}），可能是未经适配的上游原件")

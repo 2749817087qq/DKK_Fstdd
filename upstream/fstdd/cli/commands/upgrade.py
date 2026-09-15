@@ -8,8 +8,8 @@ from pathlib import Path
 
 
 def _read_version_yaml(project_root: Path) -> dict:
-    """Read .stdd/version.yaml, return empty dict if not found."""
-    version_file = project_root / ".stdd" / "version.yaml"
+    """Read .fstdd/version.yaml, return empty dict if not found."""
+    version_file = project_root / ".fstdd" / "version.yaml"
     if version_file.exists():
         import yaml
         data = yaml.safe_load(version_file.read_text(encoding="utf-8"))
@@ -18,9 +18,9 @@ def _read_version_yaml(project_root: Path) -> dict:
 
 
 def _write_version_yaml(project_root: Path, data: dict) -> None:
-    """Write .stdd/version.yaml."""
+    """Write .fstdd/version.yaml."""
     import yaml
-    version_file = project_root / ".stdd" / "version.yaml"
+    version_file = project_root / ".fstdd" / "version.yaml"
     version_file.write_text(
         yaml.dump(data, allow_unicode=True, default_flow_style=False),
         encoding="utf-8",
@@ -29,7 +29,7 @@ def _write_version_yaml(project_root: Path, data: dict) -> None:
 
 def _registry_path() -> Path:
     """Get path to global projects registry."""
-    return Path.home() / ".stdd" / "projects.yaml"
+    return Path.home() / ".fstdd" / "projects.yaml"
 
 
 def _read_registry() -> dict:
@@ -80,10 +80,10 @@ def _register_project(project_root: Path, version: str, locked: bool = False) ->
 def _backup_project_files(project_root: Path, old_version: str) -> Path:
     """Backup current STDD files before upgrade. Returns backup dir path."""
     ts = datetime.now().strftime("%Y%m%dT%H%M%S")
-    backup_dir = project_root / ".stdd" / "backup" / f"{old_version}-{ts}"
+    backup_dir = project_root / ".fstdd" / "backup" / f"{old_version}-{ts}"
     backup_dir.mkdir(parents=True, exist_ok=True)
 
-    dirs_to_backup = [".stdd/skills", ".stdd/templates", ".stdd/standards", ".stdd/config.d", ".stdd/experiences", "canonical"]
+    dirs_to_backup = [".fstdd/skills", ".fstdd/templates", ".fstdd/standards", ".fstdd/config.d", ".fstdd/experiences", "canonical"]
     for d in dirs_to_backup:
         src = project_root / d
         if src.is_dir():
@@ -96,7 +96,7 @@ def _backup_project_files(project_root: Path, old_version: str) -> Path:
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(f, target)
 
-    version_file = project_root / ".stdd" / "version.yaml"
+    version_file = project_root / ".fstdd" / "version.yaml"
     if version_file.exists():
         shutil.copy2(version_file, backup_dir / "version.yaml")
 
@@ -108,8 +108,8 @@ def _merge_project_yaml(project_root: Path, stdd_source: Path) -> None:
     import yaml
     preserve_keys = {"project", "paths"}
 
-    src_file = stdd_source / ".stdd" / "config.d" / "project.yaml"
-    dst_file = project_root / ".stdd" / "config.d" / "project.yaml"
+    src_file = stdd_source / ".fstdd" / "config.d" / "project.yaml"
+    dst_file = project_root / ".fstdd" / "config.d" / "project.yaml"
 
     if not src_file.exists():
         return
@@ -203,16 +203,16 @@ def _cmd_check_current(args: argparse.Namespace) -> None:
 
 
 _OLD_TO_NEW = {
-    "changes": ".stdd/changes",
-    "specs": ".stdd/specs",
-    "archive": ".stdd/archive",
-    "canonical": ".stdd/canonical",
-    "agent_tests": ".stdd/agent_tests",
+    "changes": ".fstdd/changes",
+    "specs": ".fstdd/specs",
+    "archive": ".fstdd/archive",
+    "canonical": ".fstdd/canonical",
+    "agent_tests": ".fstdd/agent_tests",
 }
 
 
 def _migrate_dirs_to_stdd(project_root: Path) -> None:
-    """V3.0.2: Migrate old root-level dirs into .stdd/."""
+    """V3.0.2: Migrate old root-level dirs into .fstdd/."""
     import shutil as _shutil
     for old_name, new_name in _OLD_TO_NEW.items():
         old_path = project_root / old_name
@@ -246,12 +246,12 @@ def _write_upgrade_notes(project_root: Path, old_ver: str, new_ver: str) -> None
                 "version": "3.0.2",
                 "title": "目录收敛 + README 自然语言化",
                 "what": [
-                    "changes/specs/archive/canonical/agent_tests 全部移到 .stdd/ 下",
+                    "changes/specs/archive/canonical/agent_tests 全部移到 .fstdd/ 下",
                     "stdd upgrade 自动迁移旧路径",
                     "README 快速开始改为自然语言对话示例",
                 ],
                 "rules": [
-                    "所有 STDD 目录统一在 .stdd/ 下，不再散落项目根目录",
+                    "所有 STDD 目录统一在 .fstdd/ 下，不再散落项目根目录",
                 ],
             },
             {
@@ -268,7 +268,7 @@ def _write_upgrade_notes(project_root: Path, old_ver: str, new_ver: str) -> None
                 "rules": [
                     "每个新 Session 启动时检查 Phase 完整性",
                     "僵尸 Change 不再计入 Guard 放行条件",
-                    "禁止手动编辑 .stdd.yaml 修改 phase",
+                    "禁止手动编辑 .fstdd.yaml 修改 phase",
                 ],
             },
             {
@@ -288,13 +288,13 @@ def _write_upgrade_notes(project_root: Path, old_ver: str, new_ver: str) -> None
             },
         ],
         "action_required": [
-            "📖 阅读 AI 操作手册: .stdd/onboarding/AI_OPERATING_MANUAL.yaml",
+            "📖 阅读 AI 操作手册: .fstdd/onboarding/AI_OPERATING_MANUAL.yaml",
             "📋 完成自检清单（self_check 章节，8 道题）",
             "📖 阅读流程契约: STDD_CONSTITUTION.md",
         "🏕️ 启动训练营: stdd bootcamp start",
         ],
     }
-    notes_path = project_root / ".stdd" / "UPGRADE_NOTES.yaml"
+    notes_path = project_root / ".fstdd" / "UPGRADE_NOTES.yaml"
     notes_path.write_text(_yaml.dump(notes, allow_unicode=True, default_flow_style=False), encoding="utf-8")
 
 
@@ -335,7 +335,7 @@ def _cmd_upgrade_current(args: argparse.Namespace) -> None:
         if force:
             print("    --force: 跳过版本比较，强制同步")
         from ..commands.init import FILES_TO_COPY
-        backup_dir = project_root / ".stdd" / "backup" / f"{proj_ver}-<timestamp>"
+        backup_dir = project_root / ".fstdd" / "backup" / f"{proj_ver}-<timestamp>"
         print(f"    备份目录: {backup_dir}")
         print(f"    将同步 {len(FILES_TO_COPY)} 个文件")
         platforms = _detect_installed_platforms(project_root)
@@ -353,7 +353,7 @@ def _cmd_upgrade_current(args: argparse.Namespace) -> None:
             print("  已取消")
             return
 
-    # V3.0.2: Migrate old root-level dirs into .stdd/
+    # V3.0.2: Migrate old root-level dirs into .fstdd/
     _migrate_dirs_to_stdd(project_root)
 
     # V3.0.2: Write upgrade notes — AI reads on next SessionStart
@@ -372,7 +372,7 @@ def _cmd_upgrade_current(args: argparse.Namespace) -> None:
         src = stdd_source / f
         dst = project_root / f
         if src.exists():
-            if f in (".stdd/config.d/project.yaml",):
+            if f in (".fstdd/config.d/project.yaml",):
                 _merge_project_yaml(project_root, stdd_source)
             else:
                 shutil.copy2(src, dst)

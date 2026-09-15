@@ -7,7 +7,7 @@ meta:
 why:
   problem: |
     /doctor 发现三个生命周期 hook（SessionStart/PreCompact/Stop）因配置格式错误被 Claude Code 静默忽略。
-    根因：stdd hooks install 将 hook 值写为字符串（"python .stdd/hooks/xxx.py"），但 Claude Code 要求
+    根因：stdd hooks install 将 hook 值写为字符串（"python .fstdd/hooks/xxx.py"），但 Claude Code 要求
     array-of-matchers 格式 [{hooks: [{type: "command", command: "..."}]}]。
     测试只验证 key 存在不验证 value 类型，install 后无自动校验，导致错误长期未被发现。
   motivation: |

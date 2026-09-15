@@ -21,7 +21,7 @@ STDD SHALL 支持 phase-context.md 作为阶段间结构化交接摘要，每个
 #### Scenario: 新 session Agent 恢复上下文 <!-- confidence: high -->
 
 - **GIVEN** 上一个 session 已完成 Phase 4 BUILD，phase-context.md 包含 Phase 1-4 所有章节
-- **WHEN** 新 session Agent 启动并读取 `.stdd.yaml` → 发现 `phase_context_file` 指向 phase-context.md
+- **WHEN** 新 session Agent 启动并读取 `.fstdd.yaml` → 发现 `phase_context_file` 指向 phase-context.md
 - **THEN** Agent SHALL 在 1 轮 Read 操作内获取完整上下文（无需翻读 3-5 个独立文件）
 - **AND** 如果某决策需要详细信息，Agent SHALL 按章节末尾的"完整上下文文件清单"回溯原文
 
@@ -69,14 +69,14 @@ STDD SHALL 将 resume_context 从"一句话摘要"重定位为"指针 + phase_co
 
 #### Scenario: resume_context 退为指针 <!-- confidence: high -->
 
-- **GIVEN** `.stdd.yaml` 包含 resume_context 字段
-- **WHEN** Agent 读取 `.stdd.yaml` 恢复状态
+- **GIVEN** `.fstdd.yaml` 包含 resume_context 字段
+- **WHEN** Agent 读取 `.fstdd.yaml` 恢复状态
 - **THEN** resume_context SHALL 仅包含：当前 phase、最后动作、时间戳、phase_context_file 路径
 - **AND** SHALL NOT 包含详细决策描述（那是 phase-context.md 的职责）
 
 #### Scenario: 旧格式向后兼容 <!-- confidence: medium -->
 
-- **GIVEN** `.stdd.yaml` 为 V2.5 格式（resume_context 为自然语言摘要，无 phase_context_file）
+- **GIVEN** `.fstdd.yaml` 为 V2.5 格式（resume_context 为自然语言摘要，无 phase_context_file）
 - **WHEN** V2.7 Agent 读取该文件
 - **THEN** Agent SHALL 识别 phase_context_file 为 null
 - **AND** 按旧逻辑从各阶段产物重建上下文

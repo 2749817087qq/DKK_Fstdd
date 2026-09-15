@@ -4,7 +4,7 @@ checks:
   no_manual_yaml: 2
   phase_cli: 3
 forbidden:
-- 手动编辑 .stdd.yaml
+- 手动编辑 .fstdd.yaml
 - 跳过 Gate
 - 直接 commit
 level: 1

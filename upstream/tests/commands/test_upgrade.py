@@ -18,16 +18,16 @@ def _make_args(**kwargs):
 
 def _setup_project(tmp_path: Path, version: str = "2.5.0", locked: bool = False):
     """Create a minimal STDD project for testing."""
-    (tmp_path / ".stdd" / "config.d").mkdir(parents=True)
-    (tmp_path / ".stdd" / "skills").mkdir(parents=True)
-    (tmp_path / ".stdd" / "templates").mkdir(parents=True)
-    (tmp_path / ".stdd" / "standards").mkdir(parents=True)
-    (tmp_path / ".stdd" / "config.d" / "project.yaml").write_text(
+    (tmp_path / ".fstdd" / "config.d").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "skills").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "templates").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "standards").mkdir(parents=True)
+    (tmp_path / ".fstdd" / "config.d" / "project.yaml").write_text(
         f"stdd_version: '{version}'\nproject:\n  language: python\n  name: test\n",
         encoding="utf-8",
     )
     if locked:
-        (tmp_path / ".stdd" / "version.yaml").write_text(
+        (tmp_path / ".fstdd" / "version.yaml").write_text(
             yaml.dump({"stdd_version": version, "locked": True}, allow_unicode=True),
             encoding="utf-8",
         )
@@ -59,7 +59,7 @@ class TestUpgradeCheck:
         from fstdd.cli.utils import get_source_version
         src = get_source_version() or "3.0.4"
         _setup_project(tmp_path, src)
-        (tmp_path / ".stdd" / "version.yaml").write_text(
+        (tmp_path / ".fstdd" / "version.yaml").write_text(
             yaml.dump({"stdd_version": src, "locked": False}, allow_unicode=True),
             encoding="utf-8",
         )
@@ -127,7 +127,7 @@ class TestUpgradeLock:
 
         cmd_upgrade(_make_args(lock=True))
 
-        vf = tmp_path / ".stdd" / "version.yaml"
+        vf = tmp_path / ".fstdd" / "version.yaml"
         assert vf.exists()
         data = yaml.safe_load(vf.read_text(encoding="utf-8"))
         assert data["locked"] is True
@@ -141,7 +141,7 @@ class TestUpgradeLock:
 
         cmd_upgrade(_make_args(unlock=True))
 
-        vf = tmp_path / ".stdd" / "version.yaml"
+        vf = tmp_path / ".fstdd" / "version.yaml"
         data = yaml.safe_load(vf.read_text(encoding="utf-8"))
         assert data["locked"] is False
 
@@ -167,7 +167,7 @@ class TestUpgradeDryRun:
 
         assert "DRY-RUN" in out
         # version.yaml should NOT have been created
-        assert not (tmp_path / ".stdd" / "version.yaml").exists()
+        assert not (tmp_path / ".fstdd" / "version.yaml").exists()
 
 
 class TestUpgradeRegistry:

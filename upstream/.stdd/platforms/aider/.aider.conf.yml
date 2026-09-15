@@ -4,7 +4,7 @@
 # Read conventions file for coding standards
 read:
   - CONVENTIONS.md
-  - .stdd/standards/python.md
+  - .fstdd/standards/python.md
 
 # Model settings (uncomment and customize)
 # model: claude-sonnet-4-6

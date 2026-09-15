@@ -58,7 +58,7 @@ Before completing code, verify:
 
 ## Language-Specific Standards
 
-See `.stdd/standards/` for detailed per-language standards:
+See `.fstdd/standards/` for detailed per-language standards:
 - `python.md` — Python (ruff, pytest, async/await, mypy)
 - `java.md` — Java (Spotless, JUnit 5, Mockito, virtual threads)
 - `go.md` — Go (gofmt, testing, goroutines, errgroup)

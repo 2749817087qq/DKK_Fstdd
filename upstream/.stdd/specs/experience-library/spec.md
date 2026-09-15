@@ -4,13 +4,13 @@
 
 ### Requirement: 经验数据存储
 
-系统 SHALL 在 `.stdd/experiences/` 目录中以 YAML frontmatter + Markdown body 格式存储经验条目，并通过自动维护的索引文件支持快速查找。
+系统 SHALL 在 `.fstdd/experiences/` 目录中以 YAML frontmatter + Markdown body 格式存储经验条目，并通过自动维护的索引文件支持快速查找。
 
 #### Scenario: 创建经验条目
 
-- **GIVEN** `.stdd/experiences/` 目录已存在
+- **GIVEN** `.fstdd/experiences/` 目录已存在
 - **WHEN** 用户或 AI 执行 `stdd experience add --category cascading_errors --pattern "async 函数裸 except 遗漏 CancelledError"`
-- **THEN** 系统 SHALL 在 `.stdd/experiences/` 下创建 `EXP-YYYY-NNNN.md` 文件
+- **THEN** 系统 SHALL 在 `.fstdd/experiences/` 下创建 `EXP-YYYY-NNNN.md` 文件
 - **AND** 文件 SHALL 包含完整的 YAML frontmatter（experience_id, category, pattern, root_cause, detection_trigger, fix_template）
 - **AND** experience_id SHALL 按年份和自增序号自动生成（如 EXP-2026-0001）
 - **AND** 系统 SHALL 自动更新 `.experience-index.yaml`
@@ -88,11 +88,11 @@
 
 ### Requirement: 经验库配置
 
-系统 SHALL 通过 `.stdd/config.d/experience.yaml` 提供经验库行为配置。
+系统 SHALL 通过 `.fstdd/config.d/experience.yaml` 提供经验库行为配置。
 
 #### Scenario: 读取经验库配置
 
-- **GIVEN** `.stdd/config.d/experience.yaml` 配置了 `auto_record.enabled: true` 和 `lifecycle.verified_threshold: 3`
+- **GIVEN** `.fstdd/config.d/experience.yaml` 配置了 `auto_record.enabled: true` 和 `lifecycle.verified_threshold: 3`
 - **WHEN** Phase 5 AI 或 CLI 读取配置
 - **THEN** 经验自动记录 SHALL 按 `auto_record.enabled` 决定是否启用
 - **AND** 验证阈值 SHALL 按 `lifecycle.verified_threshold` 的值执行

@@ -35,17 +35,17 @@ python /path/to/stdd-project/bin/stdd init
 
 ```bash
 # 1. 创建目录结构 / Create directory structure
-mkdir -p .stdd/skills .stdd/templates .stdd/standards
-mkdir -p .stdd/platforms/claude-code/skills
-mkdir -p .stdd/platforms/workbuddy/skills
-mkdir -p .stdd/platforms/trae/skills
+mkdir -p .fstdd/skills .fstdd/templates .fstdd/standards
+mkdir -p .fstdd/platforms/claude-code/skills
+mkdir -p .fstdd/platforms/workbuddy/skills
+mkdir -p .fstdd/platforms/trae/skills
 mkdir -p changes specs archive
 
-# 2. 复制 STDD 核心文件到 .stdd/ / Copy STDD core files to .stdd/
-cp -r /path/to/stdd-project/.stdd/config.d/ .stdd/
-cp /path/to/stdd-project/.stdd/skills/*.md .stdd/skills/
-cp /path/to/stdd-project/.stdd/templates/*.md .stdd/templates/
-cp /path/to/stdd-project/.stdd/standards/*.md .stdd/standards/
+# 2. 复制 STDD 核心文件到 .fstdd/ / Copy STDD core files to .fstdd/
+cp -r /path/to/stdd-project/.fstdd/config.d/ .fstdd/
+cp /path/to/stdd-project/.fstdd/skills/*.md .fstdd/skills/
+cp /path/to/stdd-project/.fstdd/templates/*.md .fstdd/templates/
+cp /path/to/stdd-project/.fstdd/standards/*.md .fstdd/standards/
 cp /path/to/stdd-project/STDD.md .
 cp /path/to/stdd-project/AGENTS.md .
 ```
@@ -78,9 +78,9 @@ python /path/to/stdd-project/bin/stdd install codex
 
 ```bash
 # 检查目录结构 / Check directory structure
-ls -la .stdd/
-ls -la .stdd/skills/
-ls -la .stdd/templates/
+ls -la .fstdd/
+ls -la .fstdd/skills/
+ls -la .fstdd/templates/
 
 # 验证 CLI / Verify CLI
 python /path/to/stdd-project/bin/stdd --help
@@ -155,7 +155,7 @@ stdd abort feature-rate-limit
 
 ```
 你的项目 / Your Project/
-├── .stdd/                          # STDD 系统目录 / System directory
+├── .fstdd/                          # STDD 系统目录 / System directory
 │   ├── config.d/                  # 项目配置 / Project config
 │   ├── skills/                     # 4 个阶段 Skill / 4 phase skills
 │   ├── templates/                  # 9 个文档模板 / 9 document templates
@@ -170,7 +170,7 @@ stdd abort feature-rate-limit
 │       └── opencode/skills/
 ├── changes/                        # 活跃变更 / Active changes
 │   └── <YYYY-MM-DD>-<name>/
-│       ├── .stdd.yaml              # 变更状态 / Change state
+│       ├── .fstdd.yaml              # 变更状态 / Change state
 │       ├── proposal.md
 │       ├── design.md
 │       ├── specs/<capability>/spec.md
@@ -286,7 +286,7 @@ cp STDD.md .windsurfrules
 
 ## 七、配置说明 / Configuration
 
-`.stdd/config.d/` 中的关键配置项 / Key configuration items in `.stdd/config.d/`：
+`.fstdd/config.d/` 中的关键配置项 / Key configuration items in `.fstdd/config.d/`：
 
 ```yaml
 # 项目信息 / Project info
@@ -335,8 +335,8 @@ tc_id:
 
 ## 八、开发规范的使用 / Using Development Standards
 
-Phase 3 (BUILD) 开始前，Skill 会自动读取 `.stdd/standards/<language>.md`。
-Before Phase 3 (BUILD) begins, the Skill automatically reads `.stdd/standards/<language>.md`.
+Phase 3 (BUILD) 开始前，Skill 会自动读取 `.fstdd/standards/<language>.md`。
+Before Phase 3 (BUILD) begins, the Skill automatically reads `.fstdd/standards/<language>.md`.
 
 当前支持的开发规范 / Currently supported standards（共 10 门语言 / 10 languages total）：
 - `python.md` — Python 3.10+ 开发规范（V1.0 起）/ Python dev standard
@@ -368,8 +368,8 @@ Copy `openspec/specs/` to `specs/`, copy active changes from `openspec/changes/`
 
 ### Q: 如何切换开发语言？/ How to switch the development language?
 
-修改 `.stdd/config.d/` 中的 `project.language`，然后创建对应的 `.stdd/standards/<language>.md`。
-Modify `project.language` in `.stdd/config.d/`, then create the corresponding `.stdd/standards/<language>.md`.
+修改 `.fstdd/config.d/` 中的 `project.language`，然后创建对应的 `.fstdd/standards/<language>.md`。
+Modify `project.language` in `.fstdd/config.d/`, then create the corresponding `.fstdd/standards/<language>.md`.
 
 ### Q: CLI 脚本报 Unicode 错误（Windows）？/ CLI script reports Unicode errors on Windows?
 

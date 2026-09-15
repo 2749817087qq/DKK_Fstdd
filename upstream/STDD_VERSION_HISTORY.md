@@ -172,7 +172,7 @@ V1.0 ──→ V1.1 ──→ V1.2 ──→ V1.4 ──→ V2.0 ──→ V2.3 
 
 **协作增强**：
 - Two-Instance Kickoff（`stdd new --parallel`，双 Agent 并行启动）
-- Rules 目录结构（`.stdd/rules/`，Phase 4 自动加载）
+- Rules 目录结构（`.fstdd/rules/`，Phase 4 自动加载）
 
 **遗留补齐**：
 - 5 个 Skill 目录就位（python/fastapi/go/search-first/skill-create）

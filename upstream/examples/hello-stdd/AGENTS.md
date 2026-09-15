@@ -7,7 +7,7 @@ STDD (Spec+Test Driven Development) 是一套 AI 辅助的研发流程系统，�
 ## 目录结构
 
 ```
-.stdd/                  # STDD 核心系统
+.fstdd/                  # STDD 核心系统
   skills/               # 6 个阶段 Skill 文件
     _shared/            # DRY 共享片段（确认门/模式选择/长程授权）
   templates/            # 9 个文档模板
@@ -39,7 +39,7 @@ DESIGN.md               # 完整设计文档
 ## 开发约定
 
 - STDD 本身使用 STDD 流程开发
-- Python 辅助脚本遵循 `.stdd/standards/python.md` 规范
+- Python 辅助脚本遵循 `.fstdd/standards/python.md` 规范
 - 模板和 Skill 文件使用中文编写
 - 所有文档变更需经过 Phase 2 规格设计 + 用户确认
 

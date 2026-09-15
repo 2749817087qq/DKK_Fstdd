@@ -17,7 +17,7 @@
 - `index.py` / `ci.py` 潜在键漂移与整数比较 bug 修复
 
 ### 版本统一
-- `.stdd/config.d/project.yaml`、`.stdd/version.yaml` → 3.0.5；`pyproject.toml` 2.9.4 → 3.0.5（陈旧修正）
+- `.fstdd/config.d/project.yaml`、`.fstdd/version.yaml` → 3.0.5；`pyproject.toml` 2.9.4 → 3.0.5（陈旧修正）
 - 全部 skills frontmatter、README / README_EN / CHANGELOG 同步
 
 ### YAML-first（Slice 2）
@@ -47,7 +47,7 @@
 - `project-index.yaml` 格式 + `stdd index update/show/trace` CLI
 - `STDD_ANCHORING.md` 锚定法方法论文档（L1-L4 四级锚定）
 - `stdd canon init/generate/verify` CLI（双轨制基础）
-- `.stdd/templates/canonical/` + `.stdd/templates/human-view/` 模板目录
+- `.fstdd/templates/canonical/` + `.fstdd/templates/human-view/` 模板目录
 
 ### 锚定落地 + 双轨验证（板块 A）
 - 锚定评估 Phase 2 集成（spec.md Step 2.4）
@@ -73,7 +73,7 @@
 ### 代码知识积累（板块 D · CodeGraph 借鉴）
 - 代码结构摘要系统（code-structure-delta → index.md 自积累）
 - 经验 provenance 字段（ci-detected/ai-inferred/human-reported/community-imported）
-- `.stdd.yaml` 状态新鲜度校验（state_freshness + git HEAD 对比）
+- `.fstdd.yaml` 状态新鲜度校验（state_freshness + git HEAD 对比）
 - 10 条关键规则中英双语注入（STDD.md / AGENTS.md / 各阶段 skill）
 
 ### CLI 命令新增
@@ -105,8 +105,8 @@
 - Graceful degradation：无数据时 SKIP 而非 FAIL
 
 ### 跨 Session 状态恢复 / Session Resume
-- 新增 `state.py`：`.stdd.yaml` 读写 resume_context/active_slice/last_action/last_modified
-- 向后兼容：V2.4 .stdd.yaml 新字段为 null
+- 新增 `state.py`：`.fstdd.yaml` 读写 resume_context/active_slice/last_action/last_modified
+- 向后兼容：V2.4 .fstdd.yaml 新字段为 null
 
 ### Gate 文件确认 / Gate File Confirmation
 - 新增 `gate.py` CLI：`stdd gate approve <change> --gate <N>`
@@ -155,12 +155,12 @@
 - 自动维护 `.experience-index.yaml` 索引（按 category/language/lifecycle/severity 分组）
 - 经验自动记录（Phase 5 VERIFY）和智能加载（Phase 4 BUILD）
 - 导出脱敏：路径/IP/域名自动替换占位符，支持 `--no-sanitize` 保留原始内容
-- 配置：`.stdd/config.d/experience.yaml`
+- 配置：`.fstdd/config.d/experience.yaml`
 
 ### Spec 自动补全 / Spec Auto-Complete
 - 新增 `stdd extract-proposal` CLI：从 proposal.md 提取结构化数据（JSON/YAML）
 - `spec.md` 技能增强：自动生成 spec 草稿 + 置信度标签（✓高/⚠低）
-- 新增模板：`.stdd/templates/spec-draft.md`
+- 新增模板：`.fstdd/templates/spec-draft.md`
 - `proposal.md` 模板增加 STDD-MARKER 提取标记
 
 ### 智能切片推荐 / Smart Slice Recommendation
@@ -201,7 +201,7 @@
 - 总覆盖率目标：从 ~60% 提升到 ~80%
 
 ### 跨 Session 状态恢复（P0）
-- `.stdd.yaml` 新增 `resume_context` / `active_slice` / `last_action` / `last_modified` 字段
+- `.fstdd.yaml` 新增 `resume_context` / `active_slice` / `last_action` / `last_modified` 字段
 - 任意 AI session 读取后无歧义恢复，无需翻找 change 目录
 
 ### 并行切片执行指南（P1）
@@ -211,14 +211,14 @@
 ### Gate 确认通道多样化（P1）
 - 新增文件式 Gate 确认：创建 `GATE<N>_APPROVED` token 文件即可确认
 - CLI：`stdd gate approve <change-name> --gate <N>`
-- 与对话确认等价，底层写入 `.stdd.yaml` 时间戳
+- 与对话确认等价，底层写入 `.fstdd.yaml` 时间戳
 
 ### 模板填充工具化（P1）
 - `extract-proposal` 扩展提取字段：Constraints / Stakeholders / Risk Areas / NonGoals
 - 提取结果作为模板变量填充，减少 AI "理解偏差"
 
 ### 文件驱动阶段切换（P2）
-- 标准化文件信号：`.stdd.yaml` 的 `next_phase` 字段替代斜杠命令
+- 标准化文件信号：`.fstdd.yaml` 的 `next_phase` 字段替代斜杠命令
 - 任何能读写文件的 AI Agent 都能参与 STDD 流程（去平台依赖）
 
 ### 非代码类 Change 支持（P1 · 来自 Playground 实战）
@@ -353,7 +353,7 @@
 - init 命令支持 `--force` 覆盖
 - install 增加源文件存在性检查
 - status 显示长程模式状态
-- .stdd.yaml 增加 version 字段
+- .fstdd.yaml 增加 version 字段
 - 模板增加 AND 使用示例和优先级依赖示例
 
 ---

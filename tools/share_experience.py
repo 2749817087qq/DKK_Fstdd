@@ -35,8 +35,8 @@ from pathlib import Path
 DEFAULT_EXP_REPO = "2749817087qq/Fstdd-experiences"
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-EXP_DIR = REPO_ROOT / ".stdd" / "experiences"
-ARCHIVE_DIR = REPO_ROOT / ".stdd" / "archive"
+EXP_DIR = REPO_ROOT / ".fstdd" / "experiences"
+ARCHIVE_DIR = REPO_ROOT / ".fstdd" / "archive"
 OUT_DIR = REPO_ROOT / "experiences"
 
 # 允许保留的公共域名（其余一律脱敏）
@@ -119,7 +119,7 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
 
 
 def collect_local() -> list[dict]:
-    """收集 .stdd/experiences 下已沉淀的经验。"""
+    """收集 .fstdd/experiences 下已沉淀的经验。"""
     out = []
     if not EXP_DIR.exists():
         return out
@@ -392,7 +392,7 @@ def main() -> int:
 
     if not entries:
         print("没有可回传的经验。")
-        print("  · 本地经验库为空（.stdd/experiences/ 下无 EXP-*.md）")
+        print("  · 本地经验库为空（.fstdd/experiences/ 下无 EXP-*.md）")
         print("  · 加 --from-archive 可从已归档 change 的 test-report 提取")
         return 0
 

@@ -274,7 +274,7 @@ Phase 4 开始前自动加载对应语言的开发规范。V2.9.6 已覆盖 10 �
 
 ```
 STDD 项目仓库                           你的项目（安装后）
-├── .stdd/                                ├── .stdd/
+├── .fstdd/                                ├── .fstdd/
 │   ├── skills/          # 6 阶段 Skill   │   ├── skills/templates/standards/
 │   ├── skills/_shared/  # DRY 共享片段   │   ├── config.d/        # 模块化配置
 │   ├── templates/       # 9 文档模板     │   └── platforms/       # 多平台适配
@@ -328,7 +328,7 @@ STDD 项目仓库                           你的项目（安装后）
 | **V3.0.5** | 2026-08-17 | 6→4 Phase 合并落地（SLICE+BUILD+VERIFY → BUILD）+ phase_constants 单一常量 + 旧数据容错 + 版本统一 3.0.5 |
 | **V3.0.4** | 2026-07-09 | V3.0 瘦身计划（6→4 Phase）+ Batch Pipeline 规划 + 目录迁移回归修复 |
 | **V3.0.3** | 2026-07-09 | STDD Bootcamp 训练营：5 关实战 + 自动评分 + 经验沉淀 |
-| **V3.0.2** | 2026-07-02 | 目录收敛至 `.stdd/` + Phase 前置检查 + Gate 3 确认 |
+| **V3.0.2** | 2026-07-02 | 目录收敛至 `.fstdd/` + Phase 前置检查 + Gate 3 确认 |
 | **V3.0.1** | 2026-07-01 | Guard 完善 + 新项目冷启动修复 + Zombie change 检测 |
 | **V3.0.0** | 2026-07-02 | 跨项目知识图谱 + Agent 行为验证 + 智能 Guard + 14 类失败模式 |
 | **V2.9.6** | 2026-07-01 | Codex 平台适配 + 10 语言规范 + DELIVER 经验自动上传 |

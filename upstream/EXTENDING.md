@@ -58,12 +58,12 @@ description: "{meta['description']}"
 
 ## 二、新增开发语言规范 / Adding a Language Standard
 
-STDD 通过 `.stdd/standards/<language>.md` 提供语言特定的开发规范。
-STDD provides language-specific development standards via `.stdd/standards/<language>.md`.
+STDD 通过 `.fstdd/standards/<language>.md` 提供语言特定的开发规范。
+STDD provides language-specific development standards via `.fstdd/standards/<language>.md`.
 
 ### 步骤 / Steps
 
-1. **创建规范文件** / Create standard file: `.stdd/standards/<language>.md`
+1. **创建规范文件** / Create standard file: `.fstdd/standards/<language>.md`
 
 2. **规范文件应包含** / The standard file should cover:
    - 代码风格（命名规范、缩进、行宽）/ Code style (naming, indentation, line width)
@@ -122,7 +122,7 @@ def _check_custom_failure(specs_dir: Path, test_plan: Path) -> list:
 | # | 类别 / Category | 检查位置 / Check Location |
 |---|----------------|--------------------------|
 | a | 缺失必需文件 / Missing required files | validate.py |
-| b | .stdd.yaml 无效 Phase / Invalid phase in .stdd.yaml | validate.py |
+| b | .fstdd.yaml 无效 Phase / Invalid phase in .fstdd.yaml | validate.py |
 | c | Spec 格式不完整（GIVEN/WHEN/THEN）/ Incomplete spec format | validate.py |
 | d | TC-ID 重复 / Duplicate TC-ID | validate.py |
 | e | TC 案例数不足 / Insufficient TC cases | validate.py |

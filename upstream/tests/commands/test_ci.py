@@ -17,8 +17,8 @@ def _make_args(subcommand, **kwargs):
 
 def _setup_project(tmp_path):
     """Create project skeleton with config files for CI testing."""
-    (tmp_path / ".stdd" / "config.d").mkdir(parents=True, exist_ok=True)
-    (tmp_path / ".stdd" / "config.d" / "quality.yaml").write_text("""
+    (tmp_path / ".fstdd" / "config.d").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".fstdd" / "config.d" / "quality.yaml").write_text("""
 quality:
   lint: ruff check app/ tests/
   type_check: mypy app/
@@ -33,7 +33,7 @@ ci:
     enabled: true
 """, encoding="utf-8")
 
-    (tmp_path / ".stdd" / "config.d" / "project.yaml").write_text("""
+    (tmp_path / ".fstdd" / "config.d" / "project.yaml").write_text("""
 paths:
   changes_dir: changes
   archive_dir: archive
@@ -44,8 +44,8 @@ project:
 stdd_version: '2.0'
 """, encoding="utf-8")
 
-    (tmp_path / ".stdd" / "changes").mkdir(exist_ok=True)
-    (tmp_path / ".stdd" / "archive").mkdir(exist_ok=True)
+    (tmp_path / ".fstdd" / "changes").mkdir(exist_ok=True)
+    (tmp_path / ".fstdd" / "archive").mkdir(exist_ok=True)
     return tmp_path
 
 
@@ -97,7 +97,7 @@ class TestCiInit:
         """When ci config has no python_version, fallback to project config."""
         _setup_project(tmp_path)
         # Override quality.yaml without python_version in ci section
-        (tmp_path / ".stdd" / "config.d" / "quality.yaml").write_text("""
+        (tmp_path / ".fstdd" / "config.d" / "quality.yaml").write_text("""
 quality:
   lint: ruff check app/
 ci:
@@ -216,12 +216,12 @@ class TestCiCheckFailures:
     def _setup_valid_change(self, tmp_path):
         """Create a valid change with all required files."""
         _setup_project(tmp_path)
-        change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-test-change"
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-test-change"
         change_dir.mkdir(parents=True)
 
         (change_dir / "proposal.md").write_text("# Test\n", encoding="utf-8")
         (change_dir / "design.md").write_text("# Design\n", encoding="utf-8")
-        (change_dir / ".stdd.yaml").write_text("change_id: test\n", encoding="utf-8")
+        (change_dir / ".fstdd.yaml").write_text("change_id: test\n", encoding="utf-8")
 
         # Valid test-plan with unique TC-IDs
         (change_dir / "test-plan.md").write_text("""\
@@ -267,9 +267,9 @@ class TestCiCheckFailures:
     def test_check_failures_detects_missing_files(self, tmp_path, monkeypatch):
         """TC-CI-007: check-failures detects missing required files."""
         _setup_project(tmp_path)
-        change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-test-change"
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-test-change"
         change_dir.mkdir(parents=True)
-        # Missing: proposal.md, design.md, test-plan.md, .stdd.yaml
+        # Missing: proposal.md, design.md, test-plan.md, .fstdd.yaml
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.ci import cmd_ci
@@ -282,12 +282,12 @@ class TestCiCheckFailures:
     def test_check_failures_detects_duplicate_tc_ids(self, tmp_path, monkeypatch):
         """TC-CI-008: check-failures detects duplicate TC-IDs."""
         _setup_project(tmp_path)
-        change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-test-change"
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-test-change"
         change_dir.mkdir(parents=True)
 
         (change_dir / "proposal.md").write_text("# Test", encoding="utf-8")
         (change_dir / "design.md").write_text("# Design", encoding="utf-8")
-        (change_dir / ".stdd.yaml").write_text("change_id: test", encoding="utf-8")
+        (change_dir / ".fstdd.yaml").write_text("change_id: test", encoding="utf-8")
         (change_dir / "test-plan.md").write_text("""\
 TC-CASUAL-001 TC-CASUAL-001 TC-CASUAL-002 TC-CASUAL-001
 """, encoding="utf-8")
@@ -362,7 +362,7 @@ class TestCiCheckEnhanced:
     def _setup_scope_change(self, tmp_path):
         """Create a change with proposal declaring capability for scope check."""
         _setup_project(tmp_path)
-        change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-scope-test"
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-scope-test"
         change_dir.mkdir(parents=True)
         (change_dir / "proposal.md").write_text("""\
 # Proposal
@@ -372,7 +372,7 @@ class TestCiCheckEnhanced:
 """, encoding="utf-8")
         (change_dir / "design.md").write_text("# Design\n", encoding="utf-8")
         (change_dir / "test-plan.md").write_text("TC-TEST-001\n", encoding="utf-8")
-        (change_dir / ".stdd.yaml").write_text("change_id: test\n", encoding="utf-8")
+        (change_dir / ".fstdd.yaml").write_text("change_id: test\n", encoding="utf-8")
         spec_dir = change_dir / "specs" / "test-cap"
         spec_dir.mkdir(parents=True)
         (spec_dir / "spec.md").write_text("""\
@@ -389,7 +389,7 @@ class TestCiCheckEnhanced:
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.ci import check_scope_creep
-        change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-scope-test"
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-scope-test"
         # Mock: check reads git diff but won't find anything alarming
         # Actually, without git, it should SKIP
         status, msg = check_scope_creep(change_dir, tmp_path)
@@ -399,7 +399,7 @@ class TestCiCheckEnhanced:
     def test_scope_creep_skip_no_capability_declared(self, tmp_path, monkeypatch):
         """TC-CI-ENH-003: check-scope skips when no capability in proposal."""
         _setup_project(tmp_path)
-        change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-skip"
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-skip"
         change_dir.mkdir(parents=True)
         (change_dir / "proposal.md").write_text("# No capabilities\n", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
@@ -411,7 +411,7 @@ class TestCiCheckEnhanced:
     def test_coverage_pass(self, tmp_path, monkeypatch):
         """TC-CI-ENH-004: check-coverage passes when coverage >= threshold."""
         _setup_project(tmp_path)
-        change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-cov"
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-cov"
         change_dir.mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
@@ -428,7 +428,7 @@ class TestCiCheckEnhanced:
     def test_coverage_fail(self, tmp_path, monkeypatch):
         """TC-CI-ENH-005: check-coverage fails when coverage below threshold."""
         _setup_project(tmp_path)
-        change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-cov"
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-cov"
         change_dir.mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
@@ -445,7 +445,7 @@ class TestCiCheckEnhanced:
     def test_coverage_skip_no_file(self, tmp_path, monkeypatch):
         """TC-CI-ENH-006: check-coverage skips when no coverage.json."""
         _setup_project(tmp_path)
-        change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-cov"
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-cov"
         change_dir.mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
@@ -456,12 +456,12 @@ class TestCiCheckEnhanced:
     def test_contract_pass(self, tmp_path, monkeypatch):
         """TC-CI-ENH-007: check-contracts passes when cross-references match."""
         _setup_project(tmp_path)
-        change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-ctr"
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-ctr"
         change_dir.mkdir(parents=True)
         (change_dir / "proposal.md").write_text("# Test\n", encoding="utf-8")
         (change_dir / "design.md").write_text("# Design\n", encoding="utf-8")
         (change_dir / "test-plan.md").write_text("TC-TEST-001\n", encoding="utf-8")
-        (change_dir / ".stdd.yaml").write_text("change_id: test\n", encoding="utf-8")
+        (change_dir / ".fstdd.yaml").write_text("change_id: test\n", encoding="utf-8")
         cap_a = change_dir / "specs" / "user-auth"
         cap_a.mkdir(parents=True)
         (cap_a / "spec.md").write_text("""\
@@ -487,7 +487,7 @@ class TestCiCheckEnhanced:
     def test_contract_skip_single_cap(self, tmp_path, monkeypatch):
         """TC-CI-ENH-009: check-contracts skips with single capability."""
         _setup_project(tmp_path)
-        change_dir = tmp_path / ".stdd" / "changes" / "2026-01-01-ctr"
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-ctr"
         change_dir.mkdir(parents=True)
         cap_a = change_dir / "specs" / "only-cap"
         cap_a.mkdir(parents=True)

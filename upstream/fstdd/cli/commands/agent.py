@@ -8,7 +8,7 @@ from pathlib import Path
 def cmd_agent_verify(args):
     """Execute Agent verification checkpoints."""
     project_root = Path.cwd()
-    spec_file = project_root / ".stdd" / "canonical" / "specs" / "agent" / f"{args.task}.yaml"
+    spec_file = project_root / ".fstdd" / "canonical" / "specs" / "agent" / f"{args.task}.yaml"
 
     if not spec_file.exists():
         print(f"  canonical/specs/agent/{args.task}.yaml not found")

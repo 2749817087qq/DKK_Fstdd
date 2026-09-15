@@ -35,7 +35,7 @@ def test_validate_and_count_warning(temp_project: Path, monkeypatch, capsys):
     """AND 超过 5 条时产生警告。"""
     monkeypatch.chdir(temp_project)
     today = __import__("datetime").date.today().isoformat()
-    change_dir = temp_project / ".stdd" / "changes" / f"{today}-and-test"
+    change_dir = temp_project / ".fstdd" / "changes" / f"{today}-and-test"
     change_dir.mkdir(parents=True)
     (change_dir / "specs").mkdir()
 
@@ -45,7 +45,7 @@ def test_validate_and_count_warning(temp_project: Path, monkeypatch, capsys):
         "current_phase": "spec",
         "phases": {p: {"status": "pending"} for p in ["understand", "spec", "build", "deliver"]},
     }
-    with open(change_dir / ".stdd.yaml", "w", encoding="utf-8") as f:
+    with open(change_dir / ".fstdd.yaml", "w", encoding="utf-8") as f:
         yaml.dump(state, f)
 
     (change_dir / "proposal.md").write_text("# P", encoding="utf-8")

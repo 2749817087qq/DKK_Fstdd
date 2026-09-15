@@ -11,12 +11,12 @@ def test_init_normal(temp_project: Path, monkeypatch):
     monkeypatch.chdir(temp_project)
     args = argparse.Namespace(force=False, dry_run=False, verbose=0)
     cmd_init(args)
-    assert (temp_project / ".stdd").exists()
-    assert (temp_project / ".stdd" / "changes").exists()
-    assert (temp_project / ".stdd" / "specs").exists()
-    assert (temp_project / ".stdd" / "archive").exists()
-    assert (temp_project / ".stdd" / "skills").exists()
-    assert (temp_project / ".stdd" / "config.d").exists()
+    assert (temp_project / ".fstdd").exists()
+    assert (temp_project / ".fstdd" / "changes").exists()
+    assert (temp_project / ".fstdd" / "specs").exists()
+    assert (temp_project / ".fstdd" / "archive").exists()
+    assert (temp_project / ".fstdd" / "skills").exists()
+    assert (temp_project / ".fstdd" / "config.d").exists()
 
 
 def test_init_force_overwrite(temp_project: Path, monkeypatch):
@@ -26,7 +26,7 @@ def test_init_force_overwrite(temp_project: Path, monkeypatch):
     cmd_init(args)
     # 再次执行不抛异常
     cmd_init(args)
-    assert (temp_project / ".stdd").exists()
+    assert (temp_project / ".fstdd").exists()
 
 
 def test_init_dry_run(temp_project: Path, monkeypatch):

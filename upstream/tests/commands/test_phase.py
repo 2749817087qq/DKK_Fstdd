@@ -20,18 +20,18 @@ from fstdd.cli.commands.phase_constants import (
 
 
 def _write(change_dir: Path, data: dict) -> None:
-    (change_dir / ".stdd.yaml").write_text(
+    (change_dir / ".fstdd.yaml").write_text(
         yaml.dump(data, allow_unicode=True, default_flow_style=False), encoding="utf-8")
 
 
 def _read(change_dir: Path) -> dict:
-    return yaml.safe_load((change_dir / ".stdd.yaml").read_text(encoding="utf-8"))
+    return yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
 
 
 def _make_change(project_root: Path, name: str, current_phase: str,
                  phases: dict = None, **extra) -> Path:
     today = date.today().isoformat()
-    change_dir = project_root / ".stdd" / "changes" / f"{today}-{name}"
+    change_dir = project_root / ".fstdd" / "changes" / f"{today}-{name}"
     change_dir.mkdir(parents=True)
     if phases is None:
         phases = {p: {"status": "pending"} for p in PHASE_ORDER}

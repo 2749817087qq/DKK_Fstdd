@@ -18,7 +18,7 @@ GATE_PHASE_KEY = {
 
 
 def _find_change_dir(name: str | None, project_root: Path) -> Path | None:
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         return None
     if name:
@@ -29,9 +29,9 @@ def _find_change_dir(name: str | None, project_root: Path) -> Path | None:
 
 def _check_gate_order(gate_num: int, change_dir: Path) -> tuple[bool, str]:
     """Check that previous gates are confirmed before confirming gate_num."""
-    state_file = change_dir / ".stdd.yaml"
+    state_file = change_dir / ".fstdd.yaml"
     if not state_file.exists():
-        return False, f".stdd.yaml not found in {change_dir}"
+        return False, f".fstdd.yaml not found in {change_dir}"
 
     data = yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
     phases = data.get("phases", {})
@@ -68,7 +68,7 @@ def _resolve_actor() -> str:
 
 def _confirm_gate(gate_num: int, change_dir: Path, confirmed_by: str = "",
                   evidence: str = "") -> str:
-    """Write confirmed_at + audit chain to .stdd.yaml for the given gate.
+    """Write confirmed_at + audit chain to .fstdd.yaml for the given gate.
 
     V3.0.5: 审计链字段 confirmed_by(通道) + confirmed_actor(发起者) +
     confirmed_evidence(确认证据) + confirmed_at(时间)。幂等分支不改 confirmed_at，
@@ -80,7 +80,7 @@ def _confirm_gate(gate_num: int, change_dir: Path, confirmed_by: str = "",
         confirmed_by: 确认通道（dialog|file_token|cli），无默认值
         evidence: 确认证据（如用户确认原文）
     """
-    state_file = change_dir / ".stdd.yaml"
+    state_file = change_dir / ".fstdd.yaml"
     data = yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
 
     label, section, phase_key, field = GATE_PHASE_KEY[gate_num]
@@ -152,7 +152,7 @@ def _auto_generate_human_views(project_root: Path, change_dir: Path, gate_num: i
 
 def _read_gates_config(project_root: Path) -> dict:
     """Read gates.yaml config with defaults."""
-    config_path = project_root / ".stdd" / "config.d" / "gates.yaml"
+    config_path = project_root / ".fstdd" / "config.d" / "gates.yaml"
     if not config_path.exists():
         return {"confirmation": {"channels": ["dialog", "file_token", "cli"]}}
     return yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
@@ -194,8 +194,8 @@ def cmd_gate(args: argparse.Namespace) -> None:
 
     # Check if file token already confirms this gate
     if _check_file_token(gate_num, change_dir):
-        # File token exists — sync it to .stdd.yaml if not already
-        state_file = change_dir / ".stdd.yaml"
+        # File token exists — sync it to .fstdd.yaml if not already
+        state_file = change_dir / ".fstdd.yaml"
         data = yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
         label, _, phase_key, field = GATE_PHASE_KEY[gate_num]
         phase_data = data.get("phases", {}).get(phase_key, {})

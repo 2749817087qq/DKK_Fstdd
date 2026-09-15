@@ -21,19 +21,19 @@ def cmd_validate(args: argparse.Namespace) -> None:
     errors = []
     warnings = []
 
-    required_files = ["proposal.md", "design.md", "test-plan.md", ".stdd.yaml"]
+    required_files = ["proposal.md", "design.md", "test-plan.md", ".fstdd.yaml"]
     for f in required_files:
         if not (change_dir / f).exists():
             errors.append(f"缺少必需文件: {f}")
 
-    state_file = change_dir / ".stdd.yaml"
+    state_file = change_dir / ".fstdd.yaml"
     if state_file.exists():
         with open(state_file, "r", encoding="utf-8") as f:
             state = yaml.safe_load(f) or {}
         valid_phases = ["understand", "spec", "build", "deliver"]
         for phase in state.get("phases", {}):
             if phase not in valid_phases:
-                errors.append(f".stdd.yaml: 无效的阶段: {phase}")
+                errors.append(f".fstdd.yaml: 无效的阶段: {phase}")
 
     specs_dir = change_dir / "specs"
     if specs_dir.exists():

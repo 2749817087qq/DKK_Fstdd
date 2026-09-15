@@ -10,19 +10,19 @@
 
 #### Scenario: 首次启动从第 1 关开始
 - **GIVEN** 项目已安装 STDD V3.0.x
-- **AND** .stdd/.bootcamp_certified 不存在
+- **AND** .fstdd/.bootcamp_certified 不存在
 - **WHEN** 执行 stdd bootcamp start
 - **THEN** 系统 SHALL 加载第 1 关训练场景
 - **AND** SHALL 展示关卡说明和考评标准
 - **AND** SHALL 引导 AI 完成训练任务
 
 #### Scenario: 已通过部分关卡时继续
-- **GIVEN** .stdd/.bootcamp_certified 标记为 basic（通过 1-2 关）
+- **GIVEN** .fstdd/.bootcamp_certified 标记为 basic（通过 1-2 关）
 - **WHEN** 执行 stdd bootcamp start
 - **THEN** 系统 SHALL 从第 3 关继续
 
 #### Scenario: 全部通过时提示
-- **GIVEN** .stdd/.bootcamp_certified 标记为 full
+- **GIVEN** .fstdd/.bootcamp_certified 标记为 full
 - **WHEN** 执行 stdd bootcamp start
 - **THEN** 系统 SHALL 输出已毕业提示
 - **AND** SHALL 退出码为 0
@@ -91,19 +91,19 @@
 
 ### Requirement: 三级毕业标记
 
-系统 SHALL 写入 .stdd/.bootcamp_certified 文件记录毕业等级。
+系统 SHALL 写入 .fstdd/.bootcamp_certified 文件记录毕业等级。
 
 #### Scenario: basic 毕业
 - **GIVEN** 第 1-2 关全部通过（≥6/10）
 - **WHEN** 完成训练
-- **THEN** .stdd/.bootcamp_certified SHALL 标记 level: basic
+- **THEN** .fstdd/.bootcamp_certified SHALL 标记 level: basic
 
 #### Scenario: advanced 毕业
 - **GIVEN** 第 1-4 关全部通过
 - **WHEN** 完成训练
-- **THEN** .stdd/.bootcamp_certified SHALL 标记 level: advanced
+- **THEN** .fstdd/.bootcamp_certified SHALL 标记 level: advanced
 
 #### Scenario: full 毕业
 - **GIVEN** 第 1-5 关全部通过
 - **WHEN** 完成训练
-- **THEN** .stdd/.bootcamp_certified SHALL 标记 level: full
+- **THEN** .fstdd/.bootcamp_certified SHALL 标记 level: full

@@ -16,26 +16,26 @@ stdd_version: "2.9.6"
 
 ### Step 0: 版本自检
 
-先读取并执行版本自检步骤：`.stdd/skills/_shared/version-check.md`
+先读取并执行版本自检步骤：`.fstdd/skills/_shared/version-check.md`
 
-> 检查项目 `.stdd/version.yaml` 与技能版本是否一致。落后时告警但不阻断执行。
+> 检查项目 `.fstdd/version.yaml` 与技能版本是否一致。落后时告警但不阻断执行。
 
 ---
 
 ## 前置条件
 
 - Phase 5 已完成（test-report.md 经用户确认）
-- `.stdd.yaml` 中 `phases.verify.confirmed_at` 已设置
+- `.fstdd.yaml` 中 `phases.verify.confirmed_at` 已设置
 
 ## 执行流程
 
 ### Step 1: 归档变更
 
-**V2.9 轻量模式**：如果 `.stdd.yaml` 中 `mode: lightweight`，将变更追加到当前批次目录 `changes/_batch/<id>/items/`，而非独立归档。
+**V2.9 轻量模式**：如果 `.fstdd.yaml` 中 `mode: lightweight`，将变更追加到当前批次目录 `changes/_batch/<id>/items/`，而非独立归档。
 
 **标准模式**：
 1. 将 `changes/<date>-<name>/` 移动到 `archive/<date>-<name>/`
-2. 更新 `.stdd.yaml`（status: archived）
+2. 更新 `.fstdd.yaml`（status: archived）
 
 ### Step 2: 合并规范
 
@@ -113,7 +113,7 @@ stdd_version: "2.9.6"
 - 所有变更文件已提交
 - specs 已合并更新，无遗漏
 - Git tag 已创建
-- `.stdd.yaml` 状态已更新为 archived
+- `.fstdd.yaml` 状态已更新为 archived
 
 ## 完成
 

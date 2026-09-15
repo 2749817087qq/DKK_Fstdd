@@ -19,7 +19,7 @@ def test_abort_with_yes(sample_change: Path, monkeypatch):
     assert not sample_change.exists()
 
     # 状态已更新
-    with open(aborted / ".stdd.yaml", "r", encoding="utf-8") as f:
+    with open(aborted / ".fstdd.yaml", "r", encoding="utf-8") as f:
         state = yaml.safe_load(f)
     assert state["status"] == "aborted"
 

@@ -2,26 +2,26 @@
 
 ## MODIFIED Requirements
 
-### Requirement: .stdd.yaml 包含 version 字段
+### Requirement: .fstdd.yaml 包含 version 字段
 
-系统 SHALL 在新建 change 时生成的 `.stdd.yaml` 中包含 `version` 字段，标记状态文件格式版本。
+系统 SHALL 在新建 change 时生成的 `.fstdd.yaml` 中包含 `version` 字段，标记状态文件格式版本。
 
 #### Scenario: 新建 change 生成带 version 的状态文件
 
 - **GIVEN** 用户执行 `stdd new my-feature`
-- **WHEN** 系统生成 `.stdd.yaml`
+- **WHEN** 系统生成 `.fstdd.yaml`
 - **THEN** 生成的文件 SHALL 包含 `version: "1.2"`
 
 #### Scenario: 读取旧格式状态文件（无 version 字段）
 
-- **GIVEN** 已存在的 `.stdd.yaml` 不包含 `version` 字段
+- **GIVEN** 已存在的 `.fstdd.yaml` 不包含 `version` 字段
 - **WHEN** CLI 读取该文件
 - **THEN** 系统 SHALL 默认视为 version `"1.0"`
 - **AND** 系统 SHALL NOT 报错或警告
 
 #### Scenario: status 命令显示 version 信息
 
-- **GIVEN** .stdd.yaml 包含 `version: "1.2"`
+- **GIVEN** .fstdd.yaml 包含 `version: "1.2"`
 - **WHEN** 用户执行 `stdd status`
 - **THEN** 系统 SHALL 在状态信息中显示版本号
 
@@ -64,7 +64,7 @@ STDD 配置 SHALL 从单文件 `config.yaml` 拆分为 `config.d/` 目录下 4 �
 
 - **GIVEN** 当前处于长程模式，Phase 4 自动执行中
 - **WHEN** 用户输入"切换普通模式"
-- **THEN** 系统 SHALL 更新 .stdd.yaml 中 `long_range.mode: normal`
+- **THEN** 系统 SHALL 更新 .fstdd.yaml 中 `long_range.mode: normal`
 - **AND** 当前正在执行的切片完成后 SHALL 暂停等待用户确认
 - **AND** 后续切片 SHALL 按普通模式交互
 

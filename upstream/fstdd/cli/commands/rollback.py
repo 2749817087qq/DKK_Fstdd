@@ -15,9 +15,9 @@ def cmd_rollback(args: argparse.Namespace) -> None:
     project_root = Path.cwd()
     name = args.name
 
-    archive_dir = project_root / ".stdd" / "archive"
+    archive_dir = project_root / ".fstdd" / "archive"
     if not archive_dir.exists():
-        print(f" .stdd/archive/ 目录不存在")
+        print(f" .fstdd/archive/ 目录不存在")
         sys.exit(1)
 
     # 在 archive 和 archive/aborted/ 中查找匹配的目录
@@ -29,7 +29,7 @@ def cmd_rollback(args: argparse.Namespace) -> None:
     target = None
     for search_dir in search_dirs:
         for d in sorted(search_dir.iterdir(), reverse=True):
-            if d.is_dir() and d.name.endswith(name) and (d / ".stdd.yaml").exists():
+            if d.is_dir() and d.name.endswith(name) and (d / ".fstdd.yaml").exists():
                 target = d
                 break
         if target:
@@ -46,7 +46,7 @@ def cmd_rollback(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     # 检查 changes/ 下是否已有同名目录
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     conflict_dir = changes_dir / target.name
     if conflict_dir.exists():
         print(f" 冲突: changes/{target.name} 已存在")
@@ -64,7 +64,7 @@ def cmd_rollback(args: argparse.Namespace) -> None:
     logger.info("恢复 %s -> changes/%s", target.name, target.name)
 
     # 更新状态
-    state_file = target / ".stdd.yaml"
+    state_file = target / ".fstdd.yaml"
     if state_file.exists():
         with open(state_file, "r", encoding="utf-8") as f:
             state = yaml.safe_load(f) or {}

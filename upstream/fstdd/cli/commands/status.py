@@ -15,9 +15,9 @@ def cmd_status(args: argparse.Namespace) -> None:
         print(f" 找不到 change: {args.name or '(无)'}")
         sys.exit(1)
 
-    state_file = change_dir / ".stdd.yaml"
+    state_file = change_dir / ".fstdd.yaml"
     if not state_file.exists():
-        print(" 缺少 .stdd.yaml 状态文件")
+        print(" 缺少 .fstdd.yaml 状态文件")
         sys.exit(1)
 
     with open(state_file, "r", encoding="utf-8") as f:
@@ -84,7 +84,7 @@ def cmd_status(args: argparse.Namespace) -> None:
 def _show_zombie_changes(project_root: Path, current_name: str) -> None:
     """V3.0.1: Show zombie changes in changes/ directory."""
     from datetime import datetime, timedelta
-    changes_dir = project_root / ".stdd" / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         return
     zombies = []
@@ -93,7 +93,7 @@ def _show_zombie_changes(project_root: Path, current_name: str) -> None:
             continue
         if d.name == current_name:
             continue
-        yf = d / ".stdd.yaml"
+        yf = d / ".fstdd.yaml"
         if not yf.exists():
             continue
         import yaml

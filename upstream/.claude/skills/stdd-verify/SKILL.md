@@ -12,9 +12,9 @@ stdd_version: "2.9.5"
 
 ### Step 0: 版本自检
 
-先读取并执行版本自检步骤：`.stdd/skills/_shared/version-check.md`
+先读取并执行版本自检步骤：`.fstdd/skills/_shared/version-check.md`
 
-> 检查项目 `.stdd/version.yaml` 与技能版本是否一致。落后时告警但不阻断执行。
+> 检查项目 `.fstdd/version.yaml` 与技能版本是否一致。落后时告警但不阻断执行。
 
 ---
 
@@ -29,7 +29,7 @@ Verify 阶段的以下 7 个 Step 全部是强制步骤，**不可跳过任何�
 | Step 1 | 全量质量检查 | pytest + coverage + lint 全部执行 |
 | Step 2 | Diff 审查 | 逐文件检查所有变更 |
 | Step 3 | 十一类失败模式检查 (a-k) | 11 项全部检查完成 |
-| Step 3.5 | 经验库自动记录/更新 | 失败模式已记录到 .stdd/experiences/ |
+| Step 3.5 | 经验库自动记录/更新 | 失败模式已记录到 .fstdd/experiences/ |
 | Step 4 | 汇总设计调整 | design-adjustments.md 已生成（或确认无需调整） |
 | Step 5 | 生成测试报告 | test-report.md 已写入 |
 
@@ -42,7 +42,7 @@ Verify 阶段的以下 7 个 Step 全部是强制步骤，**不可跳过任何�
 ## 前置条件
 
 - Phase 4 已完成（所有切片实现完毕）
-- `.stdd.yaml` 中 `phases.build.status == "completed"`
+- `.fstdd.yaml` 中 `phases.build.status == "completed"`
 
 ## 执行模式
 
@@ -51,8 +51,8 @@ Verify 阶段的以下 7 个 Step 全部是强制步骤，**不可跳过任何�
 - **普通模式**：最多 5 轮迭代，达到上限暂停报告用户。完成后必须等待用户确认（Gate 3）。
 - **长程模式**：最多 10 轮迭代（可配置），达上限后在 test-report 中汇总继续。Gate 3 仍为强制确认门，不自动跳过。
 
-进入本阶段时，先读取 `.stdd.yaml` 中的 `long_range.mode` 确定当前模式。
-从 `.stdd/config.d/long_range.yaml` 的 `long_range.pre_auth.iteration.max_rounds` 读取长程模式迭代上限。
+进入本阶段时，先读取 `.fstdd.yaml` 中的 `long_range.mode` 确定当前模式。
+从 `.fstdd/config.d/long_range.yaml` 的 `long_range.pre_auth.iteration.max_rounds` 读取长程模式迭代上限。
 
 ## CLI 桥接检查
 
@@ -121,7 +121,7 @@ Verify 阶段的以下 7 个 Step 全部是强制步骤，**不可跳过任何�
 
 #### Step 0.1: 启动并行审查
 
-读取 `.stdd/config.d/quality.yaml` 中的 `review` 配置。
+读取 `.fstdd/config.d/quality.yaml` 中的 `review` 配置。
 
 同时启动 3 个审查代理，每个代理审查不同维度：
 
@@ -182,7 +182,7 @@ L 级问题：仅在 test-report 的附录中列出，不阻塞。
 
 #### Step 1: 运行全量质量检查
 
-读取 `.stdd/config.d/quality.yaml` 中的 `quality` 配置，按以下顺序执行：
+读取 `.fstdd/config.d/quality.yaml` 中的 `quality` 配置，按以下顺序执行：
 
 **1a. 全量测试**：`pytest tests/ -v`
 
@@ -261,7 +261,7 @@ L 级问题：仅在 test-report 的附录中列出，不阻塞。
 
 #### Step 3: 失败模式检查（V2.9 模式缩放）
 
-**先检查 `.stdd.yaml` 中的 `mode`**：
+**先检查 `.fstdd.yaml` 中的 `mode`**：
 
 - **lightweight**：仅检查核心 5 类 — (a)幻觉, (b)范围蔓延, (c)级联错误, (e)工具误用, (f)运行时行为偏差
 - **standard**：全部 14 类 — (a)-(n)
@@ -512,7 +512,7 @@ L 级问题：仅在 test-report 的附录中列出，不阻塞。
 1. 读取 `pending-adjustments.yaml`（Phase 3-4 期间记录的偏离）
 2. 对比最终实现与 Phase 2 原始文档的差异
 3. 识别调整类型：spec 增删改 / design 变更 / test-plan 调整 / 边界情况
-4. **读取模板 `.stdd/templates/canonical/design-adjustments.yaml`**
+4. **读取模板 `.fstdd/templates/canonical/design-adjustments.yaml`**
 5. **生成 `design-adjustments.yaml`**（Canonical YAML，AI 可精确消费）
 6. 从 YAML 渲染 `design-adjustments.md`（Human View）
 7. 如果 `requires_re_spec: true`，标记此 change 需要回到 Phase 2 重新 spec
@@ -523,7 +523,7 @@ L 级问题：仅在 test-report 的附录中列出，不阻塞。
 
 #### Step 5: 生成测试报告
 
-读取模板：`.stdd/templates/test-report.md`
+读取模板：`.fstdd/templates/test-report.md`
 
 生成 `test-report.md`，包含：
 1. **总体概况**：总数/通过/失败/跳过/通过率/耗时
@@ -628,13 +628,13 @@ L 级问题：仅在 test-report 的附录中列出，不阻塞。
 - 用户确认 → 进入 Phase 6
 - 用户有异议或变更需求 → 回到 Phase 2 修订
 
-> 确认门模板参见: `.stdd/skills/_shared/confirm-gate.md`
+> 确认门模板参见: `.fstdd/skills/_shared/confirm-gate.md`
 
 ## 产出物
 
 - `test-report.md` — 测试执行报告
 - `design-adjustments.md` — 设计调整说明（如有）
-- 更新 `.stdd.yaml`（phase: verify → completed）
+- 更新 `.fstdd.yaml`（phase: verify → completed）
 
 ## 质量检查
 

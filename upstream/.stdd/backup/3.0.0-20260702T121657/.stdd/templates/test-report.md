@@ -114,7 +114,7 @@
 
 ## 七-B、经验库更新
 
-> 由 VERIFY Step 3.5 自动记录：本次变更发现并记录到 `.stdd/experiences/` 的失败模式
+> 由 VERIFY Step 3.5 自动记录：本次变更发现并记录到 `.fstdd/experiences/` 的失败模式
 
 ### 本次新增经验
 
@@ -136,7 +136,7 @@
 | 本次复用 | N 条 |
 | 经验库总计 | N 条 |
 
-> 经验库统计详见: `.stdd/experiences/.experience-index.yaml`
+> 经验库统计详见: `.fstdd/experiences/.experience-index.yaml`
 
 ## 八、结论
 

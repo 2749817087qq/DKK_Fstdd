@@ -185,7 +185,7 @@ Three mandatory gates in the STDD flow. The Skill must pause and wait for explic
   Each confirmation writes an audit chain: confirmed_by (channel) + confirmed_actor (initiator) + confirmed_evidence (evidence) + confirmed_at (timestamp).
 - AI 不得静默自跑 approve、不得伪造 evidence；先展示确认框、等用户口头确认后执行（dialog 通道）。
   AI must not silently self-approve or fabricate evidence; it must present the confirmation box, wait for verbal confirmation, then execute.
-- Guard `--hook-stdin` 路径感知：understand/spec 阶段允许 canonical YAML 与流程文档写入，阻断 Gate token 文件与 `.stdd.yaml` confirmed 字段的伪造编辑。
+- Guard `--hook-stdin` 路径感知：understand/spec 阶段允许 canonical YAML 与流程文档写入，阻断 Gate token 文件与 `.fstdd.yaml` confirmed 字段的伪造编辑。
   Guard `--hook-stdin` is path-aware: canonical YAML + workflow artifacts are writable in understand/spec; GATE token files and confirmed-field edits are blocked.
 
 ### 3.2 设计调整追溯 / Design Adjustment Traceability
@@ -255,7 +255,7 @@ THEN: 返回友好回复
 - 发现安全相关问题
 - 预授权范围外的未预期情况
 
-长程模式状态记录在 `.stdd.yaml` 的 `long_range` 字段中。
+长程模式状态记录在 `.fstdd.yaml` 的 `long_range` 字段中。
 
 ---
 
@@ -274,7 +274,7 @@ STDD uses a **hybrid model**: 4 core Skills (flow control) + Python CLI scripts 
 │  │   Skill    │  │   Config   │  │   Change Management      │   │
 │  │   Engine   │  │   Loader   │  │   (proposal/design/      │   │
 │  │            │  │            │  │    specs/test-plan/       │   │
-│  │ 4 phase    │  │  .stdd/    │  │    test-report/...)      │   │
+│  │ 4 phase    │  │  .fstdd/    │  │    test-report/...)      │   │
 │  │  skills    │  │  config    │  │                          │   │
 │  └────────────┘  └────────────┘  └──────────────────────────┘   │
 │                                                                  │
@@ -282,7 +282,7 @@ STDD uses a **hybrid model**: 4 core Skills (flow control) + Python CLI scripts 
 │  │    Gate    │  │   Trace    │  │   Template Engine        │   │
 │  │   Manager  │  │   Engine   │  │   (document generation)  │   │
 │  │            │  │            │  │                          │   │
-│  │ 3 forced   │  │ spec↔test  │  │   .stdd/templates/       │   │
+│  │ 3 forced   │  │ spec↔test  │  │   .fstdd/templates/       │   │
 │  │  gates     │  │  mapping   │  │                          │   │
 │  └────────────┘  └────────────┘  └──────────────────────────┘   │
 │                                                                  │
@@ -294,18 +294,18 @@ STDD uses a **hybrid model**: 4 core Skills (flow control) + Python CLI scripts 
 | 组件 / Component | 职责 / Responsibility | 实现 / Implementation |
 |-----------------|----------------------|----------------------|
 | Skill Engine | 4 个 Phase Skill 的调度和执行 / Schedule & execute 4 phase skills | Markdown Skill 文件 + AI 平台调用 |
-| Config Loader | 读取 .stdd/config.d/，加载项目配置 / Load project config | Python CLI + Skill Read |
+| Config Loader | 读取 .fstdd/config.d/，加载项目配置 / Load project config | Python CLI + Skill Read |
 | Change Manager | 管理 changes/specs/archive 目录结构 / Manage directory structure | 文件系统 + 模板生成 |
 | Gate Manager | 强制执行三道确认门 / Enforce three confirmation gates | Skill 内嵌确认逻辑 |
 | Trace Engine | 维护 spec↔TC↔test↔code 映射 / Maintain traceability | test-plan.md TC-ID 体系 |
-| Template Engine | 模板读取与文档生成 / Template reading & document generation | .stdd/templates/ 目录 |
+| Template Engine | 模板读取与文档生成 / Template reading & document generation | .fstdd/templates/ 目录 |
 
 ### 4.3 目录结构 / Directory Structure
 
 ```
 项目根目录 / Project Root
 │
-├── .stdd/                          # STDD 系统目录 / System directory
+├── .fstdd/                          # STDD 系统目录 / System directory
 │   ├── config.d/                   # 项目配置目录 / Project config directory
 │   ├── skills/                     # 4 个阶段 Skill 定义 / 4 phase skill definitions
 │   │   ├── understand.md           # Phase 1
@@ -343,7 +343,7 @@ STDD uses a **hybrid model**: 4 core Skills (flow control) + Python CLI scripts 
 │
 ├── changes/                        # 活跃变更 / Active changes
 │   └── <YYYY-MM-DD>-<name>/
-│       ├── .stdd.yaml              # 变更状态文件 / Change state file
+│       ├── .fstdd.yaml              # 变更状态文件 / Change state file
 │       ├── proposal.md
 │       ├── design.md
 │       ├── specs/<capability>/spec.md
@@ -358,10 +358,10 @@ STDD uses a **hybrid model**: 4 core Skills (flow control) + Python CLI scripts 
     └── <YYYY-MM-DD>-<name>/
 ```
 
-### 4.4 变更状态文件 / .stdd.yaml
+### 4.4 变更状态文件 / .fstdd.yaml
 
 ```yaml
-# changes/<date>-<name>/.stdd.yaml
+# changes/<date>-<name>/.fstdd.yaml
 change_id: "2026-05-03-v1.5-stability-ux-upgrade"
 status: "active"          # active | archived
 current_phase: "build"   # understand | spec | build | deliver
@@ -429,7 +429,7 @@ Phase 3 (BUILD) 开始前，Skill 必须先读取对应开发语言的规范文�
 Before Phase 3 begins, the Skill must read the standard file for the target language.
 
 ```
-.stdd/standards/
+.fstdd/standards/
 ├── python.md        # Python 开发规范（默认 / Default）
 ├── java.md          # Java 开发规范（后续 / Planned）
 ├── rust.md          # Rust 开发规范（后续 / Planned）
@@ -439,7 +439,7 @@ Before Phase 3 begins, the Skill must read the standard file for the target lang
 **Python 规范包含 / Python Standard Covers**：代码风格（ruff、命名约定、import 顺序）、类型注解、异步编程、错误处理、日志规范、测试代码规范、代码审查清单。
 Code style (ruff, naming, imports), type annotations, async programming, error handling, logging, test conventions, review checklist.
 
-更多细节见模板文件 / See template file for details: `.stdd/standards/python.md`
+更多细节见模板文件 / See template file for details: `.fstdd/standards/python.md`
 
 ---
 
@@ -451,7 +451,7 @@ Code style (ruff, naming, imports), type annotations, async programming, error h
 STDD 核心（平台无关）                 平台适配层（最小化）
 Platform-agnostic core               Minimal platform adapter
 ─────────────────────────           ──────────────────────────
-.stdd/                              .stdd/platforms/
+.fstdd/                              .fstdd/platforms/
 ├── skills/         ←──────┬──→     ├── claude-code/skills/   # YAML frontmatter
 ├── templates/              ├──→    ├── workbuddy/skills/     # YAML frontmatter + trigger_keywords
 ├── standards/              ├──→    ├── trae/skills/
@@ -494,7 +494,7 @@ The Python CLI handles programmatic operations. Skills handle "how to think", CL
 
 | 命令 / Command | 功能 / Function |
 |---------------|----------------|
-| `stdd init` | 初始化 .stdd/ 目录 + specs/changes/archive 骨架 |
+| `stdd init` | 初始化 .fstdd/ 目录 + specs/changes/archive 骨架 |
 | `stdd install <platform>` | 安装 skills 到目标 AI 平台 |
 | `stdd new <name>` | 创建 change 目录骨架（从模板） |
 | `stdd validate [name]` | 验证 change 结构完整性 + spec 格式 + TC-ID 唯一性 |

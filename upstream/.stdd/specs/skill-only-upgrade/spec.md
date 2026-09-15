@@ -36,22 +36,22 @@
 
 ### Scenario: SC-UP-005 — 同步技能文件
 
-- **GIVEN** 网络可达 `https://raw.githubusercontent.com/leonai42/stdd/master/.stdd/skills/`
+- **GIVEN** 网络可达 `https://raw.githubusercontent.com/leonai42/stdd/master/.fstdd/skills/`
 - **WHEN** 升级技能执行资源同步步骤
-- **THEN** 项目 `.stdd/skills/` 下的 6 个阶段技能文件 + `_shared/` 目录 + `upgrade.md` SHALL 更新为源仓库最新版本
+- **THEN** 项目 `.fstdd/skills/` 下的 6 个阶段技能文件 + `_shared/` 目录 + `upgrade.md` SHALL 更新为源仓库最新版本
 
 ### Scenario: SC-UP-006 — 同步配置文件
 
 - **GIVEN** 网络可达 GitHub raw
 - **WHEN** 升级技能执行资源同步步骤
-- **THEN** 项目 `.stdd/config.d/` 下的配置文件 SHALL 更新为最新版本
+- **THEN** 项目 `.fstdd/config.d/` 下的配置文件 SHALL 更新为最新版本
 - **AND** `project.yaml` 中的 `project` 和 `paths` 字段 SHALL 保留项目原有值
 
 ### Scenario: SC-UP-007 — 同步模板文件
 
 - **GIVEN** 网络可达 GitHub raw
 - **WHEN** 升级技能执行资源同步步骤
-- **THEN** 项目 `.stdd/templates/` 和 `.stdd/templates/canonical/` SHALL 更新为最新版本
+- **THEN** 项目 `.fstdd/templates/` 和 `.fstdd/templates/canonical/` SHALL 更新为最新版本
 
 ### Scenario: SC-UP-008 — 网络不可用降级
 
@@ -66,12 +66,12 @@
 
 - **GIVEN** 所有资源同步完成，源版本为 `2.9.5`
 - **WHEN** 升级技能写入版本信息
-- **THEN** `.stdd/version.yaml` 的 `stdd_version` SHALL 更新为 `2.9.5`
+- **THEN** `.fstdd/version.yaml` 的 `stdd_version` SHALL 更新为 `2.9.5`
 - **AND** `upgraded_at` SHALL 更新为当前 ISO 8601 时间戳
 
 ### Scenario: SC-UP-010 — 重装平台技能
 
 - **GIVEN** 平台检测为 `claude-code`，资源同步完成，源版本为 `2.9.5`
 - **WHEN** 升级技能执行平台重装步骤
-- **THEN** `.claude/skills/stdd-*/SKILL.md` SHALL 从最新 `.stdd/skills/` 重新生成
+- **THEN** `.claude/skills/stdd-*/SKILL.md` SHALL 从最新 `.fstdd/skills/` 重新生成
 - **AND** 每个 SKILL.md 的 frontmatter SHALL 包含 `stdd_version: "2.9.5"`

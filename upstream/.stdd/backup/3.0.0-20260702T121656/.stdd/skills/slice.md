@@ -11,22 +11,22 @@ stdd_version: "2.9.5"
 
 ### Step 0: 版本自检
 
-先读取并执行版本自检步骤：`.stdd/skills/_shared/version-check.md`
+先读取并执行版本自检步骤：`.fstdd/skills/_shared/version-check.md`
 
-> 检查项目 `.stdd/version.yaml` 与技能版本是否一致。落后时告警但不阻断执行。
+> 检查项目 `.fstdd/version.yaml` 与技能版本是否一致。落后时告警但不阻断执行。
 
 ---
 
 ## 前置条件
 
 - Phase 2 已完成（design.md + specs + test-plan.md 经用户确认）
-- `.stdd.yaml` 中 `phases.spec.confirmed_at` 已设置
+- `.fstdd.yaml` 中 `phases.spec.confirmed_at` 已设置
 
 ## 执行模式
 
 **自动执行，无需用户确认。** Phase 2 已锁定设计，此阶段只做机械拆分。
 
-**长程退出检测**：如有用户输入"切换普通模式"或"退出长程"，更新 `.stdd.yaml` 中 `long_range.mode: normal`，当前操作完成后暂停等待用户确认。
+**长程退出检测**：如有用户输入"切换普通模式"或"退出长程"，更新 `.fstdd.yaml` 中 `long_range.mode: normal`，当前操作完成后暂停等待用户确认。
 
 ## 执行流程
 
@@ -42,7 +42,7 @@ stdd_version: "2.9.5"
    - 获取 `nodes`, `edges`, `zero_dependency`, `cycles`
    - 如检测到循环依赖（exit code 1），先分析 cycles 输出再手动审查
 
-**V2.9 轻量模式**：如果 `.stdd.yaml` 中 `mode: lightweight`，**跳过本 Phase**。使用 1 个隐式切片，直接进入 Phase 4。
+**V2.9 轻量模式**：如果 `.fstdd.yaml` 中 `mode: lightweight`，**跳过本 Phase**。使用 1 个隐式切片，直接进入 Phase 4。
 
 ### Step 2: 五步智能切片分析
 
@@ -117,7 +117,7 @@ stdd_version: "2.9.5"
 
 ### Step 4: 生成执行计划
 
-先读取模板：`.stdd/templates/tasks.md` 和 `.stdd/templates/slices.md`
+先读取模板：`.fstdd/templates/tasks.md` 和 `.fstdd/templates/slices.md`
 
 生成两个文件：
 
@@ -133,7 +133,7 @@ stdd_version: "2.9.5"
 
 1. 写入 `tasks.md`
 2. 如需要，写入 `slices.md`
-3. 更新 `.stdd.yaml`（phase: slice → completed）
+3. 更新 `.fstdd.yaml`（phase: slice → completed）
 4. 通知用户切片数量和执行顺序
 5. **自动进入 Phase 4: BUILD**
 

@@ -21,7 +21,7 @@ def test_knowledge_query_no_match(temp_project, monkeypatch, capsys):
     monkeypatch.chdir(temp_project)
     # Create a minimal graph with one node
     import yaml
-    know_dir = temp_project / ".stdd" / "knowledge"
+    know_dir = temp_project / ".fstdd" / "knowledge"
     know_dir.mkdir(parents=True, exist_ok=True)
     graph = {
         "graph_version": "1.0", "last_merged": "",
@@ -49,7 +49,7 @@ def test_knowledge_query_match(temp_project, monkeypatch, capsys):
     """TC-KG-006: query finds matching node."""
     monkeypatch.chdir(temp_project)
     import yaml
-    know_dir = temp_project / ".stdd" / "knowledge"
+    know_dir = temp_project / ".fstdd" / "knowledge"
     know_dir.mkdir(parents=True, exist_ok=True)
     graph = {
         "graph_version": "1.0", "last_merged": "",
@@ -88,7 +88,7 @@ def test_knowledge_query_json_format(temp_project, monkeypatch, capsys):
     """TC-KG-006: query with JSON output."""
     monkeypatch.chdir(temp_project)
     import yaml, json
-    know_dir = temp_project / ".stdd" / "knowledge"
+    know_dir = temp_project / ".fstdd" / "knowledge"
     know_dir.mkdir(parents=True, exist_ok=True)
     graph = {
         "graph_version": "1.0", "last_merged": "",
@@ -120,13 +120,13 @@ def test_knowledge_merge_local_only(temp_project, monkeypatch, capsys):
     import yaml
 
     # Set up project config
-    config_dir = temp_project / ".stdd" / "config.d"
+    config_dir = temp_project / ".fstdd" / "config.d"
     config_dir.mkdir(parents=True, exist_ok=True)
     config_dir.joinpath("project.yaml").write_text(
         "project:\n  name: test-project\n  language: python\nsource_dir: app\n", encoding="utf-8")
 
     # Create experience
-    exp_dir = temp_project / ".stdd" / "experiences"
+    exp_dir = temp_project / ".fstdd" / "experiences"
     exp_dir.mkdir(parents=True, exist_ok=True)
     exp_content = """---
 experience_id: EXP-2026-0001
@@ -155,7 +155,7 @@ last_seen: "2026-07-01"
     assert "知识图谱已更新" in captured.out or "已更新" in captured.out
 
     # Verify graph was created
-    graph_path = temp_project / ".stdd" / "knowledge" / "knowledge-graph.yaml"
+    graph_path = temp_project / ".fstdd" / "knowledge" / "knowledge-graph.yaml"
     assert graph_path.exists()
     with open(graph_path, "r", encoding="utf-8") as f:
         saved = yaml.safe_load(f)
@@ -168,13 +168,13 @@ def test_knowledge_merge_dedup(temp_project, monkeypatch, capsys):
     import yaml
 
     # Set up project config
-    config_dir = temp_project / ".stdd" / "config.d"
+    config_dir = temp_project / ".fstdd" / "config.d"
     config_dir.mkdir(parents=True, exist_ok=True)
     config_dir.joinpath("project.yaml").write_text(
         "project:\n  name: test-project\n  language: python\nsource_dir: app\n", encoding="utf-8")
 
     # Create existing graph with one node
-    know_dir = temp_project / ".stdd" / "knowledge"
+    know_dir = temp_project / ".fstdd" / "knowledge"
     know_dir.mkdir(parents=True, exist_ok=True)
     existing_graph = {
         "graph_version": "1.0", "last_merged": "",
@@ -192,7 +192,7 @@ def test_knowledge_merge_dedup(temp_project, monkeypatch, capsys):
         yaml.dump(existing_graph, f, allow_unicode=True)
 
     # Create similar experience
-    exp_dir = temp_project / ".stdd" / "experiences"
+    exp_dir = temp_project / ".fstdd" / "experiences"
     exp_dir.mkdir(parents=True, exist_ok=True)
     exp_content = """---
 experience_id: EXP-2026-0002
@@ -231,7 +231,7 @@ def test_knowledge_merge_network_fallback(temp_project, monkeypatch, capsys):
     """TC-KG-005: merge gracefully handles network failure."""
     monkeypatch.chdir(temp_project)
 
-    config_dir = temp_project / ".stdd" / "config.d"
+    config_dir = temp_project / ".fstdd" / "config.d"
     config_dir.mkdir(parents=True, exist_ok=True)
     config_dir.joinpath("project.yaml").write_text(
         "project:\n  name: test-project\n  language: python\nsource_dir: app\n", encoding="utf-8")
@@ -250,7 +250,7 @@ def test_knowledge_predict(temp_project, monkeypatch, capsys):
     monkeypatch.chdir(temp_project)
     import yaml
 
-    know_dir = temp_project / ".stdd" / "knowledge"
+    know_dir = temp_project / ".fstdd" / "knowledge"
     know_dir.mkdir(parents=True, exist_ok=True)
     graph = {
         "graph_version": "1.0", "last_merged": "",
@@ -289,7 +289,7 @@ def test_knowledge_predict_json(temp_project, monkeypatch, capsys):
     monkeypatch.chdir(temp_project)
     import yaml, json
 
-    know_dir = temp_project / ".stdd" / "knowledge"
+    know_dir = temp_project / ".fstdd" / "knowledge"
     know_dir.mkdir(parents=True, exist_ok=True)
     graph = {
         "graph_version": "1.0", "last_merged": "",
@@ -320,7 +320,7 @@ def test_knowledge_predict_insufficient_data(temp_project, monkeypatch, capsys):
     monkeypatch.chdir(temp_project)
     import yaml
 
-    know_dir = temp_project / ".stdd" / "knowledge"
+    know_dir = temp_project / ".fstdd" / "knowledge"
     know_dir.mkdir(parents=True, exist_ok=True)
     # Only 1 node = insufficient
     graph = {
@@ -350,7 +350,7 @@ def test_knowledge_fix_with_template(temp_project, monkeypatch, capsys):
     monkeypatch.chdir(temp_project)
     import yaml
 
-    know_dir = temp_project / ".stdd" / "knowledge"
+    know_dir = temp_project / ".fstdd" / "knowledge"
     know_dir.mkdir(parents=True, exist_ok=True)
     graph = {
         "graph_version": "1.0", "last_merged": "",
@@ -378,7 +378,7 @@ def test_knowledge_fix_with_template(temp_project, monkeypatch, capsys):
         yaml.dump(graph, f, allow_unicode=True)
 
     # Also create matching experience
-    exp_dir = temp_project / ".stdd" / "experiences"
+    exp_dir = temp_project / ".fstdd" / "experiences"
     exp_dir.mkdir(parents=True, exist_ok=True)
     exp_content = """---
 experience_id: EXP-2026-0001
@@ -405,7 +405,7 @@ def test_knowledge_fix_no_template(temp_project, monkeypatch, capsys):
     monkeypatch.chdir(temp_project)
     import yaml
 
-    know_dir = temp_project / ".stdd" / "knowledge"
+    know_dir = temp_project / ".fstdd" / "knowledge"
     know_dir.mkdir(parents=True, exist_ok=True)
     graph = {
         "graph_version": "1.0", "last_merged": "",

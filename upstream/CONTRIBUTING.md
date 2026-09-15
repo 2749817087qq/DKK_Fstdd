@@ -106,7 +106,7 @@ Co-Authored-By: Your Name <email>
 
 ### PR 检查清单 / PR Checklist
 
-- [ ] 代码遵循对应语言规范（`.stdd/standards/<language>.md`）
+- [ ] 代码遵循对应语言规范（`.fstdd/standards/<language>.md`）
 - [ ] 新增行为有测试覆盖
 - [ ] 所有测试通过：`python -m pytest tests/ -v`
 - [ ] 文档已更新（README、CHANGELOG 等）
@@ -123,7 +123,7 @@ STDD 文档使用**中英双语**（Chinese + English），遵循以下格式：
 - 段落内容：中英各一段，英文段落后标注 `EN` 或使用双语交替
 - 表格和代码块：尽量使用双语表头或注释
 
-新增文档模板请参考 `.stdd/templates/` 目录中的现有模板。
+新增文档模板请参考 `.fstdd/templates/` 目录中的现有模板。
 
 ---
 
@@ -132,7 +132,7 @@ STDD 文档使用**中英双语**（Chinese + English），遵循以下格式：
 STDD 设计了三个主要扩展点，详见 [EXTENDING.md](EXTENDING.md)：
 
 1. **新增平台适配** — 在 `stdd/cli/commands/install.py` 中添加平台配置
-2. **新增语言规范** — 创建 `.stdd/standards/<language>.md`
+2. **新增语言规范** — 创建 `.fstdd/standards/<language>.md`
 3. **新增失败模式检查** — 在 `stdd/cli/commands/validate.py` 中添加检查函数
 4. **新增 CLI 命令** — 创建命令模块并在 `__init__.py` 中注册
 

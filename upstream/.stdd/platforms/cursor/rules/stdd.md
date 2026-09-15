@@ -74,7 +74,7 @@ STDD 是一套双驱动（Spec + TDD）的开发方法论，6 个阶段从模糊
 ## 文件结构
 
 ```
-.stdd/
+.fstdd/
 ├── standards/      # 语言开发规范（python/java/go/rust/typescript）
 ├── platforms/      # 平台适配（claude-code/cursor/copilot/aider/workbuddy/trae）
 ├── skills/         # Master skill 文件

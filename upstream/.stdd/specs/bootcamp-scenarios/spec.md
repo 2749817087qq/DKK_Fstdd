@@ -7,7 +7,7 @@
 - GIVEN bootcamp start 加载第1关
 - WHEN AI 执行训练
 - THEN scenario.yaml SHALL 包含模拟需求（typo修复）
-- AND answer/ SHALL 包含正确的 .stdd.yaml（含 phase推进和Gate确认）
+- AND answer/ SHALL 包含正确的 .fstdd.yaml（含 phase推进和Gate确认）
 - AND 考评 SHALL 检查 phase_cli/gate_cli/no_manual_yaml/archive_cli
 
 #### Scenario: 关卡2 — standard

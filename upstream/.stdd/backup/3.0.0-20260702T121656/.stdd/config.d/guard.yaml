@@ -26,7 +26,7 @@ guard:
 
     # 排除目录（变更不触发 guard）
     exclude_dirs:
-      - ".stdd/backup/"
+      - ".fstdd/backup/"
       - ".git/"
       - "__pycache__/"
       - "node_modules/"

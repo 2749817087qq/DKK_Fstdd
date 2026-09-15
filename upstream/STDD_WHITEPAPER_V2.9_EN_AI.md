@@ -117,7 +117,7 @@ L1: SHALL+Scenario (all) | L2: signatures/API/schemas (cross-system) | L3: prove
 
 **Archive V2.9.4:** Refuses to archive if VERIFY not completed (even with --yes).
 
-**Related work V2.9.4:** `stdd work add --type bugfix|test|experience|doc "desc" --commit <hash>`. Stored in .stdd.yaml `related_work` field.
+**Related work V2.9.4:** `stdd work add --type bugfix|test|experience|doc "desc" --commit <hash>`. Stored in .fstdd.yaml `related_work` field.
 
 **Batch anti-abuse V2.9.4:** add checks git diff (≤3 files), max_items=5, open warns about active change.
 
@@ -139,7 +139,7 @@ design-adjustments.yaml: `meta:{requires_re_spec}, summary, categories, adjustme
 
 ---
 
-## .stdd.yaml Fields
+## .fstdd.yaml Fields
 
 | Field | Type | Default | Writer | Reader |
 |-------|------|---------|--------|--------|

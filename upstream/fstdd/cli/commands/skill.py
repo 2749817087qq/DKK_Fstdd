@@ -43,12 +43,12 @@ def cmd_skill_create(args):
     }
     category_dir = type_dir_map.get(skill_type, "languages")
 
-    skill_dir = project_root / ".stdd" / "skills" / category_dir / name
+    skill_dir = project_root / ".fstdd" / "skills" / category_dir / name
     skill_dir.mkdir(parents=True, exist_ok=True)
 
     skill_md = skill_dir / "SKILL.md"
     if skill_md.exists():
-        print(f"  Skill already exists: .stdd/skills/{category_dir}/{name}/SKILL.md")
+        print(f"  Skill already exists: .fstdd/skills/{category_dir}/{name}/SKILL.md")
         sys.exit(1)
 
     content = SKILL_TEMPLATE.format(
@@ -59,7 +59,7 @@ def cmd_skill_create(args):
         title=name.replace("-", " ").title(),
     )
     skill_md.write_text(content, encoding="utf-8")
-    print(f"  Created .stdd/skills/{category_dir}/{name}/SKILL.md")
+    print(f"  Created .fstdd/skills/{category_dir}/{name}/SKILL.md")
     print(f"  Next: edit the SKILL.md to fill in the actual content")
 
 

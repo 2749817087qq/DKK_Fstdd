@@ -19,7 +19,7 @@ def main():
     for change_dir in sorted(changes_dir.iterdir()):
         if not change_dir.is_dir():
             continue
-        stdd_yaml = change_dir / ".stdd.yaml"
+        stdd_yaml = change_dir / ".fstdd.yaml"
         if stdd_yaml.exists():
             state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
             phase = state.get("active_phase", "?")
@@ -42,7 +42,7 @@ from datetime import datetime
 def main():
     project_root = Path.cwd()
     for change_dir in sorted((project_root / "changes").iterdir()):
-        stdd_yaml = change_dir / ".stdd.yaml"
+        stdd_yaml = change_dir / ".fstdd.yaml"
         if stdd_yaml.exists():
             state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
             state["last_modified"] = datetime.now().isoformat()
@@ -59,7 +59,7 @@ import yaml
 
 def main():
     project_root = Path.cwd()
-    exp_dir = project_root / ".stdd" / "experiences"
+    exp_dir = project_root / ".fstdd" / "experiences"
     exp_count = len(list(exp_dir.glob("EXP-*.md"))) if exp_dir.exists() else 0
     if exp_count > 0:
         print(f"[STDD] Experience library: {exp_count} entries")
@@ -128,7 +128,7 @@ def _validate_hooks_config(settings_path: Path) -> list[str]:
 def cmd_hooks_install(args):
     """Install STDD hooks to .claude/settings.json."""
     project_root = Path.cwd()
-    hooks_dir = project_root / ".stdd" / "hooks"
+    hooks_dir = project_root / ".fstdd" / "hooks"
     hooks_dir.mkdir(parents=True, exist_ok=True)
 
     # Write hook scripts
@@ -138,7 +138,7 @@ def cmd_hooks_install(args):
             print(f"  [SKIP] {name}.py already exists (use --force to overwrite)")
             continue
         script_path.write_text(script, encoding="utf-8")
-        print(f"  [OK] .stdd/hooks/{name}.py")
+        print(f"  [OK] .fstdd/hooks/{name}.py")
 
     # Update .claude/settings.json
     settings_path = project_root / ".claude" / "settings.local.json"
@@ -149,13 +149,13 @@ def cmd_hooks_install(args):
 
     hooks_config = settings.setdefault("hooks", {})
     hooks_config["SessionStart"] = [
-        {"hooks": [{"type": "command", "command": "python .stdd/hooks/session-start.py"}]}
+        {"hooks": [{"type": "command", "command": "python .fstdd/hooks/session-start.py"}]}
     ]
     hooks_config["PreCompact"] = [
-        {"hooks": [{"type": "command", "command": "python .stdd/hooks/pre-compact.py"}]}
+        {"hooks": [{"type": "command", "command": "python .fstdd/hooks/pre-compact.py"}]}
     ]
     hooks_config["Stop"] = [
-        {"hooks": [{"type": "command", "command": "python .stdd/hooks/session-end.py"}]}
+        {"hooks": [{"type": "command", "command": "python .fstdd/hooks/session-end.py"}]}
     ]
 
     settings_path.write_text(json.dumps(settings, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -173,7 +173,7 @@ def cmd_hooks_install(args):
 def cmd_hooks_status(args):
     """Show current hooks status."""
     project_root = Path.cwd()
-    hooks_dir = project_root / ".stdd" / "hooks"
+    hooks_dir = project_root / ".fstdd" / "hooks"
     if not hooks_dir.exists():
         print("  No STDD hooks installed.")
         return

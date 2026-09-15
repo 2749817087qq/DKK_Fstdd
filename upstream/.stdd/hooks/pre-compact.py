@@ -7,7 +7,7 @@ from datetime import datetime
 def main():
     project_root = Path.cwd()
     for change_dir in sorted((project_root / "changes").iterdir()):
-        stdd_yaml = change_dir / ".stdd.yaml"
+        stdd_yaml = change_dir / ".fstdd.yaml"
         if stdd_yaml.exists():
             state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
             state["last_modified"] = datetime.now().isoformat()

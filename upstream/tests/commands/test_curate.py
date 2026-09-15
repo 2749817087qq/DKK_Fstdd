@@ -22,8 +22,8 @@ def _make_args(subcommand, **kwargs):
 
 def _setup_curate_project(tmp_path, with_inbox=False):
     """Create project with community config."""
-    (tmp_path / ".stdd" / "config.d").mkdir(parents=True, exist_ok=True)
-    (tmp_path / ".stdd" / "config.d" / "project.yaml").write_text("""\
+    (tmp_path / ".fstdd" / "config.d").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".fstdd" / "config.d" / "project.yaml").write_text("""\
 paths:
   changes_dir: changes
   archive_dir: archive
@@ -32,9 +32,9 @@ project:
   name: test
 stdd_version: '2.0'
 """, encoding="utf-8")
-    (tmp_path / ".stdd" / "config.d" / "experience.yaml").write_text("""\
+    (tmp_path / ".fstdd" / "config.d" / "experience.yaml").write_text("""\
 experience:
-  dir: .stdd/experiences
+  dir: .fstdd/experiences
 community:
   registries:
     - name: github
@@ -48,7 +48,7 @@ community:
     (tmp_path / "changes").mkdir(exist_ok=True)
 
     if with_inbox:
-        inbox = tmp_path / ".stdd" / "curation" / "inbox"
+        inbox = tmp_path / ".fstdd" / "curation" / "inbox"
         inbox.mkdir(parents=True)
 
         # Create test tar.gz with EXP files
