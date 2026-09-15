@@ -530,7 +530,9 @@ def _cmd_export(args: argparse.Namespace, exp_dir: Path) -> None:
             tar.addfile(info, io.BytesIO(index_content.encode("utf-8")))
 
         print(f"  Exported {len(experiences)} experiences to: {tar_path}")
-        print(f"  Upload {tar_path.name} to GitHub Release or submit PR to stdd-experiences repo")
+        # 不外发到第三方：引导使用本项目脚本回传到自有仓库（强制脱敏）
+        print("  回传请使用（目标为自有仓库，强制脱敏）:")
+        print("    python tools/share_experience.py --export --publish")
     else:
         result = json.dumps(experiences, ensure_ascii=False, indent=2) if args.format == "json" else yaml.dump(experiences, allow_unicode=True, default_flow_style=False)
 
@@ -1031,87 +1033,41 @@ def _cmd_share(args, exp_dir):
 
 
 def _cmd_share_single(eid, exp_dir_path):
-    """Share a single experience. Returns True on success."""
-    filepath = exp_dir_path / f"{eid}.md"
-    if not filepath.exists():
-        print(f"  Experience {eid} not found")
-        return False
-    content = filepath.read_text(encoding="utf-8")
-    fm = _load_experience(filepath)
-    if not fm:
-        return False
-    sanitized = _sanitize(content)
-    fm["lifecycle_state"] = "shared"
-    fm["last_seen"] = datetime.now().strftime("%Y-%m-%d")
-    body_parts = content.split("---", 2)
-    body_text = body_parts[2].strip() if len(body_parts) >= 3 else ""
-    fm_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False)
-    # Write updated lifecycle
-    filepath.write_text(f"---\n{fm_yaml}---\n\n{body_text}", encoding="utf-8")
-    import shutil
-    import subprocess
-    if shutil.which("gh"):
-        print(f"  gh CLI detected, sharing via user account...")
-        try:
-            return _share_via_gh(eid, sanitized)
-        except Exception as e:
-            print(f"  gh CLI failed: {e}, falling back to server API...")
-            return _share_via_api(eid, sanitized)
-    else:
-        print(f"  Sharing via server API...")
-        return _share_via_api(eid, sanitized)
+    """[已永久禁用] 本项目经验数据不外发到任何第三方社区或服务器。
+
+    历史行为：把经验上传到上游社区仓库 leonai42/stdd-experiences（gh CLI 通道）
+    或第三方服务器 hzddyy.com（API 通道）。两条外发代码路径均已永久移除。
+
+    需要回传经验时，使用本项目自带的脚本（目标为自有仓库，且强制脱敏）：
+        python tools/share_experience.py --export --publish
+    """
+    print("  [已永久禁用] FSTDD 经验不外发到第三方。")
+    print("    历史上传通道（leonai42/stdd-experiences、hzddyy.com）的代码已移除。")
+    print("    如需回传，使用本项目脚本（目标为自有仓库，强制脱敏）：")
+    print("      python tools/share_experience.py --export --publish")
+    return False
+
+
 
 
 def _share_via_gh(eid, content):
-    """Share using gh CLI."""
-    import subprocess
-    import tempfile
-    repo = "leonai42/stdd-experiences"
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp = Path(tmpdir)
-        r = subprocess.run(["gh", "repo", "clone", repo, str(tmp / "repo")],
-                         capture_output=True, text=True, timeout=60)
-        if r.returncode != 0:
-            raise RuntimeError(f"clone failed: {r.stderr[:200]}")
-        repo_dir = tmp / "repo"
-        pending_dir = repo_dir / "pending"
-        pending_dir.mkdir(parents=True, exist_ok=True)
-        (pending_dir / f"{eid}.md").write_text(content, encoding="utf-8")
-        subprocess.run(["git", "add", "."], cwd=repo_dir, timeout=10)
-        subprocess.run(["git", "commit", "-m", f"share: {eid}"],
-                      cwd=repo_dir, capture_output=True, timeout=10)
-        r = subprocess.run(["git", "push"], cwd=repo_dir,
-                          capture_output=True, text=True, timeout=30)
-        if r.returncode != 0:
-            raise RuntimeError(f"push failed: {r.stderr[:200]}")
-    print(f"  {eid}: Submitted via gh CLI")
-    return True
+    """[已永久移除] 原为通过 gh CLI 上传到上游社区仓库 leonai42/stdd-experiences。"""
+    raise RuntimeError(
+        "已永久禁用：FSTDD 经验不外发到第三方社区。"
+        "如需回传请使用 tools/share_experience.py（目标为自有仓库）"
+    )
+
+
 
 
 def _share_via_api(eid, content):
-    """Share via server API (fallback)."""
-    import requests as req
-    import subprocess
-    url = "https://hzddyy.com/stdd/api/share-experience"
-    try:
-        author = subprocess.run(["git", "config", "user.name"],
-                              capture_output=True, text=True, timeout=5).stdout.strip()
-    except Exception:
-        author = ""
-    payload = {"experience_id": eid, "content": content, "author": author}
-    try:
-        r = req.post(url, json=payload, timeout=30)
-        data = r.json()
-        if data.get("success"):
-            print(f"  {eid}: Submitted to pending review pool")
-            return True
-        else:
-            print(f"  API error: {data.get('error', 'unknown')}")
-            return False
-    except Exception as e:
-        print(f"  Server API unavailable: {e}")
-        print("  Tip: retry later or use 'stdd experience export --publish'")
-        return False
+    """[已永久移除] 原为 POST 到第三方服务器 https://hzddyy.com/stdd/api/share-experience。"""
+    raise RuntimeError(
+        "已永久禁用：FSTDD 经验不外发到第三方服务器。"
+        "如需回传请使用 tools/share_experience.py（目标为自有仓库）"
+    )
+
+
 
 
 def _cmd_search(args, exp_dir):
