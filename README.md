@@ -44,8 +44,12 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 | 内容 | 在哪 |
 |------|------|
 | 方法论、模板、CLI、`.fstdd/` 骨架 | `upstream/`（vendor 自上游，MIT 许可与版权原样保留） |
-| 适配层脚本、安装文档、`fstdd-fin` | 本仓库 `tools/` `docs/` `skills/` |
-| 生成的 6 个 skill（`fstdd`、`fstdd-understand/spec/build/deliver/upgrade`） | **运行时生成物**，由安装脚本产生 |
+| 适配层脚本、安装文档、`fstdd-fin` 源 | 本仓库 `tools/` `docs/` `skills/` |
+| 生成的 7 个 skill（`fstdd`、`fstdd-understand/spec/build/deliver/upgrade` + `fstdd-fin`） | **运行时生成物**，由安装脚本产生 |
+
+> `fstdd-fin` 是本项目原创的金融增强层：源在仓库 `skills/fstdd-fin/`，
+> 安装时随 6 个通用 skill **一起**装到 `~/.workbuddy-ai/skills/`——
+> 它依赖通用层执行流程，**不单独分发**。第三方 `fintech-engineer` 为**可选**补充，未装不影响使用。
 
 ---
 
