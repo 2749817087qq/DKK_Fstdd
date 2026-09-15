@@ -304,16 +304,36 @@ python tools/share_experience.py --export --from-archive --publish   # 导出并
 
 ### 自动化
 
-已配置定时任务「STDD 经验库自动同步」，每周一 09:00 自动导出并推送。任务在 GitHub
+已配置定时任务「STDD 经验库自动同步」，每周一 09:00 自动导出并回传。任务在 GitHub
 不通时会自动借 SSH 隧道出网（见第 8 节）。
 
-### 手工贡献（其他人）
+### 其他人如何回传（自动，无需手动操作）
 
-使用者若想贡献自己的经验：
+**一条命令即可，无需手工 fork 或提 PR**：
 
-1. fork `2749817087qq/DKKstdd-experiences`
-2. 把导出的 `EXP-*.md` 放入 `experiences/` 目录
-3. 发起 Pull Request
+```bash
+export GITHUB_TOKEN='你的 GitHub 令牌'      # 需 repo 权限
+python tools/share_experience.py --export --from-archive --publish
+```
+
+脚本会**自动选择路径**，无需人工判断：
+
+| 身份 | 行为 |
+|---|---|
+| 仓库所有者 / 协作者 | 直接推送到 `main` |
+| 其他贡献者 | 自动 fork → 推送到自己的 fork → 自动创建 Pull Request |
+
+关键点：
+
+- 用的是**贡献者自己的 token**，本项目不持有也不需要任何人的凭证
+- 外部提交以 **Pull Request** 形式进入，由维护者审核后合并
+- 导出前**强制脱敏**，不含路径 / IP / 域名 / 凭证 / 邮箱
+
+实现上采用「先尝试直推、权限不足再降级 fork+PR」，而非「先查身份」——
+因为 `urllib` 不支持 socks5 代理，在需要隧道的环境下 API 调用会失败，而 git 支持代理。
+
+> 这正是开源社区的经验蒸馏方式：全球使用者的踩坑记录汇聚到一处，
+> 经审核后反哺给所有人。
 
 ---
 

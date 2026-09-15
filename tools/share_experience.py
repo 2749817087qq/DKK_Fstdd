@@ -28,6 +28,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 # 经验包回传目标仓库（可用环境变量覆盖）
@@ -197,12 +198,136 @@ def find_token() -> str:
     return ""
 
 
-def publish(out_dir: Path, repo: str, token: str) -> bool:
-    """把导出的经验包推送到目标仓库（clone → 覆盖写入 → commit → push）。"""
-    if not token:
-        print("[FAIL] 未找到凭证。请设置 GITHUB_TOKEN，或把 token 放入 "
-              "<工作区>/.workbuddy-ai/tmp/.gh_token")
+def _gh_api(method: str, path: str, token: str, payload=None) -> dict:
+    """极简 GitHub API 调用（用标准库，避免新增 requests 依赖）。"""
+    import json
+    import urllib.error
+    import urllib.request
+
+    url = "https://api.github.com" + path
+    data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    req = urllib.request.Request(url, data=data, method=method)
+    req.add_header("Authorization", "Bearer " + token)
+    req.add_header("Accept", "application/vnd.github+json")
+    req.add_header("User-Agent", "stdd-experience-share")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            raw = r.read().decode("utf-8")
+            return json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as e:
+        return {"__error__": e.code, "__body__": e.read().decode("utf-8", "replace")[:300]}
+    except Exception as e:  # noqa: BLE001
+        return {"__error__": -1, "__body__": str(e)[:300]}
+
+
+def publish_via_pr(out_dir: Path, repo: str, token: str, dry_run: bool = False) -> bool:
+    """自动 fork → 推送到 fork → 创建 Pull Request。
+
+    适用对象：没有目标仓库写权限的贡献者（即绝大多数使用者）。
+    用的是**使用者自己的 token**，我们不持有也不需要他们的凭证；
+    提交以 PR 形式进入，由维护者审核后合并 —— 这是 GitHub 的标准贡献流程。
+    """
+    owner, name = repo.split("/", 1)
+
+    me = _gh_api("GET", "/user", token)
+    login = me.get("login")
+    if not login:
+        print(f"[FAIL] 无法获取 GitHub 身份：{me.get('__body__', me)}")
         return False
+    print(f"      身份: {login}")
+
+    if dry_run:
+        print(f"[dry-run] 将 fork {repo} → {login}/{name}，推送后创建 PR")
+        return True
+
+    # 1) fork（已存在时 API 返回 202/403，都继续尝试 clone）
+    fr = _gh_api("POST", f"/repos/{repo}/forks", token, {})
+    if "__error__" in fr and fr["__error__"] not in (202, 403, 422):
+        print(f"[FAIL] fork 失败: {fr.get('__body__')}")
+        return False
+
+    # fork 是异步的，轮询等待其可克隆
+    fork_url = f"https://{token}@github.com/{login}/{name}.git"
+    deadline = time.time() + 45
+    cloned = False
+    tmp = Path(tempfile.mkdtemp(prefix="exp_pr_"))
+    try:
+        while time.time() < deadline:
+            r = subprocess.run(["git", "clone", "-q", fork_url, str(tmp / "repo")],
+                               capture_output=True, text=True,
+                               encoding="utf-8", errors="replace")
+            if r.returncode == 0:
+                cloned = True
+                break
+            time.sleep(5)
+        if not cloned:
+            print("[FAIL] fork 后仍无法克隆（可能 fork 尚未就绪，稍后重试即可）")
+            return False
+
+        repo_dir = tmp / "repo"
+        branch = f"experience-{datetime.date.today().isoformat()}"
+        subprocess.run(["git", "checkout", "-q", "-b", branch],
+                       cwd=str(repo_dir), capture_output=True)
+
+        dst = repo_dir / "experiences"
+        dst.mkdir(parents=True, exist_ok=True)
+        n = 0
+        for f in sorted(out_dir.glob("*.md")):
+            shutil.copy2(f, dst / f.name)
+            n += 1
+
+        subprocess.run(["git", "add", "-A"], cwd=str(repo_dir), capture_output=True)
+        r = subprocess.run(
+            ["git", "-c", "user.name=stdd-bot",
+             "-c", "user.email=stdd-bot@users.noreply.github.com",
+             "commit", "-m", f"experience: add {n} entries ({datetime.date.today()})"],
+            cwd=str(repo_dir), capture_output=True, text=True,
+            encoding="utf-8", errors="replace")
+        combined = (r.stdout or "") + (r.stderr or "")
+        if r.returncode != 0 and "nothing to commit" not in combined:
+            print(f"[FAIL] commit 失败: {combined[:200]}")
+            return False
+
+        r = subprocess.run(["git", "push", "-q", "-u", "origin", branch],
+                           cwd=str(repo_dir), capture_output=True, text=True,
+                           encoding="utf-8", errors="replace")
+        if r.returncode != 0:
+            print(f"[FAIL] push 到 fork 失败: {(r.stderr or '')[:200]}")
+            return False
+        print(f"      已推送到 {login}/{name} 分支 {branch}")
+
+        pr = _gh_api("POST", f"/repos/{repo}/pulls", token, {
+            "title": f"experience: {n} 条经验（{datetime.date.today()}）",
+            "head": f"{login}:{branch}",
+            "base": "master",
+            "body": (f"由 `tools/share_experience.py` 自动提交，共 {n} 条脱敏经验。\n\n"
+                     f"来源：{login} 的本机经验库。提交前已强制脱敏"
+                     f"（路径 / IP / 域名 / 凭证 / 邮箱）。"),
+        })
+        if "__error__" in pr:
+            print(f"[FAIL] 创建 PR 失败: {pr.get('__body__')}")
+            return False
+        print(f"[OK] 已创建 Pull Request #{pr.get('number')}: {pr.get('html_url')}")
+        return True
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+PERMISSION_HINTS = ("403", "permission", "denied", "forbidden", "not permitted",
+                    "write access", "could not read username")
+
+
+def is_permission_error(msg: str) -> bool:
+    return any(h in (msg or "").lower() for h in PERMISSION_HINTS)
+
+
+def publish(out_dir: Path, repo: str, token: str) -> tuple[bool, str]:
+    """把导出的经验包推送到目标仓库（clone → 覆盖写入 → commit → push）。
+
+    返回 (是否成功, 失败原因)。调用方据此判断是否降级为 fork + PR。
+    """
+    if not token:
+        return False, "no token"
     tmp = Path(tempfile.mkdtemp(prefix="exp_publish_"))
     try:
         url = f"https://{token}@github.com/{repo}.git"
@@ -210,8 +335,7 @@ def publish(out_dir: Path, repo: str, token: str) -> bool:
                            capture_output=True, text=True,
                            encoding="utf-8", errors="replace")
         if r.returncode != 0:
-            print(f"[FAIL] clone 失败: {(r.stderr or '')[:200]}")
-            return False
+            return False, (r.stderr or "")[:300]
 
         repo_dir = tmp / "repo"
         dst = repo_dir / "experiences"
@@ -230,20 +354,18 @@ def publish(out_dir: Path, repo: str, token: str) -> bool:
             encoding="utf-8", errors="replace")
         combined = (r.stdout or "") + (r.stderr or "")
         if r.returncode != 0 and "nothing to commit" not in combined:
-            print(f"[FAIL] commit 失败: {combined[:200]}")
-            return False
+            return False, combined[:300]
         if "nothing to commit" in combined:
             print(f"[OK] 无变化，远端已是最新（{n} 条经验）")
-            return True
+            return True, ""
 
         r = subprocess.run(["git", "push", "-q"], cwd=str(repo_dir),
                            capture_output=True, text=True,
                            encoding="utf-8", errors="replace")
         if r.returncode != 0:
-            print(f"[FAIL] push 失败: {(r.stderr or '')[:200]}")
-            return False
+            return False, (r.stderr or "")[:300]
         print(f"[OK] 已推送 {n} 条经验 → https://github.com/{repo}")
-        return True
+        return True, ""
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -256,7 +378,10 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true", help="预览，不写文件")
     ap.add_argument("--no-sanitize", action="store_true", help="不脱敏（危险）")
     ap.add_argument("--publish", action="store_true",
-                    help="导出后推送到经验库仓库")
+                    help="导出后自动回传到经验库仓库"
+                         "（维护者直推；其他贡献者自动 fork + 提 PR）")
+    ap.add_argument("--direct", action="store_true",
+                    help="强制直接推送（默认按 GitHub 身份自动选择）")
     ap.add_argument("--repo", default=os.environ.get("EXP_REPO", DEFAULT_EXP_REPO),
                     help=f"经验库仓库（默认 {DEFAULT_EXP_REPO}）")
     args = ap.parse_args()
@@ -324,8 +449,23 @@ def main() -> int:
 
     if args.publish:
         print()
-        print(f"=== 推送到经验库 {args.repo} ===")
-        ok = publish(OUT_DIR, args.repo, find_token())
+        print(f"=== 回传到经验库 {args.repo} ===")
+        token = find_token()
+        if not token:
+            print("[FAIL] 未找到 GitHub 凭证。请设置 GITHUB_TOKEN，或把 token 放入 "
+                  "<工作区>/.workbuddy-ai/tmp/.gh_token")
+            return 1
+
+        # 先尝试直推；若无写权限则自动降级为 fork + PR。
+        # 用「尝试 + 降级」而非「先查身份」，是因为 urllib 不支持 socks5 代理，
+        # 在需要隧道的环境下 API 调用会失败，而 git 本身支持代理。
+        ok, reason = publish(OUT_DIR, args.repo, token)
+        if not ok and not args.direct and is_permission_error(reason):
+            print("      无写权限，降级为 fork + Pull Request（标准贡献流程）")
+            ok = publish_via_pr(OUT_DIR, args.repo, token, dry_run=args.dry_run)
+        if not ok and reason:
+            print(f"[FAIL] 回传失败: {reason[:200]}")
+            print("      若网络受限，可先建立隧道再重试（见 README 第 8 节）")
         return 0 if ok else 1
 
     print()
