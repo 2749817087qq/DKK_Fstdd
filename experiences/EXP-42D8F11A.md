@@ -5,7 +5,7 @@ severity: medium
 occurrences: 1
 source_change: 2026-09-15-skill-engineering-standards
 title: 6.3 两个用例的断言依赖一次性状态（已修正）
-exported_at: 2026-09-15
+exported_at: 2026-09-16
 sanitized: true
 ---
 ### 6.3 两个用例的断言依赖一次性状态（已修正）

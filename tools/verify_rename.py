@@ -30,10 +30,14 @@ PY = os.environ.get("FSTDD_PY", sys.executable)
 CLI = REPO / "upstream" / "bin" / "fstdd"
 
 # 预期保留旧名的区域（显式声明，不静默忽略）
-#   upstream/   —— 上游 vendor 代码，属切片 S2
-#   .claude/    —— 外部工具（Claude Code）配置，非本项目产物
+#   upstream/     —— 上游 vendor 代码
+#   .claude/      —— 外部工具（Claude Code）配置，非本项目产物
+#   experiences/  —— 经验导出产物：其内容**必须**保留旧名才有意义。
+#                    例：EXP-B1 讲的就是「把 stdd 改名为 fstdd 时漏了动态导入」，
+#                    把文中的 stdd 也替换掉，这条经验就无法理解。
+#                    与「归档文档保留旧名」同理，不是未改名的残留。
 EXCLUDE_DIRS = {"upstream", ".git", ".fstdd", ".stdd", "__pycache__",
-                "backups", ".claude"}
+                "backups", ".claude", "experiences"}
 
 # 预期保留旧名的文件（工具自身，不是被改的产物）
 EXCLUDE_FILES = {
@@ -264,10 +268,20 @@ def tc_007() -> tuple[bool, str]:
     if not active:
         return False, f"changes/ 与 archive/ 下均无含 {expected} 的 change"
 
-    r = _run([PY, str(CLI), "status"], cwd=str(REPO))
-    if r.returncode != 0 or "Change" not in (r.stdout or ""):
-        return False, "CLI status 无法识别当前 change"
-    return True, f"{len(active)} 个 change 状态文件命名正确，CLI 可识别"
+    # status 的检查要分情况：
+    #   有活跃 change → 必须能识别
+    #   无活跃 change（已全部归档）→ status 报「找不到 change」是**正常行为**，
+    #     此时只验证状态文件命名，不再要求 status 成功。
+    #   实测踩到：改名 change 归档后 status 必然报无 change，
+    #   原断言一律要求成功 → 恒失败。那是断言缺陷。
+    has_active = any((REPO / ".fstdd" / "changes" / d.name).exists()
+                     for d in active) if (REPO / ".fstdd" / "changes").exists() else False
+    if has_active:
+        r = _run([PY, str(CLI), "status"], cwd=str(REPO))
+        if r.returncode != 0 or "Change" not in (r.stdout or ""):
+            return False, "CLI status 无法识别当前 change"
+        return True, f"{len(active)} 个 change 状态文件命名正确，CLI 可识别"
+    return True, f"{len(active)} 个归档 change 状态文件命名正确（无活跃 change，跳过 status 检查）"
 
 
 # ---------- TC-RENAME-008：文件名本身也必须改名 ----------

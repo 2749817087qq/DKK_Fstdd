@@ -5,7 +5,7 @@ severity: medium
 occurrences: 1
 source_change: 2026-09-15-crlf-eol-governance
 title: 5.3 CLI 生成物持续引入 CRLF（根因，已提供自愈手段）
-exported_at: 2026-09-15
+exported_at: 2026-09-16
 sanitized: true
 ---
 ### 5.3 CLI 生成物持续引入 CRLF（根因，已提供自愈手段）
