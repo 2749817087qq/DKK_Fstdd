@@ -122,10 +122,23 @@ def tc_005(repo: Path) -> tuple[bool, str]:
             不属于「行尾治理引入的额外变更」，因此从断言中排除。
     注意 2：只统计 diff-filter=M（已跟踪文件的修改）。新增文件（A）在提交前
             必然出现在 diff 中，与行尾治理无关，否则本用例在提交前必然假失败。
+    注意 3：必须排除「纯模式变更」。实测在 Linux 上 chmod +x 会把 install.sh
+            由 100644 变 100755，renormalize 暂存该变更，本用例会误报为
+            「行尾治理引入的变更」—— 实际上与行尾无关。
     """
     _git(repo, "add", "--renormalize", ".")
     r = _git(repo, "diff", "--cached", "--diff-filter=M", "--name-only")
-    changed = [l for l in r.stdout.splitlines() if l.strip()]
+    candidates = [l for l in r.stdout.splitlines() if l.strip()]
+
+    # 过滤纯模式变更：逐文件检查 diff 中是否存在真实内容行
+    changed = []
+    for f in candidates:
+        d = _git(repo, "diff", "--cached", "--", f)
+        body = [ln for ln in d.stdout.splitlines()
+                if ln.startswith(("+", "-")) and not ln.startswith(("+++", "---"))
+                and not ln.startswith(("old mode", "new mode"))]
+        if body:
+            changed.append(f)
     unexpected = [f for f in changed if not _is_allowed_diff(f)]
     if unexpected:
         return False, (f"行尾治理引入了 {len(unexpected)} 个非预期变更："
