@@ -219,7 +219,7 @@ sources: |
 
 ---
 
-## 7. 与 stdd-* 系列的关系
+## 7. 与 fstdd-* 系列的关系
 
 | Skill | 关系 |
 |-------|------|
@@ -236,9 +236,18 @@ sources: |
 
 | 资源 | 查找方式 |
 |------|---------|
-| 领域源 skill | 与本 skill **同级目录**下的 `fintech-engineer/` |
-| 通用 FSTDD skill | WorkBuddy 的 skill 目录下的 `fstdd*`（由 Fstdd 的安装脚本生成） |
+| 通用 FSTDD skill（`fstdd`、`fstdd-understand/spec/build/deliver/upgrade`） | 由 `install.sh` / `install.ps1` 生成，默认落在 `~/.workbuddy-ai/skills/` |
+| 领域源 skill | `fintech-engineer/`，位于 WorkBuddy 的另一个 skill 目录 `~/.workbuddy/skills/` |
 | FSTDD CLI | 运行 `./install.sh`（或 `install.ps1`）后，路径记录在总入口 skill `fstdd/SKILL.md` 的「本机安装位置」一节 |
+
+> ⚠️ **本机存在两个 skill 目录，本 skill 与通用层可能不在同一处**：
+> ```
+> ~/.workbuddy-ai/skills/    ← 通用层（6 个 fstdd-*），由安装脚本生成
+> ~/.workbuddy/skills/       ← 第三方与自建 skill（如本 skill、fintech-engineer）
+> ```
+> 若本 skill 与通用层不在同一目录，它会**有脑子没腿**：金融约束写得再硬，
+> 也没有通用阶段 skill 替它执行。**建议把本 skill 放到通用层同级目录**
+> （`~/.workbuddy-ai/skills/fstdd-fin/`），或确保两个目录都被 WorkBuddy 扫描。
 
 若上表中任一资源找不到，说明 FSTDD 尚未安装 —— 见 Fstdd 仓库 README 的「快速开始」。
 
