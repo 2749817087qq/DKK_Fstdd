@@ -91,13 +91,31 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 # 只需克隆本仓库 —— 上游代码已 vendor 在 upstream/ 下，不必单独获取
 git clone https://github.com/2749817087qq/DKKstdd.git
 cd DKKstdd
-
-# 生成全局 skill
-python tools/install_workbuddy_skills.py
-
-# 校验（输出 [PASS] 才算装好）
-python tools/verify_workbuddy_skills.py
 ```
+
+**推荐：一键安装**（自动完成依赖检查 → 生成 skill → 校验三步）
+
+```bash
+./install.sh                # Linux / macOS / Git Bash
+./install.sh --yes          # 非交互，自动补装缺失依赖
+```
+
+```powershell
+.\install.ps1               # Windows
+.\install.ps1 -Yes          # 非交互
+```
+
+若提示「禁止运行脚本」：`powershell -ExecutionPolicy Bypass -File .\install.ps1`
+
+**或手动执行三步**：
+
+```bash
+python tools/install_workbuddy_skills.py   # 生成全局 skill
+python tools/verify_workbuddy_skills.py    # 校验（输出 [PASS] 才算装好）
+```
+
+> 手动方式容易漏掉最后一步校验 —— 而缺依赖时安装脚本只会打 `[WARN]` 就继续，
+> 生成的 skill 看起来正常，要等真正跑 CLI 时才失败。一键脚本就是为消除这个缺口。
 
 ### 路径说明
 
