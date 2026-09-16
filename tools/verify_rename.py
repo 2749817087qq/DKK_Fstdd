@@ -228,17 +228,17 @@ def tc_006() -> tuple[bool, str]:
         results.append(f"{name}: {'PASS' if ok else 'FAIL'}")
         if not ok:
             return False, f"{name} 未通过"
-    # 安装位置 verify：**自定位优先**（与 verify_skill_standards 同策略）
-    # 顺序：FSTDD_INST_DIR → 脚本自身 tools/ → 法定源 → 历史兜底。
-    # 自定位优先的原因见 verify_skill_standards._installed_tools 的说明。
+    # 安装位置 verify：**法定源优先**（与 verify_skill_standards 同策略）
+    # 顺序：FSTDD_INST_DIR → 法定源 → 脚本自身 → 历史兜底。
+    # 法定源优先的原因见 verify_skill_standards._installed_tools 的说明。
     _here = Path(__file__).resolve().parent
     _cands: list[Path] = []
     if os.environ.get("FSTDD_INST_DIR"):
         _cands.append(Path(os.environ["FSTDD_INST_DIR"]))
     _cands += [
-        _here,
-        Path.home() / ".workbuddy-ai" / "Fstdd" / "tools",
-        Path("D:/Programs/DKK_Fstdd/tools"),
+        Path.home() / ".workbuddy-ai" / "Fstdd" / "tools",  # 法定源 = 安装源（首选）
+        _here,                                              # 自定位（独立部署时适用）
+        Path("D:/Programs/DKK_Fstdd/tools"),                # 历史遗留，仅兜底
     ]
     _rel = "verify_workbuddy_skills.py"
     inst_verify = next((d / _rel for d in _cands if (d / _rel).exists()), None)
