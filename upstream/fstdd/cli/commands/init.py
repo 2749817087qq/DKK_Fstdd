@@ -287,22 +287,22 @@ def _post_init_self_check(project_root: Path) -> None:
     """V3.0.1: Self-check after init to verify Guard + experiences are ready."""
     print()
     print("  [STDD] 初始化自检:")
-      # Check Guard —— .claude 与 .codebuddy 都要查（WorkBuddy 加载 .codebuddy）
-      from ..utils import read_config
-      import json
-      guard_active = False
-      for _sub in (".claude", ".codebuddy"):
-          settings_file = project_root / _sub / "settings.local.json"
-          if settings_file.exists():
-              try:
-                  settings = json.loads(settings_file.read_text(encoding="utf-8"))
-                  hooks = settings.get("hooks", {}).get("PreToolUse", [])
-                  # 命令已改为绝对路径调用，故按 "guard check" 判定（不再匹配裸 stdd guard）
-                  if any("guard check" in str(h) for h in hooks):
-                      guard_active = True
-              except Exception:
-                  pass
-      print(f"    Guard: {'✅ 已激活（.claude 或 .codebuddy）' if guard_active else '⚠️ 未安装（手动执行: fstdd guard init）'}")
+    # Check Guard —— .claude 与 .codebuddy 都要查（WorkBuddy 加载 .codebuddy）
+    from ..utils import read_config
+    import json
+    guard_active = False
+    for _sub in (".claude", ".codebuddy"):
+        settings_file = project_root / _sub / "settings.local.json"
+        if settings_file.exists():
+            try:
+                settings = json.loads(settings_file.read_text(encoding="utf-8"))
+                hooks = settings.get("hooks", {}).get("PreToolUse", [])
+                # 命令已改为绝对路径调用，故按 "guard check" 判定（不再匹配裸 stdd guard）
+                if any("guard check" in str(h) for h in hooks):
+                    guard_active = True
+            except Exception:
+                pass
+    print(f"    Guard: {'✅ 已激活（.claude 或 .codebuddy）' if guard_active else '⚠️ 未安装（手动执行: fstdd guard init）'}")
     # Check experiences
     exp_dir = project_root / ".fstdd" / "experiences"
     exp_count = len(list(exp_dir.glob("EXP-*.md"))) if exp_dir.exists() else 0
