@@ -504,15 +504,57 @@ def main() -> int:
         idx.append(f"| {e['id']} | {e['fm'].get('title', '-')} | {e['source']} |")
     (OUT_DIR / "README.md").write_text("\n".join(idx) + "\n", encoding="utf-8", newline="\n")
 
+    # 提交指引：明确给出「不需要 token」的网页路径。
+    # 此前只提示「请设置 GITHUB_TOKEN」，会让没有 token 的使用者以为无法回传。
+    _submit = chr(10).join([
+        "# 如何回传这些经验",
+        "",
+        "两种方式**任选其一**。方式一不需要任何 token。",
+        "",
+        "## 方式一：网页提交（不需要 token，只要 GitHub 账号）",
+        "",
+        f"1. 打开 https://github.com/{args.repo}",
+        "2. 点右上角 **Fork**（在你账号下建一份副本）",
+        "3. 进入你 fork 后的仓库 -> **Add file -> Upload files**",
+        "4. 把本目录下的 EXP-*.md 全部拖入并提交（若仓库已有 experiences/，放进该目录）",
+        "5. 回到你的仓库首页 -> **Contribute -> Open pull request** -> 创建 PR",
+        "",
+        "维护者审核后合并。**全程只需浏览器登录，不需要生成 token。**",
+        "",
+        "## 方式二：一条命令自动提交（需要你自己的 GitHub token）",
+        "",
+        "```bash",
+        "export GITHUB_TOKEN='你的 token'   # 需 repo 权限",
+        "python tools/share_experience.py --export --publish",
+        "```",
+        "",
+        "脚本会自动判断身份：维护者直推，否则自动 fork -> 推送 -> 创建 PR。",
+        "**token 是你自己的，本工具不上传、不转存。**",
+        "",
+        "---",
+        "",
+        "## 为什么方式二需要 token？",
+        "",
+        "它用 GitHub API 自动建 PR，API 调用必须有凭证。",
+        "方式一走网页，浏览器的登录态就是凭证，所以不需要 token。",
+        "两者最终都是「提 PR -> 维护者审核」，结果没有区别。",
+        "",
+    ])
+    (OUT_DIR / "SUBMIT.md").write_text(_submit, encoding="utf-8", newline="\n")
+
     print()
     print(f"已导出 {written} 条 → {OUT_DIR.relative_to(REPO_ROOT)}/")
+    print(f"  回传指引: {OUT_DIR.relative_to(REPO_ROOT)}/SUBMIT.md（方式一无需 token）")
 
     if args.publish:
         print()
         print(f"=== 回传到经验库 {args.repo} ===")
         token = find_token()
         if not token:
-            print("[FAIL] 未找到 GitHub 凭证。请设置 GITHUB_TOKEN，或把 token 放入 "
+            print("[提示] 未找到 GitHub 凭证 —— 自动提交需要它，但它不是唯一路径。")
+            print("       无 token 也能回传：见导出的 SUBMIT.md「方式一」，")
+            print("       网页操作（fork -> 上传 -> 提 PR），只需 GitHub 账号登录。")
+            print("       若要用自动提交：设置 GITHUB_TOKEN，或把 token 放入 "
                   "<工作区>/.workbuddy-ai/tmp/.gh_token")
             return 1
 
