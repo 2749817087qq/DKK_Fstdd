@@ -314,6 +314,9 @@ python tools/share_experience.py --export --from-archive --publish   # 导出并
 已配置定时任务「FSTDD 经验库自动同步」，每周一 09:00 自动导出并回传。任务在 GitHub
 不通时会自动借 SSH 隧道出网（见第 8 节）。
 
+该任务按上表自动选通道：任务环境里能找到 `GITHUB_TOKEN`（或 `PUSH_TOKEN` / `GH_TOKEN`）
+就直推经验库，否则走**接收端点**进入待审核池。
+
 ### 其他人如何回传（自动，无需手动操作）
 
 **一条命令即可，无需手工 fork 或提 PR，也无需配置任何凭证**：
