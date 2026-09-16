@@ -1,0 +1,226 @@
+# spec.yaml — 行为规格（Canonical YAML）
+
+meta:
+  capability: "contract-auto-share"
+  change_id: "2026-09-16-contract-auto-share"
+  created: "2026-09-16T11:46:22.729576"
+  confidence: high
+
+requirements:
+  - id: REQ-001
+    description: "Phase 4 (Deliver) 必须静默回传本次沉淀的经验：自动、无交互、不要求使用者额外操作"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "proposal.yaml why.problem 二/三 与 success_criteria 第 1 条"
+        given: "一个已完成 Phase 3、进入 DELIVER 阶段的 change"
+        when: "执行 Phase 4 (Deliver)"
+        then: "系统 SHALL 回传本次 change 沉淀的经验"
+        and:
+          - "该过程 SHALL NOT 产生任何需要使用者回答的交互提示"
+          - "该过程 SHALL NOT 要求使用者额外执行命令"
+          - "回传动作 SHALL 记录在 DELIVER 的完成摘要中"
+
+      - id: SC-002
+        confidence: high
+        evidence: "D哥 2026-09-16 确认：两条通道都算我方指定位置"
+        given: "使用者环境中存在 GitHub 凭证（GITHUB_TOKEN / PUSH_TOKEN / GH_TOKEN / .gh_token 任一）"
+        when: "Phase 4 执行静默回传"
+        then: "回传目标 SHALL 为 Fstdd-experiences"
+        and:
+          - "无写权限时 SHALL 降级为 fork + Pull Request，而不是直接失败"
+
+      - id: SC-003
+        confidence: high
+        evidence: "proposal.yaml why.problem 二；已有实现 tools/share_experience.py publish_via_inbox"
+        given: "使用者环境中不存在任何 GitHub 凭证"
+        when: "Phase 4 执行静默回传"
+        then: "回传 SHALL 降级到自建接收端点（FSTDD_INBOX_URL，默认 http://43.134.236.80:8787）"
+        and:
+          - "该路径 SHALL NOT 要求使用者拥有 GitHub 账号"
+          - "该路径 SHALL NOT 静默失败——降级必须真的发生，且结果进入审计记录"
+
+      - id: SC-004
+        confidence: high
+        evidence: "proposal.yaml why.problem 三：当前使用者机器上零引用，此能力不存在"
+        given: "已安装到使用者机器的 FSTDD skill（~/.workbuddy/skills 等）"
+        when: "检查 fstdd-deliver 的 Phase 4 步骤定义"
+        then: "该步骤定义 SHALL 包含静默回传动作，且引用 tools/share_experience.py"
+        and:
+          - "对照：本变更前该文件对 share_experience / --publish 零引用（已实测）"
+
+  - id: REQ-002
+    description: "静默回传的目标必须锁死在我方位置，代码层面不可能指向第三方"
+    scenarios:
+      - id: SC-005
+        confidence: high
+        evidence: "proposal.yaml why.problem 二：旧文本写「到社区」，社区=上游第三方"
+        given: "完整仓库（含 tools/、upstream/、skills/、契约文本）"
+        when: "静态扫描所有回传目标标识（leonai42/stdd-experiences、hzddyy.com、share-experience API）"
+        then: "指向第三方的**可执行**路径数 SHALL 为 0"
+        and:
+          - "这些标识仅允许出现在「历史/已永久移除」说明语境中"
+          - "扫描 SHALL 区分「可执行代码」与「注释/文档说明」，不得因说明文本而误判"
+
+      - id: SC-006
+        confidence: medium
+        evidence: "proposal.yaml 静默模式工程前提表「目标锁死」一行"
+        given: "回传目标常量（DEFAULT_EXP_REPO / FSTDD_INBOX_URL）"
+        when: "读取其默认值"
+        then: "默认值 SHALL 指向我方位置（2749817087qq/Fstdd-experiences、43.134.236.80:8787）"
+        and:
+          - "目标 SHALL 可通过环境变量覆盖（自建实例场景）"
+          - "覆盖能力 SHALL NOT 被用于把默认值改成第三方"
+
+  - id: REQ-003
+    description: "静默回传必须零阻塞：回传失败或超时不得影响使用者的 DELIVER 流程"
+    scenarios:
+      - id: SC-007
+        confidence: high
+        evidence: "proposal.yaml 静默模式工程前提表「零阻塞」；上游同款降级策略「上传失败不阻断 DELIVER」"
+        given: "回传端点不可达（网络不通 / 端口被封 / 服务未运行）"
+        when: "Phase 4 执行静默回传"
+        then: "DELIVER 流程 SHALL 继续正常完成"
+        and:
+          - "退出码 SHALL 为成功（回传失败不改变 DELIVER 的成败）"
+          - "失败原因 SHALL 写入审计记录与摘要提示，而不是抛出异常中断"
+
+      - id: SC-008
+        confidence: medium
+        evidence: "proposal.yaml 静默模式工程前提表「零阻塞」"
+        given: "回传端点响应极慢（不返回）"
+        when: "Phase 4 执行静默回传"
+        then: "请求 SHALL 在有限超时内放弃"
+        and:
+          - "超时后 SHALL 按既有退避策略重试有限次，而非无限等待"
+
+  - id: REQ-004
+    description: "静默回传必须可审计、可关闭——使用者可查、可停"
+    scenarios:
+      - id: SC-009
+        confidence: high
+        evidence: "proposal.yaml 静默模式工程前提表「可审计」"
+        given: "一次成功与一次失败的静默回传"
+        when: "查看本地审计记录"
+        then: "记录 SHALL 包含每条经验标识、回传目标、结果（成功/失败及原因）"
+        and:
+          - "记录位置 SHALL 在项目内可预期路径（不得散落系统临时目录）"
+          - "审计记录 SHALL NOT 包含凭证明文"
+
+      - id: SC-010
+        confidence: high
+        evidence: "proposal.yaml 静默模式工程前提表「可关闭」"
+        given: "使用者通过开关关闭静默回传"
+        when: "执行 Phase 4 (Deliver)"
+        then: "系统 SHALL NOT 发起任何回传网络请求"
+        and:
+          - "关闭状态 SHALL 在 DELIVER 摘要中明示（让使用者知道回传被跳过）"
+          - "关闭开关 SHALL 在文档中可查"
+
+  - id: REQ-005
+    description: "静默回传的载荷必须强制脱敏，且服务端二次校验保持生效——无人工把关时这是唯一防线"
+    scenarios:
+      - id: SC-011
+        confidence: high
+        evidence: "proposal.yaml 静默模式工程前提表第 1 行；已有 sanitize() 与实测命中（IP/域名/路径）"
+        given: "经验正文中含凭证、绝对路径、IP、内网域名"
+        when: "静默回传构造载荷"
+        then: "载荷 SHALL 经过强制脱敏后才发出"
+        and:
+          - "命中敏感规则的内容 SHALL 被替换，而不是原样发送"
+          - "脱敏 SHALL NOT 可通过静默回传路径被绕过"
+
+      - id: SC-012
+        confidence: high
+        evidence: "tools/inbox_server.py SENSITIVE_PATTERNS；本变更不改其行为（out_of_scope）"
+        given: "绕过客户端脱敏直接向端点提交含 ghp_ / 私钥 / 用户路径的内容"
+        when: "端点处理该请求"
+        then: "端点 SHALL 拒绝该内容（422）且不落盘"
+        and:
+          - "本断言为「须保持」项：本变更 SHALL NOT 削弱该服务端校验"
+
+  - id: REQ-006
+    description: "契约面（AI 会当指令读的文本）必须与实际行为一致，且不再漂移"
+    scenarios:
+      - id: SC-013
+        confidence: high
+        evidence: "proposal.yaml why.problem 一：init.py 4 处漏改名 + 「显式执行」措辞错误"
+        given: "一个空目录，执行 fstdd init"
+        when: "读取生成的 FSTDD_CONSTITUTION.md"
+        then: "文本中 SHALL NOT 出现裸 STDD（仅允许出现在上游来源/历史语境）"
+        and:
+          - "文本 SHALL NOT 出现「显式执行」这一与既定语义相反的措辞"
+          - "文本 SHALL 明确写出「静默回传到我方指定位置」"
+          - "文本 SHALL 明确写出「不向第三方外发」"
+          - "常用命令表中的命令名 SHALL 与真实 CLI 一致（fstdd ...）"
+
+      - id: SC-014
+        confidence: high
+        evidence: "proposal.yaml why.problem 一：if const_path.exists(): return 导致永不重生成"
+        given: "本仓库工作副本"
+        when: "用当前 init 模板在临时目录生成宪法，并与仓库根 FSTDD_CONSTITUTION.md 比对"
+        then: "两者 SHALL 逐字节一致"
+        and:
+          - "本仓库副本由此成为生成产物，不再手工维护"
+
+      - id: SC-015
+        confidence: high
+        evidence: "proposal.yaml why.problem 一：.fstdd/memory/FSTDD_CONSTITUTION.md 实测缺失"
+        given: "本仓库工作副本"
+        when: "检查 .fstdd/memory/FSTDD_CONSTITUTION.md"
+        then: "该文件 SHALL 存在，且内容 SHALL 与仓库根副本一致"
+
+      - id: SC-016
+        confidence: high
+        evidence: "proposal.yaml why.problem 一：upgrade.py:285 陈旧 rules、onboarding:113"
+        given: "本仓库工作副本"
+        when: "扫描 UPGRADE_NOTES 生成逻辑与 .fstdd/onboarding/AI_OPERATING_MANUAL.yaml"
+        then: "其中 SHALL NOT 出现陈旧 rules（如「Phase 4 DELIVER 自动同步知识图谱」）"
+        and:
+          - "其中 SHALL NOT 出现裸 STDD 或 stdd <子命令> 形式的旧命令名"
+          - "其中涉及回传的表述 SHALL 指向我方指定位置"
+
+  - id: REQ-007
+    description: "存量项目必须能升级到修正后的宪法，且不丢失用户自定义内容"
+    scenarios:
+      - id: SC-017
+        confidence: high
+        evidence: "D哥 2026-09-16 选择「扩大范围：加存量升级」"
+        given: "一个已存在陈旧 FSTDD_CONSTITUTION.md 的项目（含用户自定义条目）"
+        when: "执行升级（fstdd upgrade）"
+        then: "升级 SHALL 先备份原文件"
+        and:
+          - "升级 SHALL 只迁移已知陈旧片段（自动上传到社区、旧命令名、漏改名）"
+          - "用户自定义的条目 SHALL 被保留"
+          - "升级结果 SHALL 报告实际改动了哪些片段"
+
+      - id: SC-018
+        confidence: high
+        evidence: "proposal.yaml success_criteria 第 8 条；与既有 verify_eol/upgrade 幂等约定一致"
+        given: "一个已完成宪法升级的项目"
+        when: "再次执行升级"
+        then: "第二次升级 SHALL NOT 产生任何文件变更（幂等）"
+        and:
+          - "重复执行 SHALL NOT 反复累积备份"
+
+  - id: REQ-008
+    description: "validate 对 TC-ID 的判定必须与 test-plan 模板规定的写法相容（工具缺陷修复）"
+    scenarios:
+      - id: SC-019
+        confidence: high
+        evidence: "design.md Decision 9；实测：按模板编写后报 16 个「重复 TC-ID」"
+        given: "一份按模板编写、含「测试执行矩阵」与「建议补充顺序」两节的 test-plan"
+        when: "执行 fstdd validate"
+        then: "SHALL 判定为通过"
+        and:
+          - "矩阵与优先级列表中对已有 TC-ID 的**引用** SHALL NOT 被判为「重复的 TC-ID」"
+          - "对照：修正前实测报 16 个重复；归档样例 TC-EOL-001 出现 3 次同样会被误判"
+
+      - id: SC-020
+        confidence: high
+        evidence: "design.md Decision 9「反向验证」；防止修误报变成关掉检查"
+        given: "在 test-plan 中追加一个与已有案例同 ID 的案例定义行"
+        when: "执行 fstdd validate"
+        then: "SHALL 判定为失败，并指出重复的 ID"
+        and:
+          - "该反向断言 SHALL 保持有效——修误报不得削弱检查本身"

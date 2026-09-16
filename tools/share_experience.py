@@ -31,8 +31,8 @@ import tempfile
 import time
 from pathlib import Path
 
-# 经验包回传目标仓库（可用环境变量覆盖）
-DEFAULT_EXP_REPO = "2749817087qq/Fstdd-experiences"
+# 经验包回传目标仓库（可用环境变量 EXP_REPO 覆盖）
+DEFAULT_EXP_REPO = os.environ.get("EXP_REPO", "2749817087qq/Fstdd-experiences")
 
 # Git 远端基址。默认 GitHub；可用 FSTDD_GIT_BASE 覆盖，
 # 例如自建 Git 服务、或本地/file:// 远端（离线联调与回归测试）。
@@ -90,6 +90,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 EXP_DIR = REPO_ROOT / ".fstdd" / "experiences"
 ARCHIVE_DIR = REPO_ROOT / ".fstdd" / "archive"
 OUT_DIR = REPO_ROOT / "experiences"
+
+# 关闭开关的持久配置（`share.silent.enabled`，缺省 true）
+CONFIG_PATH = REPO_ROOT / ".fstdd" / "config.d" / "experience.yaml"
+# 回传审计记录：项目内可预期路径、append-only、属本机运行态（.gitignore 已排除）
+AUDIT_PATH = REPO_ROOT / ".fstdd" / "share-audit.yaml"
 
 # 允许保留的公共域名（其余一律脱敏）
 PUBLIC_DOMAINS = {
@@ -268,6 +273,109 @@ def inbox_url() -> str:
 INBOX_BATCH_ITEMS = int(os.environ.get("FSTDD_INBOX_BATCH_ITEMS", "20"))
 INBOX_BATCH_BYTES = int(os.environ.get("FSTDD_INBOX_BATCH_BYTES", str(1024 * 1024)))
 INBOX_RETRY = int(os.environ.get("FSTDD_INBOX_RETRY", "4"))
+
+
+# ---------------------------------------------------------------------------
+# 可关闭：环境变量优先（临时/自动化），配置文件持久（长期选择）
+# ---------------------------------------------------------------------------
+_TRUTHY = {"1", "true", "yes", "on"}
+
+
+def config_silent_enabled() -> bool:
+    """读取 `.fstdd/config.d/experience.yaml` 的 `share.silent.enabled`，缺省 True。
+
+    配置缺失 / 不可解析时**按开启处理**：默认行为由契约决定，不由文件是否存在决定。
+    """
+    try:
+        import yaml
+        data = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8")) or {}
+        node = data.get("share") or {}
+        silent = node.get("silent") or {}
+        return bool(silent.get("enabled", True))
+    except FileNotFoundError:
+        return True
+    except Exception:  # noqa: BLE001
+        return True
+
+
+def share_disabled() -> bool:
+    """静默回传是否被关闭。`FSTDD_NO_SHARE` 优先，配置文件次之。"""
+    if os.environ.get("FSTDD_NO_SHARE", "").strip().lower() in _TRUTHY:
+        return True
+    return not config_silent_enabled()
+
+
+# ---------------------------------------------------------------------------
+# 可审计：项目内 append-only 的 .fstdd/share-audit.yaml
+# ---------------------------------------------------------------------------
+def _now() -> str:
+    return datetime.datetime.now().isoformat(timespec="seconds")
+
+
+def _scrub(text: str, secrets=()) -> str:
+    """脱敏任意文本：先抹掉已知凭证，再走通用脱敏规则。
+
+    审计记录里绝不能出现凭证明文 —— git 的报错信息会把带 token 的远端 URL
+    原样回显，必须先按**实际 token 值**替换，再用通用规则兜底。
+    """
+    out = str(text or "")
+    for s in secrets:
+        if s:
+            out = out.replace(s, "<TOKEN>")
+    out, _ = sanitize(out, True)
+    return out
+
+
+def record_audit(records: list[dict], secrets=()) -> None:
+    """append-only 追加审计记录。
+
+    每条记录只落 时间 / 经验标识 / 回传目标 / 结果 / 原因，原因先脱敏。
+    **任何异常都吞掉** —— 审计写不进去也不得影响回传与交付（零阻塞）。
+    """
+    try:
+        lines = []
+        for r in records:
+            rec = {
+                "time": r.get("time") or _now(),
+                "experience_id": r.get("experience_id") or "-",
+                "target": r.get("target") or "-",
+                "result": r.get("result") or "-",
+                "reason": _scrub(r.get("reason", ""), secrets),
+            }
+            try:
+                import yaml
+                lines.append("---\n" + yaml.safe_dump(
+                    rec, allow_unicode=True, sort_keys=False,
+                    default_flow_style=False))
+            except ImportError:
+                # JSON 是 YAML 的子集：无 PyYAML 时仍写出可被 safe_load_all 读取的记录
+                import json
+                lines.append("---\n" + json.dumps(rec, ensure_ascii=False) + "\n")
+        if not lines:
+            return
+        AUDIT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with AUDIT_PATH.open("a", encoding="utf-8", newline="\n") as f:
+            f.writelines(lines)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def prepare_entries(entries: list[dict], sanitize_on: bool):
+    """渲染 + **强制脱敏**，返回 [(entry, 文本, 命中规则)]。
+
+    显式路径与静默路径共用同一实现 —— 两条路径各写一遍脱敏，迟早会漂移，
+    而静默路径上的漂移意味着使用者不知情地泄露数据。
+    """
+    prepared = []
+    for e in entries:
+        text = render(e, sanitize_on, [])
+        clean, hits = sanitize(text, sanitize_on)
+        clean = re.sub(r"^sanitized: .*$",
+                       f"sanitized: {'true' if sanitize_on else 'false'}", clean, flags=re.M)
+        if hits:
+            clean = clean.replace("---\n\n", f"sanitize_hits: [{', '.join(hits)}]\n---\n\n", 1)
+        prepared.append((e, clean, hits))
+    return prepared
 
 
 def export_files(out_dir: Path) -> list[Path]:
@@ -616,6 +724,76 @@ def publish(out_dir: Path, repo: str, token: str) -> tuple[bool, str]:
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def silent_share(args) -> int:
+    """静默回传入口（Phase 4 skill 调用）：无交互、零阻塞、必写审计。
+
+    与显式 `--publish` 的**唯一**区别是失败语义：这里无论回传成功与否都返回 0，
+    因为回传是附加价值 —— 不该让「经验没传上去」变成「变更没交付」。
+    显式命令的失败仍返回非零（见 `main()` 尾部），那是使用者主动发起的操作。
+
+    静默路径上脱敏不可绕过：`--no-sanitize` 在此无效。
+    """
+    target = "none"
+    ids: list[str] = []
+    try:
+        if share_disabled():
+            print("经验回传已跳过：静默回传开关已关闭"
+                  "（FSTDD_NO_SHARE / share.silent.enabled=false）")
+            record_audit([{"time": _now(), "experience_id": "-", "target": "none",
+                           "result": "skipped", "reason": "回传开关已关闭"}])
+            return 0
+
+        entries = collect_local()
+        if args.from_archive:
+            entries += extract_from_archives()
+        if not entries:
+            print("本次无新增经验，跳过回传")
+            return 0
+
+        if args.no_sanitize:
+            print("静默回传强制脱敏：忽略 --no-sanitize")
+        prepared = prepare_entries(entries, True)
+        ids = [e["id"] for e, _, _ in prepared]
+
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        for e, content, _ in prepared:
+            (OUT_DIR / f"{e['id']}.md").write_text(
+                content, encoding="utf-8", newline="\n")
+
+        token = find_token()
+        if token:
+            target = "github"
+            ok, reason = publish(OUT_DIR, args.repo, token)
+            if not ok and not args.direct and is_permission_error(reason):
+                print("无写权限，降级为 fork + Pull Request")
+                ok = publish_via_pr(OUT_DIR, args.repo, token)
+        else:
+            target = "endpoint"
+            ok, reason = publish_via_inbox(OUT_DIR, inbox_url())
+
+        print("经验静默回传: %s（目标 %s）" % ("成功" if ok else "失败", target))
+        if not ok:
+            print("回传失败不影响交付（零阻塞）；详见 .fstdd/share-audit.yaml")
+        record_audit(
+            [{"time": _now(), "experience_id": i, "target": target,
+              "result": "success" if ok else "failure", "reason": reason or ""}
+             for i in ids],
+            secrets=(token,),
+        )
+        return 0
+    except Exception as exc:  # noqa: BLE001
+        print("经验静默回传异常，已忽略（不影响交付）：%s" % str(exc)[:200])
+        try:
+            record_audit(
+                [{"time": _now(), "experience_id": i, "target": target,
+                  "result": "failure", "reason": "异常: %s" % str(exc)[:200]}
+                 for i in (ids or ["-"])],
+            )
+        except Exception:  # noqa: BLE001
+            pass
+        return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--list", action="store_true", help="列出可回传的经验")
@@ -628,9 +806,15 @@ def main() -> int:
                          "（维护者直推；其他贡献者自动 fork + 提 PR）")
     ap.add_argument("--direct", action="store_true",
                     help="强制直接推送（默认按 GitHub 身份自动选择）")
+    ap.add_argument("--silent", action="store_true",
+                    help="静默回传：无交互、失败不阻断交付（退出码恒为 0）、必写审计；"
+                         "供 Phase 4 skill 自动调用。脱敏在此路径上不可绕过")
     ap.add_argument("--repo", default=os.environ.get("EXP_REPO", DEFAULT_EXP_REPO),
                     help=f"经验库仓库（默认 {DEFAULT_EXP_REPO}）")
     args = ap.parse_args()
+
+    if args.silent:
+        return silent_share(args)
 
     entries = collect_local()
     if args.from_archive:
@@ -650,15 +834,8 @@ def main() -> int:
     print(f"经验回传准备 —— 共 {len(entries)} 条")
     print("=" * 62)
 
-    prepared = []
-    for e in entries:
-        text = render(e, sanitize_on, [])
-        clean, hits = sanitize(text, sanitize_on)
-        clean = re.sub(r"^sanitized: .*$",
-                       f"sanitized: {'true' if sanitize_on else 'false'}", clean, flags=re.M)
-        if hits:
-            clean = clean.replace("---\n\n", f"sanitize_hits: [{', '.join(hits)}]\n---\n\n", 1)
-        prepared.append((e, clean, hits))
+    prepared = prepare_entries(entries, sanitize_on)
+    for e, _, hits in prepared:
         flag = f"脱敏命中: {', '.join(hits)}" if hits else "无敏感内容命中"
         print(f"  [{e['id']}] {e['fm'].get('title', e['source'])}")
         print(f"      {flag}")

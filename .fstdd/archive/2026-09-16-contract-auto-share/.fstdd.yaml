@@ -1,0 +1,53 @@
+change_id: 2026-09-16-contract-auto-share
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 9
+last_modified: '2026-09-16T17:09:57.766650'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-16T17:09:56'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 DELIVER（487 passed / 20-20 覆盖 / 11-11 变异捕获）
+    slices_completed:
+      S1:
+        new_tests: 6
+        tc_coverage: TC-CAS-014,TC-CAS-015,TC-CAS-016
+        verified_at: '2026-09-16T16:40:00'
+      S2:
+        new_tests: 23
+        tc_coverage: TC-CAS-001,TC-CAS-002,TC-CAS-003,TC-CAS-004,TC-CAS-005,TC-CAS-007,TC-CAS-008,TC-CAS-009,TC-CAS-010,TC-CAS-011,TC-CAS-012,TC-CAS-022
+        verified_at: '2026-09-16T16:40:00'
+      S3:
+        new_tests: 9
+        tc_coverage: TC-CAS-017,TC-CAS-018,TC-CAS-019,TC-CAS-020
+        verified_at: '2026-09-16T16:40:00'
+      S4:
+        new_tests: 24
+        tc_coverage: TC-CAS-006,TC-CAS-021,TC-CAS-023,TC-CAS-024
+        verified_at: '2026-09-16T16:40:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-16T12:09:55'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 BUILD（10 项决策 + 24 TC 认可）
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-16T11:59:10'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 SPEC（静默回传口径已修正）
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 20
+  tc_cases: 24
+  test_functions: 63
+version: '3.0'

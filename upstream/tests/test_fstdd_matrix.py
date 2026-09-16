@@ -206,10 +206,16 @@ class TestFlow:
         assert "pending" in out.lower() or "Phase 1" in out
 
     def test_c5_experience_no_upload_rule(self, tmp_path):
-        """宪法必须声明数据不外发（与删除上传通道一致）。"""
+        """宪法必须声明「不向第三方外发」（与删除第三方上传通道一致）。
+
+        注意断言的是**不向第三方外发**，而不是旧契约里的「经验数据不外发」：
+        后者暗示完全不外发，与本项目「Phase 4 静默回传经验到我方指定位置」的
+        既定语义不符（我方位置 = Fstdd-experiences / 自建接收端点）。
+        契约措辞须精确，断言须随之精确。
+        """
         init_project(tmp_path)
         const = (tmp_path / "FSTDD_CONSTITUTION.md").read_text(encoding="utf-8")
-        assert "经验数据不外发" in const or "不外发" in const
+        assert "不向第三方外发" in const
 
     def test_c6_experiences_dir_created(self, tmp_path):
         init_project(tmp_path)

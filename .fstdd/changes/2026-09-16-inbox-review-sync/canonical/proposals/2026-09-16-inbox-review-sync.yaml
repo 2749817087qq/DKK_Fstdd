@@ -1,0 +1,64 @@
+# 2026-09-16-inbox-review-sync.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-09-16-inbox-review-sync"
+  title: "待审核池 → 经验库的同步链路（tools/inbox_pull.py）"
+  created: "2026-09-16T11:34:37.461554"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    上一轮打通了「无 GitHub 凭证也能回传」：使用者提交进入我们自建端点的待审核池
+    （服务器 /home/ubuntu/fstdd-inbox/）。但**没有任何工具把池子里的数据取回来并
+    同步进 GitHub 经验库** —— 链路到池子就断了，数据只能靠人工 ssh 上去手工搬运，
+    不可复现、无审核记录。
+
+    实测已确认接收侧可靠：17 条批量提交压成 1 次请求、429 自动重试后 17/17 落盘。
+    缺的是消费侧。
+
+    同时有两个必须处理的风险：
+
+    1. **隐私**：服务端落盘时写入的 `<!-- fstdd-inbox -->` 元数据头含 `remote_addr`
+       （投稿者 IP）。原样发布到公开仓库等于把第三方个人信息公开。
+    2. **重复**：重复投稿会产生「同 id、不同时间戳后缀」的多个文件
+       （实测首轮 30 个文件里 13 个 id 各 2 份）。直接发布会让经验库堆积重复条目。
+
+what_changes:
+  - description: "新增 tools/inbox_pull.py：从接收端点拉取待审核经验到本地暂存区"
+  - description: "解析服务端元数据头，仅用于本地审核展示；发布前**整体剥离**（含投稿者 IP）"
+  - description: "按 experience_id 归一文件名（丢弃时间戳后缀），同 id 保留 received_at 最新的一条"
+  - description: "按内容哈希二次去重（防不同 id 的完全相同内容）"
+  - description: "复用 share_experience.py 的 sanitize() 做入库前二次脱敏"
+  - description: "复用 share_experience.py 的 publish() 完成推送，不写第二套推送逻辑"
+  - description: "输出审核表（id / 作者 / 接收时间 / 字节 / 脱敏命中 / 重复情况）与拒绝清单"
+
+capabilities:
+  new:
+    - name: "inbox-pull"
+      description: "拉取待审核池到本地暂存目录，规范化命名并去重"
+    - name: "inbox-review"
+      description: "输出审核表，供维护者判断哪些经验可以入库"
+    - name: "inbox-reject"
+      description: "把指定经验移出待发布集合（留痕，不删除）"
+    - name: "inbox-publish"
+      description: "把通过审核的经验推送到 Fstdd-experiences"
+  modified:
+    - name: "share_experience"
+      description: "不改动其行为，仅被 inbox_pull 复用 sanitize() / publish() / find_token()"
+
+success_criteria:
+  - "待审核池内容可一条命令拉取到本地，无需手工 ssh 搬运"
+  - "发布到公开仓库的文件**不含** `<!-- fstdd-inbox -->` 头，即不含投稿者 IP"
+  - "同一 experience_id 的重复投稿入库后只保留一条（received_at 最新）"
+  - "内容完全相同的不同 id 不会重复入库"
+  - "脱敏与推送复用 share_experience.py，仓库内不存在第二套实现"
+  - "工程级测试覆盖：元数据头解析、IP 剥离、文件名归一、两级去重、入库前脱敏、幂等性"
+  - "端到端实测：向端点提交 → 拉取 → 审核 → 发布，全链路可复现且可重复执行不产生重复"
+
+out_of_scope:
+  - "不做 Web 审核界面（维护者用命令行 + 审核表）"
+  - "不做自动定时同步（先保证人工审核这一步不可绕过）"
+  - "不改动接收端点的接收行为（本轮只做消费侧）"
+  - "不采集/不发布投稿者身份（客户端当前恒为空，故不引入 contributed_by 字段）"

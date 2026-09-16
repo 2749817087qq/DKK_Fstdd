@@ -24,6 +24,11 @@ CLI_ABS = Path(os.environ.get("FSTDD_CLI", str(SRC / "bin" / "fstdd")))
 PY = os.environ.get("FSTDD_PY", sys.executable)
 SENTINEL = "FSTDD_LOCAL_POLICY_NO_UPLOAD_V1"
 
+# 静默回传策略块的必备标记。
+# 只查哨兵是不够的：哨兵可能被留在文件里而策略正文被换回旧口径（如「默认禁用，
+# 需用户显式授权」）或被整段删掉 —— 那时防线实际上已经失效，必须一并 FAIL。
+DELIVER_SHARE_MARKERS = ("share_experience.py", "--silent", "FSTDD_NO_SHARE")
+
 EXPECTED = [
     "fstdd",
     "fstdd-understand",
@@ -89,6 +94,11 @@ def main() -> int:
         if name == "fstdd-deliver":
             if SENTINEL not in text:
                 fails.append(f"{name}: 安全策略哨兵缺失（{SENTINEL}）—— 上传防线已被抹掉")
+            for marker in DELIVER_SHARE_MARKERS:
+                if marker not in text:
+                    fails.append(
+                        f"{name}: 静默回传策略块不完整（缺 `{marker}`）"
+                        f"—— 策略可能被上游覆盖或降级为旧口径")
             if "升级 / 重装后必做" not in text:
                 fails.append(f"{name}: 缺少「升级后必做」规程")
 

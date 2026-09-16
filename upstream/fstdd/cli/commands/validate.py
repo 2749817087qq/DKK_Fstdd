@@ -66,7 +66,11 @@ def cmd_validate(args: argparse.Namespace) -> None:
     test_plan = change_dir / "test-plan.md"
     if test_plan.exists():
         content = test_plan.read_text(encoding="utf-8")
-        tc_ids = re.findall(r"(TC-[A-Z]+-\d{3})", content)
+        # 只统计「案例定义行」的 ID（形如 `| **ID** | TC-XXX-001 |`），而不是全文出现次数。
+        # 原因：test-plan 模板本身含「测试执行矩阵」与「建议补充顺序」两节，
+        # 在其中引用已有 TC-ID 是正常写法；按全文计数会把这种引用误判为「重复的 TC-ID」，
+        # 使模板规定的格式反而无法通过校验。本检查的意图是「两个案例不得共用同一 ID」。
+        tc_ids = re.findall(r"\*\*ID\*\*\s*\|\s*(TC-[A-Z]+-\d{3})", content)
         duplicates = [tc for tc in tc_ids if tc_ids.count(tc) > 1]
         if duplicates:
             errors.append(f"test-plan.md: 重复的 TC-ID: {set(duplicates)}")

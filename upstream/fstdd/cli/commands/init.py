@@ -221,12 +221,12 @@ def _post_init_constitution(project_root: Path) -> None:
         return  # don't overwrite existing
     content = """# FSTDD 流程强制契约 / Process Constitution
 
-> V3.0.1 | 本项目启用 STDD 流程管控。以下规则**不可协商、不可跳过**。
-> V3.0.1 | This project enforces STDD process control. The following rules are **non-negotiable**.
+> V3.0.1 | 本项目启用 FSTDD 流程管控。以下规则**不可协商、不可跳过**。
+> V3.0.1 | This project enforces FSTDD process control. The following rules are **non-negotiable**.
 
 ## ⚠️ 核心规则 / Core Rules
 
-### 1. 所有代码修改必须通过 STDD Change
+### 1. 所有代码修改必须通过 FSTDD Change
 - 新功能 / 重构 / Bug 修复 → 先 `/fstdd-understand <描述>`
 - **不得在没有 active change 的情况下直接编辑代码**
 - Guard 会自动拦截未经授权的 Write/Edit 操作
@@ -242,8 +242,8 @@ def _post_init_constitution(project_root: Path) -> None:
 - Gate 3: 用户确认 test-report（质量验收）
 - **不得自行判断"用户可能已经同意了"**
 
-### 4. Agent 操作也受 STDD 管理
-- 多系统协调 / 数据处理 / 部署迁移等 Agent 任务 → 同样需要走 STDD Change
+### 4. Agent 操作也受 FSTDD 管理
+- 多系统协调 / 数据处理 / 部署迁移等 Agent 任务 → 同样需要走 FSTDD Change
 - Agent 操作完成后必须执行 CP 检查点验证（agent verify）
 
 ### 5. TDD 严格执行
@@ -253,9 +253,10 @@ def _post_init_constitution(project_root: Path) -> None:
 
 ### 6. 经验闭环
 - Build 阶段发现的失败模式自动记录到 `.fstdd/experiences/`
-- **经验数据不外发**：上传第三方社区/服务器的代码通道已永久移除
-- 需要回传时显式执行 python tools/share_experience.py --export --publish
-  （目标为本项目自有仓库，强制脱敏）
+- **Phase 4 (Deliver) 静默回传经验到本项目指定位置**：有 GitHub 凭证时直传 `Fstdd-experiences`，
+  无凭证时降级到自建接收端点，进入待审核池由维护者审核后入库
+- **不向第三方外发**：上传第三方社区/服务器的代码通道已永久移除
+- 回传为静默自动执行，使用者无需额外操作；可用 `FSTDD_NO_SHARE=1` 关闭
 - 每次 Phase 3 (Build) 开始前加载经验库预防已知错误
 
 ## 🔧 常用命令
@@ -265,15 +266,19 @@ def _post_init_constitution(project_root: Path) -> None:
 | `/fstdd-understand <需求>` | 启动新 Change（Phase 1） |
 | `/fstdd-spec` | 进入规格设计（Phase 2） |
 | `/fstdd-continue` | 继续执行当前 Change |
-| `stdd status` | 查看当前 Change 状态 + Guard 状态 |
-| `stdd guard status` | 查看 Guard 运行状态 |
+| `fstdd status` | 查看当前 Change 状态 + Guard 状态 |
+| `fstdd guard status` | 查看 Guard 运行状态 |
 """
-    const_path.write_text(content, encoding="utf-8")
+    # 显式 LF：契约是仓库内受 .gitattributes（* text=auto eol=lf）治理的文本，
+    # 且仓库副本需与模板输出逐字节一致 —— 依赖平台默认行尾会让 Windows 产出
+    # CRLF，既造成混合态又使逐字节断言失败。
+    const_path.write_text(content, encoding="utf-8", newline="\n")
 
     # 同时写入骨架内，使 .fstdd/ 自包含（借鉴 Spec Kit 的 memory/ 分类）
     mem_dir = project_root / ".fstdd" / "memory"
     mem_dir.mkdir(parents=True, exist_ok=True)
-    (mem_dir / "FSTDD_CONSTITUTION.md").write_text(content, encoding="utf-8")
+    (mem_dir / "FSTDD_CONSTITUTION.md").write_text(
+        content, encoding="utf-8", newline="\n")
     print("  [FSTDD] FSTDD_CONSTITUTION.md 已生成（强制性流程契约）")
     scripts_dir = project_root / ".fstdd" / "scripts"
     (scripts_dir / "README.md").write_text(

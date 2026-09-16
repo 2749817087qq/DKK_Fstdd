@@ -1,4 +1,4 @@
-"""STDD upgrade CLI — version upgrade management (V2.9)."""
+"""FSTDD upgrade CLI — version upgrade management (V2.9)."""
 
 import argparse
 import os
@@ -78,7 +78,7 @@ def _register_project(project_root: Path, version: str, locked: bool = False) ->
 
 
 def _backup_project_files(project_root: Path, old_version: str) -> Path:
-    """Backup current STDD files before upgrade. Returns backup dir path."""
+    """Backup current FSTDD files before upgrade. Returns backup dir path."""
     ts = datetime.now().strftime("%Y%m%dT%H%M%S")
     backup_dir = project_root / ".fstdd" / "backup" / f"{old_version}-{ts}"
     backup_dir.mkdir(parents=True, exist_ok=True)
@@ -99,6 +99,14 @@ def _backup_project_files(project_root: Path, old_version: str) -> Path:
     version_file = project_root / ".fstdd" / "version.yaml"
     if version_file.exists():
         shutil.copy2(version_file, backup_dir / "version.yaml")
+
+    # 宪法副本 —— 片段级迁移会改写它，备份是回滚的唯一依据
+    for rel in _CONSTITUTION_RELPATHS:
+        src = project_root / rel
+        if src.is_file():
+            dst = backup_dir / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
 
     return backup_dir
 
@@ -150,7 +158,7 @@ def _detect_installed_platforms(project_root: Path) -> list:
 
 
 def _reinstall_platforms(project_root: Path, stdd_source: Path, platforms: list, dry_run: bool = False) -> None:
-    """Reinstall STDD skills for detected platforms."""
+    """Reinstall FSTDD skills for detected platforms."""
     if not platforms:
         return
 
@@ -181,7 +189,7 @@ def _cmd_check_current(args: argparse.Namespace) -> None:
     proj_ver = get_project_version(project_root)
 
     if not source_ver:
-        print("  无法检测 STDD 源版本")
+        print("  无法检测 FSTDD 源版本")
         return
 
     if not proj_ver:
@@ -189,15 +197,15 @@ def _cmd_check_current(args: argparse.Namespace) -> None:
     version_data = _read_version_yaml(project_root)
     locked = version_data.get("locked", False)
 
-    print(f"  STDD 源版本:  {source_ver}")
+    print(f"  FSTDD 源版本:  {source_ver}")
     print(f"  项目版本:    {proj_ver}")
     if locked:
         print("  状态:        🔒 已锁定")
 
     if proj_ver == "未知":
-        print("  ⚠️ 无法确定项目版本，建议执行 stdd upgrade")
+        print("  ⚠️ 无法确定项目版本，建议执行 fstdd upgrade")
     elif compare_versions(proj_ver, source_ver) < 0:
-        print("  ⚠️ 有新版本可用。运行 'stdd upgrade' 升级")
+        print("  ⚠️ 有新版本可用。运行 'fstdd upgrade' 升级")
     else:
         print("  ✅ 已是最新版本")
 
@@ -233,6 +241,96 @@ def _migrate_dirs_to_stdd(project_root: Path) -> None:
                 print(f"  [迁移] {old_name}/ → {new_name}/ (部分文件已存在，跳过)")
 
 
+# 宪法有两个副本：项目根 + .fstdd/memory/（见 design.md Decision 7）
+_CONSTITUTION_RELPATHS = [
+    "FSTDD_CONSTITUTION.md",
+    ".fstdd/memory/FSTDD_CONSTITUTION.md",
+]
+
+# --- legacy-patterns:begin ---
+# 下面是「匹配旧状态」的模式表：old 片段**必须原样保留**（含裸 STDD / 旧命令名），
+# 改了迁移即失效。它不是契约面文案，静态扫描契约面时应剔除本段
+# （见 tests/test_cross_cutting_verification.py::test_b3_upgrade_notes_no_stale_rules）。
+# V3.0.5: 存量项目宪法里的「已知陈旧片段」→ 修正片段。
+# 片段级迁移，不做整文件覆盖 —— 否则会抹掉使用者自定义条目（见 design.md Decision 8）。
+_CONSTITUTION_MIGRATIONS = [
+    (
+        "- Phase 4 (Deliver) 自动上传经验到社区 + 同步知识图谱",
+        "- **Phase 4 (Deliver) 静默回传经验到本项目指定位置**：有 GitHub 凭证时直传 `Fstdd-experiences`，\n"
+        "  无凭证时降级到自建接收端点，进入待审核池由维护者审核后入库\n"
+        "- **不向第三方外发**：上传第三方社区/服务器的代码通道已永久移除",
+    ),
+    ("| `/stdd-continue` |", "| `/fstdd-continue` |"),
+    ("| `stdd status` |", "| `fstdd status` |"),
+    ("| `stdd guard status` |", "| `fstdd guard status` |"),
+    ("本项目启用 STDD 流程管控", "本项目启用 FSTDD 流程管控"),
+    ("This project enforces STDD process control", "This project enforces FSTDD process control"),
+    ("所有代码修改必须通过 STDD Change", "所有代码修改必须通过 FSTDD Change"),
+    ("Agent 操作也受 STDD 管理", "Agent 操作也受 FSTDD 管理"),
+]
+# --- legacy-patterns:end ---
+
+
+def _migrate_constitution(project_root: Path, old_version: str) -> list:
+    """V3.0.5: 存量项目宪法升级 —— 片段级迁移，保留使用者自定义。
+
+    流程：补齐缺失的 .fstdd/memory/ 副本 → 只替换已知陈旧片段 → 先备份 → 报告改动清单。
+    - 幂等：无片段需要替换时不写文件、不创建备份。
+    - 匹配失败：跳过该片段并提示，绝不整段覆盖。
+    """
+    root_copy = project_root / "FSTDD_CONSTITUTION.md"
+    memory_copy = project_root / ".fstdd" / "memory" / "FSTDD_CONSTITUTION.md"
+
+    # .fstdd/memory/ 副本缺失 → 从根副本补齐（SC-015）
+    if not memory_copy.exists() and root_copy.exists():
+        memory_copy.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(root_copy, memory_copy)
+        print(f"  [宪法] 补齐 {memory_copy.relative_to(project_root)}")
+
+    targets = [p for p in (root_copy, memory_copy) if p.is_file()]
+    if not targets:
+        return []
+
+    originals = {}
+    migrated = {}
+    for path in targets:
+        text = path.read_text(encoding="utf-8")
+        originals[path] = text
+        new_text = text
+        for old, new in _CONSTITUTION_MIGRATIONS:
+            if old in new_text:
+                new_text = new_text.replace(old, new)
+        migrated[path] = new_text
+
+    changed = [p for p in targets if migrated[p] != originals[p]]
+    unmatched = [
+        old for old, _new in _CONSTITUTION_MIGRATIONS
+        if not any(old in text for text in originals.values())
+    ]
+    if not changed:
+        print(f"  [宪法] 未发现陈旧片段，跳过（{len(unmatched)} 条规则未匹配，可能已手工改写）")
+        return []
+    if unmatched:
+        print(f"  [宪法] {len(unmatched)} 条规则未匹配（可能已手工改写），跳过")
+
+    backup_dir = _backup_project_files(project_root, old_version)
+
+    replaced = []
+    for path in changed:
+        path.write_text(migrated[path], encoding="utf-8")
+        rel = path.relative_to(project_root)
+        for old, _new in _CONSTITUTION_MIGRATIONS:
+            if old in originals[path]:
+                label = f"{rel}: {old}"
+                if label not in replaced:
+                    replaced.append(label)
+
+    print(f"  [宪法] 已迁移 {len(replaced)} 处陈旧片段（备份: {backup_dir.relative_to(project_root)}）")
+    for item in replaced:
+        print(f"    - {item}")
+    return replaced
+
+
 def _write_upgrade_notes(project_root: Path, old_ver: str, new_ver: str) -> None:
     """V3.0.2: Write structured upgrade notes for AI self-learning on SessionStart."""
     import yaml as _yaml
@@ -247,18 +345,18 @@ def _write_upgrade_notes(project_root: Path, old_ver: str, new_ver: str) -> None
                 "title": "目录收敛 + README 自然语言化",
                 "what": [
                     "changes/specs/archive/canonical/agent_tests 全部移到 .fstdd/ 下",
-                    "stdd upgrade 自动迁移旧路径",
+                    "fstdd upgrade 自动迁移旧路径",
                     "README 快速开始改为自然语言对话示例",
                 ],
                 "rules": [
-                    "所有 STDD 目录统一在 .fstdd/ 下，不再散落项目根目录",
+                    "所有 FSTDD 目录统一在 .fstdd/ 下，不再散落项目根目录",
                 ],
             },
             {
                 "version": "3.0.1",
                 "title": "Guard 完善 + 新项目冷启动修复",
                 "what": [
-                    "stdd init 自动安装 Guard + 拉取社区经验",
+                    "fstdd init 自动安装 Guard + 拉取社区经验",
                     "FSTDD_CONSTITUTION.md 强制性流程契约",
                     "Phase 完整性检查（Build→Verify 超时告警）",
                     "僵尸 Change 检测（>7天未推进 → 提醒清理）",
@@ -276,14 +374,14 @@ def _write_upgrade_notes(project_root: Path, old_ver: str, new_ver: str) -> None
                 "title": "跨项目知识图谱 + Agent 行为验证 + 智能 Guard",
                 "what": [
                     "knowledge-graph.yaml 跨项目经验提炼",
-                    "stdd knowledge merge/query/predict/fix CLI",
+                    "fstdd knowledge merge/query/predict/fix CLI",
                     "14 类失败模式（新增 (m) Agent CP 失败 + (n) 跨系统不一致）",
                     "Agent 验证管线（代码+Agent 双管线并行）",
                     "Guard 智能分级提醒（小改放过/中改建议/大改拦截）",
                 ],
                 "rules": [
-                    "Phase 4 DELIVER 自动同步知识图谱",
-                    "Agent 操作也需要 STDD Change 管理",
+                    "Phase 4 (Deliver) 静默回传经验到本项目指定位置（Fstdd-experiences；无凭证时走自建接收端点）",
+                    "Agent 操作也需要 FSTDD Change 管理",
                 ],
             },
         ],
@@ -291,7 +389,7 @@ def _write_upgrade_notes(project_root: Path, old_ver: str, new_ver: str) -> None
             "📖 阅读 AI 操作手册: .fstdd/onboarding/AI_OPERATING_MANUAL.yaml",
             "📋 完成自检清单（self_check 章节，8 道题）",
             "📖 阅读流程契约: FSTDD_CONSTITUTION.md",
-        "🏕️ 启动训练营: stdd bootcamp start",
+            "🏕️ 启动训练营: fstdd bootcamp start",
         ],
     }
     notes_path = project_root / ".fstdd" / "UPGRADE_NOTES.yaml"
@@ -311,7 +409,7 @@ def _cmd_upgrade_current(args: argparse.Namespace) -> None:
     stdd_source = get_stdd_source()
 
     if not source_ver:
-        print("  无法检测 STDD 源版本，请从 STDD 仓库运行")
+        print("  无法检测 FSTDD 源版本，请从 FSTDD 仓库运行")
         return
 
     if not proj_ver:
@@ -320,12 +418,12 @@ def _cmd_upgrade_current(args: argparse.Namespace) -> None:
     # Check lock
     version_data = _read_version_yaml(project_root)
     if version_data.get("locked", False):
-        print(f"  项目已锁定在版本 {proj_ver}。使用 'stdd upgrade --unlock' 解锁后再升级。")
+        print(f"  项目已锁定在版本 {proj_ver}。使用 'fstdd upgrade --unlock' 解锁后再升级。")
         return
 
     if not force and compare_versions(proj_ver, source_ver) >= 0:
         print(f"  项目已是最新版本 ({proj_ver})，无需升级")
-        print("  使用 'stdd upgrade --force' 强制重新同步所有文件。")
+        print("  使用 'fstdd upgrade --force' 强制重新同步所有文件。")
         return
 
     if dry_run:
@@ -346,7 +444,7 @@ def _cmd_upgrade_current(args: argparse.Namespace) -> None:
     # Confirm
     if not skip_confirm:
         if force:
-            print("  --force: 强制重新同步所有 STDD 文件")
+            print("  --force: 强制重新同步所有 FSTDD 文件")
         print(f"  当前版本: {proj_ver} → 目标版本: {source_ver}")
         resp = input("  确认升级? [y/N] ").strip().lower()
         if resp not in ("y", "yes"):
@@ -361,6 +459,11 @@ def _cmd_upgrade_current(args: argparse.Namespace) -> None:
 
     # Backup
     print(f"  备份到 {_backup_project_files(project_root, proj_ver)}")
+
+    # V3.0.5: 存量项目宪法片段级迁移（保留使用者自定义条目）。
+    # 必须放在上面那次备份之后：否则本次备份会把「已迁移」的宪法覆盖进同一备份目录，
+    # 升级前快照丢失 → TC-CAS-020 的回滚能力失效。
+    _migrate_constitution(project_root, proj_ver)
 
     # Sync files
     from ..commands.init import FILES_TO_COPY, DIRS
@@ -408,10 +511,10 @@ def _cmd_check_all(args: argparse.Namespace) -> None:
     projects = data.get("projects", [])
 
     if not projects:
-        print("  注册表中无项目。在各项目中运行 'stdd upgrade' 以注册。")
+        print("  注册表中无项目。在各项目中运行 'fstdd upgrade' 以注册。")
         return
 
-    print(f"  STDD 最新版本: {source_ver}")
+    print(f"  FSTDD 最新版本: {source_ver}")
     print()
     print(f"  {'项目':<25} {'当前版本':<10} {'状态':<10}")
     print(f"  {'-'*25} {'-'*10} {'-'*10}")
@@ -435,7 +538,7 @@ def _cmd_upgrade_all(args: argparse.Namespace) -> None:
     from ..utils import get_source_version, compare_versions
     source_ver = get_source_version()
     if not source_ver:
-        print("  无法检测 STDD 源版本")
+        print("  无法检测 FSTDD 源版本")
         return
 
     data = _read_registry()

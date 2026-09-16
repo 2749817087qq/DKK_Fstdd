@@ -8,3 +8,6 @@
 # 经验导出产物：由 tools/share_experience.py 生成，属运行产物不入库
 # （源是 .fstdd/experiences/，回传目标是独立仓库 Fstdd-experiences）
 experiences/
+
+# 经验回传审计记录：append-only，属本机运行态（含本机路径），不入库
+.fstdd/share-audit.yaml

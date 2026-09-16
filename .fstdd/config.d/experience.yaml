@@ -37,3 +37,8 @@ community:
       version: "v1.0.0"
     - name: go
       version: "v1.0.0"
+
+# 经验回传（Phase 4 静默回传）开关。
+# 关闭后不发起任何回传网络请求，摘要明示「回传已跳过」。
+# 环境变量 FSTDD_NO_SHARE=1 优先于本配置（立即生效，适合临时/CI 场景）。
+share:/n  silent:/n    enabled: true
