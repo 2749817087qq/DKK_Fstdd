@@ -1,12 +1,16 @@
 change_id: 2026-09-16-install-source-repo
 complexity_score: null
-current_phase: build
+current_phase: deliver
 design_adjustments:
   count: 5
-last_modified: '2026-09-16T18:40:00.000000'
+last_modified: '2026-09-16T18:48:39.197649'
 mode: standard
 phases:
   build:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-16T18:48:38'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 DELIVER（503 passed / 三项全绿 / 三方对齐）
     slices_completed:
       S1:
         new_tests: 0
@@ -24,9 +28,9 @@ phases:
         new_tests: 5
         tc_coverage: TC-ISR-004,TC-ISR-012,TC-ISR-013,TC-ISR-016
         verified_at: '2026-09-16T18:40:00'
-    status: in_progress
+    status: completed
   deliver:
-    status: pending
+    status: in_progress
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-09-16T17:57:21'
@@ -40,7 +44,7 @@ phases:
     confirmed_evidence: 确认，继续推进（法定源已就位）
     status: completed
 score_confidence: null
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 15
