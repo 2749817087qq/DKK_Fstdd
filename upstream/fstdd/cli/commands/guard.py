@@ -778,47 +778,62 @@ def cmd_guard_status(args: argparse.Namespace) -> None:
         print("    active change:  None — 🔒 只读")
 
 
+def _write_guard_settings(settings_file: Path, guard_cmd: str) -> None:
+    """把 Guard hook 写入指定 settings 文件（不存在则创建）。
+
+    guard_cmd 必须是**绝对路径**调用（裸 `stdd guard check` 不在 PATH，且已改名 fstdd），
+    否则 hook 调用失败即放行，Guard 形同虚设。
+    """
+    import json
+    if settings_file.exists():
+        try:
+            settings = json.loads(settings_file.read_text(encoding="utf-8"))
+        except Exception:
+            settings = {"permissions": {"allow": []}}
+    else:
+        settings = {"permissions": {"allow": []}}
+
+    settings.setdefault("hooks", {}).setdefault("PreToolUse", [])
+
+    if not any(
+        "guard check" in str(h.get("hooks", [])) for h in settings["hooks"]["PreToolUse"]
+    ):
+        settings["hooks"]["PreToolUse"].append({
+            "matcher": "Edit|Write",
+            "hooks": [{"type": "command", "command": guard_cmd}],
+        })
+
+    settings_file.parent.mkdir(parents=True, exist_ok=True)
+    settings_file.write_text(
+        json.dumps(settings, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+
 def cmd_guard_init(args: argparse.Namespace) -> None:
     """Initialize guard hooks for the current project."""
     project_root = Path.cwd()
     platform = getattr(args, "platform", "claude-code")
 
-    if platform == "claude-code":
-        import json
-        settings_file = project_root / ".claude" / "settings.local.json"
+    if platform in ("claude-code", "codebuddy"):
+        import sys as _sys
+        from ..utils import get_stdd_source as _get_src
 
-        if settings_file.exists():
-            settings = json.loads(settings_file.read_text(encoding="utf-8"))
-        else:
-            settings = {"permissions": {"allow": []}}
+        # 关键修复（此前 Guard 形同虚设的两个原因）：
+        # 1) 命令用绝对路径 —— 裸 `stdd guard check` 不在 PATH，且已改名 fstdd
+        # 2) 除 .claude/ 外，还要写 .codebuddy/ —— WorkBuddy 加载 .codebuddy，
+        #    只写 .claude 对 WorkBuddy 无效（Edit|Write 不会被检查）。
 
-        if "hooks" not in settings:
-            settings["hooks"] = {}
-
-        if "PreToolUse" not in settings["hooks"]:
-            settings["hooks"]["PreToolUse"] = []
-
-        guard_exists = False
-        for hook in settings["hooks"]["PreToolUse"]:
-            if "stdd guard" in str(hook.get("hooks", [])):
-                guard_exists = True
-                break
-
-        if not guard_exists:
-            settings["hooks"]["PreToolUse"].append({
-                "matcher": "Edit|Write",
-                "hooks": [{
-                    "type": "command",
-                    "command": "stdd guard check --platform claude-code --hook-stdin"
-                }]
-            })
-
-        settings_file.parent.mkdir(parents=True, exist_ok=True)
-        settings_file.write_text(
-            json.dumps(settings, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        _cli = _get_src() / "bin" / "fstdd"
+        _guard_cmd = (
+            f'"{_sys.executable}" "{_cli}" guard check '
+            "--platform claude-code --hook-stdin"
         )
-        print("  [STDD Guard] Claude Code PreToolUse hook deployed.")
+
+        for _sub in (".claude", ".codebuddy"):
+            _write_guard_settings(
+                project_root / _sub / "settings.local.json", _guard_cmd
+            )
+            print(f"  [FSTDD Guard] PreToolUse hook -> {_sub}/settings.local.json")
         print("  [STDD Guard] All Edit/Write operations will be checked.")
     elif platform == "opencode":
         _guard_init_opencode(project_root)
