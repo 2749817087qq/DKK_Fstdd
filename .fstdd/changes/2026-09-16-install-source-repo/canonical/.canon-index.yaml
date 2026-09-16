@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-16-install-source-repo: proposals/2026-09-16-install-source-repo.yaml
+specs:
+  agent:
+    2026-09-16-install-source-repo: specs/agent/2026-09-16-install-source-repo.yaml
+  code:
+    2026-09-16-install-source-repo: specs/code/2026-09-16-install-source-repo.yaml
+version: '2.9'

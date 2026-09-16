@@ -1,7 +1,7 @@
 # 待审核池 → 经验库的同步链路（tools/inbox_pull.py）
 
-<!-- source_hash: 846839a3fdb9a8c5 -->
-<!-- generated_at: 2026-09-16T11:40:54.894811 -->
+<!-- source_hash: e7a9b4241f103066 -->
+<!-- generated_at: 2026-09-16T17:53:18.654344 -->
 <!-- canonical: canonical/proposals/2026-09-16-inbox-review-sync.yaml -->
 
 ## Why

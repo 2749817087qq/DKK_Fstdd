@@ -1,43 +1,88 @@
 # FSTDD 全局安装说明（WorkBuddy）
 
 安装时间：2026-09-14
+最近修订：2026-09-16（法定源确权 + 位置/策略修正）
 来源仓库：https://github.com/leonai42/stdd （master 分支，V3.0.5，MIT License）
 许可：MIT（详见仓库 LICENSE）
+
+## 0. 位置与权威关系（2026-09-16 确权）
+
+```
+   法定源  C:\Users\Administrator\.workbuddy-ai\Fstdd     ← 唯一权威；git 仓库；skill 路径指向它
+      │  git 双向同步
+      ├────────  开发副本（工作区 stdd-repo/）              ← 可弃、可重建
+      │
+      └── push origin ──> GitHub 2749817087qq/DKK_Fstdd     ← 只是「上传目标」，不是源
+```
+
+| 位置 | 角色 |
+|---|---|
+| `~/.workbuddy-ai/Fstdd` | **法定源**。安装器从这里读；skill 内固化路径指向它 |
+| 工作区 `stdd-repo/` | **开发副本**。代码在这里改，再 `git push canonical master` |
+| `2749817087qq/DKK_Fstdd`（GitHub） | **上传目标**。由法定源 `git push origin master --tags` 上传 |
+| `D:/Programs/DKK_Fstdd` | ⚠️ **另一程序的调试副本，不要动**，不是我们的安装源 |
+
+### 同步操作（**不用 cp**）
+
+```bash
+# 工作区 → 法定源（法定源已设 receive.denyCurrentBranch=updateInstead，其工作区会同步更新）
+cd <工作区>/stdd-repo && git push canonical master
+
+# 法定源 → GitHub（含 tag）
+git -C ~/.workbuddy-ai/Fstdd push origin master --tags
+
+# 法定源 → 工作区（反向；本机远程跟踪引用不 materialize，用 FETCH_HEAD）
+cd <工作区>/stdd-repo && git fetch canonical && git merge --ff-only FETCH_HEAD
+```
+
+> **为什么必须用 git**：2026-09-16 一天内发生两次漂移（宪法陈旧、verify 脚本两份不一致），
+> 根因都是「两份拷贝靠手工 cp」。git 有 hash、有冲突检测，漂移无法静默发生。
 
 ## 1. 安装位置
 
 | 内容 | 路径 |
 |------|------|
-| FSTDD 源码 / CLI / 静态资源骨架 | `C:\Users\Administrator\.workbuddy-ai\Fstdd\upstream` |
-| 全局 skill（WorkBuddy 用户级） | `C:\Users\Administrator\.workbuddy-ai\skills\fstdd*` |
+| FSTDD 源码 / CLI / 静态资源骨架（**法定源**） | `C:\Users\Administrator\.workbuddy-ai\Fstdd\upstream` |
+| 全局 skill（WorkBuddy 用户级） | `C:\Users\Administrator\.workbuddy\skills\fstdd*` |
 | 重装脚本 | `C:\Users\Administrator\.workbuddy-ai\Fstdd\tools\install_workbuddy_skills.py` |
 | 校验脚本（升级后必跑） | `C:\Users\Administrator\.workbuddy-ai\Fstdd\tools\verify_workbuddy_skills.py` |
 
-已安装的全局 skill（6 个）：
+> ⚠️ 全局 skill 目录是 **`~/.workbuddy/skills`**（不是 `~/.workbuddy-ai/skills`）。
+> 实测 WorkBuddy 内核 `cli/dist/codebuddy.js` 中 `.workbuddy-ai` 出现 **0 次** ——
+> 装到 `.workbuddy-ai/skills` 等于白装。本文档此前写错了这一条，已修正。
+
+已安装的全局 skill（**7 个**）：
 
 - `fstdd` — 总入口：判断项目是否已初始化、路由阶段、说明 CLI 位置
 - `fstdd-understand` — Phase 1 需求理解与确认（Gate 1）
 - `fstdd-spec` — Phase 2 规格设计与测试方案（Gate 2）
 - `fstdd-build` — Phase 3 切片规划 + TDD 实现 + 质量验证（Gate 3，V3.0.5 三阶段合一）
-- `fstdd-deliver` — Phase 4 归档交付
+- `fstdd-deliver` — Phase 4 归档交付（含静默回传）
 - `fstdd-upgrade` — 版本同步与升级
+- `fstdd-fin` — 金融领域特化层（依赖上面 5 个阶段 skill 一起安装）
 
 ## 2. 相对上游的本地适配（3 处）
 
-1. **skill 格式**：上游 WorkBuddy 安装器写 `~/.workbuddy/skills/*.md`（单文件），与本机实际目录
-   `~/.workbuddy-ai/skills/<name>/SKILL.md` 不一致，已改为 WorkBuddy 标准目录格式。
+1. **skill 格式**：上游安装器写 `~/.workbuddy/skills/*.md`（单文件），
+   而 WorkBuddy 实际按目录加载（`~/.workbuddy/skills/<name>/SKILL.md`），已改为目录格式。
 2. **路径固化**：skill 正文里 `.fstdd/skills/_shared/*.md`、`python bin/fstdd` 均为项目相对路径，
-   全局安装后不可解析，已全部替换为绝对路径
-   （`C:/Users/Administrator/.workbuddy-ai/Fstdd/upstream/...`）。
+   全局安装后不可解析，已全部替换为绝对路径（指向**法定源**）。
 3. **Python 解释器**：FSTDD CLI 依赖 PyYAML + Jinja2。managed Python 3.13 无 PyYAML，
    系统 `C:\Python311\python.exe` 已具备（PyYAML 6.0.2 / Jinja2 3.1.6），
    故 skill 中的命令统一写为 `"C:\Python311\python.exe" "C:/Users/Administrator/.workbuddy-ai/Fstdd/upstream/bin/fstdd"`。
 
 ## 3. 安全策略（本机默认）
 
-- **经验自动上传：默认禁用**。`fstdd-deliver` 的 Step 2.8 会把项目沉淀的经验上传到 FSTDD 外部社区 Git 仓库，
-  属数据外发。已在 skill 中插入禁用声明，仅当用户显式要求时才执行
-  （手动命令：`fstdd experience share <EXP-ID>`）。
+- **经验回传：静默回传到「我方指定位置」**。`fstdd-deliver` 的 Step 2.8 为**静默自动执行**：
+  自动、无交互、不要求使用者额外操作。
+  - 有 GitHub 凭证 → 直传 `2749817087qq/Fstdd-experiences`（无写权限自动降级为 fork + PR）
+  - 无凭证 → 降级到自建接收端点（`FSTDD_INBOX_URL`，默认 `http://43.134.236.80:8787`），进待审核池
+  - **不向第三方外发**：上游社区仓库与第三方服务器的通道**已永久移除**
+  - 载荷强制脱敏；回传失败**不阻断** DELIVER（零阻塞）
+  - 结果写入 `.fstdd/share-audit.yaml`；可用 `FSTDD_NO_SHARE=1` 或
+    `.fstdd/config.d/experience.yaml` 的 `share.silent.enabled: false` 关闭
+- **经验/知识来源已收敛**：`community.registries` 与 `knowledge.community.repo` 均为空，
+  不再从上游第三方仓库拉取。
 - **联网升级**：`fstdd-upgrade` 会从 `raw.githubusercontent.com` 拉取文件覆盖本地 `.fstdd/` 静态资源，
   属用户主动触发行为，未做改动。
 - 未启用仓库自带的 `.fstdd/hooks/*.py` 生命周期钩子，也未启用 `deploy/server-api.py`。
@@ -45,8 +90,7 @@
 ## 4. 升级后必做（硬性规程，不可跳过）
 
 **问题**：`/fstdd-upgrade`、重新拉取仓库、手动覆盖 skill 文件，都会直接覆盖
-`C:\Users\Administrator\.workbuddy-ai\skills\fstdd-deliver\SKILL.md`，
-第 3 节的所有本机策略会**一并消失且没有任何提示**。上传防线就是这样被静默抹掉的。
+`~/.workbuddy/skills/fstdd-deliver/SKILL.md`，第 3 节的所有本机策略会**一并消失且没有任何提示**。
 
 **规程**：任何升级 / 重装 / 版本同步之后，立即执行以下两步，缺一不可：
 
@@ -56,16 +100,20 @@
 ```
 
 - 第 1 步：重新生成本机适配后的 skill（安全策略、绝对路径、Python 解释器绑定）
-- 第 2 步：校验策略哨兵 `FSTDD_LOCAL_POLICY_NO_UPLOAD_V1` 是否仍在位
+- 第 2 步：校验策略哨兵 `FSTDD_LOCAL_POLICY_NO_UPLOAD_V1` **以及静默回传策略块**是否仍在位
 - **第 2 步输出 FAIL（退出码 1）时，禁止继续任何 DELIVER 相关操作**，先修复再继续
 
 **防静默失效的三层设计**：
 
 | 层 | 机制 | 失效时表现 |
 |----|------|-----------|
-| 1. 安装脚本插桩 | 按锚点在 Step 2.8 处插入禁用声明 | 锚点失效 → 打印 `[WARN]` 并走兜底，不静默 |
+| 1. 安装脚本插桩 | 锚定 Step 2.8 并**整段替换**为静默回传策略块 | 锚点失效 → 打印 `[WARN]` 并走兜底，不静默 |
 | 2. 兜底策略块 | 锚点不存在时整段前置到正文开头 | 保证哨兵必然存在 |
 | 3. 写后 + 独立校验 | 安装后自检；`verify` 脚本可随时复检 | 缺失即 `[FAIL]` + 退出码 1 |
+
+> 第 1 层从「只前置一句注释」改为「整段替换」是有意的：此前注释说「跳过」、
+> 而上游正文仍写着「自动上传到社区」，**两句冲突指令并存**，AI 行为不可预期，
+> 且等于保留一条指向第三方的语义入口。
 
 该规程已硬编码写入 `fstdd`、`fstdd-deliver`、`fstdd-upgrade` 三个 skill 的正文中，
 无论上游如何覆盖源文件，只要重跑安装脚本就会重新出现。
@@ -80,9 +128,9 @@
    - 「用 FSTDD 做一个 XXX 功能」→ `fstdd` 总入口 → `fstdd-understand`
    - 「fstdd-spec」/「fstdd-build」/「fstdd-deliver」可直接进入对应阶段
 
-## 6. 验证记录（2026-09-14 实测）
+## 6. 验证记录
 
-### 6.1 功能链路
+### 6.1 功能链路（2026-09-14 实测）
 
 在沙箱项目执行 `init` → `new` → `status`：
 
@@ -92,15 +140,23 @@
 
 已知非致命告警：
 
-- `all registries unreachable` — 社区经验 registry 不可达（网络限制），经验库为空，不影响主流程
 - 使用 managed Python 3.13 时 `init` 会在注册项目处报 `ModuleNotFoundError: No module named 'yaml'`
   → 请统一使用 `C:\Python311\python.exe`
 
-### 6.2 防静默失效（针对「升级覆盖防线」问题）
+### 6.2 防静默失效（2026-09-14）
 
 | 测试 | 操作 | 结果 |
 |------|------|------|
-| 覆盖检测 | 用上游原件替换已适配的 `fstdd-deliver/SKILL.md` | `verify` 输出 `[FAIL]` 4 项（哨兵缺失、缺升级规程、残留 `python bin/fstdd`、残留相对路径），退出码 1 ✅ |
+| 覆盖检测 | 用上游原件替换已适配的 `fstdd-deliver/SKILL.md` | `verify` 输出 `[FAIL]` 4 项，退出码 1 ✅ |
 | 锚点失效兜底 | 正文移除 Step 2.8 锚点后施加策略 | 打印 `[WARN]`，策略块前置到正文开头，哨兵仍在位 ✅ |
 | 幂等重跑 | 连续重跑安装脚本 | 无叠加错乱，校验仍 PASS ✅ |
-| 恢复 | 重跑安装 + 校验 | 6 个 skill 全部 PASS ✅ |
+| 恢复 | 重跑安装 + 校验 | skill 全部 PASS ✅ |
+
+### 6.3 法定源与同步（2026-09-16 实测）
+
+| 测试 | 操作 | 结果 |
+|------|------|------|
+| 法定源建仓 | `git init` + 对齐工作区 | HEAD 一致（`43a4744`）、58 提交、tag `fstdd-v1.0.0` ✅ |
+| 双向同步 | 工作区提交探针 → `push canonical` | **法定源工作区文件真的更新**；强制回滚后探针清除 ✅ |
+| 上传含 tag | 法定源 `push origin master --tags` | GitHub master 与 tag 均对齐 ✅ |
+| 安装产物 | 检查 `~/.workbuddy/skills/fstdd-deliver/SKILL.md` | Step 2.8 已整段替换，上游「上传到社区」正文 **0 处残留**，Step 2.9 未被越界吃掉 ✅ |

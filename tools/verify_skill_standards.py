@@ -37,17 +37,28 @@ PY = sys.executable
 # 源码在 stdd-repo（开发源），但实际运行的是安装位置 Fstdd。
 # 在 stdd-repo 里直接跑 verify 会因 FSTDD_SRC 指向副本的 upstream 而误判。
 def _installed_tools() -> Path:
-    """安装位置的工具目录。
+    """安装位置的工具目录（**自定位优先**）。
 
-    优先稳定副本（可用 FSTDD_INST_DIR 覆盖），回退旧位置（.workbuddy-ai/Fstdd）。
-    硬编码单一路径会在仓库迁移后恒定误报 FAIL。
+    顺序：FSTDD_INST_DIR（显式覆盖）→ 脚本自身所在仓库的 tools/ → 法定源 → 历史兜底。
+
+    为什么自定位优先：脚本所在仓库必然与「本次安装」同源，是最可靠的默认。
+    此前把 D:/Programs/DKK_Fstdd 放在首位，导致从工作区运行本脚本时，
+    跑去校验另一份**陈旧副本**，而那份期望 skill 引用它自己的路径 ——
+    两相对照必然误报 FAIL。D 盘那份是另一程序的调试副本，不是我们的安装源。
     """
-    cands = [Path(os.environ.get("FSTDD_INST_DIR", "D:/Programs/DKK_Fstdd")),
-             Path.home() / ".workbuddy-ai" / "Fstdd"]
+    here = Path(__file__).resolve().parent
+    cands: list[Path] = []
+    if os.environ.get("FSTDD_INST_DIR"):
+        cands.append(Path(os.environ["FSTDD_INST_DIR"]))
+    cands += [
+        here,                                              # 自定位（最可靠）
+        Path.home() / ".workbuddy-ai" / "Fstdd" / "tools",  # 法定源
+        Path("D:/Programs/DKK_Fstdd/tools"),               # 历史遗留，仅兜底
+    ]
     for d in cands:
-        if (d / "tools" / "verify_workbuddy_skills.py").exists():
-            return d / "tools"
-    return cands[-1] / "tools"
+        if (d / "verify_workbuddy_skills.py").exists():
+            return d
+    return here
 
 
 INSTALLED_TOOLS = _installed_tools()
@@ -198,11 +209,14 @@ def tc_004(repo: Path) -> tuple[bool, str]:
     if missing:
         return False, f"仍有 {len(missing)} 项缺失：{', '.join(missing[:5])}"
 
-    # 备份完整性：至少存在一次 --fix 备份，且备份文件正文与当前一致
+    # 备份完整性：**存在备份时**才校验其正文与当前一致。
+    #
+    # 「没有备份」本身是合法状态：--fix 是幂等的，树已合规时它不做任何改动，
+    # 自然也不会留备份。此前无条件要求备份存在，会在合规环境里恒定误报 FAIL。
     bk_root = backup_root()
     cands = sorted(bk_root.glob("skill-metadata-*")) if bk_root.exists() else []
     if not cands:
-        return False, "未找到任何 --fix 备份目录"
+        return True, "全部合规；无 --fix 备份（合规树无需改动，属合法状态）"
     b = cands[-1]
     n_same = n_diff = 0
     for src in b.rglob("SKILL.md"):

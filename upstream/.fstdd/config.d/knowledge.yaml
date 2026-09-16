@@ -13,9 +13,14 @@ knowledge:
     priority: "community"
 
   # 社区源配置
+  #
+  # 注意：本项目（DKK_Fstdd）已把经验/知识的流通范围收敛到**自有仓库**
+  #   （2749817087qq/Fstdd-experiences）。上游默认值指向第三方库
+  #   leonai42/stdd-experiences，本项目已移除。若需拉取社区图谱，
+  #   请显式把 repo 改回上游库，或设为你自己的经验库。
   community:
-    # 社区 git 库
-    repo: "leonai42/stdd-experiences"
+    # 社区 git 库（留空 = 不拉取社区图谱，仅生成本地图谱）
+    repo: ""
     # 图谱文件在库中的路径
     graph_path: "knowledge-graph.yaml"
     # 拉取超时（秒）

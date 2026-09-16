@@ -22,15 +22,9 @@ experience:
     auto_generate: true
 
 community:
-  registries:
-    - name: github
-      type: github
-      url: "https://github.com/leonai42/stdd-experiences/releases/latest/download"
-      priority: 1
-    - name: gitee
-      type: gitee
-      url: "https://gitee.com/leonai42/stdd-experiences/releases/download"
-      priority: 2
+  # 本项目（DKK_Fstdd）经验只回传到自有仓库 2749817087qq/Fstdd-experiences
+  #（经 tools/share_experience.py）。上游默认的三方 registry 已移除。
+  registries: []
   fallback_timeout: 5
   packs:
     - name: python
@@ -41,4 +35,6 @@ community:
 # 经验回传（Phase 4 静默回传）开关。
 # 关闭后不发起任何回传网络请求，摘要明示「回传已跳过」。
 # 环境变量 FSTDD_NO_SHARE=1 优先于本配置（立即生效，适合临时/CI 场景）。
-share:/n  silent:/n    enabled: true
+share:
+  silent:
+    enabled: true

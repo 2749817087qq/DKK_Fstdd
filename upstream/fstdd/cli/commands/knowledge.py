@@ -126,9 +126,18 @@ def _exp_to_node(exp: dict, node_id: str, project_name: str) -> dict:
 
 
 def _fetch_community_graph(config: dict) -> Optional[dict]:
-    """Fetch knowledge-graph.yaml from community git repo. Returns None on failure."""
+    """Fetch knowledge-graph.yaml from community git repo. Returns None on failure.
+
+    Project policy (DKK_Fstdd): experience/knowledge must stay within our own
+    repos. The upstream default pointed at the third-party
+    `leonai42/stdd-experiences`; that default is gone. An empty/unset `repo`
+    means "no community source" and returns immediately — otherwise a blank
+    value would fall through to the `gh` clone below and still reach out.
+    """
     community = config.get("community", {})
-    repo = community.get("repo", "leonai42/stdd-experiences")
+    repo = (community.get("repo") or "").strip()
+    if not repo:
+        return None
     graph_path_in_repo = community.get("graph_path", "knowledge-graph.yaml")
     timeout = community.get("timeout", 30)
 

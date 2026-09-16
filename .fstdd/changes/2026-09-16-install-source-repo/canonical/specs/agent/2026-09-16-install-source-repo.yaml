@@ -1,0 +1,42 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+
+meta:
+  task_id: "install-source-single-verify"
+  change_id: "2026-09-16-install-source-repo"
+  created: "2026-09-16T17:32:28.036493"
+  task_type: code
+  system: "FSTDD 多副本环境（工作区 / 法定源 ~/.workbuddy-ai/Fstdd / D 盘调试副本）+ GitHub 上传目标 + WorkBuddy 已安装 skill"
+
+preconditions:
+  - "工作副本位于 stdd-repo；法定源 `~/.workbuddy-ai/Fstdd` 已是 git 仓库"
+  - "`D:/Programs/DKK_Fstdd` 是另一程序的调试副本，**本验证不得对其写入**"
+  - "测试解释器为 C:/Python311/python.exe（托管 python 3.13.12 未安装 pytest）"
+  - "调试副本的独有文件已备份到 `backups/canonical-prep-*/unique-from-debug/`"
+
+steps:
+  - action: "比对法定源与工作区的 HEAD、tag 与关键文件"
+    verify: "HEAD 相同、tag 指向同一提交、关键文件逐字节一致"
+  - action: "工作区提交一个临时探针并 `git push canonical master`"
+    verify: "法定源的**工作区文件**出现该探针（证明 updateInstead 生效，而非仅 ref 更新）；随后强制回滚并确认探针被清除"
+  - action: "从工作区运行三项校验：verify_eol / verify_skill_standards / verify_rename"
+    verify: "三者全绿；且把 `D:/Programs/DKK_Fstdd` 改名或临时不可见后重跑，结果不变（证明不依赖它）"
+  - action: "在「树已合规、无 --fix 备份」的临时项目上运行备份完整性检查"
+    verify: "SHALL 通过（不再恒定误报）"
+  - action: "检查 knowledge.py 与两份 config"
+    verify: "无 `leonai42/stdd-experiences` 默认值；`repo` 为空时提前返回；registries 为空列表"
+  - action: "运行 contract-auto-share 归档的交叉验证测试"
+    verify: "ALLOWED_REFS 不含「拉取源」条目，且 test_a1 / test_a6 仍通过"
+  - action: "从法定源执行安装脚本，再运行 verify_workbuddy_skills.py"
+    verify: "skill 内路径指向 `~/.workbuddy-ai/Fstdd`，不含会话工作区路径；verify 全绿"
+  - action: "逐条核对 docs/WORKBUDDY_INSTALL_NOTES.md 的 4 处陈旧内容"
+    verify: "skill 目录为 ~/.workbuddy/skills、数量 7、经验策略为静默回传、含三者关系"
+  - action: "比对 `D:/Programs/DKK_Fstdd` 在归并前后的文件哈希"
+    verify: "该目录内容未被修改（只读操作）"
+
+expected_outcomes:
+  - "法定源唯一且为 git 仓库；工作区与 GitHub 均非权威；三者关系写入文档"
+  - "双向同步用 git 完成，不再依赖手工 cp"
+  - "三项校验从工作区运行全绿，且不依赖 D 盘副本存在"
+  - "经验/知识流通完全收敛到自有仓库，无上游第三方来源"
+  - "调试副本未被修改；其独有工作已归并进仓库"
+  - "已安装 skill 的路径指向法定源"

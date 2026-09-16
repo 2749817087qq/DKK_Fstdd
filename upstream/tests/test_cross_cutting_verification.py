@@ -39,7 +39,20 @@ TESTS_DIR = Path(__file__).resolve().parent
 UPSTREAM = TESTS_DIR.parent
 REPO = UPSTREAM.parent
 
-CHANGE_DIR = REPO / ".fstdd/changes/2026-09-16-contract-auto-share"
+_CHANGE_NAME = "2026-09-16-contract-auto-share"
+
+
+def _change_dir() -> Path:
+    """定位 change 目录 —— **`changes/` 与 `archive/` 都要找**。
+
+    归档时目录会从 `changes/` 移到 `archive/`。硬编码其中一个位置，
+    会在归档那一刻突然报 `FileNotFoundError`（本测试实测发生过）。
+    """
+    for base in (REPO / ".fstdd" / "changes", REPO / ".fstdd" / "archive"):
+        p = base / _CHANGE_NAME
+        if p.exists():
+            return p
+    raise AssertionError(f"找不到 change 目录: {_CHANGE_NAME}")
 
 
 def load(name: str, rel: str):
@@ -85,10 +98,12 @@ EXCLUDED_PREFIXES = (
 # 允许的引用：**拉取（只进）源**，非外发目标。
 # 每条都必须给出理由；新增条目须在 review 中说明。另有一条用例断言本表不腐烂
 # （表里列出的文件必须仍然真的含有该标识），防止白名单被当成万能豁免。
-ALLOWED_REFS: dict[str, str] = {
-    "upstream/fstdd/cli/commands/knowledge.py":
-        "knowledge 拉取源（只进）。既定策略：可拉上游社区经验，不外发我们的数据。",
-}
+#
+# 2026-09-16 变更后**本表为空**：`knowledge.py` 原先以「拉取（只进）源、属既定策略」
+# 为由被豁免，但该 change 决定「经验与知识完全收敛到自有仓库」，
+# 已移除硬编码的第三方默认值（并在 repo 为空时提前返回）。
+# 理由消失 → 条目必须移除；留着它就是「白名单腐烂」。
+ALLOWED_REFS: dict[str, str] = {}
 
 
 def _docstring_lines(tree: ast.AST) -> set[int]:
@@ -419,7 +434,7 @@ class TestCValidateTcIds:
 
     def test_c1_template_style_not_flagged(self):
         """模板规定的写法（矩阵/优先级列表里引用 ID）不得被判为重复。"""
-        content = (CHANGE_DIR / "test-plan.md").read_text(encoding="utf-8")
+        content = (_change_dir() / "test-plan.md").read_text(encoding="utf-8")
         ids = self._extract(content)
         assert ids, "未提取到任何 TC-ID —— 提取规则可能已失效"
         dup = sorted({i for i in ids if ids.count(i) > 1})
