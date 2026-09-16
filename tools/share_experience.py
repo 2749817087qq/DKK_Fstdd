@@ -253,6 +253,188 @@ def find_token() -> str:
     return ""
 
 
+def inbox_url() -> str:
+    """经验接收端点（我们自己的服务器）。
+
+    用途：使用者**没有 GitHub 凭证**时回传经验。
+    思路对齐上游 STDD 的 _share_via_api，但服务器是我们自己的，
+    数据不外发给第三方；提交进「待审核池」，由维护者审核后同步进仓库。
+    可用 FSTDD_INBOX_URL 覆盖（自建实例）。
+    """
+    return os.environ.get("FSTDD_INBOX_URL", "http://43.134.236.80:8787").rstrip("/")
+
+
+# 批量提交参数（可用环境变量覆盖）
+INBOX_BATCH_ITEMS = int(os.environ.get("FSTDD_INBOX_BATCH_ITEMS", "20"))
+INBOX_BATCH_BYTES = int(os.environ.get("FSTDD_INBOX_BATCH_BYTES", str(1024 * 1024)))
+INBOX_RETRY = int(os.environ.get("FSTDD_INBOX_RETRY", "4"))
+
+
+def export_files(out_dir: Path) -> list[Path]:
+    """导出产物里的**经验文件**。
+
+    注意：out_dir 里还有 README.md（索引）和 SUBMIT.md（回传指引），
+    它们不是经验，不能提交给经验库。
+    """
+    skip = {"README.md", "SUBMIT.md"}
+    return sorted(p for p in out_dir.glob("*.md") if p.name not in skip)
+
+
+def _chunk_experiences(files: list[Path], max_items: int,
+                       max_bytes: int) -> list[list[Path]]:
+    """按**条数**与**字节**双重上限分批。
+
+    只按条数分批会在经验偏大时撞上服务端的单请求字节上限（413），
+    所以两个维度都要卡。
+    """
+    chunks: list[list[Path]] = []
+    cur: list[Path] = []
+    cur_bytes = 0
+    for f in files:
+        try:
+            size = f.stat().st_size
+        except OSError:
+            size = 0
+        if cur and (len(cur) >= max_items or cur_bytes + size > max_bytes):
+            chunks.append(cur)
+            cur, cur_bytes = [], 0
+        cur.append(f)
+        cur_bytes += size
+    if cur:
+        chunks.append(cur)
+    return chunks
+
+
+def _post_experiences(endpoint: str, body: bytes,
+                      max_retry: int) -> tuple[bool, object, int]:
+    """POST 一批经验，暂时性失败按 Retry-After / 指数退避重试。
+
+    返回 (是否成功, 响应 dict 或错误文案, 实际重试次数)。
+
+    重试策略：
+      · 429（限流）与 5xx —— 重试，优先采用服务端给的 Retry-After
+      · 其余 4xx —— 确定性错误（格式不对、内容被拒），重试无意义，立即返回
+    """
+    import json
+    import urllib.error
+    import urllib.request
+
+    delay = 2.0
+    retried = 0
+    last = "未知错误"
+
+    for attempt in range(max_retry + 1):
+        req = urllib.request.Request(endpoint, data=body, method="POST")
+        req.add_header("Content-Type", "application/json")
+        req.add_header("User-Agent", "fstdd-share-experience")
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return True, json.loads(r.read().decode("utf-8") or "{}"), retried
+        except urllib.error.HTTPError as e:  # noqa: PERF203
+            detail = ""
+            try:
+                detail = (json.loads(e.read().decode("utf-8", "replace") or "{}")
+                          .get("error", ""))
+            except Exception:  # noqa: BLE001
+                pass
+            last = "HTTP %d%s" % (e.code, (": " + detail) if detail else "")
+            if e.code != 429 and e.code < 500:
+                return False, last, retried
+            wait = delay
+            try:
+                ra = e.headers.get("Retry-After") if e.headers else None
+                if ra:
+                    wait = max(1.0, float(ra))
+            except (TypeError, ValueError):
+                pass
+            if attempt >= max_retry:
+                return False, last, retried
+            retried += 1
+            print("      [retry] %s，%.0fs 后重试（第 %d/%d 次）"
+                  % (last[:80], wait, retried, max_retry))
+            time.sleep(wait)
+            delay = min(delay * 2, 30)
+        except Exception as exc:  # noqa: BLE001
+            last = "端点不可达: %s" % str(exc)[:120]
+            if attempt >= max_retry:
+                return False, last, retried
+            retried += 1
+            print("      [retry] %s，%.0fs 后重试（第 %d/%d 次）"
+                  % (last[:80], delay, retried, max_retry))
+            time.sleep(delay)
+            delay = min(delay * 2, 30)
+
+    return False, last, retried
+
+
+def publish_via_inbox(out_dir: Path, url: str) -> tuple[bool, str]:
+    """把经验**分批** POST 到接收端点（无需任何账号/凭证）。
+
+    此前是逐条提交：提交 N 条 = N 次请求，服务端一旦按请求数限流，
+    必然随经验条数线性撞墙；且首个异常就 return False，剩余全部放弃。
+    现在改为：
+      · 按条数 + 字节双重上限分批（默认 20 条 / 1 MB）
+      · 429 / 5xx 按 Retry-After 与指数退避重试
+      · 单批失败只影响该批，其余批次照常提交
+    """
+    import json
+
+    files = export_files(out_dir)
+    if not files:
+        return False, "没有可提交的经验文件"
+
+    endpoint = url.rstrip("/") + "/api/share-experience"
+    chunks = _chunk_experiences(files, INBOX_BATCH_ITEMS, INBOX_BATCH_BYTES)
+    print("      分批提交：%d 条 -> %d 批（每批 <= %d 条 / <= %d KB）"
+          % (len(files), len(chunks), INBOX_BATCH_ITEMS, INBOX_BATCH_BYTES // 1024))
+
+    ok_n = 0
+    bad: list[str] = []
+    for i, chunk in enumerate(chunks, 1):
+        items = []
+        for f in chunk:
+            try:
+                items.append({"experience_id": f.stem,
+                              "content": f.read_text(encoding="utf-8"),
+                              "author": ""})
+            except OSError as exc:
+                bad.append("%s：读取失败 %s" % (f.stem, exc))
+        if not items:
+            continue
+
+        body = json.dumps({"experiences": items}, ensure_ascii=False).encode("utf-8")
+        ok, res, _ = _post_experiences(endpoint, body, INBOX_RETRY)
+        if not ok:
+            bad.append("第 %d/%d 批（%d 条）：%s" % (i, len(chunks), len(items), res))
+            continue
+        if not isinstance(res, dict) or not res.get("success"):
+            bad.append("第 %d/%d 批：服务端未确认" % (i, len(chunks)))
+            continue
+
+        ok_n += int(res.get("accepted", len(items)) or 0)
+        for err in (res.get("errors") or []):
+            bad.append("%s：%s" % (err.get("experience_id", "?"),
+                                   err.get("error", "被服务端拒绝")))
+        if len(chunks) > 1:
+            print("      [%d/%d] 累计已接收 %d 条" % (i, len(chunks), ok_n))
+
+    if ok_n:
+        print("[OK] 已提交 %d/%d 条经验到接收端点（待维护者审核）"
+              % (ok_n, len(files)))
+    if bad:
+        print("      以下 %d 项未成功：" % len(bad))
+        for b in bad[:10]:
+            print("        - %s" % b)
+        if len(bad) > 10:
+            print("        ...（其余 %d 项省略）" % (len(bad) - 10))
+
+    if ok_n == 0:
+        return False, "全部提交失败：" + (bad[0] if bad else "未知原因")
+    if bad:
+        return True, "部分失败：成功 %d/%d 条，详见上方清单" % (ok_n, len(files))
+    return True, ""
+
+
 def _gh_api(method: str, path: str, token: str, payload=None) -> dict:
     """极简 GitHub API 调用（用标准库，避免新增 requests 依赖）。"""
     import json
@@ -327,7 +509,9 @@ def publish_via_pr(out_dir: Path, repo: str, token: str, dry_run: bool = False) 
         dst = repo_dir / "experiences"
         dst.mkdir(parents=True, exist_ok=True)
         n = 0
-        for f in sorted(out_dir.glob("*.md")):
+        # 只复制经验文件：README.md（索引）与 SUBMIT.md（回传指引）不是经验，
+        # 推进经验库会污染仓库（此前踩过：误提交说明文件）。
+        for f in export_files(out_dir):
             shutil.copy2(f, dst / f.name)
             n += 1
 
@@ -401,7 +585,9 @@ def publish(out_dir: Path, repo: str, token: str) -> tuple[bool, str]:
         dst = repo_dir / "experiences"
         dst.mkdir(parents=True, exist_ok=True)
         n = 0
-        for f in sorted(out_dir.glob("*.md")):
+        # 只复制经验文件：README.md（索引）与 SUBMIT.md（回传指引）不是经验，
+        # 推进经验库会污染仓库（此前踩过：误提交说明文件）。
+        for f in export_files(out_dir):
             shutil.copy2(f, dst / f.name)
             n += 1
 
@@ -504,59 +690,88 @@ def main() -> int:
         idx.append(f"| {e['id']} | {e['fm'].get('title', '-')} | {e['source']} |")
     (OUT_DIR / "README.md").write_text("\n".join(idx) + "\n", encoding="utf-8", newline="\n")
 
-    # 提交指引：明确给出「不需要 token」的网页路径。
-    # 此前只提示「请设置 GITHUB_TOKEN」，会让没有 token 的使用者以为无法回传。
+    # 回传指引（面向 AI Agent）。
+    # 演进过程：最早只提示「请设置 GITHUB_TOKEN」，没有 token 的使用者以为无法回传；
+    # 中途曾给 AI 网页操作步骤（D哥 指出这是错的——AI 点不了 Fork、拖不了文件）；
+    # 现在改为**无凭证也能自动回传**：降级到我们自己的接收端点，AI 一条命令即可完成。
+    # 只有「手工 fork + PR」这一条路需要人类操作浏览器。
     _submit = chr(10).join([
         "# 如何回传这些经验",
         "",
-        "两种方式**任选其一**。方式一不需要任何 token。",
+        "> **给 AI Agent 的说明**：「方式一」你**可以直接执行，不需要任何凭证**。",
+        "> 「方式三」需要人类操作浏览器，**你做不到，不要尝试、也不要向用户承诺**。",
         "",
-        "## 方式一：网页提交（不需要 token，只要 GitHub 账号）",
-        "",
-        f"1. 打开 https://github.com/{args.repo}",
-        "2. 点右上角 **Fork**（在你账号下建一份副本）",
-        "3. 进入你 fork 后的仓库 -> **Add file -> Upload files**",
-        "4. 把本目录下的 EXP-*.md 全部拖入并提交（若仓库已有 experiences/，放进该目录）",
-        "5. 回到你的仓库首页 -> **Contribute -> Open pull request** -> 创建 PR",
-        "",
-        "维护者审核后合并。**全程只需浏览器登录，不需要生成 token。**",
-        "",
-        "## 方式二：一条命令自动提交（需要你自己的 GitHub token）",
+        "## 方式一：一条命令自动回传（无需任何账号，推荐）",
         "",
         "```bash",
-        "export GITHUB_TOKEN='你的 token'   # 需 repo 权限",
         "python tools/share_experience.py --export --publish",
         "```",
         "",
-        "脚本会自动判断身份：维护者直推，否则自动 fork -> 推送 -> 创建 PR。",
-        "**token 是你自己的，本工具不上传、不转存。**",
+        "脚本自动选择通道，两条都是自动的：",
+        "",
+        "1. **有 GitHub 凭证**（`GITHUB_TOKEN` 等）→ 推送到经验库；",
+        "   若没有写权限，自动 fork + 提 Pull Request（标准贡献流程）。",
+        "2. **没有凭证** → 自动回传到 FSTDD 接收端点，进入待审核池，",
+        "   由维护者审核后同步进 GitHub 仓库。**不需要 GitHub 账号。**",
+        "",
+        "两种情况下都无需手工操作。提交失败会自动按服务端的 `Retry-After` 退避重试。",
+        "",
+        "## 方式二：只导出到本地（不发任何网络请求）",
+        "",
+        "```bash",
+        "python tools/share_experience.py --export",
+        "```",
+        "",
+        "导出到 `experiences/`，文件留在本地，不做回传。",
+        "",
+        "## 方式三：手工 fork + PR（需要人类操作浏览器）",
+        "",
+        "```bash",
+        "python tools/share_experience.py --export",
+        "```",
+        "",
+        "然后由**人类**在浏览器里：fork 经验库 → 把导出的经验文件放进 `experiences/`",
+        "→ 发起 Pull Request。**这一步 AI 做不到**，不要向用户承诺可以代做。",
         "",
         "---",
         "",
-        "## 为什么方式二需要 token？",
+        "## 想改用 GitHub 通道（可选）",
         "",
-        "它用 GitHub API 自动建 PR，API 调用必须有凭证。",
-        "方式一走网页，浏览器的登录态就是凭证，所以不需要 token。",
-        "两者最终都是「提 PR -> 维护者审核」，结果没有区别。",
+        "如果你希望提交以**你自己的 GitHub 身份**进入（而不是走接收端点），",
+        "配置一个 Fine-grained token 即可，只需 Contents 与 Pull requests 的读写权限：",
+        "",
+        "```bash",
+        "export GITHUB_TOKEN='<你的 token>'",
+        "python tools/share_experience.py --export --publish",
+        "```",
+        "",
+        "**token 属于使用者，本工具不上传、不转存、不写入仓库。**",
         "",
     ])
     (OUT_DIR / "SUBMIT.md").write_text(_submit, encoding="utf-8", newline="\n")
 
     print()
     print(f"已导出 {written} 条 → {OUT_DIR.relative_to(REPO_ROOT)}/")
-    print(f"  回传指引: {OUT_DIR.relative_to(REPO_ROOT)}/SUBMIT.md（方式一无需 token）")
+    print(f"  回传指引: {OUT_DIR.relative_to(REPO_ROOT)}/SUBMIT.md")
 
     if args.publish:
         print()
         print(f"=== 回传到经验库 {args.repo} ===")
         token = find_token()
         if not token:
-            print("[提示] 未找到 GitHub 凭证 —— 自动提交需要它，但它不是唯一路径。")
-            print("       无 token 也能回传：见导出的 SUBMIT.md「方式一」，")
-            print("       网页操作（fork -> 上传 -> 提 PR），只需 GitHub 账号登录。")
-            print("       若要用自动提交：设置 GITHUB_TOKEN，或把 token 放入 "
-                  "<工作区>/.workbuddy-ai/tmp/.gh_token")
-            return 1
+            # 降级：无 GitHub 凭证时走**自有接收端点**（无需任何账号）。
+            # 对齐上游 STDD 的 _share_via_gh -> _share_via_api 降级思路，
+            # 但服务器是我们自己的，数据不外发给第三方。
+            url = inbox_url()
+            print("      未找到 GitHub 凭证 -> 降级到自有接收端点")
+            print("      %s" % url)
+            ok, reason = publish_via_inbox(OUT_DIR, url)
+            if reason:
+                print(("[WARN] " if ok else "[FAIL] ") + reason)
+            if not ok:
+                print("      可稍后重试，或把 experiences/ 里的文件手工提交"
+                      "（见 SUBMIT.md）")
+            return 0 if ok else 1
 
         # 先尝试直推；若无写权限则自动降级为 fork + PR。
         # 用「尝试 + 降级」而非「先查身份」，是因为 urllib 不支持 socks5 代理，

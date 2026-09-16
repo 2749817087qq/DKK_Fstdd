@@ -175,10 +175,13 @@ Skill 安装后需**重启 WorkBuddy 或执行 `/reload`** 才会出现在可用
 这属于数据外发，可能把项目信息带出去。本适配层将其**默认禁用**：
 除非你本轮对话显式要求，一律跳过并输出「已按本机策略跳过」。
 
-需要时手动执行：
+上游的 `experience share` 子命令在本仓库已**永久移除**——它指向的两条外发通道
+（外部社区仓库、第三方服务器）都不再用，执行它只会得到「历史上传通道的代码已移除」的提示。
+
+需要回传经验时，改用本仓库自己的链路（见第 9 节）：
 
 ```bash
-python "C:/路径/stdd/bin/fstdd" experience share <EXP-ID>
+python tools/share_experience.py --export --from-archive --publish
 ```
 
 ### 三层防护（防止升级把策略抹掉）
@@ -281,26 +284,26 @@ rm -f <文件> && git checkout -- <文件>
 
 ## 9. 经验回传
 
-FSTDD 会把每个 change 中踩过的坑沉淀为「经验」。本仓库提供了一条**回传到本项目自己仓库**的链路。
+FSTDD 会把每个 change 中踩过的坑沉淀为「经验」。本仓库提供了一条**回传到本项目自己仓库**的链路：
+使用者一条命令即可完成，**不需要 GitHub 账号，也不需要任何配置**。
 
 ### 为什么不用 `fstdd experience share`
 
-上游的 `share` 目标仓库是**硬编码**的，且有两条路径：
+上游的 `share` 目标仓库是**硬编码**的，指向外部：社区仓库 `leonai42/stdd-experiences`
+（需写权限，普通使用者必然失败），以及一个**第三方服务器**（属数据外发）。
 
-| 路径 | 目标 | 问题 |
-|---|---|---|
-| 1 | `gh repo clone leonai42/stdd-experiences` 后直接 push | 需写权限，普通使用者必然失败 |
-| 2 | `POST https://hzddyy.com/stdd/api/share-experience` | **第三方服务器**，属数据外发 |
-
-两者都不是「回传到本项目自己的仓库」，因此本地安装策略会**跳过**该步骤。
+这两条外发路径均已**永久移除**——数据只进本项目自己的经验库，不外发给第三方。
+因此本地安装策略会**跳过**上游的 share 步骤（见第 6 节），改用本仓库自己的链路。
 
 ### 本仓库的回传方式
 
 ```bash
 python tools/share_experience.py --list                    # 查看可回传的经验
 python tools/share_experience.py --export --from-archive   # 导出到 experiences/
-python tools/share_experience.py --export --from-archive --publish   # 导出并推送
+python tools/share_experience.py --export --from-archive --publish   # 导出并回传
 ```
+
+`--publish` 会按有无 GitHub 凭证自动选通道（见下），**没有凭证也能回传**。
 
 - **目标仓库**：`2749817087qq/Fstdd-experiences`（可用 `--repo` 或 `EXP_REPO` 覆盖）
 - **经验来源**：`.fstdd/experiences/EXP-*.md`，以及已归档 change 的 `test-report.md`
@@ -313,25 +316,56 @@ python tools/share_experience.py --export --from-archive --publish   # 导出并
 
 ### 其他人如何回传（自动，无需手动操作）
 
-**一条命令即可，无需手工 fork 或提 PR**：
+**一条命令即可，无需手工 fork 或提 PR，也无需配置任何凭证**：
 
 ```bash
-export GITHUB_TOKEN='你的 GitHub 令牌'      # 需 repo 权限
 python tools/share_experience.py --export --from-archive --publish
 ```
 
-脚本会**自动选择路径**，无需人工判断：
+脚本会**自动选择通道**，使用者不需要判断：
 
-| 身份 | 行为 |
-|---|---|
-| 仓库所有者 / 协作者 | 直接推送到 `main` |
-| 其他贡献者 | 自动 fork → 推送到自己的 fork → 自动创建 Pull Request |
+| 通道 | 触发条件 | 行为 |
+|---|---|---|
+| GitHub | 找到 GitHub 凭证 | 有写权限直推经验库；无写权限自动 fork → 推送 → 创建 Pull Request |
+| 接收端点 | 没有凭证 | 分批 POST 到 FSTDD 自建接收端点，进入**待审核池** |
 
-关键点：
+凭证查找顺序：环境变量 `GITHUB_TOKEN` → `PUSH_TOKEN` → `GH_TOKEN` →
+文件 `<工作区>/.workbuddy-ai/tmp/.gh_token`。
 
-- 用的是**贡献者自己的 token**，本项目不持有也不需要任何人的凭证
-- 外部提交以 **Pull Request** 形式进入，由维护者审核后合并
+**没有凭证也能回传**：接收端点是我们自己的服务器（默认 `http://43.134.236.80:8787`），
+不是 GitHub，也不是第三方服务器。提交进待审核池后，由维护者审核，再同步进 GitHub 经验库。
+使用者零配置即可完成回传。
+
+#### 接收端点相关环境变量
+
+| 变量 | 作用 | 默认值 |
+|---|---|---|
+| `GITHUB_TOKEN` | GitHub 凭证（也可用 `PUSH_TOKEN` / `GH_TOKEN`） | 无 |
+| `FSTDD_INBOX_URL` | 接收端点地址（可指向自建实例） | `http://43.134.236.80:8787` |
+| `FSTDD_INBOX_BATCH_ITEMS` | 每批最多条数 | `20` |
+| `FSTDD_INBOX_BATCH_BYTES` | 每批最多字节 | `1048576`（1 MB） |
+| `FSTDD_INBOX_RETRY` | 失败重试次数 | `4` |
+
+无凭证通道会**分批**提交（默认每批 20 条 / 1 MB），失败时按服务端返回的 `Retry-After`
+退避重试。服务端限流按**条数**计：每 IP 每 60 秒最多 120 条，单批最多 50 条，单条上限 256 KB。
+服务端实现见 `tools/inbox_server.py`（零依赖，只用标准库）。
+
+#### 关于凭证
+
+- 用的是**使用者自己的 token**，本项目不持有也不需要任何人的凭证
+- **token 属于使用者，本工具不上传、不转存、不写入仓库**
 - 导出前**强制脱敏**，不含路径 / IP / 域名 / 凭证 / 邮箱
+
+#### 手工 fork + PR（需要人类操作浏览器）
+
+若自动通道都不可用，可先只导出到本地：
+
+```bash
+python tools/share_experience.py --export
+```
+
+再由**人类**在浏览器里：fork 经验库 → 把导出的经验文件放进 `experiences/` → 发起 Pull Request。
+**这一步 AI 做不到**——AI 操作不了浏览器，不要向用户承诺可以代做。
 
 实现上采用「先尝试直推、权限不足再降级 fork+PR」，而非「先查身份」——
 因为 `urllib` 不支持 socks5 代理，在需要隧道的环境下 API 调用会失败，而 git 支持代理。

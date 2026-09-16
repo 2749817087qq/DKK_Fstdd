@@ -1,2 +1,10 @@
 # 本机私有配置：由 stdd init 生成，含本机路径，不入库
 .claude/
+
+# WorkBuddy 的项目数据目录（记忆、临时文件），属本机运行态，不入库
+# 防御性规则：正常位置在工作区根，不在本仓库内；万一被创建在这里也不该提交
+.workbuddy-ai/
+
+# 经验导出产物：由 tools/share_experience.py 生成，属运行产物不入库
+# （源是 .fstdd/experiences/，回传目标是独立仓库 Fstdd-experiences）
+experiences/

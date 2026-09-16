@@ -38,7 +38,8 @@ BASELINE_WARN_LINES = 640  # 无规则时实测告警行数（对照基准，随
 # 因此其 diff 同样属于正常开发活动。
 ALLOWED_DIFF_PREFIX = ("tools/", "docs/", "skills/")
 ALLOWED_DIFF_EXACT = {
-    "README.md",  # 仓库说明，随变更持续更新
+    "README.md",     # 仓库说明，随变更持续更新
+    ".gitignore",    # 忽略规则会随开发活动调整（如新增产物目录），属有意变更
 }
 
 
