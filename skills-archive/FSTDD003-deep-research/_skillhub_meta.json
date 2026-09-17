@@ -1,0 +1,20 @@
+{
+  "name": "Deep Research",
+  "installedAt": 1789646090940,
+  "source": "marketplace",
+  "version": "1.0.0",
+  "skillId": "skill_2053082035566706688",
+  "examples_zh": [
+    "调研 AI agent workflow 产品的最新进展",
+    "对比三家海外竞品的定位、价格和集成",
+    "为客户行业生成带来源的研究报告",
+    "整理市场机会的证据、风险和建议"
+  ],
+  "examples_en": [
+    "Research recent progress in AI agent workflow products",
+    "Compare positioning, pricing, and integrations across three overseas competitors",
+    "Create a cited research report for a customer’s industry",
+    "Summarize evidence, risks, and recommendations for this market opportunity"
+  ],
+  "iconSource": "letter:auto"
+}
