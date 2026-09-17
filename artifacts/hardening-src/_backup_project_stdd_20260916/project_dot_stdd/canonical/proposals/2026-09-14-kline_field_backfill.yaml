@@ -1,0 +1,89 @@
+# canonical/proposals/2026-09-14-kline_field_backfill.yaml — 由 STDD Phase 4 Step 2 从 change 合并生成
+# 生成时间: 2026-09-15T07:20:00+08:00 ｜ 来源: .stdd/archive/2026-09-14-kline_field_backfill/proposal.md
+
+meta:
+  change_id: kline_field_backfill
+  title: reits_kline_daily 字段级回填（daily_return_pct + amount）+ 非交易日脏行清理
+  created: '2026-09-14T17:35:00+08:00'
+  confirmed_at: '2026-09-14T20:44:01+08:00'
+  archived_at: '2026-09-15T07:20:00+08:00'
+  status: completed
+  supersedes: kline_amount_repair
+why:
+  problem: business.reits_kline_daily 有 24,732 行 daily_return_pct 为 NULL（占 47.96%）与 259 行 amount 为 NULL；其中 178 行为 2026-09-10/09-11
+    的字段级缺口，81 行为 2026-05-03（劳动节假期）被 sina 源整批重复写入的幽灵交易日脏行。
+  motivation: reits_kline_daily 由 reits_kline_daily.json 全量重建（build 的 CREATE OR REPLACE），而每日新增的 tdx 类 bar 一律带 NULL daily_return_pct，编排中的补录脚本只补缺失键、不补字段
+    NULL → 缺口逐日沉淀；且任何只改 PG 的修复都会被下一轮 build 回滚。
+what_changes:
+- id: C1
+  description: 回填 24,642 行 daily_return_pct（未复权，剔除幽灵日 1 行）
+  type: modified
+- id: C2
+  description: 回填 178 行 amount（取自 business.tdx_kline_daily）
+  type: modified
+- id: C3
+  description: 删除 2026-05-03 的 81 行幽灵交易日脏行（删除前备份）
+  type: removed
+- id: C4
+  description: 新增 repair_kline_fields.py（CLI：--write/--purge-phantom/--apply-pg/--verify/--daily）
+  type: new
+- id: C5
+  description: daily_etl.py 编排插入 repair_kline（sync_kline_json 之后、json/build 之前）
+  type: modified
+- id: C6
+  description: 新增测试 .stdd/agent_tests/test_kline_field_backfill.py（25 TC / 27 断言）
+  type: new
+capabilities:
+  new:
+  - name: kline_field_backfill
+    description: 权威日线字段级回填 + 非交易日脏行清理（幂等、可编排、可独立执行）
+  modified: []
+constraints:
+- 只写 JSON 真源；PG 由紧随的 build 全量重建传播，不引入第二条会漂移的写路径
+- 非交易日脏行删除须过三重守卫（不在日历 ∧ 严格早于日历最大日 ∧ (周末 ∨ 与上一交易日逐行重复)）
+- 删除前强制备份；生产库写入与删行须逐次向用户确认
+- 回填只作用于 NULL 行，厂商已有值逐字节不变
+stakeholders:
+- D哥（项目所有者 / 审批）
+risk_areas:
+- capability: kline_field_backfill
+  risk: 只改 PG 不改 JSON → 下轮 build 回滚
+  mitigation: 双写 JSON；TC-018 断言重跑完整 build 后缺口不复现
+- capability: kline_field_backfill
+  risk: 误删真实交易日数据
+  mitigation: 删除前备份 81 行到 backups/；三重守卫 + 与 04-30 逐行对等断言
+- capability: kline_field_backfill
+  risk: 把幽灵日当正常日填出假收益率
+  mitigation: 填值前用 tdx_kline_daily 交易日历过滤（实测仅排除 1 行）
+- capability: kline_field_backfill
+  risk: 除息日未复权收益率被误读为暴跌
+  mitigation: 在 JSON coverage 记录口径；TC-023 断言 |涨跌|>10% 的行全部可解释
+- capability: kline_field_backfill
+  risk: --apply-pg 沿用 JSON 推导的待删计划 → PG 脏行永远删不掉
+  mitigation: 改为对 PG 自身行集合重放三重守卫（ADJ-001，SC-006-003）
+non_goals:
+- business.tdx_kline_daily（只读，不改）
+- turnover_rate / nav_premium_rate_pct 的历史空缺（另行 slice）
+- 复权收益率、分红再投资收益率、reits_dividend 的任何写入
+- DuckDB 副本（sync_pg_to_duckdb.py 自 PG 全量重建，无需单独处理）
+critical:
+  is_critical: true
+  risk_assessment:
+    safety_critical: false
+    financial: true
+    cross_system: true
+anchoring:
+  level: L2
+  reference_changes:
+  - kline_amount_repair (superseded)
+  anchor_implementations:
+  - repair_kline_fields.py
+success_criteria:
+- daily_return_pct IS NULL 行数 = 89（仅每只标的首行）
+- 可回填缺口 pg_field_gap() = 0（取代旧口径「amount IS NULL = 0」）
+- reits_kline_daily 不再存在 2026-05-03 的任何行
+- 24,642 个收益率值经独立实现（Python）重算，偏差 > 1e-4 的行数 = 0
+- reits_kline_daily.json 与 PG 逐字段一致
+- 重跑完整 build 后上述标准仍成立
+- 编排新增步骤在无缺口时幂等早退，跑两次结果完全一致
+- 三系统（JSON / PG / DuckDB）四项计数完全一致

@@ -1,0 +1,3 @@
+APPROVED by D哥 via explicit instruction 2026-09-14 ("两者都做...走stdd").
+Gate 3 (test-report + design-adjustments) approved → proceed to Phase 4 (DELIVER/COMMIT).
+test-report.md: 11/11 PASS, coverage 94/94 标的, linkage 100%, orphan 0.

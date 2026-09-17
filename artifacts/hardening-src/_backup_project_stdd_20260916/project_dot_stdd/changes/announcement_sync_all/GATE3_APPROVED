@@ -1,0 +1,4 @@
+GATE3_APPROVED — 2026-09-14
+Phase 3 验证通过：全量 93/94 成功、UPSERT 升级 5170、web 覆盖 92.7%、disk_scan 关联 100% 保留、
+content_hash 0 重复、announcement_files 29632 不变、94 标的全覆盖。pre_listing 零下载。
+CNInfo 403 外部阻断已优雅降级（非代码问题）。允许进入 Phase 4 提交。

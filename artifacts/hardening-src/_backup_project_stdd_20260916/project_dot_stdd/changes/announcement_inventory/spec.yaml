@@ -1,0 +1,46 @@
+# Spec: announcement_files 文件资产清单表 + announcements 元数据补全
+
+capability: announcement_inventory
+
+requirements:
+  - id: REQ-001-001
+    title: 建 announcement_files 表
+    desc: 系统 SHALL 在 business schema 下创建 announcement_files 表，含 id/fund_code/exchange/file_type/filename/rel_path/abs_path/file_size/md_rel_path/content_hash/source_root/created_at 列。
+    test: unit
+    code: to-implement
+
+  - id: REQ-001-002
+    title: 建索引
+    desc: 系统 SHALL 在 announcement_files 上建立主键、rel_path 唯一约束、fund_code 索引、file_type 索引、abs_path 索引。
+    test: unit
+    code: to-implement
+
+  - id: REQ-002-001
+    title: 扫描磁盘登记文件资产
+    desc: 系统 SHALL 扫描 D:\项目\PDF 下 SSE(pdf)/SZSE(pdf)/announcements_md(md)/announcements_json(json) 四个根，排除任何含 pre_listing 路径段的文件，解析 fund_code(从祖先目录 ^\d{6}_)、exchange、rel_path、abs_path(正斜杠归一)、file_size，并幂等 upsert 入库。
+    test: acceptance
+    code: to-implement
+
+  - id: REQ-002-002
+    title: pdf→md 关联
+    desc: 系统 SHALL 为 pdf 行填充 md_rel_path（若存在同名 .md 文件于 announcements_md 下），用于 pdf_local_path 与 MD 资产的关联。
+    test: unit
+    code: to-implement
+
+  - id: REQ-003-001
+    title: 离线回补 announcements 元数据
+    desc: 系统 SHALL 以 announcement_files 中 pdf 行为源，解析文件名 YYYYMMDD_标题 得到 publish_date 与 title，向 announcements 表幂等插入缺失元数据（content_hash=md5(fund_code:publish_date:title) 去重，source='disk_scan'），使全市场文件资产均有元数据登记。
+    test: acceptance
+    code: to-implement
+
+  - id: REQ-004-001
+    title: pdf_local_path 关联校验
+    desc: 系统 SHALL 保证 announcements.pdf_local_path（正斜杠归一）全部存在于 announcement_files.abs_path 集合中；现有 69 行 SHALL 100% 可链接。
+    test: acceptance
+    code: to-implement
+
+  - id: REQ-005-001
+    title: 计数自洽
+    desc: 系统 SHALL 使 announcement_files 行数等于重扫磁盘得到的文件数（排除 pre_listing）；rel_path SHALL 唯一无重复。
+    test: acceptance
+    code: to-implement

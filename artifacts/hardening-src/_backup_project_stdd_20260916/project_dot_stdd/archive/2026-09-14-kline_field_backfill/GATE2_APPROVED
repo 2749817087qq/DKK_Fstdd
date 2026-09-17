@@ -1,0 +1,34 @@
+APPROVED by D哥 via AskUserQuestion 2026-09-14 20:44 (+0800):
+
+- Phase 2 产出（spec.yaml / design.md / test-plan.md）→ 「确认，进入 Phase 3」
+- Phase 3（BUILD）执行模式 → 「普通交互模式（推荐）」
+  （理由：本次涉及生产库删行，长程全自动会预授权现库写入，与项目红线
+   「现库 reits 的任何写入必须逐表与用户确认」相冲）
+
+Gate 2 (spec/design/test-plan) approved → proceed to Phase 3 (BUILD).
+
+## 本门锁定内容
+
+| 项 | 值 |
+|---|---|
+| Requirements | 18 |
+| Scenarios | 22（≥ Requirement ✅）|
+| TC Cases | 23（P0 20 / P1 3 / P2 0）|
+| 置信度 | high 16 / medium 2 / low 0 |
+| 执行模式 | standard |
+| task_type | data-migration |
+| long_range | disabled（普通交互）|
+
+## 自审修复记录（Step 5.5）
+
+1. **顺序依赖未写清** → `spec.yaml` constants 拆出 `expected_null_return_after_fill_only: 90`
+   与 `expected_null_amount_after_fill_only: 81`；TC-004 / TC-007 / TC-015 预置条件补全为
+   「回填 + 清理均完成」。
+
+## Phase 3 附加约束（高于流程默认）
+
+- **生产库写入与删行不得静默执行**：`--write` / `--purge-phantom` / `--apply-pg` 三个动作
+  在真正执行前必须再次向 D哥展示「将影响的行数 + 备份路径」并取得确认。
+- 删除动作前必须确认 `backups/phantom_<ts>.csv` 已落盘且行数 = 81。
+- 严格 RED→GREEN→REFACTOR：先写 `.stdd/agent_tests/test_kline_field_backfill.py` 并观察到
+  预期失败（RED），再实现 `repair_kline_fields.py`。

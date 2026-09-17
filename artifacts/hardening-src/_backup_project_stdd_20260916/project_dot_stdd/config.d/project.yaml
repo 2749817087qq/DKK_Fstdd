@@ -1,0 +1,15 @@
+paths:
+  archive_dir: archive
+  changes_dir: changes
+  experiences_dir: .stdd/experiences
+  platforms_dir: .stdd/platforms
+  skills_dir: .stdd/skills
+  specs_dir: specs
+  standards_dir: .stdd/standards
+  templates_dir: .stdd/templates
+project:
+  language: python
+  name: 数据文件
+  python_version: '3.13'
+  source_dir: .
+stdd_version: 3.0.5

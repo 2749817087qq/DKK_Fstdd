@@ -1,0 +1,858 @@
+From 419c0b125b9e33908662c05c17f77621c30d1cc6 Mon Sep 17 00:00:00 2001
+From: CCREITs <13708386842@139.com>
+Date: Wed, 16 Sep 2026 09:29:31 +0800
+Subject: [PATCH 3/3] =?UTF-8?q?feat:=20=E5=9B=9E=E4=BC=A0=202026-09-16=20?=
+ =?UTF-8?q?=E5=AE=89=E8=A3=85=E4=B8=8E=E8=BF=90=E8=A1=8C=E7=9A=84=E7=BB=8F?=
+ =?UTF-8?q?=E9=AA=8C=E5=8C=85?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- experiences/: 新增 EXP-20260916-INSTALL-1/2/3、RUN-1/2 及回传指引
+- 经验贡献包-20260916.zip
+- .gitignore: 排除 .fstdd/ 与 __pycache__/（本机运行时，含绝对路径）
+- docs: 安装与运行问题清单 + 对 skills 目录结论的纠正
+---
+ .gitignore                                    |   4 ++
+ README.md                                     |  34 +++++----
+ experiences/EXP-20260916-INSTALL-1.md         |  28 ++++++++
+ experiences/EXP-20260916-INSTALL-2.md         |  24 +++++++
+ experiences/EXP-20260916-INSTALL-3.md         |  35 ++++++++++
+ experiences/EXP-20260916-RUN-1.md             |  26 +++++++
+ experiences/EXP-20260916-RUN-2.md             |  28 ++++++++
+ experiences/README.md                         |  14 +++-
+ ...41\347\214\256\347\273\217\351\252\214.md" |  24 +++++++
+ tools/share_experience.py                     |  65 +++++++++++++++---
+ ...\241\347\214\256\345\214\205-20260916.zip" | Bin 0 -> 22551 bytes
+ 11 files changed, 257 insertions(+), 25 deletions(-)
+ create mode 100644 experiences/EXP-20260916-INSTALL-1.md
+ create mode 100644 experiences/EXP-20260916-INSTALL-2.md
+ create mode 100644 experiences/EXP-20260916-INSTALL-3.md
+ create mode 100644 experiences/EXP-20260916-RUN-1.md
+ create mode 100644 experiences/EXP-20260916-RUN-2.md
+ create mode 100644 "experiences/\345\233\236\344\274\240\346\214\207\345\274\225-\345\246\202\344\275\225\350\264\241\347\214\256\347\273\217\351\252\214.md"
+ create mode 100644 "\347\273\217\351\252\214\350\264\241\347\214\256\345\214\205-20260916.zip"
+
+diff --git a/.gitignore b/.gitignore
+index e8892b3..e40d664 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,2 +1,6 @@
+ # 本机私有配置：由 stdd init 生成，含本机路径，不入库
+ .claude/
++
++# 本机运行时目录：由 fstdd init 生成，含本机绝对路径，不入库
++.fstdd/
++__pycache__/
+diff --git a/README.md b/README.md
+index a3c9ca7..2faf745 100644
+--- a/README.md
++++ b/README.md
+@@ -294,14 +294,17 @@ FSTDD 会把每个 change 中踩过的坑沉淀为「经验」。本仓库提供
+ 
+ 两者都不是「回传到本项目自己的仓库」，因此本地安装策略会**跳过**该步骤。
+ 
+-### 本仓库的回传方式
++### 本仓库的回传方式（回传可选 · 免 token 优先）
++
++FSTDD 是**分发的 skill**，回传经验不应要求别人持有 GitHub token，因此默认路径**零凭证**：
+ 
+ ```bash
+ python tools/share_experience.py --list                    # 查看可回传的经验
+-python tools/share_experience.py --export --from-archive   # 导出到 experiences/
+-python tools/share_experience.py --export --from-archive --publish   # 导出并推送
++python tools/share_experience.py --export --from-archive   # 导出 + 生成零凭证贡献包
++python tools/share_experience.py --export --from-archive --publish   # 导出并推送（需 token，可选）
+ ```
+ 
++- 导出时自动生成**零凭证贡献包** `经验贡献包-<日期>.zip`（脱敏经验 + 「回传指引」），无需 token 即可贡献
+ - **目标仓库**：`2749817087qq/Fstdd-experiences`（可用 `--repo` 或 `EXP_REPO` 覆盖）
+ - **经验来源**：`.fstdd/experiences/EXP-*.md`，以及已归档 change 的 `test-report.md`
+ - **强制脱敏**：导出前自动替换绝对路径、IP、内网域名、凭证、邮箱（`--no-sanitize` 可关闭，但不建议）
+@@ -311,16 +314,15 @@ python tools/share_experience.py --export --from-archive --publish   # 导出并
+ 已配置定时任务「FSTDD 经验库自动同步」，每周一 09:00 自动导出并回传。任务在 GitHub
+ 不通时会自动借 SSH 隧道出网（见第 8 节）。
+ 
+-### 其他人如何回传（自动，无需手动操作）
+-
+-**一条命令即可，无需手工 fork 或提 PR**：
++### 别人如何回传（三条路径，按凭证门槛从低到高）
+ 
+-```bash
+-export GITHUB_TOKEN='你的 GitHub 令牌'      # 需 repo 权限
+-python tools/share_experience.py --export --from-archive --publish
+-```
++| 路径 | 谁用 | 凭证要求 | 操作 |
++|---|---|---|---|
++| **A 网页提交** | 所有用户（推荐） | 仅 GitHub 账号，**无需 token** | 打开贡献包内「回传指引」，把 EXP-*.md 粘贴到 Issue，或 fork → 加文件 → PR（全程网页） |
++| **B 转交维护者** | 非开发者 | 无 | 把 `经验贡献包-<日期>.zip` 通过问卷/邮件发给维护者 |
++| **C 自动推送** | 维护者 / 有 token 用户 | `GITHUB_TOKEN`（repo 权限） | `--export --from-archive --publish` |
+ 
+-脚本会**自动选择路径**，无需人工判断：
++路径 C 详解：脚本会**自动选择路径**，无需人工判断：
+ 
+ | 身份 | 行为 |
+ |---|---|
+@@ -329,15 +331,17 @@ python tools/share_experience.py --export --from-archive --publish
+ 
+ 关键点：
+ 
+-- 用的是**贡献者自己的 token**，本项目不持有也不需要任何人的凭证
+-- 外部提交以 **Pull Request** 形式进入，由维护者审核后合并
++- **没有 token 也能贡献**（路径 A/B）：`--publish` 在无凭证时**不再失败**，而是降级输出贡献包与网页指引（exit 0）
++- 用的是**贡献者自己的 token**（路径 C），本项目不持有也不需要任何人的凭证
++- 外部提交以 **Pull Request / Issue** 形式进入，由维护者审核后合并
+ - 导出前**强制脱敏**，不含路径 / IP / 域名 / 凭证 / 邮箱
+ 
+ 实现上采用「先尝试直推、权限不足再降级 fork+PR」，而非「先查身份」——
+ 因为 `urllib` 不支持 socks5 代理，在需要隧道的环境下 API 调用会失败，而 git 支持代理。
+ 
+-> 这正是开源社区的经验蒸馏方式：全球使用者的踩坑记录汇聚到一处，
+-> 经审核后反哺给所有人。
++> 开源社区的经验蒸馏：全球使用者的踩坑记录汇聚到一处，经审核后反哺给所有人。
++> **经验池随 FSTDD 分发**（仓库 `experiences/` 目录），用户 `fstdd-upgrade` 即可只读获取，
++> **回传仅是可选加分项，不构成使用门槛**。
+ 
+ ---
+ 
+diff --git a/experiences/EXP-20260916-INSTALL-1.md b/experiences/EXP-20260916-INSTALL-1.md
+new file mode 100644
+index 0000000..ae58812
+--- /dev/null
++++ b/experiences/EXP-20260916-INSTALL-1.md
+@@ -0,0 +1,28 @@
++---
++experience_id: EXP-20260916-INSTALL-1
++category: tooling
++severity: high
++occurrences: 1
++exported_at: 2026-09-16
++sanitized: true
++---
++## 现象
++
++FSTDD 安装脚本默认把全局 skill 输出到 `~/.workbuddy-ai/skills`，装完后 WorkBuddy 的 skill 列表里**看不到**（等于白装）。
++
++## 根因
++
++WorkBuddy 应用实际只加载 `~/.workbuddy/skills`：
++- 在应用资源二进制里 grep，`.workbuddy/skills` 出现 7 次，`.workbuddy-ai/skills` 出现 **0 次**（实证于 2026-09-16）。
++- `.workbuddy-ai/skills` 是应用内部/另一套独立安装流程的管理目录，两边互不加载。
++
++更隐蔽的坑：即使装对了目录，应用进程在运行中可能把该目录下的 skill 重新归置到内部目录，导致「上一秒 verify 通过、下一秒文件不见了」。
++
++## 处理
++
++- 安装脚本 `OUT` 默认值从 `.workbuddy-ai/skills` 改为 `.workbuddy/skills`（install_workbuddy_skills.py 已修）。
++- 复验方法：默认 OUT 跑 `verify_workbuddy_skills.py`，必须回显 `[PASS]`；再 grep 应用资源确认加载路径。
++
++## 性质
++
++平台适配的坑：**不要相信安装工具的默认目录，要以宿主应用实际加载路径为准**，并用「写后校验 + 二进制级路径实证」双保险。
+diff --git a/experiences/EXP-20260916-INSTALL-2.md b/experiences/EXP-20260916-INSTALL-2.md
+new file mode 100644
+index 0000000..061fdcc
+--- /dev/null
++++ b/experiences/EXP-20260916-INSTALL-2.md
+@@ -0,0 +1,24 @@
++---
++experience_id: EXP-20260916-INSTALL-2
++category: tooling
++severity: medium
++occurrences: 1
++exported_at: 2026-09-16
++sanitized: true
++---
++## 现象
++
++跑 `verify_workbuddy_skills.py` 之后，FSTDD 项目注册表 `~/.fstdd/projects.yaml` 里多出 6 条 `stdd_smoke_<随机串>` 条目，指向已删除的临时目录。
++
++## 根因
++
++verify 脚本的 CLI 端到端冒烟测试（`init / new / status`）在**真实 HOME 环境**的临时目录里执行，而 `fstdd init` 会把项目登记进 `~/.fstdd/projects.yaml`——冒烟跑一次就污染一次注册表，且临时目录随后被清理，留下悬空条目。
++
++## 处理
++
++- 手工清理：保留真实项目（数据文件、公众号历史文章），删除全部 `stdd_smoke_*` 与历史测试条目。
++- 根治建议：冒烟测试应隔离 HOME（如临时 `HOME` 环境变量 + 临时注册表），或事后回滚注册表。
++
++## 性质
++
++测试隔离性缺陷：**凡是会写用户级状态的命令，跑冒烟/集成测试时必须隔离其状态写入面**，否则测试本身就会污染生产配置。
+diff --git a/experiences/EXP-20260916-INSTALL-3.md b/experiences/EXP-20260916-INSTALL-3.md
+new file mode 100644
+index 0000000..521bd75
+--- /dev/null
++++ b/experiences/EXP-20260916-INSTALL-3.md
+@@ -0,0 +1,35 @@
++---
++experience_id: EXP-20260916-INSTALL-3
++category: tooling
++severity: low
++occurrences: 1
++exported_at: 2026-09-16
++sanitized: true
++---
++## 现象
++
++`install.sh --py /path/to/python` 传参失败：脚本把 `--py` 本身当成解释器路径，或漏掉后面的参数值。
++
++## 根因
++
++Bash 的 `for arg in "$@"` 在循环开始前已把参数列表展开固定，循环体内的 `shift` **不会**影响迭代顺序，导致 `--py` 与其值错位。
++
++## 处理
++
++改用下标遍历：
++
++```bash
++_args=("$@")
++_i=0
++while [[ $_i -lt ${#_args[@]} ]]; do
++  case "${_args[$_i]}" in
++    --py) _i=$((_i + 1)); PY="${_args[$_i]:-}" ;;
++    *) : ;;
++  esac
++  _i=$((_i + 1))
++done
++```
++
++## 性质
++
++Shell 脚本参数解析的基础坑：**在 `for` 循环里 `shift` 无效**，需要精确消费参数值时一律用下标遍历或 `getopt`。
+diff --git a/experiences/EXP-20260916-RUN-1.md b/experiences/EXP-20260916-RUN-1.md
+new file mode 100644
+index 0000000..11cffb2
+--- /dev/null
++++ b/experiences/EXP-20260916-RUN-1.md
+@@ -0,0 +1,26 @@
++---
++experience_id: EXP-20260916-RUN-1
++category: runtime
++severity: medium
++occurrences: 1
++exported_at: 2026-09-16
++sanitized: true
++---
++## 现象
++
++`fstdd init` 拉取社区经验库失败：GitHub 源 404（`experience-python-latest.tar.gz` 不存在），降级到 gitee 镜像后也失败，最终输出 `Error: all registries unreachable`。
++
++## 根因
++
++上游模板里的社区经验库源仍指向 `leonai42/stdd-experiences`（FSTDD 的**上游**仓库，非自有仓库）：
++- GitHub 源 404 —— 上游仓库没有按约定路径发布经验包；
++- 且该源属于第三方上游，FSTDD 自研体系不应依赖它。
++
++## 处理
++
++- 该失败**非致命**：init 正常完成，仅 `经验库: ⚠️ 空（手动拉取: fstdd experience pull）`，不阻断主流程（README 故障排除已注明）。
++- 根治建议：把 `config.d/experience.yaml` 的 <DOMAIN> 指向自有仓库（如 Fstdd-experiences 的发布资产），或默认跳过社区拉取。
++
++## 性质
++
++外部依赖健壮性坑：**默认源不可达时要有降级与明确告警**（本实现已做到非致命），但更关键的是**自研产品不应硬编码依赖上游第三方源**。
+diff --git a/experiences/EXP-20260916-RUN-2.md b/experiences/EXP-20260916-RUN-2.md
+new file mode 100644
+index 0000000..b08d63a
+--- /dev/null
++++ b/experiences/EXP-20260916-RUN-2.md
+@@ -0,0 +1,28 @@
++---
++experience_id: EXP-20260916-RUN-2
++category: tooling
++severity: high
++occurrences: 1
++exported_at: 2026-09-16
++sanitized: true
++---
++## 现象
++
++`fstdd init` 生成的项目骨架里残留上游旧命名与数据外发步骤：
++
++1. `.fstdd/skills/deliver.md` 的 **Step 2.8「经验自动上传」仍是默认执行**（会向外部社区仓库外发项目经验），且命令引用 `python bin/stdd`（旧 CLI 名）；
++2. 生成的项目级 `FSTDD_CONSTITUTION.md` 仍写 `STDD Change`、`stdd status` 等旧字样（rename-to-fstdd 未全覆盖）。
++
++## 根因
++
++rename 到 fstdd 时，仓库模板与上游 vendor 的同步覆盖了命名空间，但**模板内的正文文本没有做全量替换**；同时上游 deliver.md 的 Step 2.8 数据外发步骤被原样带进生成物。
++
++## 处理
++
++- 对每个初始化后的项目**立即施加防线**：在 `.fstdd/skills/deliver.md` 的 Step 2.8 插入带哨兵 `FSTDD_LOCAL_POLICY_NO_UPLOAD_V1` 的「默认禁用」声明，Step 2.9 一并跳过；
++- 项目级 `FSTDD_CONSTITUTION.md` 补第 7 条「升级/重装后必须重新施加」（耐久锚点，参照 09-14 加固设计）；
++- 校验命令：`grep -q "FSTDD_LOCAL_POLICY_NO_UPLOAD_V1" .fstdd/skills/deliver.md`。
++
++## 性质
++
++「改名 ≠ 改内容」的经典坑：**批量重命名/换牌后必须全量 grep 旧标识符与危险步骤**，尤其注意模板生成的产物（init/new 生成物）也要纳入检查，而不只查仓库源码。
+diff --git a/experiences/README.md b/experiences/README.md
+index 0dd9d0c..6354d4d 100644
+--- a/experiences/README.md
++++ b/experiences/README.md
+@@ -1,6 +1,6 @@
+ # 经验库（对外回传）
+ 
+-> 由 `tools/share_experience.py` 导出，共 10 条，导出时间 2026-09-16 02:35
++> 由 `tools/share_experience.py` 导出，共 22 条，导出时间 2026-09-16 09:26
+ 
+ | ID | 标题 | 来源 |
+ |---|---|---|
+@@ -14,3 +14,15 @@
+ | EXP-20260915-B2 | - | EXP-20260915-B2.md |
+ | EXP-20260915-B3 | - | EXP-20260915-B3.md |
+ | EXP-20260915-B4 | - | EXP-20260915-B4.md |
++| EXP-20260916-INSTALL-1 | - | EXP-20260916-INSTALL-1.md |
++| EXP-20260916-INSTALL-2 | - | EXP-20260916-INSTALL-2.md |
++| EXP-20260916-INSTALL-3 | - | EXP-20260916-INSTALL-3.md |
++| EXP-20260916-RUN-1 | - | EXP-20260916-RUN-1.md |
++| EXP-20260916-RUN-2 | - | EXP-20260916-RUN-2.md |
++| EXP-6D722212 | 5.1 测试设计缺陷（已修正） | 2026-09-15-crlf-eol-governance/test-report.md |
++| EXP-C6A698A8 | 5.2 基准数值偏差（已记录） | 2026-09-15-crlf-eol-governance/test-report.md |
++| EXP-D4587CAE | 5.3 CLI 生成物持续引入 CRLF（根因，已提供自愈手段） | 2026-09-15-crlf-eol-governance/test-report.md |
++| EXP-1BA44745 | 5.4 上游工具限制（已澄清，非缺陷） | 2026-09-15-crlf-eol-governance/test-report.md |
++| EXP-C4213ACA | 6.1 统计口径争议（数据修正） | 2026-09-15-skill-engineering-standards/test-report.md |
++| EXP-00C0412F | 6.2 测试位置错误导致的误判 | 2026-09-15-skill-engineering-standards/test-report.md |
++| EXP-42D8F11A | 6.3 两个用例的断言依赖一次性状态（已修正） | 2026-09-15-skill-engineering-standards/test-report.md |
+diff --git "a/experiences/\345\233\236\344\274\240\346\214\207\345\274\225-\345\246\202\344\275\225\350\264\241\347\214\256\347\273\217\351\252\214.md" "b/experiences/\345\233\236\344\274\240\346\214\207\345\274\225-\345\246\202\344\275\225\350\264\241\347\214\256\347\273\217\351\252\214.md"
+new file mode 100644
+index 0000000..d24a947
+--- /dev/null
++++ "b/experiences/\345\233\236\344\274\240\346\214\207\345\274\225-\345\246\202\344\275\225\350\264\241\347\214\256\347\273\217\351\252\214.md"
+@@ -0,0 +1,24 @@
++# 如何贡献你的 FSTDD 经验（零凭证版）
++
++本目录下的 `EXP-*.md` 是**已脱敏**的经验条目，来自你的 FSTDD 使用过程。
++
++> 回传是**可选**的：不回传不影响任何功能。官方经验池会随 FSTDD 升级
++> （fstdd-upgrade）自动更新，你始终能获得最新经验。
++
++## 方式 A：网页提交（推荐 · 无需 token，只需 GitHub 账号）
++1. 浏览器打开 https://github.com/2749817087qq/Fstdd-experiences/issues/new
++2. 标题写「经验贡献：<主题>」，把 `EXP-*.md` 内容粘贴进正文（可多条合并）
++3. 提交 Issue，维护者看到后会并入经验池
++   （进阶：fork 该仓库 → 把 EXP-*.md 放进 experiences/ → 网页发起 Pull Request，
++   全程网页操作，同样无需 token）
++
++## 方式 B：把贡献包发给维护者（非开发者）
++把上级目录的 `经验贡献包-*.zip` 通过问卷 / 邮件发送给我们即可，其余我们来处理。
++
++## 方式 C：自动推送（维护者 / 有 GitHub token 的用户）
++```bash
++export GITHUB_TOKEN='<你的 token>'      # 需 repo 权限
++python tools/share_experience.py --export --from-archive --publish
++```
++
++本次共导出 22 条经验。
+diff --git a/tools/share_experience.py b/tools/share_experience.py
+index 3da8e47..68adea9 100644
+--- a/tools/share_experience.py
++++ b/tools/share_experience.py
+@@ -430,6 +430,47 @@ def publish(out_dir: Path, repo: str, token: str) -> tuple[bool, str]:
+         shutil.rmtree(tmp, ignore_errors=True)
+ 
+ 
++# 零凭证贡献指引（L1：分发场景默认路径，无需 GitHub token）
++GUIDE = """# 如何贡献你的 FSTDD 经验（零凭证版）
++
++本目录下的 `EXP-*.md` 是**已脱敏**的经验条目，来自你的 FSTDD 使用过程。
++
++> 回传是**可选**的：不回传不影响任何功能。官方经验池会随 FSTDD 升级
++> （fstdd-upgrade）自动更新，你始终能获得最新经验。
++
++## 方式 A：网页提交（推荐 · 无需 token，只需 GitHub 账号）
++1. 浏览器打开 https://github.com/2749817087qq/Fstdd-experiences/issues/new
++2. 标题写「经验贡献：<主题>」，把 `EXP-*.md` 内容粘贴进正文（可多条合并）
++3. 提交 Issue，维护者看到后会并入经验池
++   （进阶：fork 该仓库 → 把 EXP-*.md 放进 experiences/ → 网页发起 Pull Request，
++   全程网页操作，同样无需 token）
++
++## 方式 B：把贡献包发给维护者（非开发者）
++把上级目录的 `经验贡献包-*.zip` 通过问卷 / 邮件发送给我们即可，其余我们来处理。
++
++## 方式 C：自动推送（维护者 / 有 GitHub token 的用户）
++```bash
++export GITHUB_TOKEN='<你的 token>'      # 需 repo 权限
++python tools/share_experience.py --export --from-archive --publish
++```
++
++本次共导出 {exported} 条经验。
++"""
++
++
++def build_bundle(out_dir: Path) -> Path:
++    """零凭证贡献包：把已导出的经验 + 网页提交指引打成 zip，供分发/人工提交。
++
++    返回 zip 路径（位于仓库根）。幂等，可重复执行。
++    """
++    guide = out_dir / "回传指引-如何贡献经验.md"
++    guide.write_text(GUIDE.format(exported=len(list(out_dir.glob("EXP-*.md")))),
++                     encoding="utf-8", newline="\n")
++    bundle = out_dir.parent / f"经验贡献包-{datetime.datetime.now():%Y%m%d}.zip"
++    shutil.make_archive(str(bundle.with_suffix("")), "zip", root_dir=out_dir)
++    return bundle
++
++
+ def main() -> int:
+     ap = argparse.ArgumentParser()
+     ap.add_argument("--list", action="store_true", help="列出可回传的经验")
+@@ -504,17 +545,25 @@ def main() -> int:
+         idx.append(f"| {e['id']} | {e['fm'].get('title', '-')} | {e['source']} |")
+     (OUT_DIR / "README.md").write_text("\n".join(idx) + "\n", encoding="utf-8", newline="\n")
+ 
++    # 零凭证贡献包（L1）：导出的经验 + 网页提交指引打成 zip，无需 token 即可贡献
++    bundle_path = build_bundle(OUT_DIR)
++
+     print()
+     print(f"已导出 {written} 条 → {OUT_DIR.relative_to(REPO_ROOT)}/")
++    print(f"零凭证贡献包: {bundle_path.relative_to(REPO_ROOT)}（无需 token，见包内「回传指引」）")
+ 
+     if args.publish:
+         print()
+         print(f"=== 回传到经验库 {args.repo} ===")
+         token = find_token()
+         if not token:
+-            print("[FAIL] 未找到 GitHub 凭证。请设置 GITHUB_TOKEN，或把 token 放入 "
+-                  "<工作区>/.workbuddy-ai/tmp/.gh_token")
+-            return 1
++            print("[提示] 未找到 GitHub 凭证 —— 回传是可选贡献，不影响本地使用。")
++            print("       已为你生成零凭证贡献包，两条免 token 路径任选：")
++            print(f"         · 网页提交：打开 {bundle_path.relative_to(REPO_ROOT)} 内「回传指引」，"
++                  "按方式 A 粘贴到 GitHub Issue/PR（只需账号）")
++            print(f"         · 转交维护者：把 {bundle_path.name} 发给维护者（方式 B）")
++            print("       维护者/有 token 的用户可设 GITHUB_TOKEN 后重跑 --publish（方式 C）")
++            return 0
+ 
+         # 先尝试直推；若无写权限则自动降级为 fork + PR。
+         # 用「尝试 + 降级」而非「先查身份」，是因为 urllib 不支持 socks5 代理，
+@@ -529,12 +578,10 @@ def main() -> int:
+         return 0 if ok else 1
+ 
+     print()
+-    print("下一步（二选一）：")
+-    print(f"  · 自动推送：python {Path(__file__).name} --export --from-archive --publish")
+-    print("  · 手工提交（fork + PR）：")
+-    print(f"    1. fork https://github.com/{DEFAULT_EXP_REPO}")
+-    print("    2. 把本目录下的经验文件放入 fork 的 experiences/ 目录")
+-    print("    3. 发起 Pull Request")
++    print("下一步（回传可选 · 免 token 优先）：")
++    print(f"  · 零凭证（推荐）：打开 {bundle_path.name} 内的「回传指引」，"
++          "按网页步骤提交 Issue/PR，或把 zip 转交维护者")
++    print(f"  · 自动推送（需 token）：python {Path(__file__).name} --export --from-archive --publish")
+     return 0
+ 
+ 
+diff --git "a/\347\273\217\351\252\214\350\264\241\347\214\256\345\214\205-20260916.zip" "b/\347\273\217\351\252\214\350\264\241\347\214\256\345\214\205-20260916.zip"
+new file mode 100644
+index 0000000000000000000000000000000000000000..2eeff743bc7da6de693dae853e870c6f7dc7a97d
+GIT binary patch
+literal 22551
+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
+
+literal 0
+HcmV?d00001
+
+-- 
+2.55.0.windows.3
+

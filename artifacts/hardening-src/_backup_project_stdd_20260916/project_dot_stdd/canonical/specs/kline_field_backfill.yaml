@@ -1,0 +1,334 @@
+# canonical/specs/kline_field_backfill.yaml — 由 STDD Phase 4 Step 2 从 change `kline_field_backfill` 合并生成
+# 生成时间: 2026-09-15T07:20:00+08:00 ｜ 来源: .stdd/archive/2026-09-14-kline_field_backfill/spec.yaml
+# 本文件为 AI 主读的 Canonical 行为规格；Human View 见 specs/kline_field_backfill/spec.md
+
+meta:
+  capability: kline_field_backfill
+  change_id: kline_field_backfill
+  created: '2026-09-14'
+  merged_at: '2026-09-15T07:20:00+08:00'
+  confidence: high
+  status: archived
+  task_type: data-migration
+  source_change_path: .stdd/archive/2026-09-14-kline_field_backfill
+  human_view: specs/kline_field_backfill/spec.md
+artifacts:
+  script: repair_kline_fields.py
+  test: .stdd/agent_tests/test_kline_field_backfill.py
+  truth_source: reits_kline_daily.json
+  target_table: business.reits_kline_daily
+  calendar_source: business.tdx_kline_daily
+  backup_dir: backups/
+  orchestrator: daily_etl.py
+constants:
+  return_formula: round(((close / prev_close - 1) * 100), 4)
+  expected_fill_return: 24642
+  expected_null_return_after_fill_only: 90
+  expected_null_return_after: 89
+  expected_fill_amount: 178
+  expected_null_amount_after_fill_only: 81
+  expected_null_amount_after: 0
+  expected_total_rows_after_purge: 51486
+  expected_purged_rows: 81
+  phantom_date: '2026-05-03'
+  exdiv_rows_in_fill_set: 223
+requirements:
+- id: REQ-001-001
+  title: 交易日历基准取数
+  description: 系统 SHALL 以 `business.tdx_kline_daily` 的 DISTINCT date 集合作为交易日历基准， 并同时取出 max(date) 作为「历史边界」；日历集合 SHALL NOT 含任何周六/周日。
+  confidence: high
+  test: unit
+  code: to-implement
+  scenarios:
+  - id: SC-001-001
+    confidence: high
+    given: 已连接 business schema，`tdx_kline_daily` 有数据
+    when: 加载交易日历
+    then: 系统 SHALL 返回 (calendar:set[str], max_date:str)
+    and:
+    - calendar 中 SHALL NOT 存在任何周六或周日
+    evidence: proposal §1.3「tdx_kline_daily 含周末行 = 0」
+- id: REQ-001-002
+  title: 日历缺失时保护性中止
+  description: 交易日历为空时系统 SHALL 中止执行并报错，SHALL NOT 执行任何写入或删除。
+  confidence: high
+  test: unit
+  code: to-implement
+  scenarios:
+  - id: SC-001-002
+    confidence: high
+    given: '`tdx_kline_daily` 为空（模拟上游全断）'
+    when: 加载交易日历
+    then: 系统 SHALL 抛出/返回错误并中止
+    and:
+    - SHALL NOT 修改 JSON 与 PG 的任何行
+- id: REQ-002-001
+  title: daily_return_pct 回填（未复权）
+  description: 对 JSON 中 `daily_return_pct` 为 null、且其同一标的上一交易日的 close 存在且 > 0、 且该行 date 落在交易日历内的行，系统 SHALL 填入 `round(((close
+    / prev_close - 1) * 100), 4)`。
+  confidence: high
+  test: acceptance
+  code: to-implement
+  scenarios:
+  - id: SC-002-001
+    confidence: high
+    given: JSON 中某行 daily_return_pct = null，同标的上一行 close = 2.056，本行 close = 2.08
+    when: 执行回填
+    then: 该行 daily_return_pct SHALL = 1.1673
+    evidence: proposal §1.4（sina 真实交易日 26,755/26,755 吻合该公式）
+  - id: SC-002-002
+    confidence: high
+    given: 回填与幽灵行清理均已执行完毕
+    when: 统计全表 daily_return_pct IS NULL 的行
+    then: 行数 SHALL = 89（= 标的数）
+    and:
+    - 这 89 行 SHALL 全部是各标的 date 最小的一行
+    evidence: proposal §1.3「无 prev_close 的行 = 89 = 每只标的的首行」； 顺序依赖：只回填未清理时为 90（多出幽灵行 180503）
+- id: REQ-002-002
+  title: 厂商已有值不被改写
+  description: 回填 SHALL 只作用于 null 行；`daily_return_pct` 已有值的行 SHALL 逐字节保持不变。
+  confidence: high
+  test: acceptance
+  code: to-implement
+  scenarios:
+  - id: SC-002-003
+    confidence: high
+    given: 某行 daily_return_pct = -0.4883（sina 厂商值，与公式计算结果不同）
+    when: 执行回填
+    then: 该行 SHALL 仍为 -0.4883
+    evidence: proposal §1.4（80 处不符全在幽灵日，非 null 行须原样保留）
+- id: REQ-002-003
+  title: 幽灵日不参与收益率回填
+  description: 系统 SHALL NOT 为 date 不在交易日历内的行计算收益率。
+  confidence: high
+  test: unit
+  code: to-implement
+  scenarios:
+  - id: SC-002-004
+    confidence: high
+    given: JSON 中存在 180503 于 2026-05-03（非交易日）且 daily_return_pct = null
+    when: 执行回填
+    then: 该行 SHALL NOT 被填入任何收益率
+    evidence: proposal §1.3「净可填 24,642（剔除幽灵日 1 行）」
+- id: REQ-003-001
+  title: amount 回填
+  description: 对 JSON 中 `amount` 为 null、且 (fund_code, date) 在 `business.tdx_kline_daily` 存在非空 amount 的行，系统 SHALL 填入该值。
+  confidence: high
+  test: acceptance
+  code: to-implement
+  scenarios:
+  - id: SC-003-001
+    confidence: high
+    given: JSON 中 2026-09-10/09-11 共 178 行 amount = null；tdx_kline_daily 同键 amount 非空
+    when: 执行回填与幽灵行清理
+    then: 这 178 行 SHALL 全部被填入非空 amount
+    and:
+    - 全表 amount IS NULL 的行数 SHALL = 0
+    evidence: proposal §1.6；顺序依赖：只回填未清理时为 81（= 幽灵行数）
+- id: REQ-003-002
+  title: 无源 amount 显式报告
+  description: 无源可取的 amount 空值行 SHALL 保持 null，且系统 SHALL 报告其数量与键，SHALL NOT 静默吞掉。
+  confidence: medium
+  test: unit
+  code: to-implement
+  scenarios:
+  - id: SC-003-002
+    confidence: medium
+    given: 某行 amount = null 且 tdx_kline_daily 无同键行或同键 amount 也为 null
+    when: 执行回填
+    then: 该行 SHALL 保持 null
+    and:
+    - 系统 SHALL 在输出中列出该行 (fund_code, date)
+- id: REQ-004-001
+  title: 幽灵交易日行删除（三重守卫）
+  description: 系统 SHALL 删除同时满足以下三条的行：(1) date 不在交易日历内； (2) date < 交易日历最大日期；(3) date 为周六/周日，或该日全部行与「上一交易日」 同标的行在 (close, volume)
+    上逐行完全相同。
+  confidence: high
+  test: acceptance
+  code: to-implement
+  scenarios:
+  - id: SC-004-001
+    confidence: high
+    given: 2026-05-03 的 81 行，为周日且 close+volume 与 2026-04-30 逐行相同
+    when: 执行清理
+    then: 这 81 行 SHALL 被删除
+    and:
+    - 全表 SHALL NOT 再存在 date = '2026-05-03' 的行
+    evidence: proposal §1.7（劳动节假期 + 逐行重复）
+  - id: SC-004-002
+    confidence: high
+    given: 某行 date 不在日历内但 date = 日历最大日期（可能是当日尚未入库）
+    when: 执行清理
+    then: 该行 SHALL NOT 被删除
+    and:
+    - 系统 SHALL 输出告警
+- id: REQ-004-002
+  title: 未分类的非交易日行只告警不删除
+  description: 不满足删除条件 (3) 的「date 不在日历内且 date < 日历最大日期」的行， 系统 SHALL 只输出 WARNING 并列出明细，SHALL NOT 删除。
+  confidence: high
+  test: unit
+  code: to-implement
+  scenarios:
+  - id: SC-004-003
+    confidence: high
+    given: 某行 date 不在日历内、date < 日历最大日期，但该行是工作日且不与上一交易日重复
+    when: 执行清理
+    then: 该行 SHALL 保留
+    and:
+    - 系统 SHALL 输出 WARNING 含该 date 与行数
+- id: REQ-004-003
+  title: 删除前强制备份
+  description: 执行任何删除前，系统 SHALL 先把被删行的完整内容写入 `backups/phantom_<timestamp>.csv`。
+  confidence: high
+  test: acceptance
+  code: to-implement
+  scenarios:
+  - id: SC-004-004
+    confidence: high
+    given: 待删 81 行
+    when: 执行清理
+    then: '`backups/phantom_<ts>.csv` SHALL 存在且行数 = 81'
+    and:
+    - 该文件 SHALL 含 fund_code/date/open/high/low/close/volume/amount/turnover_rate/daily_return_pct/source 全部列
+- id: REQ-005-001
+  title: JSON 真源原子写入
+  description: 对 `reits_kline_daily.json` 的写入 SHALL 走「先写 .tmp 再 os.replace」的原子替换， 且写入前 SHALL 备份原文件到 `backups/`。
+  confidence: high
+  test: unit
+  code: to-implement
+  scenarios:
+  - id: SC-005-001
+    confidence: high
+    given: 执行 `--write`
+    when: 写入 JSON
+    then: 目录中 SHALL 出现 `backups/reits_kline_daily_<ts>.json` 备份
+    and:
+    - 主 JSON SHALL 通过 tmp + os.replace 完成替换（无中间态可见）
+    evidence: proposal §1.8（JSON 是唯一真源）
+- id: REQ-005-002
+  title: coverage 元数据记录口径
+  description: JSON 的 `coverage` 块 SHALL 记录本次回填的口径与计数： `return_fill_count` / `amount_fill_count` / `purged_rows` / `return_caliber`（未复权）/
+    `last_repair_at`；且 SHALL 保持既有 coverage 字段不丢。
+  confidence: medium
+  test: unit
+  code: to-implement
+  scenarios:
+  - id: SC-005-002
+    confidence: medium
+    given: 执行 `--write`
+    when: 读取 JSON 的 coverage
+    then: coverage SHALL 含上述 5 个新字段
+    and:
+    - 既有字段（fund_count/total_records/date_range）SHALL 保持存在且值自洽
+- id: REQ-006-001
+  title: 一次性 PG 应用（--apply-pg）
+  description: 传入 `--apply-pg` 时，系统 SHALL 在单个 PG 事务内执行与 JSON 等价的 UPDATE（daily_return_pct + amount）与 DELETE（幽灵行），提交后 SHALL
+    断言 PG 与 JSON 在「null 收益率行数 / null amount 行数 / 幽灵日行数」三项上一致。
+  confidence: high
+  test: acceptance
+  code: to-implement
+  scenarios:
+  - id: SC-006-001
+    confidence: high
+    given: 已 `--write` 修复 JSON，PG 尚未更新
+    when: 执行 `--apply-pg`
+    then: PG 的 daily_return_pct IS NULL 行数 SHALL = 89
+    and:
+    - PG 中 date = '2026-05-03' 的行数 SHALL = 0
+  - id: SC-006-002
+    confidence: high
+    given: 已 `--apply-pg` 完成
+    when: 对比 PG 与 JSON
+    then: 上述三项计数 SHALL 完全一致
+    and:
+    - 不一致时 SHALL 以非零退出码失败
+  - id: SC-006-003
+    confidence: high
+    given: JSON 已修复完成（plan.purge 为空），但 PG 仍残留非交易日脏行
+    when: 执行 `--apply-pg`
+    then: 系统 SHALL 从 **PG 自身行集合** 重放三重守卫得到待删日期（而非沿用 JSON 计划）
+    and:
+    - SHALL 严格按该日期集合发 DELETE，且与两项 UPDATE 同处一个事务
+    evidence: 执行期发现：`plan.purge` 由 JSON 推导，JSON 修好后即为空，若 `--apply-pg` 沿用该空计划则 PG 脏行永远删不掉（2026-09-14 实测 json_purge=0 而 PG 实有
+      81 行）。
+  - id: SC-006-004
+    confidence: high
+    given: 完整跑过一次 `daily_etl.py`（含 json/build 与末尾的 sync_duckdb）
+    when: 对比 JSON / PG / DuckDB 副本三者的四项计数
+    then: 三者 SHALL 完全一致（总行数 / null 收益率行数 / null amount 行数 / 幽灵日行数）
+    evidence: 用户报缺陷时即指出「postgresql 与 duckdb 都有数据」。DuckDB 副本 `D:\\duckdb\\reits.duckdb` 由 sync_pg_to_duckdb.py 自 PG 反向重建， 只验
+      JSON↔PG 会漏掉副本仍停留在旧态的情况。
+- id: REQ-007-001
+  title: 编排防复发
+  description: '`daily_etl.py` 的 `DAILY_DEFAULT` SHALL 在 `sync_kline_json` 之后、`json`（build）之前 插入 `repair_kline` 步；该步 SHALL
+    只写 JSON，PG 由紧随其后的 build 全量重建传播。'
+  confidence: high
+  test: acceptance
+  code: to-implement
+  scenarios:
+  - id: SC-007-001
+    confidence: high
+    given: '`daily_etl.py --dry-run`'
+    when: 打印计划
+    then: 计划中 SHALL 出现 repair_kline，且位置在 sync_kline_json 之后、json 之前
+  - id: SC-007-002
+    confidence: high
+    given: 完整跑一次 `daily_etl.py`（含 build）
+    when: 检查 PG
+    then: 三项成功标准 SHALL 仍成立（JSON 修复未被 build 回滚）
+- id: REQ-008-001
+  title: 幂等
+  description: 连续执行两次相同命令 SHALL 得到逐字节相同的 JSON，且第二次为空操作（无备份写入、无行变更）。
+  confidence: high
+  test: acceptance
+  code: to-implement
+  scenarios:
+  - id: SC-008-001
+    confidence: high
+    given: 已执行过一次 `--write`
+    when: 再次执行 `--write`
+    then: JSON 内容的 SHA256 SHALL 与第一次执行后完全一致
+    and:
+    - 输出 SHALL 报告「无缺口，跳过写入」
+- id: REQ-008-002
+  title: 无缺口早退
+  description: 无任何缺口时，系统 SHALL 早退且 SHALL NOT 创建备份文件或修改任何文件。
+  confidence: high
+  test: unit
+  code: to-implement
+  scenarios:
+  - id: SC-008-002
+    confidence: high
+    given: 三项缺口均为 0
+    when: 执行 `--write`
+    then: 系统 SHALL 输出早退信息
+    and:
+    - '`backups/` 中 SHALL NOT 新增文件'
+- id: REQ-009-001
+  title: 默认 dry-run
+  description: 不带 `--write` 时，系统 SHALL 只打印缺口统计与执行计划，SHALL NOT 修改任何文件或数据。
+  confidence: high
+  test: unit
+  code: to-implement
+  scenarios:
+  - id: SC-009-001
+    confidence: high
+    given: 存在缺口
+    when: 不带 `--write` 执行
+    then: 输出 SHALL 含三项缺口计数
+    and:
+    - JSON 的 SHA256 与 PG 三项计数 SHALL 保持不变
+- id: REQ-009-002
+  title: 删除需显式授权
+  description: 删除幽灵行 SHALL 需要显式 `--purge-phantom`，SHALL NOT 由 `--write` 单独触发。
+  confidence: high
+  test: unit
+  code: to-implement
+  scenarios:
+  - id: SC-009-002
+    confidence: high
+    given: 存在 81 行幽灵行
+    when: 只传 `--write`（不带 --purge-phantom）
+    then: 幽灵行 SHALL 保留
+    and:
+    - 系统 SHALL 输出提示「检测到 N 行待清理，加 --purge-phantom 执行」
