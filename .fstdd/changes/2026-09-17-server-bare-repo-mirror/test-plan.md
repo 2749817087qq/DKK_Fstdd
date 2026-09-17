@@ -187,6 +187,21 @@
 | **预期结果** | 公钥指纹不变；输出 `[SKIP] deploy key 已存在`；API 侧条目数不变 |
 | **当前状态** | ✅ 已覆盖 |
 
+#### 案例 4.3 — remote 必须走 SSH 别名
+
+| 字段 | 内容 |
+|------|------|
+| **ID** | TC-SBR-017 |
+| **对应 Spec** | code spec → SC-008 |
+| **优先级** | P0 |
+| **预置条件** | 本地已配置 ssh 别名 |
+| **输入** | 检查 remote URL 形式；`git ls-remote server` |
+| **预期结果** | URL 为 `fstdd-hub:<path>` 别名形式，**不得**为裸主机名；连通验证能读到 sha |
+| **当前状态** | ✅ 已覆盖 |
+
+> 该案例来自实测缺陷：脚本早期版本写裸主机名 `ubuntu@ip:...`，绕过 `~/.ssh/config`
+> 的 `IdentityFile`，导致 `Permission denied (publickey)`。
+
 ### 功能 5：主机信任治理（REQ-005）
 
 #### 案例 5.1 — known_hosts 与服务器一致
