@@ -318,6 +318,13 @@ stdd_version: "2.9.5"
 - [ ] REFACTOR：重构后测试保持绿色
 - [ ] 已有测试无回归
 
+## Gate 前自检清单（与宪法第 7 节一致，V3.1）
+
+- [ ] 时间基线已建立：`fstdd baseline show <change> --check` 返回 ok（Gate 1 会自动建立；老 change 用 `fstdd baseline establish <change>` 回填）
+- [ ] 证据带观测时刻：`why.evidence` 含 `observed_at`（带时区）与观测时 git HEAD；不得用生成时刻冒充
+- [ ] 时效检测通过：`python tools/check_timestamps.py --repo .` 0 违规
+- [ ] （涉及时钟结论时）`fstdd baseline check` 巡检已执行；判「无法测量」时不得写成「已对齐」
+
 ## 用户交互规则
 
 | 场景 | 普通模式 | 长程模式 |

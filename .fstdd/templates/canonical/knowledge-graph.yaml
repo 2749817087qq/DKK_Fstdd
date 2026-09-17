@@ -1,0 +1,50 @@
+# knowledge-graph.yaml — 跨项目知识图谱（Canonical YAML）
+# V3.0 新增：AI 可精确消费的知识网络
+
+graph_version: "1.0"
+last_merged: ""
+
+# ── Nodes：跨项目知识单元 ──
+nodes:
+  - id: ""                    # KG-{NNN} 全局唯一
+    type: ""                  # failure_pattern | design_decision | fix_template | language_idiom
+    title: ""                 # 简短标题（≤80 字）
+    description: ""           # 详细描述
+    cross_project_count: 0    # 跨项目出现次数
+    projects: []              # 出现过的项目列表
+    tags: []                  # 自由标签
+
+    # type=failure_pattern 特有字段
+    category: ""              # 14 类失败模式之一（snake_case）
+    root_cause: ""            # 根因分析
+    fix_template_refs: []     # 关联的 fix_template node IDs
+    severity: ""              # high | medium | low
+
+    # type=design_decision 特有字段
+    applies_to: []            # 适用场景（如 ["python", "cli"]）
+    rationale: ""             # 为什么做这个决策
+    prevents: []              # 可预防的 failure_pattern node IDs
+
+    # type=fix_template 特有字段
+    steps: []                 # 修复步骤（有序列表）
+    success_rate: 0.0         # 跨项目修复成功率（0.0 - 1.0）
+    total_applications: 0     # 总应用次数
+
+    # type=language_idiom 特有字段
+    language: ""              # 目标语言
+    code_snippet: ""          # 代码示例
+    anti_pattern: ""          # 对应的反模式
+
+    # Metrics
+    metrics:
+      occurrence_count: 0
+      severity_trend: ""      # rising | stable | declining
+      last_seen: ""
+
+# ── Edges：节点关系 ──
+edges:
+  - from: ""                  # source node ID
+    to: ""                    # target node ID
+    type: ""                  # causes | prevented_by | refines | appears_in
+    weight: 0.0               # 关系权重 (0.0 - 1.0)
+    evidence: ""              # 关系证据描述

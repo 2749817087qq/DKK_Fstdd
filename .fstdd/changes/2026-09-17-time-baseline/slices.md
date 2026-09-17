@@ -293,3 +293,30 @@ canon generate 重渲染 + canon verify 通过（DC-HASH 一致）。
 不可达 → 样本不足 → 抖动 → 误差上界 → 超限 → 可接受；
 采样器注入（sampler 返回 list，TC-CAL-009 按读数条数计数）；
 err > tolerance 时 reason 明示「误差上界」。
+
+### ✅ Slice 7 done — 宪法条款 + 模板双源（2026-09-17T17:50:00+00:00）
+
+| 字段 | 值 |
+|---|---|
+| tc_coverage | TC-CONST-001..005 + TC-TMPL-001 |
+| new_tests | 6（`upstream/tests/test_constitution_ops.py`，**新增 > 0** ✅） |
+| verified_at | 2026-09-17T17:44:48+00:00（`23 passed in 5.42s` 含 S5/S6 回归） |
+| 产物 | 宪法第 7 节（两份同步）+ stdd-build Gate 前自检清单 + knowledge-graph.yaml 镜像补同步 |
+
+**TDD 轨迹**：RED（5 failed / 1 passed——通过的正是模板双源本就一致）→ GREEN（6 passed）。
+
+**测试先行兑现价值**：
+1. 模板双源**存量漂移**被抓出：upstream 侧有 `canonical/knowledge-graph.yaml`
+   而 `.fstdd/templates` 缺 → 补上（EXP-20260915-B2 的复发点现在有测试守）
+2. CONST-002 证实 validate 的基线警告**确实执行**（warning 级、可触发、可观察）
+
+**宪法第 7 节（时间基线）五项规定**：须建立基线（establish / Gate 1 自动 /
+backfill 回填）、证据须带观测时刻（observed_at + 观测时 HEAD，禁止生成时刻
+冒充）、提交前过时效检测（check_timestamps 双轨）、巡检三态禁止「测不准
+报已对齐」、违规后果（validate 警告 + Gate 3 前清零）。
+
+**TC-CONST-004 核对**（每项「必须」→ 可执行检查，记入 test-report）：
+- 建立基线 → `baseline.py` establish（TC-TB-001..009 覆盖）
+- 观测时刻 → `tools/check_timestamps.py`（TC-TSN-001..007 覆盖）
+- 时效检测 → 同上检测器（SC-016）
+- 巡检三态 → `baseline.py` check（TC-CAL-001..009 覆盖）
