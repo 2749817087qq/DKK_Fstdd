@@ -85,7 +85,7 @@ phases:
     confirmed_evidence: D哥：确认 Gate 1（并指出『使用 agent 时很多都不建立时间基线，这个需要进入到 FSTDD 中去』）
     status: completed
 score_confidence: confirmed
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 18
