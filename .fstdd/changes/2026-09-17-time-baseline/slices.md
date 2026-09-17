@@ -179,3 +179,35 @@ GREEN（15 passed）。
 
 **变异测试（TC-CANON-006）**：4 个纯内存变异体（identity / 反方向 / 错误目标串 /
 半吊子首替换）全部被语料杀死，且正确实现幂等。
+
+### ✅ Slice 3 done — 时间戳规范统一（2026-09-17T17:04:00+00:00）
+
+| 字段 | 值 |
+|---|---|
+| tc_coverage | TC-TSN-001 / 002 / 003 / 004 / 005 / 006 / 007 |
+| new_tests | 7（`upstream/tests/test_timestamp_ops.py`，**新增 > 0** ✅） |
+| verified_at | 2026-09-17T17:03:02+00:00（`22 passed in 52.50s`，含 Slice 1/2 复验） |
+| 产物 | `tools/check_timestamps.py`（L1 值层 + L2 源层双轨检测器）<br>14 文件 30 处 naive 改 aware（22 处产出 + 3 处比较 + …） |
+
+**TDD 轨迹**：RED（6 failed / 1 passed）→ GREEN（22 passed，全仓扫描 0 违规）。
+
+**L2 检测器当场兑现价值**：人工清点正则 `datetime\.now()` 漏了 `_dt.now()` 形态，
+检测器抓到 3 处遗漏（guard.py:517 卡壳检测 / upgrade.py:340 upgraded_at /
+batch.py:78 batch_id 声明）——其中 guard.py:517 与 :195 同构（naive now 减 aware
+解析值，TypeError 被 except 吞掉 → 检测器静默失效，比崩溃更糟）。
+
+**检测器自身的两处假阳性（首跑即中，已修）**：
+1. 检测器 docstring 里的 `` `datetime.now()` `` 文本被当代码 → L2 改 tokenize 重建
+   「代码行」（跳过 docstring / 字符串 / 注释）
+2. 豁免清单的 tools/ 条目在 upstream/fstdd 根下定位失败 → find_stale_exemptions
+   根参数改仓库根
+
+**豁免清单（TC-TSN-005/006）**：4 类（pure_date / identifier / year_extract /
+comparison），每条附理由，自检全部可定位；植入无效条目被报出（try/finally 恢复）。
+
+**存量回填（迁移）**：活跃 change `.fstdd.yaml` 3 个 naive 值按 +08:00→UTC 换算
+（含 `pre_auth_timestamp` 的 `+0800` 无冒号格式修正——Step 8a 手写时的格式错误）。
+归档不回溯（L1 只扫活跃 change）。
+
+**SC-016 达成**：`check_timestamps.py --repo .` → ✅ naive 计数为 0，
+0 条失效豁免，全程只读。

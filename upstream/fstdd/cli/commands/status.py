@@ -83,7 +83,7 @@ def cmd_status(args: argparse.Namespace) -> None:
 
 def _show_zombie_changes(project_root: Path, current_name: str) -> None:
     """V3.0.1: Show zombie changes in changes/ directory."""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timezone, timedelta
     changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         return
@@ -103,7 +103,7 @@ def _show_zombie_changes(project_root: Path, current_name: str) -> None:
             continue
         try:
             lm = datetime.fromisoformat(last_mod)
-            if datetime.now() - lm > timedelta(days=7):
+            if datetime.now(timezone.utc) - lm > timedelta(days=7):
                 zombies.append(d.name)
         except Exception:
             pass

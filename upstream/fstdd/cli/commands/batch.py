@@ -18,7 +18,8 @@ Usage:
 
 import argparse
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
+from ..timeutil import utc_now_iso
 from pathlib import Path
 
 # V2.9.3: Import scope classifier from guard
@@ -74,7 +75,7 @@ def _read_batch_config(project_root: Path) -> dict:
 def _create_batch(project_root: Path, strategy: str = "monthly") -> Path:
     """Create a new batch directory."""
     import yaml
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     if strategy == "weekly":
         iso = now.isocalendar()
         batch_id = f"{now.year}-W{iso.week:02d}-{now.strftime('%m%d')}"
@@ -126,7 +127,7 @@ def _create_batch(project_root: Path, strategy: str = "monthly") -> Path:
 def _close_batch(batch_dir: Path) -> None:
     """Close a batch and generate archive-summary.md."""
     import yaml
-    now = datetime.now().isoformat()
+    now = utc_now_iso()
 
     stdd_yaml = batch_dir / ".fstdd.yaml"
     data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) if stdd_yaml.exists() else {}
@@ -264,7 +265,7 @@ def _cmd_batch_add(project_root: Path, description: str) -> None:
 
     items.append({
         "description": description,
-        "added_at": datetime.now().isoformat(),
+        "added_at": utc_now_iso(),
     })
     data["items"] = items
     stdd_yaml.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False), encoding="utf-8")
@@ -413,7 +414,7 @@ def _cmd_batch_close(project_root: Path, force: bool = False) -> None:
             if len(items) <= 1 and created_str:
                 try:
                     created = datetime.fromisoformat(created_str)
-                    age_minutes = (datetime.now() - created).total_seconds() / 60
+                    age_minutes = (datetime.now(timezone.utc) - created).total_seconds() / 60
                     if age_minutes < 60:
                         print(f"  ⚠️  批次仅 {len(items)} 项、才开了 {int(age_minutes)} 分钟。")
                         print(f"     batch 适合收纳多个小修复，不建议频繁开关。")
@@ -456,7 +457,7 @@ def _cmd_batch_proposal(project_root: Path, batch: Path, description: str = "") 
     designs_dir.mkdir(parents=True, exist_ok=True)
 
     from .canon import CANONICAL_PROPOSAL_TEMPLATE
-    now = datetime.now().isoformat()
+    now = utc_now_iso()
 
     proposal_file = proposals_dir / f"{batch_id}.yaml"
     if not proposal_file.exists():
@@ -596,7 +597,7 @@ def _cmd_batch_child_add(project_root: Path, batch: Path, name: str, description
         spec_file.write_text(
             CANONICAL_CODE_SPEC_TEMPLATE.format(
                 change_name=f"{today}-{name}",
-                created_at=datetime.now().isoformat()),
+                created_at=utc_now_iso()),
             encoding="utf-8")
 
     # Link batch description into child proposal.md (inherited)
@@ -684,7 +685,7 @@ def _cmd_batch_deliver(project_root: Path, batch: Path,
                         merged_specs += 1
 
     # Batch test-report.md
-    now = datetime.now().isoformat()
+    now = utc_now_iso()
     lines = [f"# Batch {batch.name} — 批级交付报告", "",
              f"- 生成时间: {now}",
              f"- 子 change 数: {len(children)}",

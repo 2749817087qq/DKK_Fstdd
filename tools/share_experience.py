@@ -309,7 +309,7 @@ def share_disabled() -> bool:
 # 可审计：项目内 append-only 的 .fstdd/share-audit.yaml
 # ---------------------------------------------------------------------------
 def _now() -> str:
-    return datetime.datetime.now().isoformat(timespec="seconds")
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 
 
 def _scrub(text: str, secrets=()) -> str:
@@ -861,7 +861,7 @@ def main() -> int:
     # 索引
     idx = ["# 经验库（对外回传）", "",
            f"> 由 `tools/share_experience.py` 导出，共 {written} 条，"
-           f"导出时间 {datetime.datetime.now():%Y-%m-%d %H:%M}", "",
+           f"导出时间 {datetime.datetime.now(datetime.timezone.utc):%Y-%m-%d %H:%M} UTC", "",
            "| ID | 标题 | 来源 |", "|---|---|---|"]
     for e, _, _ in prepared:
         idx.append(f"| {e['id']} | {e['fm'].get('title', '-')} | {e['source']} |")

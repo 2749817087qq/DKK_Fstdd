@@ -11,7 +11,7 @@ phases:
     status: pending
   spec:
     confirmed_actor: ai
-    confirmed_at: '2026-09-17T23:22:20'
+    confirmed_at: '2026-09-17T15:22:20+00:00'
     confirmed_by: dialog
     confirmed_evidence: D哥 于 2026-09-17T23:2x 经确认框明确选择「确认通过」：Gate 2（2026-09-17-time-baseline，design.md
       9 项技术决策 / 7 份 canonical 行为规格共 21 REQ + 47 Scenario / test-plan 52 TC / agent
@@ -19,7 +19,7 @@ phases:
     status: completed
   understand:
     confirmed_actor: ai
-    confirmed_at: '2026-09-17T23:07:40'
+    confirmed_at: '2026-09-17T15:07:40+00:00'
     confirmed_by: dialog
     confirmed_evidence: D哥 于 2026-09-17T23:1x 经确认框明确选择「确认通过」：Gate 1（2026-09-17-time-baseline，8
       项变更 C1–C8 / 4 个新增 capability / 8 条成功标准）。同轮确认：执行模式采纳 thorough（复杂度评分 13）；C8（canon
@@ -29,7 +29,7 @@ long_range:
   enabled: true
   mode: full_auto
   pre_auth_completed: true
-  pre_auth_timestamp: 2026-09-17T23:27:46+0800
+  pre_auth_timestamp: 2026-09-17T15:27:46+00:00
   pre_auth_by: dialog
   iteration_limit: 10
   notes: D哥 于 2026-09-17T23:2x 经确认框选择「确认全部」：授权 A①②③④ + B⑤～⑫ （含 ssh 只读时钟巡检、Git 写操作

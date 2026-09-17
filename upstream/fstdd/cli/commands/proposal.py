@@ -4,6 +4,7 @@ import sys
 import yaml
 from pathlib import Path
 from datetime import datetime
+from ..timeutil import utc_now_iso
 
 
 def cmd_proposal_init(args):
@@ -35,7 +36,7 @@ def _parse_proposal_md(content: str, change_id: str) -> dict:
         "meta": {
             "change_id": change_id,
             "title": sections.get("title", change_id),
-            "created": datetime.now().isoformat(),
+            "created": utc_now_iso(),
             "status": "draft",
         },
         "why": {

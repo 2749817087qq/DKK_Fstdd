@@ -4,6 +4,7 @@ import argparse
 import os
 import shutil
 from datetime import datetime
+from ..timeutil import utc_now_iso
 from pathlib import Path
 
 
@@ -336,7 +337,7 @@ def _write_upgrade_notes(project_root: Path, old_ver: str, new_ver: str) -> None
     import yaml as _yaml
     from datetime import datetime as _dt
     notes = {
-        "upgraded_at": _dt.now().isoformat(),
+        "upgraded_at": _dt.now(_dt.timezone.utc).isoformat(),
         "from_version": old_ver,
         "to_version": new_ver,
         "changes": [
@@ -486,7 +487,7 @@ def _cmd_upgrade_current(args: argparse.Namespace) -> None:
     _reinstall_platforms(project_root, stdd_source, platforms)
 
     # Write version
-    now = datetime.now().isoformat()
+    now = utc_now_iso()
     installed_at = version_data.get("installed_at", now)
     _write_version_yaml(project_root, {
         "stdd_version": source_ver,
@@ -585,7 +586,7 @@ def _cmd_lock_project(args: argparse.Namespace) -> None:
     proj_ver = get_project_version(project_root) or "0.0.0"
 
     data = _read_version_yaml(project_root)
-    now = datetime.now().isoformat()
+    now = utc_now_iso()
     data["stdd_version"] = proj_ver
     data["locked"] = True
     if "installed_at" not in data:

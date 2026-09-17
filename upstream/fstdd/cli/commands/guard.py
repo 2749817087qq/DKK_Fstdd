@@ -193,7 +193,7 @@ def _is_zombie(change_dir: Path) -> bool:
         return False
     try:
         lm = _dt.fromisoformat(last_mod)
-        if _dt.now() - lm > _td(days=_ZOMBIE_DAYS):
+        if _dt.now(_dt.timezone.utc) - lm > _td(days=_ZOMBIE_DAYS):
             return True
     except Exception:
         pass
@@ -514,7 +514,7 @@ def _check_phase_integrity_guard(project_root: Path) -> list[str]:
         spec_done = phases.get("spec", {}).get("status") == "completed"
         build_time = phases.get("build", {}).get("completed_at", "")
         spec_time = phases.get("spec", {}).get("completed_at", "")
-        now = _dt.now()
+        now = _dt.now(_dt.timezone.utc)
         if build_done and not deliver_done:
             try:
                 bt = _dt.fromisoformat(build_time)

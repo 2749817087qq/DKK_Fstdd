@@ -38,6 +38,7 @@ if __name__ == "__main__":
 from pathlib import Path
 import yaml
 from datetime import datetime
+from ..timeutil import utc_now_iso
 
 def main():
     project_root = Path.cwd()
@@ -45,7 +46,7 @@ def main():
         stdd_yaml = change_dir / ".fstdd.yaml"
         if stdd_yaml.exists():
             state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
-            state["last_modified"] = datetime.now().isoformat()
+            state["last_modified"] = utc_now_iso()
             print(f"[STDD] State saved: Phase {state.get('active_phase', '?')}")
             break
 

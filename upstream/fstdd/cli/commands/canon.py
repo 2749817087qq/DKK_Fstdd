@@ -4,7 +4,7 @@ import sys
 import yaml
 import hashlib
 
-from ..timeutil import content_hash
+from ..timeutil import content_hash, utc_now_iso
 from pathlib import Path
 from datetime import datetime
 
@@ -143,7 +143,7 @@ def cmd_canon_init(args):
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
 
-    created_at = datetime.now().isoformat()
+    created_at = utc_now_iso()
     templates_created = []
 
     # Create proposal template (with correct naming: {change_name}.yaml)
@@ -299,7 +299,7 @@ def _generate_one(project_root: Path, change_id: str, gen_type: str,
 
     data = yaml.safe_load(yaml_file.read_text(encoding="utf-8"))
     yaml_hash = content_hash(yaml_file.read_bytes())
-    now = datetime.now().isoformat()
+    now = utc_now_iso()
 
     # Build Human View from template or direct mapping
     if output_dir is None:

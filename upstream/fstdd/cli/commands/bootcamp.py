@@ -3,6 +3,7 @@ import argparse
 import sys
 from pathlib import Path
 from datetime import datetime
+from ..timeutil import utc_now_iso
 
 LEVELS = {
     1: {
@@ -287,7 +288,7 @@ def cmd_bootcamp_grade(args: argparse.Namespace) -> None:
         cert.setdefault("levels_passed", []).append(lv)
         cert["levels_passed"] = sorted(cert["levels_passed"])
     cert.setdefault("scores", {})[str(lv)] = final
-    cert["last_graded"] = datetime.now().isoformat()
+    cert["last_graded"] = utc_now_iso()
     _save_cert(project_root, cert)
     print(f"  毕业等级: {_calc_level(cert['levels_passed'])}")
 

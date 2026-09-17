@@ -4,6 +4,7 @@ import sys
 import argparse
 from pathlib import Path
 from datetime import datetime
+from ..timeutil import utc_now_iso
 import yaml
 
 from .phase_constants import (
@@ -93,7 +94,7 @@ def cmd_phase(args: argparse.Namespace) -> None:
             print(f"  ❌ Slice {slice_id} 已存在不同证据，拒绝覆盖。")
             sys.exit(1)
         slices[slice_id] = evidence
-        data["last_modified"] = datetime.now().isoformat()
+        data["last_modified"] = utc_now_iso()
         stdd_yaml.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False), encoding="utf-8")
         print(f"  Slice {slice_id} evidence recorded for change {change_dir.name}")
         return
@@ -167,12 +168,12 @@ def cmd_phase(args: argparse.Namespace) -> None:
         phases.setdefault(current, {})["status"] = "completed"
         # Only auto-set confirmed_at for non-gate phases
         if current not in _GATE_PHASES:
-            phases.setdefault(current, {})["confirmed_at"] = datetime.now().isoformat()
+            phases.setdefault(current, {})["confirmed_at"] = utc_now_iso()
 
         # Advance to next
         data["current_phase"] = nxt
         phases.setdefault(nxt, {})["status"] = "in_progress"
-        data["last_modified"] = datetime.now().isoformat()
+        data["last_modified"] = utc_now_iso()
 
         stdd_yaml.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False), encoding="utf-8")
 
@@ -191,7 +192,7 @@ def cmd_phase(args: argparse.Namespace) -> None:
             sys.exit(1)
         data["current_phase"] = target
         data.setdefault("phases", {}).setdefault(target, {})["status"] = "in_progress"
-        data["last_modified"] = datetime.now().isoformat()
+        data["last_modified"] = utc_now_iso()
         stdd_yaml.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False), encoding="utf-8")
         print(f"  Phase set to {_PHASE_LABELS[target]}")
         print(f"  Change: {change_dir.name}")

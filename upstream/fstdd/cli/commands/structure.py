@@ -5,6 +5,7 @@ import yaml
 import hashlib
 from pathlib import Path
 from datetime import datetime
+from ..timeutil import utc_now_iso
 
 
 def _get_structure_dir(project_root: Path) -> Path:
@@ -38,7 +39,7 @@ def cmd_structure_delta(args):
     git_head = _get_git_head(project_root)
     lines = [
         f"# Code Structure Delta — {change_name}",
-        f"> 生成时间: {datetime.now().isoformat()} | Git commit: {git_head}",
+        f"> 生成时间: {utc_now_iso()} | Git commit: {git_head}",
         f"> 置信度: 0.70 (AI-generated — 以源代码为准)",
         "",
         "## 变更文件",
@@ -79,7 +80,7 @@ def cmd_structure_merge(args):
 
     # Update YAML index
     index_data = yaml.safe_load(yaml_file.read_text(encoding="utf-8")) or {}
-    index_data["meta"]["last_updated"] = datetime.now().isoformat()
+    index_data["meta"]["last_updated"] = utc_now_iso()
     index_data["meta"]["total_changes"] = index_data["meta"].get("total_changes", 0) + 1
 
     # Extract module info from delta
@@ -119,7 +120,7 @@ def cmd_structure_rebuild(args):
     index_file.write_text("# 项目代码结构索引\n\n> 重建 | STDD V2.8\n\n", encoding="utf-8")
 
     yaml_file = _get_structure_dir(project_root) / ".structure-index.yaml"
-    yaml_file.write_text(yaml.dump({"meta": {"last_updated": datetime.now().isoformat(),
+    yaml_file.write_text(yaml.dump({"meta": {"last_updated": utc_now_iso(),
                                               "total_changes": 0, "modules": {}}},
                                    allow_unicode=True, default_flow_style=False), encoding="utf-8")
 

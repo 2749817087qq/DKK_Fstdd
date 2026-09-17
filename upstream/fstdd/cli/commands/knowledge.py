@@ -8,6 +8,7 @@ import tempfile
 import subprocess
 from pathlib import Path
 from datetime import datetime
+from ..timeutil import utc_now_iso
 from difflib import SequenceMatcher
 from typing import Optional
 
@@ -48,7 +49,7 @@ def _empty_graph() -> dict:
 
 def _save_graph(graph_path: Path, graph: dict) -> None:
     graph_path.parent.mkdir(parents=True, exist_ok=True)
-    graph["last_merged"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    graph["last_merged"] = utc_now_iso(timespec="seconds")
     with open(graph_path, "w", encoding="utf-8") as f:
         yaml.dump(graph, f, allow_unicode=True, default_flow_style=False)
 

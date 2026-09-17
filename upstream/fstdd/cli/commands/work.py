@@ -8,6 +8,7 @@ import sys
 import argparse
 from pathlib import Path
 from datetime import datetime
+from ..timeutil import utc_now_iso
 import yaml
 
 
@@ -77,7 +78,7 @@ def cmd_work(args: argparse.Namespace) -> None:
             "type": work_type,
             "description": description,
             "commit": commit,
-            "added_at": datetime.now().isoformat(),
+            "added_at": utc_now_iso(),
         })
         data["related_work"] = works
         stdd_yaml.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False), encoding="utf-8")

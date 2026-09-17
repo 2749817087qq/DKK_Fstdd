@@ -5,6 +5,7 @@ import hashlib
 import sys
 from pathlib import Path
 from datetime import datetime
+from ..timeutil import utc_now_iso
 
 import yaml
 
@@ -92,7 +93,7 @@ def _confirm_gate(gate_num: int, change_dir: Path, confirmed_by: str = "",
     if existing:
         return f"Gate {gate_num} already confirmed at {existing}"
 
-    timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    timestamp = utc_now_iso(timespec="seconds")
     phase_data[field] = timestamp
     phase_data["confirmed_by"] = confirmed_by or "cli"
     phase_data["confirmed_actor"] = _resolve_actor()
@@ -200,7 +201,7 @@ def _amend_audit(change_dir: Path, gate_num: int, confirmed_by: str,
         "amended_actor": "user",
         "amended_by": confirmed_by,
         "amended_evidence": evidence,
-        "amended_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "amended_at": utc_now_iso(timespec="seconds"),
         "amended_by_tool_version": "3.0",
         "idempotency_key": idempotency_key,
     })

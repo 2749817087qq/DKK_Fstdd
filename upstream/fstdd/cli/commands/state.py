@@ -4,6 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 from datetime import datetime
+from ..timeutil import utc_now_iso
 
 import yaml
 
@@ -55,7 +56,7 @@ def write_resume_context(change_dir: Path, **kwargs) -> None:
     for k in RESUME_FIELDS:
         if k in kwargs:
             data[k] = kwargs[k]
-    data["last_modified"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    data["last_modified"] = utc_now_iso(timespec="seconds")
 
     state_file.write_text(
         yaml.dump(data, allow_unicode=True, default_flow_style=False),
