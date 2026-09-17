@@ -74,16 +74,47 @@ git -C "\$BARE_DIR" config receive.denyNonFastForwards false
 echo "    path=\$BARE_DIR bare=\$(git -C "\$BARE_DIR" rev-parse --is-bare-repository)"
 REMOTE
 
-echo "=== 2/6 配置本地 remote ==="
-cd "$REPO_ROOT"
-if git remote get-url server >/dev/null 2>&1; then
-  git remote set-url server "$HOST:$BARE_DIR"
-  echo "    [UPDATE] remote server 已更新"
+echo "=== 2/6 配置本地 SSH 别名与 remote ==="
+ALIAS="${FSTDD_SSH_ALIAS:-fstdd-hub}"
+HOST_ONLY="${HOST#*@}"
+USER_ONLY="${HOST%%@*}"
+# 命令行 -i 用 POSIX 路径，ssh config 用 Windows 风格（D:/...）——
+# 后者才被 Windows OpenSSH 正确解析，写成 /d/... 会静默用不到密钥。
+IDENTITY_WIN="$(printf '%s' "$KEY" | sed -E 's|^/([a-zA-Z])/|\1:/|')"
+SSH_CFG="$HOME/.ssh/config"
+
+mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+[ -f "$SSH_CFG" ] || touch "$SSH_CFG"
+chmod 600 "$SSH_CFG"
+if grep -qE "^Host[[:space:]]+${ALIAS}([[:space:]]|\$)" "$SSH_CFG"; then
+  echo "    [SKIP] 本地 SSH 别名 $ALIAS 已存在"
 else
-  git remote add server "$HOST:$BARE_DIR"
-  echo "    [ADD] remote server 已添加"
+  cat >> "$SSH_CFG" <<CFGBLOCK
+
+Host $ALIAS
+    HostName $HOST_ONLY
+    User $USER_ONLY
+    IdentityFile $IDENTITY_WIN
+    IdentitiesOnly yes
+    StrictHostKeyChecking accept-new
+    ServerAliveInterval 30
+    ServerAliveCountMax 4
+CFGBLOCK
+  echo "    [ADD] 已写入本地 SSH 别名 $ALIAS"
 fi
-echo "    $(git remote get-url server)"
+
+cd "$REPO_ROOT"
+# remote 必须走 SSH 别名，不能写裸主机名：裸主机名会绕过 ssh config 的
+# IdentityFile，导致 git 退回默认密钥并认证失败（本脚本早期版本踩过）。
+REMOTE_URL="$ALIAS:$BARE_DIR"
+if git remote get-url server >/dev/null 2>&1; then
+  git remote set-url server "$REMOTE_URL"
+  echo "    [UPDATE] remote server -> $REMOTE_URL"
+else
+  git remote add server "$REMOTE_URL"
+  echo "    [ADD] remote server -> $REMOTE_URL"
+fi
+echo "    连通验证: $(git ls-remote server refs/heads/master 2>/dev/null | cut -f1 || echo '(空库)')"
 
 if [ "$SKIP_MIRROR" = "1" ]; then
   echo "[OK] 已跳过 GitHub 镜像配置（FSTDD_SKIP_MIRROR=1）"

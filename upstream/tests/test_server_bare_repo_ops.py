@@ -49,6 +49,18 @@ def test_mirror_hook_is_non_force_and_non_blocking():
     assert "exit 0" in text
 
 
+def test_deploy_bare_repo_remote_uses_ssh_alias():
+    """remote 必须走 SSH 别名。
+
+    裸主机名（`ubuntu@ip:...`）会绕过 `~/.ssh/config` 的 IdentityFile，
+    使 git 退回默认密钥并认证失败 —— 这是实际踩到过的缺陷，故立断言守住。
+    """
+    text = read("deploy_server_bare_repo.sh")
+    assert "FSTDD_SSH_ALIAS" in text
+    assert "$ALIAS:$BARE_DIR" in text
+    assert "$HOST:$BARE_DIR" not in text
+
+
 def test_deploy_bare_repo_avoids_dangerous_process_kill():
     """按端口找 PID 再 kill，绝不用 pkill（会匹配到 ssh 命令行自身）。
 
