@@ -1,0 +1,94 @@
+change_id: 2026-09-17-mirror-failure-alert
+complexity_score: 10
+current_phase: deliver
+design_adjustments:
+  count: 10
+last_modified: '2026-09-17T22:37:47.958574'
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-09-17T16:06:24'
+  source: D哥 于 2026-09-17T16:06 选择「全自动长程模式（推荐）」
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T22:36:55'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 于 2026-09-17T22:36 经确认框明确选择「通过」：Gate 3 质量验收（25/25 TC、8/8
+      切片、E2E PASS=48/FAIL=0、变异 29/29、ADJ 10 项、测试报告 v2.0）。同轮确认：三项规格缺口记录为后续 change；校验脚本与既存问题另立
+      change 统一处理；本 change 提交并推送 server + GitHub。
+    slices_completed:
+      A:
+        new_tests: 7
+        status: done
+        tc_coverage: 7/7
+        tc_ids: TC-MFA-001,TC-MFA-002,TC-MFA-003,TC-MFA-004,TC-MFA-005,TC-MFA-006,TC-MFA-007
+        verified_at: '2026-09-17T16:58:55'
+      B:
+        new_tests: 3
+        status: done
+        tc_coverage: 3/3
+        tc_ids: TC-MFA-008,TC-MFA-009,TC-MFA-010
+        verified_at: '2026-09-17T17:40:03+08:00'
+      C:
+        new_tests: 6
+        status: done
+        tc_coverage: 2/2
+        tc_ids: TC-MFA-019,TC-MFA-020
+        verified_at: '2026-09-17T17:40:03+08:00'
+      D:
+        new_tests: 8
+        status: done
+        tc_coverage: 6/6
+        tc_ids: TC-MFA-011,TC-MFA-012,TC-MFA-013,TC-MFA-014,TC-MFA-024,TC-MFA-025
+        verified_at: '2026-09-17T17:40:03+08:00'
+      E:
+        new_tests: 4
+        status: done
+        tc_coverage: 4/4
+        tc_ids: TC-MFA-015,TC-MFA-016,TC-MFA-017,TC-MFA-018
+        verified_at: '2026-09-17T18:15:46+08:00'
+      F:
+        new_tests: 4
+        status: done
+        tc_coverage: 1/1
+        tc_ids: TC-MFA-021
+        verified_at: '2026-09-17T19:16:04+08:00'
+      G:
+        new_tests: 2
+        status: done
+        tc_coverage: 2/2
+        tc_ids: TC-MFA-022,TC-MFA-023
+        verified_at: '2026-09-17T19:22:08+08:00'
+      H:
+        new_tests: 5
+        status: done
+        tc_coverage: 13/13
+        tc_ids: TC-MFA-001,TC-MFA-002,TC-MFA-004,TC-MFA-008,TC-MFA-009,TC-MFA-011,TC-MFA-012,TC-MFA-013,TC-MFA-015,TC-MFA-016,TC-MFA-017,TC-MFA-019,TC-MFA-020
+        verified_at: '2026-09-17T19:37:35+08:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T16:06:38'
+    confirmed_by: dialog
+    confirmed_evidence: D哥：Gate 2：2026-09-17-mirror-failure-alert（spec 阶段 9 REQ /
+      18 SC / 25 TC 已就绪）
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T15:21:49'
+    confirmed_by: dialog
+    confirmed_evidence: D哥：确认 Gate 1（并指出『使用 agent 时很多都不建立时间基线，这个需要进入到 FSTDD 中去』）
+    status: completed
+score_confidence: confirmed
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 18
+  tc_cases: 25
+  test_functions: 45
+version: '3.0'

@@ -1,0 +1,130 @@
+# 2026-09-17-mirror-failure-alert.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-09-17-mirror-failure-alert"
+  title: "镜像失败告警：让 GitHub 镜像失效不再无声"
+  created: "2026-09-17T14:18:03.135357"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    上一轮 change（2026-09-17-server-bare-repo-mirror）建立了「服务器裸库（真值源）→
+    GitHub（镜像）」的通道。钩子采用**非强制推送**，失败时把 `[WARN]` 写进服务器上的
+    `/home/ubuntu/fstdd-git/mirror.log`。
+
+    但这条通道**失败时是无声的**：
+
+      1. 钩子把**全部输出重定向**到 mirror.log（`{ ... } >> "$LOG" 2>&1`），
+         推送方在 `git push` 的输出里**看不到任何镜像结果**；
+      2. 钩子**恒以 `exit 0` 结束** —— 即使镜像失败，推送方拿到的也是成功；
+      3. 失败信息只落在服务器本地文件里，**必须有人主动 `ssh … tail` 才看得到**；
+      4. 没有任何主动通知：无 timer、无消息、无标记。
+
+    后果：GitHub 镜像可能**长期滞后而无人察觉**。
+
+    这比一般的故障更隐蔽 —— 因为按架构硬规则「GitHub 不可达不阻塞任何流转」，
+    内部协作照常进行，**没有任何机制会把它暴露出来**。GitHub 是对外通道
+    （外部协作、CI、异地副本），它的滞后是「看不见的故障」。
+
+    更值得警惕的是：正因为「失败才会写 WARN」，而实测 mirror.log 中 WARN 次数为 0，
+    说明**这条告警路径至今从未被真实触发过** —— 它的有效性是未经检验的假设。
+
+  evidence: |
+    - 只读巡检（服务器）`systemctl is-active fstdd-hub` → `active`；
+      `ss -ltnp` → `127.0.0.1:8788`（控制面）与 `0.0.0.0:8787`（inbox）均在监听。
+    - 只读巡检（服务器）`systemctl list-timers --all | grep -i fstdd` → **空**；
+      `crontab -l` → 仅一条无关的 ccreits 任务。
+      → **不存在任何 fstdd 侧巡检机制**。
+    - 只读巡检（服务器）`curl -s http://127.0.0.1:8788/nodes` → `{"nodes": []}`。
+      → 控制面**尚无任何已注册节点**；这构成后续设计的硬约束（见下）。
+    - 只读巡检（服务器）mirror.log：**21 行 / 2 次镜像 / WARN 0 次**。
+      → 当前健康，但告警路径从未被验证。
+    - 源码实测（`tools/deploy_server_bare_repo.sh` 内嵌 HOOKBODY）：
+        * `} >> "$LOG" 2>&1` —— 输出全部落盘，**不回显**给推送方；
+        * `exit 0` —— 恒成功，**推送方无法从退出码感知失败**；
+        * 失败分支仅 `echo "[WARN] branch mirror failed rc=$?"`，无任何其他动作。
+    - 文档实测（`docs/DISTRIBUTED_ACCESS.md`）：
+        * 第 84 行把「查镜像日志」定义为人工 `ssh fstdd-hub 'tail -20 …'`；
+        * 第 113 行定义 `[WARN]` 的人工处置流程。
+      → 两者都以「有人主动去看」为前提，**没有主动告警**。
+    - 契约实测（`tools/fstdd_hub.py`）：
+        * `POST /messages` 要求 `from_node_id` **必须已在 nodes 表注册**；
+        * `MESSAGE_KINDS = ("question", "blocker", "status", "notice")` ——
+          已有可用于告警的语义类型；
+        * `validate_node` 要求 `machine_name`/`platform`/`os`/`ssh_fingerprint`。
+      → 钩子若要向控制面投递告警，**必须先解决「以什么身份发」**。
+
+what_changes:
+  - description: |
+      【推送方即时可见】镜像钩子的输出由「全部落盘」改为 **tee**：既写 mirror.log，
+      也回显给推送方。`git push` 结束后，推送方在命令输出中**直接看到**镜像结果，
+      不必再另开一次 ssh 去查日志。
+  - description: |
+      【失败醒目化】镜像失败时输出**结构化告警块**（明确写清：裸库已更新、
+      GitHub 镜像未同步、对外通道滞后、勿在服务器上强推），
+      使其在 push 输出中**不可能被误读为成功**。
+  - description: |
+      【失败落标记】镜像失败时写入 `mirror-failed.flag`（含时间戳与失败项）；
+      镜像成功时**自动清除**。使「当前是否处于镜像故障态」成为一个
+      **可被程序读取的事实**，而不必靠解析日志文本。
+  - description: |
+      【一条命令巡检】新增 `tools/check_mirror.sh`：核对「服务器裸库 HEAD 与
+      GitHub HEAD 是否一致」并报告 flag 状态，给出**明确的判定与退出码**，
+      把「人工 tail 日志」升级为可自动化、可断言的巡检。
+  - description: |
+      【控制面可见性】镜像失败时向控制面（8788）投递一条 `notice` 消息，
+      使镜像故障进入协作层的消息流。因 `POST /messages` 要求 `from_node_id` 已注册，
+      需先为**承载镜像的服务器**注册一个基础设施节点身份。
+  - description: |
+      【文档同步】更新 `docs/DISTRIBUTED_ACCESS.md`：日常操作表增加「查镜像状态」
+      的一条命令；故障处置表补充镜像失败的完整处置路径（flag + 巡检命令）。
+      消除「必须人工 tail 日志才知道镜像失败」这一表述。
+
+capabilities:
+  new:
+    - name: "镜像失败主动告警"
+      description: |
+        镜像失败不再是一条静默日志：推送方在 `git push` 输出中即时可见，
+        服务器上留下可读取的故障标记，并（可选）进入控制面消息流。
+        告警**不依赖控制面可用** —— 控制面不可达时降级为回显 + 标记，而非失效。
+    - name: "镜像状态巡检"
+      description: |
+        一条命令给出「裸库与 GitHub 是否收敛」的明确判定与退出码，
+        可被自动化流程直接消费，替代人工阅读日志。
+    - name: "基础设施节点身份"
+      description: |
+        服务器作为承载 L1 数据面与 L2 控制面的节点，在控制面注册独立身份，
+        使镜像失败这类**系统级事件**有明确的来源，而不必冒充某个 agent 节点。
+  modified:
+    - name: "post-receive 镜像钩子"
+      description: |
+        输出策略由「静默落盘」改为「回显 + 落盘」；失败时增加告警动作
+        （告警块、故障标记、控制面消息）。
+        **保持不变的两条底线**：仍以 `exit 0` 结束（镜像失败不得让 push 失败）、
+        仍为非强制推送（不得引入 `--force`）。
+    - name: "多节点接入文档"
+      description: |
+        把「镜像失败需人工 tail 日志」升级为「一条命令巡检 + 主动告警」，
+        与新的告警能力保持一致。
+
+success_criteria:
+  - "模拟镜像失败（如临时将 github remote 指向不可达地址）时，`git push` 的输出中出现明确告警块，且不会被误读为成功"
+  - "镜像失败后 `mirror-failed.flag` 存在且含时间戳与失败项；随后一次成功镜像会将其清除"
+  - "`tools/check_mirror.sh` 在「已收敛」与「滞后」两种状态下给出不同的、可断言的判定与退出码"
+  - "钩子仍以 `exit 0` 结束 —— 镜像失败不得使 `git push` 失败（真值源已更新，呼应硬规则「GitHub 不可达不阻塞流转」）"
+  - "钩子仍为非强制推送：不引入 `--force`，GitHub 出现分叉时失败而非覆盖"
+  - "告警能力不依赖控制面可用：控制面不可达时，回显与故障标记仍然生效（降级而非失效）"
+  - "镜像失败时控制面出现一条 `notice` 消息，其 `from_node_id` 指向已注册的基础设施节点"
+  - "端到端实测：真实触发一次镜像失败并走完告警链路，再恢复并验证标记自动清除"
+  - "既有工程测试套件保持全绿（基线 592 passed）"
+  - "`docs/DISTRIBUTED_ACCESS.md` 中不再存在「必须人工 tail 日志才知道镜像失败」的表述"
+
+out_of_scope:
+  - "镜像失败的自动重试与补偿（本变更只做「告知」，不做「自愈」）"
+  - "邮件 / IM 等外部通知渠道（控制面消息已足够；外部通道另行立项）"
+  - "磁盘水位、控制面健康度等其他运维告警（同一模式，可后续复用本变更的巡检骨架）"
+  - "把镜像机制改为 GitHub 拉取或引入 GitHub Actions（架构变更，超出本变更范围）"
+  - "为控制面引入鉴权体系（当前控制面仅回环监听，鉴权属独立议题）"
+  - "由 AI 自动确认任何 Gate（宪法明令禁止）"

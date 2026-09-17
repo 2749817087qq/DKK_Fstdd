@@ -1,0 +1,64 @@
+# agent_spec.yaml - Agent 验证规格（Canonical YAML）
+meta:
+  task_id: "mirror-failure-alert-verify"
+  change_id: "2026-09-17-mirror-failure-alert"
+  created: "2026-09-17T15:43:57+08:00"
+  task_type: code
+  system: "6 个 AI agent / 3 台开发机；服务器裸库为 L1 数据面真值源，GitHub 为镜像；8788 控制面与 8787 经验端点保持隔离；镜像失败告警不得引入对控制面的强依赖"
+
+preconditions:
+  - "法定源为 `D:/tools/FSTDD/stdd-repo`，当前 Change 已进入 BUILD"
+  - "本节点 id 为 `FSTDD005`；其他节点 id 由注册表配置，不得硬编码"
+  - "测试解释器为 `C:/Python311/python.exe`"
+  - "服务器远端操作必须幂等，且用端状态验证（不看命令回显）"
+  - "裸库路径 `/home/ubuntu/fstdd-git/stdd-repo.git`，镜像 remote 名为 `github`，钩子为 `hooks/post-receive`"
+  - "镜像日志 `/home/ubuntu/fstdd-git/mirror.log`；故障标记为同目录下 `mirror-failed.flag`"
+  - "控制面 `http://127.0.0.1:8788`（仅回环，经 SSH 访问）"
+  - "模拟失败后**必须**恢复现场，不得把服务器留在故障态"
+
+steps:
+  - id: CP-001
+    action: "检查 canonical proposal / code spec / agent spec / design / test-plan 的双轨一致性"
+    verify: "`fstdd canon verify 2026-09-17-mirror-failure-alert` 通过；REQ/SC 与文档互相可追溯"
+  - id: CP-002
+    action: "制造一次真实提交并推送到服务器裸库，检查**推送方**的输出"
+    verify: "推送命令输出中出现镜像结果行（不再只落日志）；同一内容同时出现在 mirror.log 中"
+  - id: CP-003
+    action: "模拟一次镜像失败（临时将 github remote 指向不可达地址或制造非快进），随后推送"
+    verify: "推送方输出中出现结构化告警块，含「裸库已更新 / GitHub 未同步 / 对外通道滞后」；失败项被明确指出；告警不会被误读为成功"
+  - id: CP-004
+    action: "在故障态下检查故障标记文件"
+    verify: "`mirror-failed.flag` 存在，且内容可被结构化解析（含时间戳与失败项）"
+  - id: CP-005
+    action: "恢复镜像目标后再次推送，检查标记是否自动清除"
+    verify: "`mirror-failed.flag` 被自动清除，无需人工介入；推送方输出恢复为成功标识"
+  - id: CP-006
+    action: "在「已收敛」与「滞后」两种状态下分别执行镜像状态巡检命令"
+    verify: "两种状态给出不同判定与退出码（收敛=0，滞后≠0）；输出同时含裸库 sha、GitHub sha 与标记状态"
+  - id: CP-007
+    action: "注册基础设施节点身份并检查幂等性"
+    verify: "`GET /nodes` 中出现与 agent 节点区分的基础设施节点；重复执行注册不报错、不产生重复记录"
+  - id: CP-008
+    action: "在故障态下查询控制面消息"
+    verify: "`GET /messages` 中可检索到一条 `notice` 消息，body 含失败项与发生时间"
+  - id: CP-009
+    action: "使控制面不可达，重复制造一次镜像失败"
+    verify: "回显与故障标记仍然生效；钩子退出码仍为 0；推送未被阻断或明显延迟"
+  - id: CP-010
+    action: "静态审查钩子实现，并实测推送返回状态"
+    verify: "钩子不含 `--force` 或等价强制选项；镜像失败时 `git push` 仍成功返回（退出码 0）"
+  - id: CP-011
+    action: "核对接入文档与新告警能力的一致性"
+    verify: "日常操作表含「查镜像状态」一条命令；故障处置表含镜像失败完整处置；文档中不存在「必须人工 tail 日志才知道镜像失败」的表述"
+  - id: CP-012
+    action: "运行全量工程测试与结构/EOL 校验，并确认无凭证进入仓库"
+    verify: "测试保持全绿（基线 592 passed）；`verify_eol.py` / `verify_skill_standards.py` 通过；仓库内无凭证"
+
+  - id: CP-013
+    action: "在干净克隆（模拟另一节点）中直接执行巡检命令，并检查其 mode 与外部依赖"
+    verify: "mode 为 100755（非 100644）；除 `bash`/`git`/`ssh` 外无外部依赖（不含 `jq`）；无需安装步骤即可执行；前置条件缺失时给出明确提示且退出码可区分"
+expected_outcomes:
+  - "镜像失败从「静默日志」变为「推送方即时可见 + 可程序读取 + 可一条命令巡检」"
+  - "告警不依赖控制面可用：控制面故障时降级为回显与标记，而非整体失效"
+  - "「GitHub 不可达不阻塞流转」与「非强制推送」两条既有语义保持不变"
+  - "运维方式从「人工 tail 日志」升级为「有明确判定与退出码的巡检」"

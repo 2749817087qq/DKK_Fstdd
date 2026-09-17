@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-17-mirror-failure-alert: proposals/2026-09-17-mirror-failure-alert.yaml
+specs:
+  agent:
+    2026-09-17-mirror-failure-alert: specs/agent/2026-09-17-mirror-failure-alert.yaml
+  code:
+    2026-09-17-mirror-failure-alert: specs/code/2026-09-17-mirror-failure-alert.yaml
+version: '2.9'

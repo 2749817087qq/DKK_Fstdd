@@ -40,10 +40,13 @@ def test_deploy_bare_repo_uses_least_privilege_credential():
 def test_mirror_hook_is_non_force_and_non_blocking():
     """钩子非强制推送（不静默覆盖），且超时兜底、失败不拖垮推送。"""
     text = read("deploy_server_bare_repo.sh")
-    assert "push github --all" in text
-    assert "push github --tags" in text
-    assert "push github --all --force" not in text
-    assert "push github --tags --force" not in text
+    # 镜像目标自 ADJ-010 起是 `push "$MIRROR_TARGET"` —— 默认 remote 名 github，
+    # 可被 FSTDD_MIRROR_URL 覆盖（自动化验证用）。故按 MIRROR_TARGET 断言，
+    # 而不是字面 `github`（否则钩子一改就假红）。
+    assert r'push "\$MIRROR_TARGET" --all' in text
+    assert r'push "\$MIRROR_TARGET" --tags' in text
+    assert r'push "\$MIRROR_TARGET" --all --force' not in text
+    assert r'push "\$MIRROR_TARGET" --tags --force' not in text
     assert "timeout 180" in text
     assert "timeout 120" in text
     assert "exit 0" in text
