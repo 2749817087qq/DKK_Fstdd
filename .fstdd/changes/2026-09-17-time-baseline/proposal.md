@@ -1,7 +1,7 @@
 # 时间基线：让每份产出都能回答「何时、基于什么状态」
 
 <!-- source_hash: b40fe63a8bbfdf3d -->
-<!-- generated_at: 2026-09-17T23:07:40.194295 -->
+<!-- generated_at: 2026-09-18T00:45:14.566609 -->
 <!-- canonical: canonical/proposals/2026-09-17-time-baseline.yaml -->
 
 ## Why

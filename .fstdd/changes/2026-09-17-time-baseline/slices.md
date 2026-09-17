@@ -147,3 +147,35 @@
 **TDD 轨迹**：RED（7 failed / 1 passed）→ 加固空断言（EXP-20260917-A2 防护）→
 GREEN（8 passed）。RED 阶段暴露的两个失败都是**测试自身的判据缺陷**，
 被测实现一次通过。
+
+### ✅ Slice 2 done — canon DC-HASH 归一（2026-09-17T16:46:00+00:00）
+
+| 字段 | 值 |
+|---|---|
+| tc_coverage | TC-CANON-001（拆 2 用例）/ 002 / 003 / 004 / 005 / 006 |
+| new_tests | 7（`upstream/tests/test_canon_dchash_ops.py`，**新增 > 0** ✅） |
+| verified_at | 2026-09-17T16:45:01+00:00（`15 passed in 104.99s`，含 Slice 1 复验 8 个） |
+| 产物 | `canon.py` 两处 DC-HASH（:299/:378）改 `content_hash()`；迁移 = 本仓活跃 change 重渲染 |
+
+**TDD 轨迹**：RED（4 failed / 11 passed——失败精确落在 4 个端到端正向判据）→
+GREEN（15 passed）。
+
+**实现审查的两处修正（都是真发现，非走样）**：
+1. **归一口径收窄为「仅 CRLF→LF」**：原 design 写「与 verify_eol.py 同口径」，
+   但 verify_eol.py:247 实际**只处理 CRLF，不动孤立 CR**（Slice 1 时我把口径误记成
+   三步）。git `eol=lf` 同样只转换 CRLF。若 DC-HASH 归一孤立 CR，两个「git 视角
+   内容不同」的 blob 会算出相同哈希 → 干净克隆假绿。**Slice 1 的 timeutil 与对应
+   测试已同步修正**（孤立 CR 保持原样）。
+2. **`proposal.md` 有 `<!-- generated_at: ... -->` 元数据行**：TC-CANON-004 的
+   「只改 source_hash 一行」判据把正文与元数据混为一谈 → 判据收窄为「正文
+   （非注释行）零改动」。**顺带实锤：generated_at 是 naive 本地时间戳
+   （`2026-09-18T00:41:22.871631` 无后缀）——正是 Slice 3 要改的 canon.py 产出点。**
+
+**迁移实测（比预期好）**：本仓活跃 change 重渲染后 source_hash **不变**
+（`b40fe63a8bbfdf3d`）——git 里 YAML 已是 LF，新旧算法对 LF 字节结果相同。
+**「一次性作废所有既有 source_hash」的担忧被实测推翻**：作废只发生在
+「CRLF 工作区生成 + 记录字节哈希」的场景，而已提交的值全在 LF blob 上 →
+归档 change 的 hash 也全部继续有效，零回溯成本。
+
+**变异测试（TC-CANON-006）**：4 个纯内存变异体（identity / 反方向 / 错误目标串 /
+半吊子首替换）全部被语料杀死，且正确实现幂等。

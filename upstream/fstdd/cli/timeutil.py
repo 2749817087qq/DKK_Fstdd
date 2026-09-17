@@ -3,7 +3,7 @@
 本模块是 `2026-09-17-time-baseline` 的基础设施：
 - `utc_now_iso()`：所有 CLI 新产出时间字段的**唯一**来源（SC-010）。
 - `normalize_eol()` / `content_hash()`：C8 的 DC-HASH 改为「EOL 归一后的内容哈希」，
-  口径必须与 tools/verify_eol.py 完全一致（先 CRLF→LF，再孤立 CR→LF）。
+  口径 = git `eol=lf` = 仅 CRLF→LF（与 tools/verify_eol.py:247 一致；孤立 CR 不动）。
 """
 from __future__ import annotations
 
@@ -31,13 +31,15 @@ def has_tz(value: object) -> bool:
 
 
 def normalize_eol(data: bytes) -> bytes:
-    """三种换行形态（CRLF / 孤立 CR / LF）统一归一为 LF。
+    """CRLF → LF。仅此一步，与 tools/verify_eol.py:247 和 git `eol=lf` 同口径。
 
-    顺序敏感：必须先处理 CRLF，再处理孤立 CR——
-    若先替换 CR，CRLF 会变成 LF + 残留 LF（双换行）。
-    与 tools/verify_eol.py 的归一口径保持一致。
+    ⚠️ **孤立 CR 不归一**（Slice 2 实现审查修正，2026-09-17）：
+    git 的 `text=auto`/`eol=lf` 转换只动 CRLF↔LF，**不动孤立 CR**。
+    DC-HASH 必须与 git 同口径 —— 若把孤立 CR 也归一，两个「git 视角内容不同」
+    的 blob（一个含孤立 CR、一个不含）会算出相同哈希，verify 在干净克隆上
+    假绿，吞掉真实内容差异。
     """
-    return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return data.replace(b"\r\n", b"\n")
 
 
 def content_hash(data: bytes) -> str:

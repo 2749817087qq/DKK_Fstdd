@@ -3,6 +3,8 @@
 import sys
 import yaml
 import hashlib
+
+from ..timeutil import content_hash
 from pathlib import Path
 from datetime import datetime
 
@@ -296,7 +298,7 @@ def _generate_one(project_root: Path, change_id: str, gen_type: str,
         sys.exit(1)
 
     data = yaml.safe_load(yaml_file.read_text(encoding="utf-8"))
-    yaml_hash = hashlib.sha256(yaml_file.read_bytes()).hexdigest()[:16]
+    yaml_hash = content_hash(yaml_file.read_bytes())
     now = datetime.now().isoformat()
 
     # Build Human View from template or direct mapping
@@ -375,7 +377,7 @@ def cmd_canon_verify(args):
         print(f"  Warning: changes/{args.change_name}/proposal.md not found — nothing to verify")
         sys.exit(0)
 
-    yaml_hash = hashlib.sha256(yaml_file.read_bytes()).hexdigest()[:16]
+    yaml_hash = content_hash(yaml_file.read_bytes())
     md_content = md_file.read_text(encoding="utf-8")
 
     passed = 0

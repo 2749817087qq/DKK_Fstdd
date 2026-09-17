@@ -235,8 +235,13 @@ def test_timeutil_utc_now_iso_is_timezone_aware():
     assert re.search(r"([+-]\d{2}:\d{2}|Z)$", value), f"naive 时间戳（无时区）: {value!r}"
 
 
-def test_timeutil_normalize_eol_crlf_lf_and_lone_cr():
-    """`normalize_eol()` 与 `tools/verify_eol.py` 同口径：三种形态都归一为 LF。"""
+def test_timeutil_normalize_eol_matches_git_and_verify_eol():
+    """`normalize_eol()` 与 git `eol=lf` / tools/verify_eol.py 同口径：仅 CRLF→LF。
+
+    ⚠️ 孤立 CR **必须保持原样**（Slice 2 实现审查修正）：
+    git 只转换 CRLF↔LF，不动孤立 CR。若 DC-HASH 归一孤立 CR，
+    两个「git 视角内容不同」的 blob 会算出相同哈希 → 干净克隆上假绿。
+    """
     spec = importlib.util.spec_from_file_location(
         "_fstdd_timeutil", UPSTREAM / "fstdd" / "cli" / "timeutil.py"
     )
@@ -244,7 +249,7 @@ def test_timeutil_normalize_eol_crlf_lf_and_lone_cr():
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
 
-    assert mod.normalize_eol(b"a\r\nb\r\n") == b"a\nb\n"
-    assert mod.normalize_eol(b"a\rb") == b"a\nb"        # 孤立 CR
-    assert mod.normalize_eol(b"a\nb\n") == b"a\nb\n"    # 幂等
+    assert mod.normalize_eol(b"a\r\nb\r\n") == b"a\nb\n"      # CRLF → LF
+    assert mod.normalize_eol(b"a\rb") == b"a\rb"              # 孤立 CR 不动（与 git 同口径）
+    assert mod.normalize_eol(b"a\nb\n") == b"a\nb\n"          # 幂等
     assert mod.normalize_eol(b"") == b""
