@@ -82,5 +82,7 @@
 
 - TC-SES-004（skill 标准 6/7）：既存问题，与本 change 无关
 - 归档 change 不回溯基线回填（Decision 明确排除，L1 只扫活跃 change）
-- 经验沉淀：建议把「`_dt.timezone` 误写被 except 吞掉」类静默失效模式
-  记入 `.fstdd/experiences/`（Phase 4 Deliver 时随经验回传）
+- 经验已沉淀（Build 阶段随发现随记录）：
+  `EXP-20260917-B1`（err 公式假三态）/ `B2`（monotonic 混算 epoch，注入测不到）/
+  `B3`（`_dt.timezone` 误写被 except 吞掉，silent failure）/ `B4`（多副本改了 N-1 份），
+  Phase 4 Deliver 时随经验回传进入待审核池
