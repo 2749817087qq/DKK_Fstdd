@@ -440,8 +440,14 @@ def main() -> None:
                             help="动作 (establish/show/check)")
     p_baseline.add_argument("change", nargs="?", default="",
                             help="establish/show: change 名（默认最近的）")
-    p_baseline.add_argument("--by", dest="by", default="", help="establish: 建立者标识")
+    p_baseline.add_argument("--by", dest="by", default="",
+                            choices=["cli", "backfill"],
+                            help="establish: 建立者途径（回填会自动判 backfill）")
+    p_baseline.add_argument("--clock-source", dest="clock_source", default="",
+                            choices=["system", "hub", "manual"],
+                            help="establish: 时钟源声明（默认 system）")
     p_baseline.add_argument("--force", action="store_true", help="establish: 覆盖已有基线")
+    p_baseline.add_argument("--check", action="store_true", help="show: 机器可判的基线完整性检查")
     p_baseline.add_argument("--format", choices=["text", "json"], default="text",
                             help="show/check: 输出格式")
 

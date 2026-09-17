@@ -101,6 +101,14 @@ def _confirm_gate(gate_num: int, change_dir: Path, confirmed_by: str = "",
         phase_data["confirmed_evidence"] = evidence
     data["phases"][phase_key]["status"] = "completed"
 
+    # C1 / TC-TB-001：Gate 1 自动建立时间基线
+    # （at = Gate 1 确认时刻；established_by = gate1。已有基线不覆盖。）
+    if gate_num == 1 and not data.get("baseline"):
+        from .baseline import build_baseline
+        data["baseline"] = build_baseline(
+            change_dir.parent.parent, established_by="gate1", at=timestamp,
+        )
+
     state_file.write_text(
         yaml.dump(data, allow_unicode=True, default_flow_style=False),
         encoding="utf-8"

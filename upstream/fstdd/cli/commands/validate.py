@@ -89,6 +89,23 @@ def cmd_validate(args: argparse.Namespace) -> None:
         if tc_cases < len(spec_scenarios):
             errors.append(f"test-plan.md: TC 案例数 ({tc_cases}) 少于 Spec Scenario 数 ({len(spec_scenarios)})")
 
+    # TC-TB-008：基线完整性检查（warning 级 —— 不使校验失败）
+    state_file = change_dir / ".fstdd.yaml"
+    if state_file.exists():
+        try:
+            import yaml as _yaml
+            state = _yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
+            baseline = state.get("baseline") or {}
+            missing = [k for k in ("at", "base_git_sha", "node_id", "clock_source")
+                       if not baseline.get(k)]
+            if not baseline:
+                warnings.append("基线: 未建立（Gate 1 会自动建立；老 change 用 "
+                                "`fstdd baseline establish` 回填）")
+            elif missing:
+                warnings.append(f"基线: 不完整（缺 {', '.join(missing)}）")
+        except Exception:
+            pass
+
     print()
     if errors:
         print(f" 验证失败 ({len(errors)} 个错误):")

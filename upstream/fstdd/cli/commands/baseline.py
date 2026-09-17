@@ -101,21 +101,46 @@ def _git_head(root: Path) -> str:
 
 
 def _clock_source() -> str:
-    """尽力探测时钟源；探测不到就诚实标注 system（绝不假装 ntp）。"""
-    # Windows：w32tm /query；Linux：timedatectl。探测失败统一回退。
-    probes = (
-        ["w32tm", "/query", "/status"],
-        ["timedatectl", "status"],
-    )
-    for cmd in probes:
-        try:
-            out = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-            text = (out.stdout or "") + (out.stderr or "")
-            if out.returncode == 0 and "ntp" in text.lower():
-                return "ntp"
-        except Exception:
-            continue
+    """时钟源枚举 {system, hub, manual}。
+
+    默认 system（本机系统时钟）；除非显式与 hub 对时（--clock-source hub）
+    或人工声明（manual），否则绝不假装更高可信级。
+    """
     return "system"
+
+
+BASELINE_FIELDS = ("at", "base_git_sha", "node_id", "clock_source")
+
+
+def build_baseline(root: Path, *, established_by: str,
+                   at: str | None = None, clock_source: str = "system") -> dict:
+    """构造 baseline 块（纯函数，无 IO）——供 write_baseline 与 gate.py 共用。
+
+    established_by ∈ {gate1, cli, backfill}；
+    at 缺省 = 当前 UTC 时刻；调用方负责传入正确的时刻（如回填传 confirmed_at）。
+    """
+    return {
+        "at": at or utc_now_iso(),
+        "base_git_sha": _git_head(root),
+        "node_id": socket.gethostname(),
+        "clock_source": clock_source,
+        "established_by": established_by,
+    }
+
+
+def write_baseline(root: Path, change: str, *, established_by: str,
+                   at: str | None = None, clock_source: str = "system") -> dict:
+    """写 baseline 块（gate.py 的 Gate 1 自动基线与 CLI 共用）。"""
+    yp = _change_yaml(root, change)
+    data = _load_yaml(yp)
+    baseline = build_baseline(root, established_by=established_by,
+                              at=at, clock_source=clock_source)
+    data["baseline"] = baseline
+    yp.write_text(
+        yaml.safe_dump(data, allow_unicode=True, sort_keys=False),
+        encoding="utf-8",
+    )
+    return baseline
 
 
 # --------------------------------------------------------------------------- #
@@ -143,21 +168,19 @@ def _cmd_establish(args: argparse.Namespace, root: Path) -> int:
     data = _load_yaml(yp)
     existing = data.get("baseline")
     if existing and not args.force:
-        print(f"基线已存在（at={existing.get('at')}）。重建请用 --force。", file=sys.stderr)
-        return 1
+        # TC-TB-002：幂等 = 退出 0 + 明确提示「已存在，未改写」+ 值不变
+        print(f"基线已存在，未改写（at={existing.get('at')}）。重建请用 --force。")
+        return 0
 
-    baseline = {
-        "at": utc_now_iso(),
-        "base_git_sha": _git_head(root),
-        "node_id": socket.gethostname(),
-        "clock_source": _clock_source(),
-        "established_by": args.by or "user",
-    }
-    data["baseline"] = baseline
-    yp.write_text(
-        yaml.safe_dump(data, allow_unicode=True, sort_keys=False),
-        encoding="utf-8",
-    )
+    # TC-TB-006 回填：无基线但 Gate 1 已有 confirmed_at → at 取 confirmed_at
+    # （而非回填动作时刻，否则基线记录本身是假信息 —— Decision 2）
+    confirmed = ((data.get("phases") or {}).get("understand") or {}).get("confirmed_at")
+    if confirmed and not args.force:
+        baseline = write_baseline(root, change, established_by="backfill", at=str(confirmed))
+    else:
+        baseline = write_baseline(root, change,
+                                  established_by=args.by or "cli",
+                                  clock_source=args.clock_source or "system")
     print(f"✅ 已建立基线 {change}: at={baseline['at']} node={baseline['node_id']}")
     return 0
 
@@ -180,6 +203,28 @@ def _cmd_show(args: argparse.Namespace, root: Path) -> int:
         print("错误：未指定 change，且 .fstdd/changes/ 下没有可用 change", file=sys.stderr)
         return 2
     data = _load_yaml(_change_yaml(root, change))
+
+    # TC-TB-009：--check 机器可判（JSON 含 status；退出码 0 / 1）
+    if getattr(args, "check", False):
+        baseline = data.get("baseline") or {}
+        missing = [k for k in BASELINE_FIELDS if not baseline.get(k)]
+        if not baseline:
+            status = "missing"
+        elif missing:
+            status = "incomplete"
+        else:
+            status = "ok"
+        payload = {"status": status, "change": change, "missing_fields": missing}
+        if baseline:
+            payload["baseline"] = baseline
+        if args.format == "json":
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            flag = {"ok": "✅", "missing": "❌", "incomplete": "⚠️"}[status]
+            print(f"{flag} 基线状态: {status}"
+                  + (f"（缺: {', '.join(missing)}）" if missing else ""))
+        return 0 if status == "ok" else 1
+
     baseline = data.get("baseline")
     if not baseline:
         print(f"{change}: 尚未建立基线（可运行 `fstdd baseline establish {change}`）", file=sys.stderr)

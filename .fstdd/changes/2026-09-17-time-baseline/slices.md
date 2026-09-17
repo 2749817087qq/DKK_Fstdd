@@ -211,3 +211,25 @@ comparison），每条附理由，自检全部可定位；植入无效条目被�
 
 **SC-016 达成**：`check_timestamps.py --repo .` → ✅ naive 计数为 0，
 0 条失效豁免，全程只读。
+
+### ✅ Slice 4 done — 时间基线契约（2026-09-17T17:12:00+00:00）
+
+| 字段 | 值 |
+|---|---|
+| tc_coverage | TC-TB-001..009（TB-004/005 合并为 1 用例） |
+| new_tests | 8（`upstream/tests/test_time_baseline_ops.py`，**新增 > 0** ✅） |
+| verified_at | 2026-09-17T17:11:31+00:00（`16 passed in 106.21s`，含 Slice 1 复验 8 个） |
+| 产物 | `baseline.py`（幂等 0 / 回填 / 枚举 / show --check）<br>`gate.py`（Gate 1 自动基线）<br>`validate.py`（基线 warning） |
+
+**TDD 轨迹**：RED（6 failed / 2 passed——通过的正是 Slice 1 已实现的 show-json
+与 git-sha）→ GREEN（16 passed）。
+
+**对 Slice 1 初始实现的四处修正**（测试先行暴露，契约级约束）：
+1. 幂等语义：已存在 → **退出 0** +「已存在，未改写」（Slice 1 误用退出 1）
+2. `established_by` 收敛为枚举 {gate1, cli, backfill}（Slice 1 是自由文本 user）
+3. `clock_source` 收敛为枚举 {system, hub, manual}（Slice 1 是 ntp/system）
+4. `show` 新增 `--check`（机器可判：JSON status + 退出码）
+
+**回填语义（TB-006 / Decision 2）**：老 change establish 时若已有 Gate 1
+confirmed_at → `at` 取 confirmed_at（而非回填动作时刻），established_by=backfill；
+重复回填不变。**gate.py 自动基线 at 与 confirmed_at 同一时刻对象**。
