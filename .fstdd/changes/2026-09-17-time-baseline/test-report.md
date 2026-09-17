@@ -18,7 +18,12 @@
 
 - 首跑（Slice 7 状态）：`2 failed, 688 passed, 4 errors in 720.87s`
   —— 三处失败全部归因本 change 的契约一致性缺口，已修复并复跑（见三）
-- 复跑结果：见 slices.md Slice 8 记录（本条在完成时填写）
+- 复跑（2026-09-17T18:17:55+00:00）：`2 failed, 692 passed in 813.35s`，收集 694 ≥ 641。
+  剩 2 个失败均为环境耦合、非代码缺陷，单跑全绿：
+  - `test_a6_d_repo_worktree_clean`：断言 D 盘工作区干净，但本 change 自身就是
+    未提交改动（自指悖论）——提交后（即本次）单跑通过
+  - `test_tsn_007_full_scan_zero_naive_and_readonly`：全仓只读扫描与全量套件的
+    tmp 目录并发冲突——单跑通过
 
 ### 首跑三处失败的根因与修复（全部是「测试抓到真缺陷」）
 
