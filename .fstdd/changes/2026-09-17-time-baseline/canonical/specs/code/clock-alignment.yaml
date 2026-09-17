@@ -1,0 +1,103 @@
+# spec.yaml - 行为规格（Canonical YAML）
+meta:
+  capability: "clock-alignment"
+  change_id: "2026-09-17-time-baseline"
+  created: "2026-09-17T15:25:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-010
+    description: "一条命令报告各节点与本机的时钟偏差，并给出误差上界"
+    scenarios:
+      - id: SC-022
+        confidence: high
+        evidence: "proposal.yaml → why.evidence (6)：本机↔服务器 10 次采样 `5093/5898/5595/5935/5524/6083/5931/5710/5544/6239 ms`，抖动达秒级；`ping` 100% 丢包 → 拿不到更干净的 RTT 基准"
+        given: "节点清单已配置"
+        when: "执行时钟巡检命令"
+        then: "输出 SHALL 含每个节点的 `offset`（偏移估计）、`rtt` 与 `err`（误差上界）"
+        and:
+          - "SHALL 含实际采样次数与有效样本数"
+          - "SHALL 含 `jitter`（RTT 抖动）"
+          - "`--format json` SHALL 输出可被程序解析的结构"
+      - id: SC-023
+        confidence: medium
+        evidence: "proposal.yaml → why.evidence (6)：NTP 式估算给出稳定的「服务器 − 本机 ≈ +3.0s」，但对称假设本身被秒级抖动否定 → **该读数不可采信**。故必须用最小 RTT 样本而非平均"
+        given: "同一节点存在多次采样"
+        when: "计算最终偏移估计"
+        then: "系统 SHALL 采用最小 RTT 的那次样本"
+        and:
+          - "SHALL NOT 采用全部样本的算术平均作为偏移估计"
+          - "所选样本的 RTT SHALL 出现在输出中，使估计可被复核"
+
+  - id: REQ-011
+    description: "巡检必须给出三态判定，且三态可区分、不互相冒充"
+    scenarios:
+      - id: SC-024
+        confidence: high
+        evidence: "proposal.yaml → what_changes C5：『给出三态判定：偏差可接受 / 偏差超限 / 无法测量（如 RTT 抖动过大、节点不可达）。三态必须可区分 —— 否则会把「测不准」误报成「已对齐」』"
+        given: "节点可达、抖动在阈值内、且 `abs(offset) <= TOLERANCE` 且 `err <= TOLERANCE`"
+        when: "执行时钟巡检"
+        then: "该节点 SHALL 被判定为「可接受」"
+        and:
+          - "命令 SHALL 以退出码 0 结束"
+      - id: SC-025
+        confidence: high
+        evidence: "同上 C5；超限是「需要校时」的信号，必须与「无法测量」区分 —— 后者的处置是修通道而非改时钟"
+        given: "节点可达、抖动在阈值内、`err <= TOLERANCE`，但 `abs(offset) > TOLERANCE`"
+        when: "执行时钟巡检"
+        then: "该节点 SHALL 被判定为「超限」"
+        and:
+          - "命令 SHALL 以退出码 1 结束"
+          - "退出码 SHALL 与「无法测量」不同"
+      - id: SC-026
+        confidence: high
+        evidence: "proposal.yaml → why.evidence (6)：本机↔服务器 RTT ~5.5s → `err ≈ 2.7s`；若此时报「可接受」或「超限」，都是把噪声当信号。这正是本 change 要治的「把测不准误报成已对齐」"
+        given: "节点不可达，或有效样本数不足，或 `jitter > JITTER_MAX`，或 `err > TOLERANCE`"
+        when: "执行时钟巡检"
+        then: "该节点 SHALL 被判定为「无法测量」"
+        and:
+          - "命令 SHALL 以退出码 2 结束"
+          - "SHALL NOT 报告为「可接受」"
+          - "SHALL NOT 报告为「超限」"
+      - id: SC-027
+        confidence: high
+        evidence: "constraints：『必须区分「偏差超限」与「无法测量」，不得把测量失败静默当作通过』"
+        given: "测量结果落在噪声中（`err > TOLERANCE`）"
+        when: "生成判定"
+        then: "判定 SHALL NOT 为「可接受」"
+        and:
+          - "即使 `abs(offset)` 恰好小于容差，SHALL 仍判为「无法测量」"
+          - "输出 SHALL 说明判为「无法测量」的具体原因（不可达 / 样本不足 / 抖动 / 误差上界）"
+
+  - id: REQ-012
+    description: "巡检必须只读、幂等，且对不可达节点稳健"
+    scenarios:
+      - id: SC-028
+        confidence: high
+        evidence: "constraints：『不得引入服务器常驻服务：时钟巡检必须是一次性命令』『时钟巡检必须幂等且只读 —— 本环境经 ssh 的命令会执行两次』"
+        given: "执行一次时钟巡检"
+        when: "对比执行前后各节点的状态"
+        then: "各节点状态 SHALL 保持不变"
+        and:
+          - "SHALL NOT 在远端写入任何文件"
+          - "SHALL NOT 修改本机任何被观测状态"
+          - "重复执行 SHALL 得到结构相同的结果"
+      - id: SC-029
+        confidence: high
+        evidence: "proposal.yaml → why.evidence (6)：3 台机器中另外 2 台**在本机 `~/.ssh/config` 中不存在**（只有 `fstdd-hub` 一个 Host 条目）→ 完全不可知。巡检必须能处理这种节点"
+        given: "节点清单中存在一个不可达节点"
+        when: "执行时钟巡检"
+        then: "系统 SHALL 完成对其余节点的巡检，SHALL NOT 因单点不可达而中止或崩溃"
+        and:
+          - "不可达节点 SHALL 被标记为「无法测量」"
+          - "命令 SHALL NOT 无限挂起（每个节点 SHALL 有超时）"
+          - "汇总 SHALL 明确列出哪些节点未能测量"
+      - id: SC-030
+        confidence: medium
+        evidence: "本机 agent 环境特性（实测）：经 ssh 的命令会执行两次。对读操作无副作用，但会让「1 次采样」产生 2 个远端读数；若按「发起的调用次数」计数会得出错误的样本数"
+        given: "单次采样调用产生了多于一条远端读数"
+        when: "统计有效样本数"
+        then: "计数 SHALL 基于实际收到的有效读数条数"
+        and:
+          - "SHALL NOT 基于发起的调用次数"
+          - "重复读数 SHALL NOT 使偏移估计产生系统性偏差"

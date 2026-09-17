@@ -1,0 +1,60 @@
+# spec.yaml - 行为规格（Canonical YAML）
+meta:
+  capability: "evidence-provenance"
+  change_id: "2026-09-17-time-baseline"
+  created: "2026-09-17T15:24:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-008
+    description: "证据条目必须携带观测时刻与观测时的代码版本"
+    scenarios:
+      - id: SC-017
+        confidence: high
+        evidence: "proposal.yaml → why.evidence (5)：上一轮 change 的 `why.evidence` 逐条写着「只读巡检实测」「实测 mirror.log 21 行 / 2 次镜像 / WARN 0 次」，但**没有任何一条记录观测时刻或当时的 sha**"
+        given: "canonical proposal 的 `why.evidence` 已填写"
+        when: "检查该证据块"
+        then: "SHALL 含 `observed_at`（观测时刻，带时区）"
+        and:
+          - "SHALL 含 `observed_base_git_sha`（观测时的代码版本）"
+          - "两者 SHALL NOT 为空"
+      - id: SC-018
+        confidence: high
+        evidence: "proposal.yaml → what_changes C3：`why.evidence` / spec 的 `evidence` / test-report 的证据条目**三处**都要带，只改一处等于没建立契约"
+        given: "canonical spec 的某个 scenario 已填写 `evidence`"
+        when: "检查该 evidence 字段"
+        then: "SHALL 能定位到其观测时刻"
+        and:
+          - "若 evidence 引用实测数据，SHALL 标注观测时刻"
+          - "test-report 的证据条目 SHALL 同样携带 `observed_at`"
+      - id: SC-019
+        confidence: high
+        evidence: "模板是「新 change 默认即符合规范」的唯一落地手段（proposal.yaml → what_changes C7）；模板不带该字段则新 change 必然漏填"
+        given: "读取两处模板中的 proposal 模板与 spec 模板"
+        when: "检查模板中的证据字段"
+        then: "模板 SHALL 包含观测时刻与代码版本字段"
+        and:
+          - "两处模板（`upstream/.fstdd/templates/**` 与 `.fstdd/templates/**`）SHALL 一致"
+          - "模板 SHALL 含填写示例，而非仅字段名"
+
+  - id: REQ-009
+    description: "证据是否过期必须成为可判定问题"
+    scenarios:
+      - id: SC-020
+        confidence: high
+        evidence: "proposal.yaml → why：『真到需要判断「这份证据还成立吗」时，答案并不存在』—— 有了观测时刻与基线时刻，该判断才成为可能"
+        given: "某条证据携带 `observed_at`，且所属 change 有 `baseline.at`"
+        when: "比较两者"
+        then: "系统 SHALL 能判定证据是「在基线之后观测」还是「早于基线」"
+        and:
+          - "判定结果 SHALL 可被程序读取（非仅打印文本）"
+          - "证据早于基线时 SHALL 被明确标识，而非静默通过"
+      - id: SC-021
+        confidence: high
+        evidence: "risk_areas: 时间基线契约 → 『基线字段沦为形式 —— 填了但不影响任何判断』；本需求是把观测时刻真正用于判断的落点"
+        given: "证据缺少观测时刻"
+        when: "执行时效判定"
+        then: "系统 SHALL 报告「无法判定时效」"
+        and:
+          - "SHALL NOT 把「无法判定」当作「未过期」"
+          - "该三态（未过期 / 早于基线 / 无法判定）SHALL 可区分"

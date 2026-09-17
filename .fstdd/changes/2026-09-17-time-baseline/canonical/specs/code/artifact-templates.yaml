@@ -1,0 +1,75 @@
+# spec.yaml - 行为规格（Canonical YAML）
+# 修改型 capability：产物模板与 CLI
+meta:
+  capability: "artifact-templates"
+  change_id: "2026-09-17-time-baseline"
+  created: "2026-09-17T15:27:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-016
+    description: "模板必须同时更新两处来源，使新 change 默认即符合规范"
+    scenarios:
+      - id: SC-036
+        confidence: high
+        evidence: "EXP-20260915-B2（medium）：『批量替换只覆盖了「引用的文本」，漏掉「被引用的实体本身」』。实测两处模板并存：`upstream/.fstdd/templates/**`（`fstdd init` 的安装源，见 `init.py:11-68` 清单）与 `.fstdd/templates/**`（本仓自身）"
+        given: "模板字段已更新"
+        when: "比较两处同名模板"
+        then: "两处内容 SHALL 一致"
+        and:
+          - "一致性 SHALL 有测试断言覆盖"
+          - "SHALL NOT 只更新其中一处"
+      - id: SC-037
+        confidence: high
+        evidence: "proposal.yaml → what_changes C7：『使新 change 默认即符合规范』—— 只有模板带字段，新 change 才可能默认合规"
+        given: "以更新后的模板创建一个新 change"
+        when: "检查该 change 的模板产物"
+        then: "产物 SHALL 含基线字段与观测时刻字段的占位"
+        and:
+          - "SHALL 含填写示例或注释，而非仅字段名"
+          - "SHALL NOT 因模板新增字段而使既有解析失败"
+
+  - id: REQ-017
+    description: "新增 CLI 命令必须五处注册齐全并可实际执行"
+    scenarios:
+      - id: SC-038
+        confidence: high
+        evidence: "EXP-20260915-B1（high）：『改包名时只替换静态 import 语句，漏掉以字符串形式存在的动态导入路径，导致运行时 ModuleNotFoundError』。实测 `upstream/fstdd/cli/__init__.py:468` 一带的命令分发表就是**动态导入字符串**（`\"fstdd.cli.commands.canon._dispatch\"`）"
+        given: "新增了 `baseline` 命令"
+        when: "检查 `upstream/fstdd/cli/__init__.py`"
+        then: "五处 SHALL 同时到位：`COMMAND_GROUPS` / `_CMD_HELP` / `subparsers.add_parser` / 命令分发表 / 命令模块文件"
+        and:
+          - "命令分发表中的路径 SHALL 为可导入的 dotted string"
+          - "命令模块文件 SHALL 存在于对应路径"
+      - id: SC-039
+        confidence: high
+        evidence: "EXP-20260917-A2（medium）：『用「文本里是否出现某字符串」判定「行为是否违规」，而检测代码本身必须提及该字符串 —— 断言命中了检测规则自己』。五处注册中有三处是字符串，grep 必然「全绿」而命令仍可能不可执行"
+        given: "命令已注册"
+        when: "执行 `fstdd baseline --help`"
+        then: "命令 SHALL 被 CLI 识别并输出帮助"
+        and:
+          - "三个动作（`establish` / `show` / `check`）SHALL 各被真实调用一次并返回预期结果"
+          - "验收 SHALL NOT 以「源码中出现某字符串」作为判据"
+      - id: SC-040
+        confidence: high
+        evidence: "constraints：『不得引入服务器常驻服务：时钟巡检必须是一次性命令，与既有运维范式一致』；CLI 是本项目既有的分发入口，新增命令无需装机步骤"
+        given: "另一节点 `git pull` 后"
+        when: "直接执行新增命令"
+        then: "命令 SHALL 在无额外安装步骤的情况下可执行"
+        and:
+          - "依赖 SHALL 限于 Python 标准库与既有依赖（PyYAML）"
+          - "缺失配置（如节点清单不存在）时 SHALL 给出明确提示，而非静默失败"
+
+  - id: REQ-018
+    description: "基线配置必须可被外部调整而不改代码"
+    scenarios:
+      - id: SC-041
+        confidence: medium
+        evidence: "constraints：『不得要求所有机器使用同一时区，只要求显式可比较』『时区必须显式声明，不得依赖运行机器的本地时区设置』—— 节点集合与阈值在不同机器上可能不同，硬编码会使命令只在作者机器上可用（EXP-20260915-B4）"
+        given: "节点清单与巡检参数以配置形式存在"
+        when: "修改配置中的节点或阈值"
+        then: "命令行为 SHALL 随之改变，SHALL NOT 需要改代码"
+        and:
+          - "节点清单 SHALL 位于 `.fstdd/config.d/` 下"
+          - "巡检参数（采样数 / 容差 / 抖动阈值 / 超时）SHALL 位于 `.fstdd/config.d/` 下"
+          - "配置缺失时 SHALL 使用有文档说明的默认值，或给出明确提示"

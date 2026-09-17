@@ -1,18 +1,86 @@
 # agent_spec.yaml — Agent 验证规格（Canonical YAML）
-
 meta:
-  task_id: "TODO: 任务标识"
+  task_id: "time-baseline-verify"
   change_id: "2026-09-17-time-baseline"
-  created: "2026-09-17T16:02:17.968509"
+  created: "2026-09-17T15:30:00+00:00"
   task_type: code
-  system: "TODO: 目标系统描述"
+  system: "6 个 AI agent / 3 台开发机；本节点 id 为 FSTDD005；服务器为 L1 数据面（裸库 + GitHub 镜像）与 L2 控制面（8788）所在节点；时间基线为横切契约，须同时覆盖 CLI、模板、宪法与双轨校验"
 
 preconditions:
-  - "TODO: 前置条件 1"
+  - "法定源为 `D:/tools/FSTDD/stdd-repo`，本 change 已通过 Gate 1"
+  - "本节点 id 为 `FSTDD005`；其他节点 id 由 `.fstdd/config.d/nodes.yaml` 配置，不得硬编码"
+  - "测试解释器为 `C:/Python311/python.exe`（托管 python 3.13 未装 pytest）"
+  - "本机经 ssh 的命令会执行两次 → 巡检与任何远端动作必须幂等、只读"
+  - "时钟巡检的消费者是 3 台机器上的 6 个 agent，命令必须随仓分发、无需额外安装"
+  - "宪法有两份副本（仓根与 `.fstdd/memory/`），必须同步修改"
+  - "模板有两处来源（`upstream/.fstdd/templates/**` 与 `.fstdd/templates/**`），必须同步修改"
 
 steps:
-  - action: "TODO: 操作步骤 1"
-    verify: "TODO: 验证方法 1"
+  - id: CP-001
+    action: "检查 canonical proposal / 7 份 code spec / agent spec / design / test-plan 的双轨一致性"
+    verify: "`fstdd canon verify 2026-09-17-time-baseline` 通过；REQ/SC 与文档互相可追溯；每个 REQ 至少 1 个 Scenario"
+  - id: CP-002
+    action: "在本 change 上执行基线回填"
+    verify: "`.fstdd.yaml` 出现 `baseline` 四项且非空；`baseline.at` 等于 `phases.understand.confirmed_at`（**不是**回填动作时刻）；`established_by: backfill`"
+  - id: CP-003
+    action: "重复执行基线建立（不带 --force），检查幂等性"
+    verify: "四项取值不变；命令退出码 0；输出报告「已存在，未改写」"
+  - id: CP-004
+    action: "执行 `fstdd baseline show --check`"
+    verify: "基线完整时退出码 0；人为清空一项后退出码非 0；输出无需人工解读即可判定"
+  - id: CP-005
+    action: "对缺基线的 change 执行 `fstdd validate`"
+    verify: "报告基线缺失/不完整，但为 warning 级、不使校验失败、退出码保持通过时的取值"
+  - id: CP-006
+    action: "新建一个 change，检查其 `.fstdd.yaml` 是否自动携带基线块"
+    verify: "新 change 的基线四项非空（`established_by: gate1`）；模板产物含基线字段占位与示例"
+  - id: CP-007
+    action: "检查宪法两份副本"
+    verify: "`### 7. 时间基线` 存在于两份；`diff` 为空；条款中的每一项「必须」都有对应的可执行检查"
+  - id: CP-008
+    action: "检查模板两处来源"
+    verify: "`upstream/.fstdd/templates/**` 与 `.fstdd/templates/**` 的 7 个相关模板内容一致"
+  - id: CP-009
+    action: "执行 `fstdd baseline --help`，并真实调用 establish / show / check 三个动作各一次"
+    verify: "命令被 CLI 识别；三个动作均返回预期结果（**不得**以「源码里出现某字符串」作为判据 —— 五处注册中有三处是字符串，grep 必然全绿而命令仍可能不可执行）"
+  - id: CP-010
+    action: "执行时钟巡检，读取三态与退出码"
+    verify: "输出含每节点的 offset / rtt / err / jitter / 有效样本数；三态退出码分别为 0 / 1 / 2 且可区分"
+  - id: CP-011
+    action: "构造「误差上界超过容差」的场景（如高抖动节点），检查判定"
+    verify: "判定为「无法测量」而**不是**「可接受」；即使 abs(offset) 小于容差也仍判「无法测量」；输出说明具体原因"
+  - id: CP-012
+    action: "在节点清单中放入一个不可达节点，执行巡检"
+    verify: "其余节点仍完成巡检；不可达节点标记为「无法测量」；命令不崩溃、不无限挂起（有超时）；汇总列出未测节点"
+  - id: CP-013
+    action: "对巡检做幂等性与只读性验证"
+    verify: "执行前后各节点状态不变；远端无文件写入；重复执行结果结构相同"
+  - id: CP-014
+    action: "运行 naive 时间戳检测，读取违规清单与被检查字段总数"
+    verify: "0 个违规；被检查字段总数 > 0（使「0 个违规」可被信任）；4 类豁免（单调钟 / 标识符 / 纯时间差 / 渲染参数）均未被误报"
+  - id: CP-015
+    action: "运行豁免清单自检"
+    verify: "每条豁免仍能在源码中定位到对应位置；无法定位的豁免被报出"
+  - id: CP-016
+    action: "逐条核对 C2 覆盖范围：只改「写入持久化产物的时间戳字段」"
+    verify: "豁免项未被改动（`time.time()` 单调钟、`batch_id` 日期片段、纯时间差计算、渲染参数）；改动项均为带时区 UTC"
+  - id: CP-017
+    action: "在干净克隆（LF 工作区）中执行 `canon verify`"
+    verify: "结果 2/2 通过（DC-HASH 源哈希一致 + DC-FIELD 字段引用完整）；无需先执行任何归一命令"
+  - id: CP-018
+    action: "对 DC-HASH 做负向验证：修改 canonical YAML 但不重新生成 Human View"
+    verify: "`canon verify` 报告 DC-HASH 失配并以非 0 退出码结束（校验不得退化为恒真）"
+  - id: CP-019
+    action: "对归一函数做变异测试（纯内存注入：只处理 `\\r\\n` 而忽略孤立 `\\r`）"
+    verify: "至少 1 个测试失败（证明断言有效）；注入无文件残留，恢复后复验通过"
+  - id: CP-020
+    action: "运行全量工程测试与结构/EOL 校验"
+    verify: "全量套件保持绿（基线 641 收集 / 640 passed / 1 skipped，以本 change 建立基线时的收集数为准）；`verify_eol.py` 通过；无凭证进入仓库"
 
 expected_outcomes:
-  - "TODO: 预期结果 1"
+  - "每个 change 都能回答「何时建立基线、基于哪个代码版本、在哪个节点」—— 本地发起的 change 不再是没有基线的二等公民"
+  - "全仓时间戳为带时区的 ISO 8601，CLI 与控制面的时间可直接比较与排序"
+  - "证据带观测时刻，使「这份证据还成立吗」成为可判定问题而非印象"
+  - "时钟巡检给出三态判定，把「测不准」如实报为「无法测量」而不是误报成「已对齐」"
+  - "DC-HASH 与行尾治理解耦，干净克隆可通过双轨校验 —— 消除「只有生成它的机器能校验通过」"
+  - "时间基线从「好习惯」变为强制契约：宪法有条款、Gate 检查有引用、模板默认携带"
