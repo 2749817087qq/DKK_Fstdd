@@ -36,8 +36,11 @@ CLI = REPO / "upstream" / "bin" / "fstdd"
 #                    例：EXP-B1 讲的就是「把 stdd 改名为 fstdd 时漏了动态导入」，
 #                    把文中的 stdd 也替换掉，这条经验就无法理解。
 #                    与「归档文档保留旧名」同理，不是未改名的残留。
+# `inbox/` 是 tools/inbox_pull.py 从接收端点拉回的**待审核经验**（gitignored 运行产物）。
+# 其内容与 experiences/ 同源 —— 同样会合法地提到旧名（那是史实），同样不该被判为残留。
+# 实测：拉回测试数据后本检查报「残留 20 处」，全部来自 inbox/raw/ 里的历史经验文档。
 EXCLUDE_DIRS = {"upstream", ".git", ".fstdd", ".stdd", "__pycache__",
-                "backups", ".claude", "experiences"}
+                "backups", ".claude", "experiences", "inbox"}
 
 # 预期保留旧名的文件（工具自身，不是被改的产物）
 EXCLUDE_FILES = {
@@ -228,16 +231,16 @@ def tc_006() -> tuple[bool, str]:
         results.append(f"{name}: {'PASS' if ok else 'FAIL'}")
         if not ok:
             return False, f"{name} 未通过"
-    # 安装位置 verify：**法定源优先**（与 verify_skill_standards 同策略）
-    # 顺序：FSTDD_INST_DIR → 法定源 → 脚本自身 → 历史兜底。
-    # 法定源优先的原因见 verify_skill_standards._installed_tools 的说明。
+    # 安装位置 verify：**自定位优先**（与 verify_skill_standards 同策略）
+    # 顺序：FSTDD_INST_DIR → 自定位 → 区外副本 → 历史兜底。
+    # 自定位优先的原因见 verify_skill_standards._installed_tools 的说明。
     _here = Path(__file__).resolve().parent
     _cands: list[Path] = []
     if os.environ.get("FSTDD_INST_DIR"):
         _cands.append(Path(os.environ["FSTDD_INST_DIR"]))
     _cands += [
-        Path.home() / ".workbuddy-ai" / "Fstdd" / "tools",  # 法定源 = 安装源（首选）
-        _here,                                              # 自定位（独立部署时适用）
+        _here,                                              # 自定位（安装源 = 本仓库）
+        Path.home() / ".workbuddy-ai" / "Fstdd" / "tools",  # 区外副本（已归档，兜底）
         Path("D:/Programs/DKK_Fstdd/tools"),                # 历史遗留，仅兜底
     ]
     _rel = "verify_workbuddy_skills.py"

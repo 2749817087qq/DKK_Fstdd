@@ -1,9 +1,9 @@
-change_id: 2026-09-16-inbox-review-sync
+change_id: 2026-09-17-canonical-in-workspace
 complexity_score: null
 current_phase: build
 design_adjustments:
   count: 0
-last_modified: '2026-09-17T07:55:03.811418'
+last_modified: '2026-09-17T08:33:14.964866'
 mode: standard
 phases:
   build:
@@ -12,15 +12,15 @@ phases:
     status: pending
   spec:
     confirmed_actor: ai
-    confirmed_at: '2026-09-17T07:55:02'
+    confirmed_at: '2026-09-17T08:33:14'
     confirmed_by: dialog
-    confirmed_evidence: 确认，进入 BUILD（6 项决策 + 16 TC 认可）
+    confirmed_evidence: 确认，进入 BUILD（5 项决策 + 14 TC 认可）
     status: completed
   understand:
     confirmed_actor: ai
-    confirmed_at: '2026-09-16T11:40:54'
+    confirmed_at: '2026-09-17T08:30:16'
     confirmed_by: dialog
-    confirmed_evidence: 确认，进入 SPEC
+    confirmed_evidence: 确认，进入 SPEC（法定源收进工作区）
     status: completed
 score_confidence: null
 status: active

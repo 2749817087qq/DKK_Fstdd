@@ -1,18 +1,41 @@
 # agent_spec.yaml — Agent 验证规格（Canonical YAML）
 
 meta:
-  task_id: "TODO: 任务标识"
+  task_id: "inbox-review-sync-verify"
   change_id: "2026-09-16-inbox-review-sync"
   created: "2026-09-16T11:34:37.461554"
   task_type: code
-  system: "TODO: 目标系统描述"
+  system: "自建接收端点（ubuntu@43.134.236.80 的 ~/fstdd-inbox）→ 本地暂存目录 → Fstdd-experiences"
 
 preconditions:
-  - "TODO: 前置条件 1"
+  - "工作副本位于 stdd-repo；法定源 ~/.workbuddy-ai/Fstdd 已就位"
+  - "测试解释器为 C:/Python311/python.exe（托管 python 3.13.12 未安装 pytest）"
+  - "接收端点可达（用于端到端拉取）；端点实现见 tools/inbox_server.py"
+  - "端点侧已有测试数据可用（或先向端点提交若干条构造数据）"
 
 steps:
-  - action: "TODO: 操作步骤 1"
-    verify: "TODO: 验证方法 1"
+  - action: "向端点提交若干条构造经验（含：同 id 重复、正文相同但 id 不同、含投稿者 IP）"
+    verify: "端点 /health 计数按预期增长"
+  - action: "执行拉取，观察落盘结果"
+    verify: "文件名归一为 <experience_id>.md；同 id 只留 received_at 最新的一条；正文相同的不同 id 只留一份"
+  - action: "重复执行同一次拉取"
+    verify: "结果与首次一致（幂等），无新增文件"
+  - action: "解析服务端元数据头并输出审核表"
+    verify: "审核表含 id/作者/接收时间/字节/脱敏命中/重复情况；缺头文件不报错"
+  - action: "构造发布物，检查其内容"
+    verify: "不含 `fstdd-inbox` 头；不含投稿者 IP（出现次数为 0）；正文除脱敏替换外逐字保留"
+  - action: "检查发布物是否含 README.md / SUBMIT.md"
+    verify: "SHALL 被排除（只含经验文件）"
+  - action: "静态检查 tools/inbox_pull.py 的实现方式"
+    verify: "脱敏调用 share_experience.sanitize()；推送调用 share_experience.publish()；无第二套推送实现"
+  - action: "拒绝某条经验后再次构造发布物"
+    verify: "被拒条目不出现在发布物中；原文件被移入 rejected 位置（留痕，未删除）"
+  - action: "把端点指向未监听端口后执行拉取"
+    verify: "以非零退出码 + 明确原因失败，不报告成功"
 
 expected_outcomes:
-  - "TODO: 预期结果 1"
+  - "待审核池可一条命令取回，不再依赖人工 ssh 搬运"
+  - "发布物不含投稿者 IP 等来源元数据；不含索引/说明文件"
+  - "同 id 重复与内容重复都被去重；重复拉取幂等"
+  - "脱敏与推送均复用既有实现，仓库内不存在第二套"
+  - "维护者可据审核表判断入库，并可拒绝个别条目且留痕"

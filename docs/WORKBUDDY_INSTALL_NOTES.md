@@ -1,39 +1,50 @@
 # FSTDD 全局安装说明（WorkBuddy）
 
 安装时间：2026-09-14
-最近修订：2026-09-16（法定源确权 + 位置/策略修正）
+最近修订：2026-09-17（**法定源收进工作区**）
 来源仓库：https://github.com/leonai42/stdd （master 分支，V3.0.5，MIT License）
 许可：MIT（详见仓库 LICENSE）
 
-## 0. 位置与权威关系（2026-09-16 确权）
+## 0. 位置与权威关系（2026-09-17 确权）
 
 ```
-   法定源  C:\Users\Administrator\.workbuddy-ai\Fstdd     ← 唯一权威；git 仓库；skill 路径指向它
-      │  git 双向同步
-      ├────────  开发副本（工作区 stdd-repo/）              ← 可弃、可重建
-      │
-      └── push origin ──> GitHub 2749817087qq/DKK_Fstdd     ← 只是「上传目标」，不是源
+   工作区  C:\Users\Administrator\WorkBuddy AI\2026-09-14-18-36-54\
+   ┌──────────────────────────────────────────────────────────┐
+   │  stdd-repo/   ← **法定源**（唯一权威；git 仓库；              │
+   │                 完整历史 + tag fstdd-v1.0.0）               │
+   │      │  安装器从这里读；skill 内固化路径指向它               │
+   │      └── push origin ──> GitHub DKK_Fstdd（**上传目标**）    │
+   │                                                          │
+   │  backups/       ← 含区外副本的归档                          │
+   │  .workbuddy-ai/ ← 记忆 / 临时                              │
+   │  inbox/         ← 待审核池暂存（gitignored 运行产物）        │
+   └──────────────────────────────────────────────────────────┘
 ```
 
 | 位置 | 角色 |
 |---|---|
-| `~/.workbuddy-ai/Fstdd` | **法定源**。安装器从这里读；skill 内固化路径指向它 |
-| 工作区 `stdd-repo/` | **开发副本**。代码在这里改，再 `git push canonical master` |
-| `2749817087qq/DKK_Fstdd`（GitHub） | **上传目标**。由法定源 `git push origin master --tags` 上传 |
+| 工作区 `stdd-repo/` | **法定源**。安装器从这里读；skill 内固化路径指向它 |
+| `2749817087qq/DKK_Fstdd`（GitHub） | **上传目标**（不是源）。由法定源 `git push origin master --tags` 上传 |
+| `~/.workbuddy-ai/Fstdd` | ⚠️ **已归档**，**不再是法定源**。完整副本在 `backups/canonical-archived-*/`；原目录保留未删 |
 | `D:/Programs/DKK_Fstdd` | ⚠️ **另一程序的调试副本，不要动**，不是我们的安装源 |
 
-### 同步操作（**不用 cp**）
+> **为什么收进工作区**：D哥 要求「所有开发 FSTDD 产生的文件，包括真源，全部归档到工作区文件夹」。
+> 此前把真源放在区外（理由：避免 skill 路径固化到会话目录），代价是真源散落在工作区外。
+> 收拢前已按 git blob 哈希逐个比对，确认 `stdd-repo` 是内容超集，未丢失任何东西。
+
+### 同步操作
 
 ```bash
-# 工作区 → 法定源（法定源已设 receive.denyCurrentBranch=updateInstead，其工作区会同步更新）
-cd <工作区>/stdd-repo && git push canonical master
+# 工作区 → GitHub（含 tag）
+cd <工作区>/stdd-repo && git push origin master --tags
 
-# 法定源 → GitHub（含 tag）
-git -C ~/.workbuddy-ai/Fstdd push origin master --tags
-
-# 法定源 → 工作区（反向；本机远程跟踪引用不 materialize，用 FETCH_HEAD）
-cd <工作区>/stdd-repo && git fetch canonical && git merge --ff-only FETCH_HEAD
+# 若日后仍需与区外副本互同步（当前不再需要）：
+#   git push canonical master      # 工作区 → 区外副本（需其 receive.denyCurrentBranch=updateInstead）
+#   git fetch canonical && git merge --ff-only FETCH_HEAD   # 反向（本机远程跟踪引用不 materialize）
 ```
+
+> **为什么用 git 而不是手工 cp**：2026-09-16 一天内发生两次漂移（宪法陈旧、verify 脚本两份不一致），
+> 根因都是「两份拷贝靠手工 cp」。git 有 hash、有冲突检测，漂移无法静默发生。
 
 > **为什么必须用 git**：2026-09-16 一天内发生两次漂移（宪法陈旧、verify 脚本两份不一致），
 > 根因都是「两份拷贝靠手工 cp」。git 有 hash、有冲突检测，漂移无法静默发生。

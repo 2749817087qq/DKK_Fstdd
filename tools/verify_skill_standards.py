@@ -39,25 +39,28 @@ PY = sys.executable
 def _installed_tools() -> Path:
     """安装位置的工具目录。
 
-    顺序：FSTDD_INST_DIR（显式覆盖）→ **法定源** → 脚本自身 → 历史兜底。
+    顺序：FSTDD_INST_DIR（显式覆盖）→ **自定位** → 区外副本 → 历史兜底。
 
-    为什么**法定源优先**：被校验的对象是「已安装的 skill」，而 skill 内固化的路径
-    指向**安装源**。所以必须用安装源自己的 verify 去校验 —— 用别处的 verify，
-    其「期望路径」与实际安装不符，会恒定误报 FAIL（实测：从工作区运行时报
-    「未发现资源绝对路径（期望含 <工作区>/upstream）」，而 skill 引用的是法定源）。
+    为什么**自定位优先**：被校验的对象是「已安装的 skill」，其内固化路径指向
+    **安装源**。所以必须用安装源自己的 verify 去校验 —— 用别处的 verify，
+    其「期望路径」与实际安装不符，会恒定误报 FAIL。
 
-    为什么自定位不作首选：它隐含假设「脚本所在仓库 == 安装源」。
-    该假设在「安装源 = 法定源」的架构下**不成立**，故降为次选（独立部署场景仍适用）。
+    而**安装源就是本脚本所在的仓库**（`stdd-repo`，2026-09-17 确权为法定源），
+    因此自定位即命中安装源。
 
-    D:/Programs/DKK_Fstdd 是另一程序的调试副本，只作历史兜底，绝不作首选。
+    > 历史注记：2026-09-16 曾把区外副本置于首位，因为当时安装源在区外；
+    > 2026-09-17 法定源收进工作区后改回自定位。**原则始终是「用安装源自己的
+    > verify」，只是安装源变了。**
+
+    区外副本与 D:/Programs/DKK_Fstdd 均只作兜底，绝不作首选。
     """
     here = Path(__file__).resolve().parent
     cands: list[Path] = []
     if os.environ.get("FSTDD_INST_DIR"):
         cands.append(Path(os.environ["FSTDD_INST_DIR"]))
     cands += [
-        Path.home() / ".workbuddy-ai" / "Fstdd" / "tools",  # 法定源 = 安装源（首选）
-        here,                                              # 自定位（独立部署时适用）
+        here,                                              # 自定位（安装源 = 本仓库）
+        Path.home() / ".workbuddy-ai" / "Fstdd" / "tools",  # 区外副本（已归档，兜底）
         Path("D:/Programs/DKK_Fstdd/tools"),               # 历史遗留，仅兜底
     ]
     for d in cands:

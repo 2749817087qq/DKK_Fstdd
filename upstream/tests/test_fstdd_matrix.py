@@ -13,6 +13,8 @@
 """
 from __future__ import annotations
 
+import datetime
+
 import json
 import os
 import subprocess
@@ -31,6 +33,12 @@ INSTALLER = REPO / "tools" / "install_workbuddy_skills.py"
 VERIFIER = REPO / "tools" / "verify_workbuddy_skills.py"
 
 SENTINEL = "FSTDD_LOCAL_POLICY_NO_UPLOAD_V1"
+
+
+# change 目录名由**创建当天**决定（`<YYYY-MM-DD>-<slug>`）。
+# **不得硬编码日期** —— 硬编码的用例只在当天能过，次日必然失败
+# （实测：2026-09-17 跑全量时 3 个用例因硬编码 2026-09-16 而失败）。
+DEMO_CHANGE = f"{datetime.date.today().isoformat()}-demo-change"
 
 
 def run_cli(args, cwd, timeout=120):
@@ -122,13 +130,13 @@ class TestCLI:
         init_project(tmp_path)
         rc, out = run_cli(["new", "demo-change"], tmp_path)
         assert rc == 0, out
-        assert (tmp_path / ".fstdd" / "changes" / "2026-09-16-demo-change").exists()
+        assert (tmp_path / ".fstdd" / "changes" / DEMO_CHANGE).exists()
 
     def test_b6_new_creates_canonical_yaml(self, tmp_path):
         init_project(tmp_path)
         run_cli(["new", "demo-change"], tmp_path)
         # canonical YAML 生成在 change 目录内；全局 .fstdd/canonical/ 由归档/合并填充
-        chg = tmp_path / ".fstdd" / "changes" / "2026-09-16-demo-change"
+        chg = tmp_path / ".fstdd" / "changes" / DEMO_CHANGE
         canon = chg / "canonical"
         assert canon.exists(), "change 内应生成 canonical/"
         assert any(canon.rglob("*.yaml")), "canonical 下应有 YAML"
@@ -150,14 +158,14 @@ class TestCLI:
         init_project(tmp_path)
         run_cli(["new", "demo-change"], tmp_path)
         # 不传 --confirmed-by 应被拒绝
-        rc, out = run_cli(["gate", "approve", "2026-09-16-demo-change", "--gate", "1"], tmp_path)
+        rc, out = run_cli(["gate", "approve", DEMO_CHANGE, "--gate", "1"], tmp_path)
         assert rc != 0 or "confirmed" in out.lower()
 
     def test_b10_gate_approve_ok(self, tmp_path):
         init_project(tmp_path)
         run_cli(["new", "demo-change"], tmp_path)
         rc, out = run_cli(
-            ["gate", "approve", "2026-09-16-demo-change", "--gate", "1",
+            ["gate", "approve", DEMO_CHANGE, "--gate", "1",
              "--confirmed-by", "dialog", "--evidence", "matrix test"],
             tmp_path)
         assert rc == 0, out
@@ -166,10 +174,10 @@ class TestCLI:
         """流程约束：未走完 BUILD（Phase 3）的 change 不得归档。"""
         init_project(tmp_path)
         run_cli(["new", "demo-change"], tmp_path)
-        rc, out = run_cli(["archive", "2026-09-16-demo-change"], tmp_path)
+        rc, out = run_cli(["archive", DEMO_CHANGE], tmp_path)
         # 应被拒绝并提示 BUILD/Phase 3 未完成，而不是静默归档
         assert ("BUILD" in out) or ("Phase 3" in out) or rc != 0, out
-        assert not (tmp_path / ".fstdd" / "archive" / "2026-09-16-demo-change").exists()
+        assert not (tmp_path / ".fstdd" / "archive" / DEMO_CHANGE).exists()
 
     def test_b12_experience_list_runs(self, tmp_path):
         init_project(tmp_path)

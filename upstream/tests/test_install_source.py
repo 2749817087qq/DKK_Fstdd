@@ -46,19 +46,23 @@ class TestAResolutionOrder:
     """TC-ISR-005 / TC-ISR-006 —— 解析顺序必须「法定源优先」。"""
 
     def test_a1_source_declares_canonical_first(self):
-        """源码里法定源必须排在「脚本自身」之前。
+        """源码里**自定位**必须排在「区外副本」之前。
 
-        理由：被校验对象是**已安装的 skill**，其内固化路径指向**安装源**（法定源）。
-        用别处的 verify 会因「期望路径」不同而恒定误报。
+        原则是「用**安装源自己的** verify 去校验」（被校验对象是已安装的 skill，
+        其内固化路径指向安装源）。安装源自 2026-09-17 起是**工作区仓库**，
+        而脚本就在工作区仓库里 → 自定位即命中安装源。
+
+        > 历史注记：2026-09-16 该断言方向相反（当时安装源在区外）。
+        > 本 change 把法定源收进工作区后随之反转 —— **不是反复，是同一原则的必然结果**。
         """
         src = (REPO / "tools/verify_skill_standards.py").read_text(encoding="utf-8")
-        i_canon = src.find('".workbuddy-ai" / "Fstdd" / "tools"')
         i_here = src.find("here,", src.find("cands += ["))
-        assert i_canon != -1, "未找到法定源候选"
+        i_outside = src.find('".workbuddy-ai" / "Fstdd" / "tools"')
         assert i_here != -1, "未找到自定位候选"
-        assert i_canon < i_here, (
-            "法定源必须排在自定位之前 —— 否则从工作区运行时会用工作区的 verify，"
-            "而它期望 skill 引用工作区路径，与实际（引用法定源）不符"
+        assert i_outside != -1, "未找到区外副本候选"
+        assert i_here < i_outside, (
+            "自定位必须优先 —— 安装源是工作区仓库，而脚本就在其中；"
+            "把区外副本放首位会让校验去比对另一份陈旧副本，恒定误报"
         )
 
     def test_a2_fstdd_inst_dir_still_wins(self):
@@ -77,11 +81,11 @@ class TestAResolutionOrder:
         assert i_d != -1 and i_canon < i_d
 
     def test_a4_verify_rename_uses_same_order(self):
-        """`verify_rename.py` 必须采用同一顺序。"""
+        """`verify_rename.py` 必须采用同一顺序（自定位优先）。"""
         src = (REPO / "tools/verify_rename.py").read_text(encoding="utf-8")
-        i_canon = src.find('".workbuddy-ai" / "Fstdd" / "tools"')
-        i_here = src.find("_here,")
-        assert i_canon != -1 and i_here != -1 and i_canon < i_here
+        i_here = src.find("_here,", src.find("_cands += ["))
+        i_outside = src.find('".workbuddy-ai" / "Fstdd" / "tools"')
+        assert i_here != -1 and i_outside != -1 and i_here < i_outside
 
     def test_a5_backup_check_tolerates_absent_backup(self):
         """备份完整性必须容忍「无备份」——合规树不产生备份是合法状态。"""
@@ -194,11 +198,16 @@ class TestCContractAndDocs:
         assert "经验自动上传：默认禁用" not in doc, "旧的「默认禁用」表述必须已移除"
 
     def test_c4_doc_states_three_way_relationship(self):
-        """文档必须写明 法定源／开发副本／上传目标 三者关系。"""
+        """文档必须写明 法定源／上传目标 的关系，并说明区外副本已归档。
+
+        > 2026-09-17：法定源收进工作区后，文档不再使用「开发副本」这一角色名
+        > （工作区仓库本身就是法定源），改为「已归档」+「上传目标」。
+        """
         doc = (REPO / "docs/WORKBUDDY_INSTALL_NOTES.md").read_text(encoding="utf-8")
-        assert "法定源" in doc and "开发副本" in doc and "上传目标" in doc
-        assert "不是源" in doc, "必须明确 GitHub 不是权威来源"
-        assert "git push canonical master" in doc, "必须给出同步命令"
+        assert "法定源" in doc and "上传目标" in doc
+        assert "不是源" in doc or "不是权威" in doc, "必须明确 GitHub 不是权威来源"
+        assert "已归档" in doc, "必须说明区外副本已归档"
+        assert "git push origin master --tags" in doc, "必须给出上传命令"
 
 
 # ---------------------------------------------------------------------------

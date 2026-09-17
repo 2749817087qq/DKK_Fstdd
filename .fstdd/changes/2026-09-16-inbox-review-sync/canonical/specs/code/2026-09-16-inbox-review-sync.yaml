@@ -1,16 +1,155 @@
 # spec.yaml — 行为规格（Canonical YAML）
 
 meta:
-  capability: "TODO: 能力名称"
+  capability: "inbox-review-sync"
   change_id: "2026-09-16-inbox-review-sync"
   created: "2026-09-16T11:34:37.461554"
-  confidence: medium
+  confidence: high
 
 requirements:
-  - id: "REQ-001"
-    description: "TODO: 需求描述"
+  - id: REQ-001
+    description: "待审核池的内容必须能一条命令取回本地，不再依赖人工 ssh 搬运"
     scenarios:
-      - id: "SC-001"
-        given: "TODO: 前置条件"
-        when: "TODO: 触发动作"
-        then: "TODO: 预期结果 — 使用 SHALL 声明"
+      - id: SC-001
+        confidence: high
+        evidence: "proposal.yaml why：链路到池子就断了，数据只能靠人工 ssh 手工搬运"
+        given: "自建接收端点可达，池中有已落盘的待审核经验"
+        when: "执行拉取命令"
+        then: "经验 SHALL 被取回并落到本地暂存目录"
+        and:
+          - "SHALL NOT 要求使用者手工 ssh 或手工复制文件"
+          - "拉取结果 SHALL 可复现（同一池内容重复拉取得到相同结果）"
+
+      - id: SC-002
+        confidence: high
+        evidence: "proposal.yaml what_changes：按 experience_id 归一文件名"
+        given: "池中文件名为 `<experience_id>-<UTC时间戳>.md`"
+        when: "拉取落盘"
+        then: "本地文件名 SHALL 归一为 `<experience_id>.md`（丢弃时间戳后缀）"
+        and:
+          - "归一后同一 id 只会有一个文件，重复投稿不会堆积"
+
+      - id: SC-003
+        confidence: high
+        evidence: "proposal.yaml why：不可复现的搬运是当前痛点"
+        given: "端点不可达（网络不通 / 服务未运行）"
+        when: "执行拉取命令"
+        then: "SHALL 以明确的失败原因退出（非零退出码）"
+        and:
+          - "SHALL NOT 在未取到任何内容时报告成功"
+
+  - id: REQ-002
+    description: "发布物必须剥离服务端元数据头 —— 其中含投稿者 IP，公开即泄露第三方个人信息"
+    scenarios:
+      - id: SC-004
+        confidence: high
+        evidence: "proposal.yaml why 风险 1；tools/inbox_server.py 落盘时写 remote_addr"
+        given: "池中文件的头部形如 `<!-- fstdd-inbox ... remote_addr: <ip> -->`"
+        when: "解析该文件"
+        then: "SHALL 能提取 experience_id / author / received_at / remote_addr"
+        and:
+          - "这些字段 SHALL 仅用于本地审核展示"
+          - "解析 SHALL 容忍头部缺失（缺头不报错，按无元数据处理）"
+
+      - id: SC-005
+        confidence: high
+        evidence: "proposal.yaml why 风险 1：原样发布等于公开第三方个人信息"
+        given: "一个含 `remote_addr: 203.0.113.7` 的待审核文件"
+        when: "构造发布物"
+        then: "发布物 SHALL NOT 包含该 IP，也 SHALL NOT 包含 `fstdd-inbox` 头"
+        and:
+          - "反向验证：断言该 IP 字符串在发布物中出现次数为 0"
+          - "剥离 SHALL NOT 误删正文（正文内容 SHALL 逐字保留，除脱敏替换外）"
+
+  - id: REQ-003
+    description: "必须两级去重，避免经验库堆积重复条目"
+    scenarios:
+      - id: SC-006
+        confidence: high
+        evidence: "proposal.yaml why 风险 2：实测首轮 30 个文件里 13 个 id 各 2 份"
+        given: "同一 experience_id 有 2 份，received_at 不同"
+        when: "归一落盘"
+        then: "SHALL 只保留 received_at 最新的一份"
+        and:
+          - "丢弃的那份 SHALL 在审核表中标注为「重复（同 id）」"
+
+      - id: SC-007
+        confidence: high
+        evidence: "proposal.yaml what_changes：按内容哈希二次去重"
+        given: "两个不同 experience_id 的文件，正文完全相同"
+        when: "归一落盘"
+        then: "SHALL 只保留一份"
+        and:
+          - "去重 SHALL 基于内容哈希，不依赖文件名"
+
+      - id: SC-008
+        confidence: high
+        evidence: "与既有 upgrade/回传的幂等约定一致"
+        given: "已拉取并归一过的暂存目录"
+        when: "再次执行同一拉取"
+        then: "结果 SHALL 与首次一致（幂等），不产生新增文件"
+
+  - id: REQ-004
+    description: "必须复用既有能力，不得出现第二套脱敏或推送实现"
+    scenarios:
+      - id: SC-009
+        confidence: high
+        evidence: "proposal.yaml capabilities.modified：仅被复用，不改其行为"
+        given: "`tools/inbox_pull.py`"
+        when: "检查其脱敏逻辑"
+        then: "SHALL 调用 `share_experience.sanitize()`"
+        and:
+          - "SHALL NOT 内联复制一份脱敏规则表"
+
+      - id: SC-010
+        confidence: high
+        evidence: "proposal.yaml what_changes：复用 publish() 完成推送"
+        given: "`tools/inbox_pull.py`"
+        when: "检查其推送逻辑"
+        then: "SHALL 调用 `share_experience.publish()`"
+        and:
+          - "SHALL NOT 出现第二套 git clone / commit / push 实现"
+          - "仓库内 `publish()` 的定义处数 SHALL 为 1"
+
+  - id: REQ-005
+    description: "维护者必须能在入库前完成审核，并能拒绝个别条目"
+    scenarios:
+      - id: SC-011
+        confidence: high
+        evidence: "proposal.yaml what_changes：输出审核表"
+        given: "暂存目录中有若干待审核经验"
+        when: "执行审核命令"
+        then: "审核表 SHALL 含 id / 作者 / 接收时间 / 字节数 / 脱敏命中 / 重复情况"
+        and:
+          - "审核表 SHALL 让人能据以判断「哪些可以入库」"
+
+      - id: SC-012
+        confidence: high
+        evidence: "proposal.yaml capabilities.new：inbox-reject 留痕不删除"
+        given: "暂存目录中的某条经验"
+        when: "执行拒绝命令"
+        then: "该条 SHALL 被移出待发布集合"
+        and:
+          - "SHALL 留痕（移入单独的 rejected 位置），SHALL NOT 直接删除"
+          - "被拒条目 SHALL NOT 出现在后续发布物中"
+
+  - id: REQ-006
+    description: "发布目标与内容边界必须正确"
+    scenarios:
+      - id: SC-013
+        confidence: high
+        evidence: "proposal.yaml why：回传到本项目自己的仓库"
+        given: "暂存目录中的待发布经验"
+        when: "执行发布"
+        then: "目标仓库 SHALL 为 `2749817087qq/Fstdd-experiences`（我方位置）"
+        and:
+          - "SHALL NOT 指向任何第三方仓库"
+
+      - id: SC-014
+        confidence: high
+        evidence: "本日已踩过的坑：publish/publish_via_pr 曾把 README.md/SUBMIT.md 推进经验库"
+        given: "暂存目录中同时存在经验文件与索引/说明文件（README.md / SUBMIT.md）"
+        when: "构造发布物"
+        then: "发布物 SHALL 只含经验文件"
+        and:
+          - "索引与说明文件 SHALL 被排除（复用既有 export_files 的排除规则）"

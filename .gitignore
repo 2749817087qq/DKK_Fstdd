@@ -11,3 +11,7 @@ experiences/
 
 # 经验回传审计记录：append-only，属本机运行态（含本机路径），不入库
 .fstdd/share-audit.yaml
+
+# 待审核池同步的暂存区：由 tools/inbox_pull.py 生成，属运行产物不入库
+# （raw=端点取回；staging=归一+剥离+脱敏后待发布；rejected=被拒留痕）
+inbox/
