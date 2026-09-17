@@ -1,0 +1,53 @@
+change_id: 2026-09-17-canonical-in-workspace
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 4
+last_modified: '2026-09-17T08:55:12.009683'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T08:55:11'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 DELIVER（543 passed / 三项全绿 / 归档 829=829 / 变异 3-3）
+    slices_completed:
+      S1:
+        new_tests: 4
+        tc_coverage: TC-CIW-001,TC-CIW-002,TC-CIW-008,TC-CIW-009
+        verified_at: '2026-09-17T09:00:00'
+      S2:
+        new_tests: 7
+        tc_coverage: TC-CIW-003,TC-CIW-004,TC-CIW-005,TC-CIW-006,TC-CIW-007,TC-CIW-010,TC-CIW-011
+        verified_at: '2026-09-17T09:00:00'
+      S3:
+        new_tests: 4
+        tc_coverage: TC-CIW-012,TC-CIW-013
+        verified_at: '2026-09-17T09:00:00'
+      S4:
+        new_tests: 2
+        tc_coverage: TC-CIW-014
+        verified_at: '2026-09-17T09:00:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T08:33:14'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 BUILD（5 项决策 + 14 TC 认可）
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T08:30:16'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 SPEC（法定源收进工作区）
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 10
+  tc_cases: 14
+  test_functions: 17
+version: '3.0'
