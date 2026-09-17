@@ -86,7 +86,7 @@ C:/Python311/python.exe -m pytest upstream/tests/test_hub_ops.py -q
 C:/Python311/python.exe -m pytest tests -q
 ```
 
-结果：**583 passed / 0 failed**，退出码 0。
+结果：**586 passed / 0 failed**，退出码 0。
 
 其中包含 Slice A/B/C/D 新增测试以及两个已归档 change 的相关测试。pytest 退出时偶发的批量临时目录清理守卫不影响用例汇总；本次汇总本身为 583 passed。
 
