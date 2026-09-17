@@ -1,14 +1,68 @@
+baseline:
+  at: '2026-09-17T16:22:00+00:00'
+  base_git_sha: 8dd86ff31e415dbbcc25aaf1fd6bd9f6465aae20
+  clock_source: system
+  established_by: user
+  node_id: DESKTOP-1MEQDMR
 change_id: 2026-09-17-time-baseline
 complexity_score: 13
-current_phase: spec
+current_phase: deliver
 design_adjustments:
   count: 0
+last_modified: '2026-09-17T18:28:18+00:00'
+long_range:
+  enabled: true
+  iteration_limit: 10
+  mode: full_auto
+  notes: D哥 于 2026-09-17T23:2x 经确认框选择「确认全部」：授权 A①②③④ + B⑤～⑫ （含 ssh 只读时钟巡检、Git 写操作
+    commit/push server+local）；Gate 3 仍为强制确认门。
+  pre_auth_by: dialog
+  pre_auth_completed: true
+  pre_auth_timestamp: 2026-09-17 15:27:46+00:00
 mode: thorough
 phases:
   build:
-    status: pending
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T18:27:10+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 对话确认通过（2026-09-17 18:45）：全量 692 passed（2 环境耦合失败单跑绿）；新增
+      50 测试函数≥52 TC；verify_eol 7/7；skill 6/7 不劣于基线；凭证 0 命中；真实巡检无法测量为预期结论；首跑 3 处真缺陷全部修复
+    slices_completed:
+      S1:
+        new_tests: 8
+        tc_coverage: TB-001..009
+        verified_at: '2026-09-17T15:55:00+00:00'
+      S2:
+        new_tests: 7
+        tc_coverage: CANON-001..006
+        verified_at: '2026-09-17T16:20:00+00:00'
+      S3:
+        new_tests: 7
+        tc_coverage: TSN-001..007
+        verified_at: '2026-09-17T17:03:02+00:00'
+      S4:
+        new_tests: 8
+        tc_coverage: TB-001..009
+        verified_at: '2026-09-17T17:11:31+00:00'
+      S5:
+        new_tests: 5
+        tc_coverage: EPR-001..005
+        verified_at: '2026-09-17T18:14:30+00:00'
+      S6:
+        new_tests: 9
+        tc_coverage: CAL-001..009
+        verified_at: '2026-09-17T17:37:00+00:00'
+      S7:
+        new_tests: 6
+        tc_coverage: CONST-001..005,TMPL-001
+        verified_at: '2026-09-17T17:44:48+00:00'
+      S8:
+        new_tests: 0
+        tc_coverage: XCUT-001..005
+        verified_at: '2026-09-17T18:17:55+00:00'
+    status: completed
   deliver:
-    status: pending
+    status: in_progress
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-09-17T15:22:20+00:00'
@@ -25,15 +79,6 @@ phases:
       项变更 C1–C8 / 4 个新增 capability / 8 条成功标准）。同轮确认：执行模式采纳 thorough（复杂度评分 13）；C8（canon
       DC-HASH 由字节哈希改为 EOL 归一后的内容哈希）保留在本 change 内，与 C1/C3 同批落地。
     status: completed
-long_range:
-  enabled: true
-  mode: full_auto
-  pre_auth_completed: true
-  pre_auth_timestamp: 2026-09-17T15:27:46+00:00
-  pre_auth_by: dialog
-  iteration_limit: 10
-  notes: D哥 于 2026-09-17T23:2x 经确认框选择「确认全部」：授权 A①②③④ + B⑤～⑫ （含 ssh 只读时钟巡检、Git 写操作
-    commit/push server+local）；Gate 3 仍为强制确认门。
 score_confidence: preliminary
 status: active
 task_type: code
@@ -42,9 +87,3 @@ traceability:
   tc_cases: 52
   test_functions: 0
 version: '3.0'
-baseline:
-  at: '2026-09-17T16:22:00+00:00'
-  base_git_sha: 8dd86ff31e415dbbcc25aaf1fd6bd9f6465aae20
-  node_id: DESKTOP-1MEQDMR
-  clock_source: system
-  established_by: user
