@@ -1,7 +1,7 @@
 # FSTDD 分布式任务协作：6 agent / 3 开发机的任务分派、读取、回传与信息交流
 
 <!-- source_hash: 693718323d210ba8 -->
-<!-- generated_at: 2026-09-17T09:59:50.461998 -->
+<!-- generated_at: 2026-09-17T10:44:53.114752 -->
 <!-- canonical: canonical/proposals/2026-09-17-distributed-task-coordination.yaml -->
 
 ## Why

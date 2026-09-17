@@ -69,6 +69,35 @@ def cmd_phase(args: argparse.Namespace) -> None:
     data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8"))
     current = data.get("current_phase", "understand")
 
+    if action == "record-slice":
+        if current != "build":
+            print("  ❌ 只有 BUILD phase 可以记录 Slice 证据。")
+            sys.exit(1)
+        slice_id = getattr(args, "target_phase", None)
+        tc_coverage = (getattr(args, "tc_coverage", None) or "").strip()
+        new_tests = getattr(args, "new_tests", None)
+        verified_at = (getattr(args, "verified_at", None) or "").strip()
+        if not slice_id or not tc_coverage or new_tests is None or not verified_at:
+            print("  Usage: fstdd phase record-slice <change> <slice-id> --tc-coverage <TCs> --new-tests <N> --verified-at <ISO>")
+            sys.exit(2)
+        phases = data.setdefault("phases", {})
+        build = phases.setdefault("build", {})
+        slices = build.setdefault("slices_completed", {})
+        existing = slices.get(slice_id)
+        evidence = {
+            "tc_coverage": tc_coverage,
+            "new_tests": new_tests,
+            "verified_at": verified_at,
+        }
+        if existing and existing != evidence:
+            print(f"  ❌ Slice {slice_id} 已存在不同证据，拒绝覆盖。")
+            sys.exit(1)
+        slices[slice_id] = evidence
+        data["last_modified"] = datetime.now().isoformat()
+        stdd_yaml.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False), encoding="utf-8")
+        print(f"  Slice {slice_id} evidence recorded for change {change_dir.name}")
+        return
+
     if action == "status":
         idx = _PHASE_ORDER.index(current) if current in _PHASE_ORDER else -1
         print(f"  Change: {change_dir.name}")

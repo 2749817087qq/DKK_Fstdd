@@ -170,6 +170,76 @@ class TestGateConfirm:
         data = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         assert data["phases"]["spec"]["confirmed_at"] is not None
 
+    def test_amend_audit_appends_without_overwriting_original(self, tmp_path, monkeypatch, capsys):
+        """TC-GATE-110: 用户追认追加记录，原始 Gate 审计保持不变。"""
+        change_dir = _setup_gate_project(tmp_path, gates_confirmed=[1])
+        state_file = change_dir / ".fstdd.yaml"
+        data = yaml.safe_load(state_file.read_text(encoding="utf-8"))
+        data["phases"]["understand"].update({
+            "confirmed_by": "dialog",
+            "confirmed_actor": "ai",
+            "confirmed_evidence": "历史 AI 记录",
+        })
+        state_file.write_text(yaml.dump(data, allow_unicode=True), encoding="utf-8")
+        monkeypatch.chdir(tmp_path)
+
+        from fstdd.cli.commands.gate import cmd_gate
+        args = _make_args("amend-audit", name="2026-01-01-gate-test", gate=1,
+                          confirmed_by="dialog", evidence="D哥追认 Gate 1")
+        cmd_gate(args)
+
+        result = yaml.safe_load(state_file.read_text(encoding="utf-8"))
+        original = result["phases"]["understand"]
+        assert original["confirmed_actor"] == "ai"
+        assert original["confirmed_evidence"] == "历史 AI 记录"
+        assert len(result["audit_amendments"]) == 1
+        amendment = result["audit_amendments"][0]
+        assert amendment["amended_actor"] == "user"
+        assert amendment["amended_evidence"] == "D哥追认 Gate 1"
+        assert amendment["original_confirmed_actor"] == "ai"
+
+    def test_amend_audit_is_idempotent(self, tmp_path, monkeypatch, capsys):
+        """TC-GATE-111: 相同追认请求重复执行不重复追加。"""
+        change_dir = _setup_gate_project(tmp_path, gates_confirmed=[1])
+        monkeypatch.chdir(tmp_path)
+        from fstdd.cli.commands.gate import cmd_gate
+        args = _make_args("amend-audit", name="2026-01-01-gate-test", gate=1,
+                          confirmed_by="dialog", evidence="D哥追认 Gate 1")
+        cmd_gate(args)
+        cmd_gate(args)
+        result = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
+        assert len(result["audit_amendments"]) == 1
+        assert "already recorded" in capsys.readouterr().out
+
+    def test_amend_audit_rejects_conflicting_evidence(self, tmp_path, monkeypatch):
+        """TC-GATE-112: 同一 Gate 的不同追认证据不得覆盖或追加。"""
+        change_dir = _setup_gate_project(tmp_path, gates_confirmed=[1])
+        monkeypatch.chdir(tmp_path)
+        from fstdd.cli.commands.gate import cmd_gate
+        first = _make_args("amend-audit", name="2026-01-01-gate-test", gate=1,
+                           confirmed_by="dialog", evidence="第一份追认")
+        second = _make_args("amend-audit", name="2026-01-01-gate-test", gate=1,
+                            confirmed_by="dialog", evidence="第二份追认")
+        cmd_gate(first)
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_gate(second)
+        assert exc_info.value.code == 1
+        result = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
+        assert len(result["audit_amendments"]) == 1
+
+    def test_amend_audit_requires_existing_gate(self, tmp_path, monkeypatch):
+        """TC-GATE-113: 未确认 Gate 不允许追认。"""
+        change_dir = _setup_gate_project(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        from fstdd.cli.commands.gate import cmd_gate
+        args = _make_args("amend-audit", name="2026-01-01-gate-test", gate=1,
+                          confirmed_by="dialog", evidence="D哥追认 Gate 1")
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_gate(args)
+        assert exc_info.value.code == 1
+        result = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
+        assert "audit_amendments" not in result
+
     def test_file_token_and_cli_equivalent(self, tmp_path, monkeypatch, capsys):
         """TC-GF-006: File token + CLI approve are equivalent."""
         change_dir = _setup_gate_project(tmp_path, gates_confirmed=[1])

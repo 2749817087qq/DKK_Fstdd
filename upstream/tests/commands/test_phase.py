@@ -221,3 +221,38 @@ class TestPhaseSet:
         monkeypatch.chdir(temp_project)
         with pytest.raises(SystemExit):
             cmd_phase(_set_args("slice"))  # 旧阶段不再是合法目标
+
+
+class TestRecordSlice:
+    def _args(self, name, slice_id, tc_coverage="TC-001", new_tests=2,
+              verified_at="2026-09-17T10:00:00"):
+        return __import__("argparse").Namespace(
+            phase_action="record-slice", name=name, target_phase=slice_id,
+            tc_coverage=tc_coverage, new_tests=new_tests, verified_at=verified_at,
+        )
+
+    def test_record_slice_writes_controlled_evidence(self, temp_project, monkeypatch):
+        ch = _make_change(temp_project, "record", "build")
+        monkeypatch.chdir(temp_project)
+        cmd_phase(self._args(ch.name, "S1", "TC-001,TC-002", 3))
+        data = _read(ch)
+        assert data["phases"]["build"]["slices_completed"]["S1"] == {
+            "tc_coverage": "TC-001,TC-002",
+            "new_tests": 3,
+            "verified_at": "2026-09-17T10:00:00",
+        }
+
+    def test_record_slice_rejects_conflicting_overwrite(self, temp_project, monkeypatch):
+        ch = _make_change(temp_project, "record-conflict", "build")
+        monkeypatch.chdir(temp_project)
+        cmd_phase(self._args(ch.name, "S1"))
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_phase(self._args(ch.name, "S1", "TC-999"))
+        assert exc_info.value.code == 1
+
+    def test_record_slice_requires_build_phase(self, temp_project, monkeypatch):
+        ch = _make_change(temp_project, "record-phase", "spec")
+        monkeypatch.chdir(temp_project)
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_phase(self._args(ch.name, "S1"))
+        assert exc_info.value.code == 1

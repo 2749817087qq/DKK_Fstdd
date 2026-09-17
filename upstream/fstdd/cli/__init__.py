@@ -205,6 +205,12 @@ def main() -> None:
     p_gate_approve.add_argument("--confirmed-by", required=True, choices=["dialog", "file_token", "cli"],
                                 help="确认通道 (必填): dialog=用户口头确认 / file_token=GATE<N>_APPROVED / cli=直接命令")
     p_gate_approve.add_argument("--evidence", default="", help="确认证据（如用户确认原文）")
+    p_gate_amend = gate_subs.add_parser("amend-audit", help="追加历史 Gate 的用户追认审计", parents=[parent])
+    p_gate_amend.add_argument("name", help="change 目录名")
+    p_gate_amend.add_argument("--gate", type=int, required=True, choices=[1, 2, 3], help="Gate 编号 (1/2/3)")
+    p_gate_amend.add_argument("--confirmed-by", required=True, choices=["dialog", "file_token", "cli"],
+                              help="追认通道 (必填)")
+    p_gate_amend.add_argument("--evidence", required=True, help="用户追认原文（不能为空）")
 
     # experience (V2.4 新增)
     p_exp = subparsers.add_parser("experience", help="管理项目级 AI 经验库", parents=[parent])
@@ -379,10 +385,13 @@ def main() -> None:
 
     # V2.9.4: phase — advance and check change phase
     p_phase = subparsers.add_parser("phase", help="变更阶段管理 (V2.9.4)", parents=[parent])
-    p_phase.add_argument("phase_action", nargs="?", choices=["status", "advance", "set"],
+    p_phase.add_argument("phase_action", nargs="?", choices=["status", "advance", "set", "record-slice"],
                          default="status", help="操作 (默认: status)")
     p_phase.add_argument("name", nargs="?", help="change 目录名（默认: 最近的）")
-    p_phase.add_argument("target_phase", nargs="?", help="目标阶段 (set 时使用)")
+    p_phase.add_argument("target_phase", nargs="?", help="目标阶段 (set 时使用) 或 Slice ID (record-slice 时使用)")
+    p_phase.add_argument("--tc-coverage", dest="tc_coverage", help="Slice 覆盖的 TC 列表")
+    p_phase.add_argument("--new-tests", dest="new_tests", type=int, help="Slice 新增测试数")
+    p_phase.add_argument("--verified-at", dest="verified_at", help="Slice 验证时间（ISO 8601）")
 
     # V2.7: experience list — add provenance filter
     p_exp_list.add_argument("--provenance", help="按来源过滤 (ci-detected / ai-inferred / human-reported / community-imported)")

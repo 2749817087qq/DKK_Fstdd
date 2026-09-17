@@ -1,6 +1,7 @@
 """stdd gate — CLI and file-token based Gate confirmation (V2.5)."""
 
 import argparse
+import hashlib
 import sys
 from pathlib import Path
 from datetime import datetime
@@ -158,17 +159,83 @@ def _read_gates_config(project_root: Path) -> dict:
     return yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
 
 
-def cmd_gate(args: argparse.Namespace) -> None:
-    """CLI entry: stdd gate approve <change-name> --gate <N> --confirmed-by <channel>.
+def _amend_audit(change_dir: Path, gate_num: int, confirmed_by: str,
+                  evidence: str) -> str:
+    """Append a user ratification without rewriting the original Gate audit.
 
-    V3.0.5 硬防线：--confirmed-by 必填（无默认值，省略 → exit 2）。
-    _check_gate_order 顺序检查对全部通道生效（含 file_token 路径）。
+    The original confirmation remains immutable. A second amendment for the same
+    Gate is allowed only when it is the exact same idempotent request.
     """
+    if not evidence or not evidence.strip():
+        raise ValueError("追认 evidence 不能为空")
+
+    state_file = change_dir / ".fstdd.yaml"
+    if not state_file.exists():
+        raise ValueError(f".fstdd.yaml not found in {change_dir}")
+    data = yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
+    phase_key = GATE_PHASE_KEY[gate_num][2]
+    original = (data.get("phases", {}).get(phase_key, {}) or {})
+    if not original.get("confirmed_at"):
+        raise ValueError(f"Gate {gate_num} 尚未确认，不能追加追认")
+
+    evidence = evidence.strip()
+    evidence_hash = hashlib.sha256(evidence.encode("utf-8")).hexdigest()[:16]
+    idempotency_key = f"{data.get('change_id', change_dir.name)}:gate{gate_num}:{evidence_hash}"
+    amendments = data.setdefault("audit_amendments", [])
+
+    for amendment in amendments:
+        if amendment.get("gate") != gate_num:
+            continue
+        if amendment.get("idempotency_key") == idempotency_key:
+            print(f"Gate {gate_num} audit amendment already recorded")
+            return "idempotent"
+        raise ValueError(f"Gate {gate_num} 已存在不同证据的追认，拒绝覆盖")
+
+    amendments.append({
+        "gate": gate_num,
+        "original_confirmed_at": original.get("confirmed_at"),
+        "original_confirmed_by": original.get("confirmed_by", ""),
+        "original_confirmed_actor": original.get("confirmed_actor", ""),
+        "original_confirmed_evidence": original.get("confirmed_evidence", ""),
+        "amended_actor": "user",
+        "amended_by": confirmed_by,
+        "amended_evidence": evidence,
+        "amended_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "amended_by_tool_version": "3.0",
+        "idempotency_key": idempotency_key,
+    })
+    state_file.write_text(
+        yaml.dump(data, allow_unicode=True, default_flow_style=False),
+        encoding="utf-8",
+    )
+    return "recorded"
+
+
+def cmd_gate(args: argparse.Namespace) -> None:
+    """CLI entry: gate approval and append-only audit amendments."""
     project_root = Path.cwd()
 
     subcommand = getattr(args, "subcommand", "approve")
+    if subcommand == "amend-audit":
+        change_dir = _find_change_dir(getattr(args, "name", None), project_root)
+        if change_dir is None or not change_dir.is_dir():
+            print(f"  找不到 change: {getattr(args, 'name', '')}")
+            sys.exit(1)
+        try:
+            result = _amend_audit(
+                change_dir,
+                args.gate,
+                args.confirmed_by,
+                args.evidence,
+            )
+        except ValueError as exc:
+            print(f"  ❌ {exc}")
+            sys.exit(1)
+        if result == "recorded":
+            print(f"Gate {args.gate} audit amendment recorded for change {change_dir.name}")
+        return
     if subcommand != "approve":
-        print(f"  Unknown subcommand: {subcommand}. Use: approve")
+        print(f"  Unknown subcommand: {subcommand}. Use: approve or amend-audit")
         sys.exit(1)
 
     gate_num = getattr(args, "gate", None)
