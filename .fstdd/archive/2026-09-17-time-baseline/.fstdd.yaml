@@ -80,7 +80,7 @@ phases:
       DC-HASH 由字节哈希改为 EOL 归一后的内容哈希）保留在本 change 内，与 C1/C3 同批落地。
     status: completed
 score_confidence: preliminary
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 47
