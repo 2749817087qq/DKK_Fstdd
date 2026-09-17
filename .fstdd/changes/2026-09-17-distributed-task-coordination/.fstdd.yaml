@@ -1,0 +1,29 @@
+change_id: 2026-09-17-distributed-task-coordination
+complexity_score: null
+current_phase: spec
+design_adjustments:
+  count: 0
+last_modified: '2026-09-17T09:59:55.551909'
+mode: standard
+phases:
+  build:
+    status: pending
+  deliver:
+    status: pending
+  spec:
+    status: in_progress
+  understand:
+    confirmed_actor: user
+    confirmed_at: '2026-09-17T09:59:50'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 确认：认可 Phase 1 proposal，进入 SPEC。附带确认两项：① 两个遗留 change 先核实实际产物再决定归档/abort；②
+      三个工具链缺陷（batch/canon 的 --dry-run 写盘、canon 丢弃 out_of_scope）纳入本 change。
+    status: completed
+score_confidence: null
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

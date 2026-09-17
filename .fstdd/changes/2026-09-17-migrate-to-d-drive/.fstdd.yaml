@@ -2,11 +2,32 @@ change_id: 2026-09-17-migrate-to-d-drive
 complexity_score: null
 current_phase: build
 design_adjustments:
-  count: 0
-last_modified: '2026-09-17T09:01:31.358141'
+  count: 4
+last_modified: '2026-09-17T10:00:00.000000'
 mode: standard
 phases:
   build:
+    slices_completed:
+      S1:
+        new_tests: 8
+        tc_coverage: TC-MDD-001,TC-MDD-002,TC-MDD-003,TC-MDD-004,TC-MDD-005,TC-MDD-006
+        verified_at: '2026-09-17T10:00:00'
+      S2:
+        new_tests: 4
+        tc_coverage: TC-MDD-014
+        verified_at: '2026-09-17T10:00:00'
+      S3:
+        new_tests: 2
+        tc_coverage: TC-MDD-007,TC-MDD-008,TC-MDD-009,TC-MDD-010,TC-MDD-011
+        verified_at: '2026-09-17T10:00:00'
+      S4:
+        new_tests: 3
+        tc_coverage: TC-MDD-012,TC-MDD-013
+        verified_at: '2026-09-17T10:00:00'
+      S5:
+        new_tests: 2
+        tc_coverage: TC-MDD-014
+        verified_at: '2026-09-17T10:00:00'
     status: in_progress
   deliver:
     status: pending
@@ -26,7 +47,7 @@ score_confidence: null
 status: active
 task_type: code
 traceability:
-  spec_scenarios: 0
-  tc_cases: 0
-  test_functions: 0
+  spec_scenarios: 10
+  tc_cases: 15
+  test_functions: 19
 version: '3.0'
