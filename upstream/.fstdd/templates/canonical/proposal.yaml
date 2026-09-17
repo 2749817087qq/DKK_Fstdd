@@ -10,6 +10,10 @@ meta:
 why:
   problem: ""                  # 问题陈述
   motivation: ""               # 为什么现在做
+  evidence:                    # 证据块（TC-EPR-001：两字段必填非空）
+    observed_at: "2026-01-01T00:00:00+00:00"   # 观测时刻（带时区；不得用生成时刻冒充采集时刻）
+    observed_base_git_sha: "TODO-观测时-HEAD"    # 观测时的 git HEAD
+    details: ""                # 证据细节（实测数据 / 命令与输出摘要）
 
 what_changes:
   - id: C1

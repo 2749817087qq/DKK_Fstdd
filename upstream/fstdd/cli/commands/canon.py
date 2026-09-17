@@ -44,6 +44,11 @@ meta:
 why:
   problem: |
     TODO: 描述要解决的问题或需求背景（一段话）
+  evidence:
+    observed_at: "2026-01-01T00:00:00+00:00"   # 观测时刻（带时区，必填；不得用生成时刻冒充）
+    observed_base_git_sha: "TODO-观测时-HEAD"    # 观测时的 git HEAD（必填）
+    details: |
+      TODO: 证据细节（引用了什么实测数据、命令与输出摘要）
 
 what_changes:
   - description: "TODO: 变更项 1"

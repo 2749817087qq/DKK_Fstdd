@@ -112,6 +112,34 @@ def _clock_source() -> str:
 BASELINE_FIELDS = ("at", "base_git_sha", "node_id", "clock_source")
 
 
+def classify_evidence(observed_at: object, baseline_at: object) -> dict:
+    """证据时效三态判定（TC-EPR-004/005）。
+
+    current       = 观测晚于（或等于）基线建立 → 证据描述基线后的行为
+    pre_baseline  = 观测早于基线 → 证据可能描述旧版本行为（明确标识，非「未过期」）
+    undetermined  = 缺 observed_at / 缺 baseline.at / 无法解析 → **不等同未过期**
+
+    返回 dict（可 JSON 序列化，程序可读）。
+    """
+    base = {"observed_at": observed_at, "baseline_at": baseline_at}
+    if not observed_at:
+        return {**base, "status": "undetermined",
+                "reason": "缺少 observed_at，无法判定时效（不等同未过期）"}
+    if not baseline_at:
+        return {**base, "status": "undetermined",
+                "reason": "缺少 baseline.at，无参照时刻"}
+    try:
+        from datetime import datetime
+        obs = datetime.fromisoformat(str(observed_at))
+        ref = datetime.fromisoformat(str(baseline_at))
+    except ValueError:
+        return {**base, "status": "undetermined", "reason": "时刻无法解析（非 ISO 8601）"}
+    if obs >= ref:
+        return {**base, "status": "current", "reason": "观测晚于基线建立"}
+    return {**base, "status": "pre_baseline",
+            "reason": "观测早于基线，证据可能描述旧版本行为"}
+
+
 def build_baseline(root: Path, *, established_by: str,
                    at: str | None = None, clock_source: str = "system") -> dict:
     """构造 baseline 块（纯函数，无 IO）——供 write_baseline 与 gate.py 共用。

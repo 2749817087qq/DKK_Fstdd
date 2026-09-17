@@ -46,68 +46,123 @@ why:
       4. **越早越便宜** —— 时间基线是**横切契约**；等大量产物生成后再回填，
          成本远高于现在把它写进模板与宪法
 
-  evidence: |
-    全部为本机只读实测，观测时刻 **2026-09-17T16:02+08:00**，观测时 HEAD = `c11789a`。
+  evidence:
+    observed_at: "2026-09-17T16:02:00+08:00"
+    observed_base_git_sha: "c11789a"
+    details: |
+      全部为本机只读实测，观测时刻 **2026-09-17T16:02+08:00**，观测时 HEAD = `c11789a`。
 
-    **(1) 宪法零命中**
-    `grep -c` 逐词统计 `FSTDD_CONSTITUTION.md`：
-    时间 0 / 时效 0 / 基线 0 / 新鲜 0 / 时钟 0 / 时间戳 0 / 时刻 0 / timestamp 0 / 过期 0。
 
-    **(2) 时间戳格式三种形态并存**（同一个 change 内）
-    | 字段 | 实测值 | 带时区？ |
-    |---|---|---|
-    | `canonical/proposals/*.yaml` → `meta.created` | `2026-09-17T14:18:03.135357` | ❌ |
-    | `canonical/specs/code/*.yaml` → `meta.created` | `2026-09-17T15:43:57+08:00` | ✅ |
-    | `.fstdd.yaml` → `phases.understand.confirmed_at` | `2026-09-17T15:21:49` | ❌ |
-    | `proposal.md` → `generated_at` | `2026-09-17T15:56:11.800867` | ❌ |
+      **(1) 宪法零命中**
 
-    → 4 个字段、**3 个无时区**。而控制面 `tools/fstdd_hub.py:99` 用的是
-    `datetime.now(timezone.utc).isoformat()`（UTC 带时区）→ **第 4 种形态**；
-    CLI 与控制面的时间**不可直接比较**。
-    **且这不是历史遗留**：本 change 由 `fstdd new` 生成时，
-    `meta.created` 被写成 `2026-09-17T16:02:17.968509` —— **CLI 此刻仍在产出 naive 时间戳**。
+      `grep -c` 逐词统计 `FSTDD_CONSTITUTION.md`：
 
-    **(3) 生成时刻 ≠ 采集时刻**
-    同一个 change 实测：`proposal.yaml` 的 `created` = `14:18:03`，
-    而 `proposal.md` 的 `generated_at` = `15:56:11` —— **相差 1 小时 38 分**。
-    若引用的是更早的实测数据，产物看上去仍然"很新"。
+      时间 0 / 时效 0 / 基线 0 / 新鲜 0 / 时钟 0 / 时间戳 0 / 时刻 0 / timestamp 0 / 过期 0。
 
-    **(4) 无代码版本锚点**
-    `grep -rn base_git_sha`（排除 archive）只命中三处：`tools/fstdd_hub.py:62`（tasks 表定义）、
-    `:178` / `:194`（读写）、`upstream/tests/test_fstdd_hub.py:69`。
-    → `base_git_sha` **只存在于 hub 的 tasks 表**，即**只有"被分派的任务"才有代码基线**；
-    **本地发起的 change 完全没有**。`.fstdd.yaml` 中只有 `last_modified` 与各 Gate 的
-    `confirmed_at`，**没有任何 sha 字段**。
 
-    **(5) 证据不带观测时刻**
-    上一轮 change 的 `why.evidence` 逐条写着"只读巡检实测"、
-    "实测 mirror.log 21 行 / 2 次镜像 / WARN 0 次"，但**没有任何一条记录观测时刻或当时的 sha**。
+      **(2) 时间戳格式三种形态并存**（同一个 change 内）
 
-    **(6) 跨机时钟无法验证**（本次实测）
-    - 本机 → 服务器 ssh 单次往返（持久连接下 10 次采样）：
-      **5093 / 5898 / 5595 / 5935 / 5524 / 6083 / 5931 / 5710 / 5544 / 6239 ms**
-      → **~5.5–6.2s**，抖动达秒级
-    - `ping 43.134.236.80` → **100% 丢包**（ICMP 被防火墙封禁）→ 拿不到更干净的 RTT 基准
-    - NTP 式估算（假设往返对称）给出稳定读数「服务器 − 本机 ≈ **+3.0s**」，
-      但对称假设本身被上面的秒级抖动否定 → **该读数不可采信**
-    - **结论：目前连"两台机器的时钟是否一致"都无法在秒级上验证**
-    - 服务器侧：`System clock synchronized: yes`、`NTP service: active`、
-      `Time zone: Asia/Shanghai (CST, +0800)` —— 服务器是**已对齐**的
-    - 本机（Windows）**无任何对齐记录**；3 台机器中另外 2 台
-      **在本机 `~/.ssh/config` 中不存在**（只有 `fstdd-hub` 一个 Host 条目）→ 完全不可知
+      | 字段 | 实测值 | 带时区？ |
 
-    **(7) 现有机制反而放大问题**
-    `canon verify` 的 `DC-HASH` 对 YAML **原始字节**做哈希（`canon.py:299`）——
-    任何时间字段改动都会触发 DC-HASH 失配。做时间基线时必须同时处理这个耦合，
-    否则"补时间"会连带打断双轨校验。
+      |---|---|---|
 
-    **(8) 状态文件自相矛盾（Gate 2 确认后当场实测）**
-    `2026-09-17-mirror-failure-alert` 在 Gate 2 确认后，`.fstdd.yaml` 同时存在两个互相矛盾的字段：
-    `current_phase: understand`（陈旧）与 `phases.spec.status: completed`（已更新）。
-    后果：`fstdd phase status` 忠实输出「Next: Phase 2: SPEC」——
-    **在 spec 阶段已完成之后，工具仍在提示去做 spec**。
-    这说明"当前处于哪个阶段"本身就是一个**没有基线、可能陈旧的状态**，
-    且没有任何机制能发现它已失真。
+      | `canonical/proposals/*.yaml` → `meta.created` | `2026-09-17T14:18:03.135357` | ❌ |
+
+      | `canonical/specs/code/*.yaml` → `meta.created` | `2026-09-17T15:43:57+08:00` | ✅ |
+
+      | `.fstdd.yaml` → `phases.understand.confirmed_at` | `2026-09-17T15:21:49` | ❌ |
+
+      | `proposal.md` → `generated_at` | `2026-09-17T15:56:11.800867` | ❌ |
+
+
+      → 4 个字段、**3 个无时区**。而控制面 `tools/fstdd_hub.py:99` 用的是
+
+      `datetime.now(timezone.utc).isoformat()`（UTC 带时区）→ **第 4 种形态**；
+
+      CLI 与控制面的时间**不可直接比较**。
+
+      **且这不是历史遗留**：本 change 由 `fstdd new` 生成时，
+
+      `meta.created` 被写成 `2026-09-17T16:02:17.968509` —— **CLI 此刻仍在产出 naive 时间戳**。
+
+
+      **(3) 生成时刻 ≠ 采集时刻**
+
+      同一个 change 实测：`proposal.yaml` 的 `created` = `14:18:03`，
+
+      而 `proposal.md` 的 `generated_at` = `15:56:11` —— **相差 1 小时 38 分**。
+
+      若引用的是更早的实测数据，产物看上去仍然"很新"。
+
+
+      **(4) 无代码版本锚点**
+
+      `grep -rn base_git_sha`（排除 archive）只命中三处：`tools/fstdd_hub.py:62`（tasks 表定义）、
+
+      `:178` / `:194`（读写）、`upstream/tests/test_fstdd_hub.py:69`。
+
+      → `base_git_sha` **只存在于 hub 的 tasks 表**，即**只有"被分派的任务"才有代码基线**；
+
+      **本地发起的 change 完全没有**。`.fstdd.yaml` 中只有 `last_modified` 与各 Gate 的
+
+      `confirmed_at`，**没有任何 sha 字段**。
+
+
+      **(5) 证据不带观测时刻**
+
+      上一轮 change 的 `why.evidence` 逐条写着"只读巡检实测"、
+
+      "实测 mirror.log 21 行 / 2 次镜像 / WARN 0 次"，但**没有任何一条记录观测时刻或当时的 sha**。
+
+
+      **(6) 跨机时钟无法验证**（本次实测）
+
+      - 本机 → 服务器 ssh 单次往返（持久连接下 10 次采样）：
+
+        **5093 / 5898 / 5595 / 5935 / 5524 / 6083 / 5931 / 5710 / 5544 / 6239 ms**
+
+        → **~5.5–6.2s**，抖动达秒级
+
+      - `ping 43.134.236.80` → **100% 丢包**（ICMP 被防火墙封禁）→ 拿不到更干净的 RTT 基准
+
+      - NTP 式估算（假设往返对称）给出稳定读数「服务器 − 本机 ≈ **+3.0s**」，
+
+        但对称假设本身被上面的秒级抖动否定 → **该读数不可采信**
+
+      - **结论：目前连"两台机器的时钟是否一致"都无法在秒级上验证**
+
+      - 服务器侧：`System clock synchronized: yes`、`NTP service: active`、
+
+        `Time zone: Asia/Shanghai (CST, +0800)` —— 服务器是**已对齐**的
+
+      - 本机（Windows）**无任何对齐记录**；3 台机器中另外 2 台
+
+        **在本机 `~/.ssh/config` 中不存在**（只有 `fstdd-hub` 一个 Host 条目）→ 完全不可知
+
+
+      **(7) 现有机制反而放大问题**
+
+      `canon verify` 的 `DC-HASH` 对 YAML **原始字节**做哈希（`canon.py:299`）——
+
+      任何时间字段改动都会触发 DC-HASH 失配。做时间基线时必须同时处理这个耦合，
+
+      否则"补时间"会连带打断双轨校验。
+
+
+      **(8) 状态文件自相矛盾（Gate 2 确认后当场实测）**
+
+      `2026-09-17-mirror-failure-alert` 在 Gate 2 确认后，`.fstdd.yaml` 同时存在两个互相矛盾的字段：
+
+      `current_phase: understand`（陈旧）与 `phases.spec.status: completed`（已更新）。
+
+      后果：`fstdd phase status` 忠实输出「Next: Phase 2: SPEC」——
+
+      **在 spec 阶段已完成之后，工具仍在提示去做 spec**。
+
+      这说明"当前处于哪个阶段"本身就是一个**没有基线、可能陈旧的状态**，
+
+      且没有任何机制能发现它已失真。
+
 
 what_changes:
   - id: C1

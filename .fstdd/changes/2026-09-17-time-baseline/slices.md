@@ -233,3 +233,33 @@ comparison），每条附理由，自检全部可定位；植入无效条目被�
 **回填语义（TB-006 / Decision 2）**：老 change establish 时若已有 Gate 1
 confirmed_at → `at` 取 confirmed_at（而非回填动作时刻），established_by=backfill；
 重复回填不变。**gate.py 自动基线 at 与 confirmed_at 同一时刻对象**。
+
+### ✅ Slice 5 done — 证据时效标注（2026-09-17T18:14:00+00:00）
+
+| 字段 | 值 |
+|---|---|
+| tc_coverage | TC-EPR-001 / 002 / 003 / 004 / 005 |
+| new_tests | 5（`upstream/tests/test_evidence_ops.py`，**新增 > 0** ✅） |
+| verified_at | 2026-09-17T18:14:30+00:00（`5 passed in 5.70s`） |
+| 产物 | `baseline.py`（`classify_evidence` 纯函数）<br>三源 proposal 模板 / 双源 spec 模板 / 双源 test-plan 模板<br>本仓 proposal YAML `why.evidence` 结构化回填 |
+
+**TDD 轨迹**：RED（5 failed）→ GREEN（5 passed）。
+
+**classify_evidence 语义**（SC-014，heuristic 标注 + `details` 原样保留）：
+- 含 ISO8601 时刻 → observed_at=inline
+- 含 @短SHA / PR #号 / issue 号 / URL → source=inline
+- 否则 → unknown（诚实降级，不假装标注成功）
+- `details` 字段原样保留原文，标注只加不改
+
+**模板改造（5 文件，双源全部复核一致）**：
+- proposal.yaml：why.evidence 由自由文本块改为结构化 {observed_at?, source?, details}
+- spec.yaml：evidence 注释示例改 `observed_at=... source=@短SHA` 键值形态
+- test-plan.md：新增「## 证据与执行记录（Evidence）」节——
+  每个 Slice 记录 verified_at（带时区）+ tc_coverage + new_tests + 产物
+
+**本仓 proposal 回填**：原 18 行 evidence 文本块 →
+details 原样保留 + observed_at=2026-09-17T09:24:00+00:00（首条证据时刻）。
+canon generate 重渲染 + canon verify 通过（DC-HASH 一致）。
+
+**GREEN 期修一处**：spec 模板注释示例带时刻但无字面 `observed_at` 键
+→ 测试抓出（测试先行兑现价值），改键值形态并双源同步。

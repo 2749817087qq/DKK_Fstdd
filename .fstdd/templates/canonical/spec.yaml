@@ -14,7 +14,8 @@ requirements:
     scenarios:
       - id: SC-001            # 全局唯一，对应 TC-ID
         confidence: high      # high | medium | low
-        evidence: ""          # 证据来源（引用 proposal.yaml 段落）
+        evidence: ""          # 证据来源；引用实测须含观测时刻与版本，如：
+                              # "observed_at=2026-09-17T15:30:00+00:00 source=@abc1234 只读实测：..."
         given: ""             # 前置条件
         when: ""              # 触发动作
         then: ""              # 预期结果（SHALL 强制行为）
