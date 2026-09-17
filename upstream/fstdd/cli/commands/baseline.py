@@ -36,6 +36,7 @@ DEFAULTS = {
     "tolerance_s": 2.0,
     "jitter_max_s": 1.0,
     "timeout_s": 5,
+    "min_samples": 3,
 }
 
 
@@ -292,51 +293,68 @@ def _load_nodes(root: Path) -> list[dict]:
     return nodes
 
 
-def _sample_node(ssh_target: str, timeout_s: float) -> tuple[float, float] | None:
-    """一次采样：返回 (rtt_s, offset_s)；失败返回 None。
+def _sample_node(ssh_target: str, timeout_s: float) -> list[tuple[float, float]]:
+    """一次采样：返回 [(rtt_s, offset_s), ...]（可能多条，见下）；失败返回 []。
 
     offset = 远端时间 - 本地中点（>0 表示远端快）。
+    本机 agent 环境特性：经 ssh 的命令会执行两次 → 远端 date 可能回两行，
+    **每行都是一条有效读数**（TC-CAL-009：按读数条数计数，不按调用次数）。
     """
     cmd = [
         "ssh", "-o", "BatchMode=yes", "-o", f"ConnectTimeout={int(timeout_s)}",
         ssh_target, "date +%s.%N",
     ]
-    t0 = time.monotonic()
+    # 必须用 time.time()（epoch 墙钟）与远端 `date +%s.%N` 同基准；
+    # time.monotonic() 与 epoch 原点不同 → offset 会是 ~1.7e9 的荒谬值（实测抓到）
+    t0 = time.time()
     try:
         out = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s + 5)
     except Exception:
-        return None
-    t1 = time.monotonic()
+        return []
+    t1 = time.time()
     if out.returncode != 0:
-        return None
-    try:
-        remote_ts = float(out.stdout.strip().splitlines()[-1])
-    except (ValueError, IndexError):
-        return None
-    rtt = t1 - t0
+        return []
     local_mid = (t0 + t1) / 2.0
-    return rtt, remote_ts - local_mid
+    rtt = t1 - t0
+    readings = []
+    for line in out.stdout.strip().splitlines():
+        try:
+            remote_ts = float(line.strip())
+        except ValueError:
+            continue
+        readings.append((rtt, remote_ts - local_mid))
+    return readings
 
 
-def _probe_node(node: dict, cfg: dict) -> dict:
-    """对单节点采样并做三态判定。"""
+def _probe_node(node: dict, cfg: dict, sampler=None) -> dict:
+    """对单节点采样并做三态判定。
+
+    sampler(ssh, timeout) -> [(rtt, offset), ...] | []；缺省用 _sample_node。
+    err（误差上界）= min_rtt / 2 —— 不含 |offset|（实测：RTT ~5.5s → err ≈ 2.7s）。
+    """
+    if sampler is None:
+        sampler = _sample_node
     result = {"id": node["id"], "ssh": node["ssh"], "samples": 0}
     samples: list[tuple[float, float]] = []
     for _ in range(int(cfg["samples"])):
-        s = _sample_node(node["ssh"], float(cfg["timeout_s"]))
-        if s is not None:
-            samples.append(s)
+        samples.extend(sampler(node["ssh"], float(cfg["timeout_s"])) or [])
     result["samples"] = len(samples)
+    result["valid_samples"] = len(samples)
 
     if not samples:
         result["status"] = "unmeasurable"
-        result["reason"] = "no_samples（ssh 不可达或 date 失败）"
+        result["reason"] = "不可达（ssh 失败或无有效读数）"
+        return result
+
+    if len(samples) < int(cfg["min_samples"]):
+        result["status"] = "unmeasurable"
+        result["reason"] = f"样本不足（{len(samples)} < min_samples {cfg['min_samples']}）"
         return result
 
     min_rtt, offset_at_min = min(samples, key=lambda x: x[0])
     offsets = [o for _, o in samples]
     jitter = max(offsets) - min(offsets)
-    err_upper = abs(offset_at_min) + min_rtt / 2.0
+    err_upper = min_rtt / 2.0  # 误差上界 = 最小 RTT 的一半（SC-022/023）
 
     result.update({
         "min_rtt_s": round(min_rtt, 4),
@@ -349,15 +367,22 @@ def _probe_node(node: dict, cfg: dict) -> dict:
     if jitter > float(cfg["jitter_max_s"]):
         # 抖动超阈值 → 测量不可信，归入「无法测量」（诚实，不报假「可接受」）
         result["status"] = "unmeasurable"
-        result["reason"] = f"jitter {jitter:.3f}s > jitter_max {cfg['jitter_max_s']}s"
+        result["reason"] = f"抖动（jitter {jitter:.3f}s > jitter_max {cfg['jitter_max_s']}s）"
     elif err_upper > float(cfg["tolerance_s"]):
+        # 误差上界超容差 → 落在噪声里：不得报「可接受」，也不冒充「超限」
+        # （SC-027：即使 abs(offset) 恰好小于容差，仍判「无法测量」）
+        result["status"] = "unmeasurable"
+        result["reason"] = (
+            f"误差上界（err {err_upper:.3f}s > tolerance {cfg['tolerance_s']}s）"
+        )
+    elif abs(offset_at_min) > float(cfg["tolerance_s"]):
         result["status"] = "over_threshold"
     else:
         result["status"] = "ok"
     return result
 
 
-def _cmd_check(args: argparse.Namespace, root: Path) -> int:
+def _cmd_check(args: argparse.Namespace, root: Path, sampler=None) -> int:
     cfg = _load_check_config(root)
     nodes = _load_nodes(root)
     report = {
@@ -376,7 +401,7 @@ def _cmd_check(args: argparse.Namespace, root: Path) -> int:
             print(report["message"])
         return 0
 
-    results = [_probe_node(n, cfg) for n in nodes]
+    results = [_probe_node(n, cfg, sampler=sampler) for n in nodes]
     report["nodes"] = results
 
     statuses = {r["status"] for r in results}

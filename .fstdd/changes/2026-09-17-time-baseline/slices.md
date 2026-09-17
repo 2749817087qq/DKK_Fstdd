@@ -263,3 +263,33 @@ canon generate 重渲染 + canon verify 通过（DC-HASH 一致）。
 
 **GREEN 期修一处**：spec 模板注释示例带时刻但无字面 `observed_at` 键
 → 测试抓出（测试先行兑现价值），改键值形态并双源同步。
+
+### ✅ Slice 6 done — 时钟对齐巡检（2026-09-17T17:40:00+00:00）
+
+| 字段 | 值 |
+|---|---|
+| tc_coverage | TC-CAL-001..009（005 参数化 4 场景） |
+| new_tests | 12（`upstream/tests/test_clock_check_ops.py`，**新增 > 0** ✅） |
+| verified_at | 2026-09-17T17:37:00+00:00（`33 passed in 133.85s` 含 S1/4/5 回归；修复后复跑 12 passed） |
+| 产物 | `baseline.py` 巡检段重写 + `config.d/nodes.yaml` 节点清单 |
+
+**TDD 轨迹**：RED（12 failed）→ GREEN（12 passed）。
+
+**测试先行抓出两处真缺陷**：
+1. **err 定义错误（契约级）**：Slice 1 初版 err = |offset| + rtt/2 →
+   「err ≤ 容差 且 |offset| > 容差」永假，**「超限」态不可达**（假三态）。
+   按 why.evidence (6) 实测「RTT ~5.5s → err ≈ 2.7s」即 rtt/2 反推，
+   正确定义 **err = min_rtt / 2**（不含 |offset|）。
+2. **monotonic 与 epoch 混算（真实 ssh 实测抓到）**：`_sample_node` 用
+   `time.monotonic()` 当本地中点减远端 `date +%s`（epoch）→ offset 输出
+   1.79e9 荒谬值。改 `time.time()` 同基准后真实 offset ≈ +2.56s
+   （与证据「服务器 − 本机 ≈ +3.0s」吻合）。
+
+**真实节点巡检（fstdd-hub）**：offset=+2.5562s，err=2.377s > 2.0s →
+**「无法测量」**——正是本 change 的预期实测结论（err ≈ 2.7s > 容差 2.0s），
+不是失败。三态退出码 0/1/2 可区分。
+
+**其余语义落锤**：min_samples=3（DEFAULTS，可配置）；判定顺序
+不可达 → 样本不足 → 抖动 → 误差上界 → 超限 → 可接受；
+采样器注入（sampler 返回 list，TC-CAL-009 按读数条数计数）；
+err > tolerance 时 reason 明示「误差上界」。
