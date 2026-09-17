@@ -38,4 +38,16 @@ C:/Python311/python.exe -m pytest upstream/tests/commands/test_gate.py upstream/
 
 Slice B（8788 控制面）、Slice C（Git 分支/worktree/串行集成）、Slice D（8788 部署与恢复）尚未实现，不能将本报告作为完整分布式系统的 Gate 3 质量报告。
 
-全量回归将在后续 Slice 完成后重新执行；本报告不宣称当前全量测试已通过。
+## 四、全量回归
+
+在提交 Slice A 及两个遗留 change 归档记录后，从法定源 `D:/tools/FSTDD/stdd-repo/upstream` 执行全量套件：
+
+```bash
+C:/Python311/python.exe -m pytest tests -q
+```
+
+结果：**569 passed / 0 failed**，退出码 0。
+
+其中包含本 Slice 新增的 Gate/phase 测试以及两个已归档 change 的相关测试。pytest 退出时偶发的批量临时目录清理守卫不影响用例汇总；本次汇总本身为 569 passed。
+
+Slice B/C/D 仍未实现，因此这份报告是当前 BUILD 中间报告，不是完整分布式系统的 Gate 3 质量报告。
