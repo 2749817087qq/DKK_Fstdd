@@ -60,8 +60,8 @@ Slice C（Git 分支/worktree/串行集成）、Slice D（8788 部署与恢复�
 C:/Python311/python.exe -m pytest tests -q
 ```
 
-结果：**569 passed / 0 failed**，退出码 0。
+结果：**577 passed / 0 failed**，退出码 0。
 
-其中包含本 Slice 新增的 Gate/phase 测试以及两个已归档 change 的相关测试。pytest 退出时偶发的批量临时目录清理守卫不影响用例汇总；本次汇总本身为 569 passed。
+其中包含 Slice A/B 新增测试以及两个已归档 change 的相关测试。pytest 退出时偶发的批量临时目录清理守卫不影响用例汇总；本次汇总本身为 577 passed。
 
 Slice C/D 仍未实现，因此这份报告是当前 BUILD 中间报告，不是完整分布式系统的 Gate 3 质量报告。
