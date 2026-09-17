@@ -129,10 +129,15 @@ class TestAMigrationIntegrity:
         assert int(_git(D_REPO, "rev-list", "--count", "HEAD")) >= 60
 
     def test_a6_d_repo_worktree_clean(self):
-        """除本 change 的产物外，不应有未提交改动。"""
+        """除本 change 自己的产物外，不应有未提交改动。
+
+        > 注意：change 目录**部分被跟踪**时，git 会**逐个列出**未跟踪文件
+        > （而不是折叠成一行目录）。所以判据必须是「路径属于该目录」，
+        > 不能要求整行以目录名结尾 —— 否则本 change 自己新增文件就会误报。
+        """
+        change_dir = ".fstdd/changes/2026-09-17-migrate-to-d-drive/"
         out = _git(D_REPO, "status", "--short")
-        stray = [l for l in out.splitlines()
-                 if not l.endswith("2026-09-17-migrate-to-d-drive/")]
+        stray = [l for l in out.splitlines() if change_dir not in l]
         assert stray == [], "D 盘仓库有意外未提交项: %s" % stray
 
 
