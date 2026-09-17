@@ -1,4 +1,4 @@
-# distributed-task-coordination 测试报告（Slice A）
+# distributed-task-coordination 测试报告（Slice A/B）
 
 > 变更：`2026-09-17-distributed-task-coordination`
 > 执行日期：2026-09-17
@@ -34,13 +34,27 @@ C:/Python311/python.exe -m pytest upstream/tests/commands/test_gate.py upstream/
 | Slice 冲突覆盖拒绝 | `test_phase.py` 新增 | 通过 |
 | 非 BUILD 阶段拒绝记录 | `test_phase.py` 新增 | 通过 |
 
-## 三、尚未完成的切片
+## 三、Slice B 执行结果
 
-Slice B（8788 控制面）、Slice C（Git 分支/worktree/串行集成）、Slice D（8788 部署与恢复）尚未实现，不能将本报告作为完整分布式系统的 Gate 3 质量报告。
+Slice B 已实现 `tools/fstdd_hub.py`，提供标准库 HTTP + SQLite 控制面：节点注册/心跳、任务创建/查询/原子领取、租约续期、完成/失败回传、消息投递/拉取/ack，以及写操作幂等键。
 
-## 四、全量回归
+执行命令：
 
-在提交 Slice A 及两个遗留 change 归档记录后，从法定源 `D:/tools/FSTDD/stdd-repo/upstream` 执行全量套件：
+```bash
+C:/Python311/python.exe -m pytest upstream/tests/test_fstdd_hub.py -q
+```
+
+结果：**8 passed / 0 failed**，退出码 0。
+
+覆盖重点：并发安全的事务领取、重复创建/领取幂等、租约过期回收、旧 token 拒绝、失败/阻塞记录、消息 ack 和未注册节点拒绝。
+
+## 四、尚未完成的切片
+
+Slice C（Git 分支/worktree/串行集成）、Slice D（8788 部署与恢复）尚未实现，不能将本报告作为完整分布式系统的 Gate 3 质量报告。
+
+## 五、全量回归
+
+在提交 Slice A/B 及两个遗留 change 归档记录后，从法定源 `D:/tools/FSTDD/stdd-repo/upstream` 执行全量套件：
 
 ```bash
 C:/Python311/python.exe -m pytest tests -q
@@ -50,4 +64,4 @@ C:/Python311/python.exe -m pytest tests -q
 
 其中包含本 Slice 新增的 Gate/phase 测试以及两个已归档 change 的相关测试。pytest 退出时偶发的批量临时目录清理守卫不影响用例汇总；本次汇总本身为 569 passed。
 
-Slice B/C/D 仍未实现，因此这份报告是当前 BUILD 中间报告，不是完整分布式系统的 Gate 3 质量报告。
+Slice C/D 仍未实现，因此这份报告是当前 BUILD 中间报告，不是完整分布式系统的 Gate 3 质量报告。

@@ -25,8 +25,8 @@
 | **对应 TC** | TC-DTC-001 ~ TC-DTC-006、TC-DTC-011 ~ TC-DTC-015 |
 | **依赖** | Slice A；D哥 Gate 3 前必须完成并测试 |
 | **风险** | 并发领取、租约过期、旧 token 回传、重复请求和数据库恢复 |
-| **验证结果** | 待实现 |
-| **状态** | pending |
+| **验证结果** | `upstream/tests/test_fstdd_hub.py`：**8 passed**；覆盖注册、任务幂等、原子领取、租约/旧 token、失败/阻塞消息与 ack |
+| **状态** | done |
 
 ### Slice C — Git 分支、外部 worktree 与串行集成（git-integration）
 
@@ -57,6 +57,6 @@ Slice A（审计与 FSTDD 证据基础） -> Slice B（控制面闭环）
 Slice C（Git 集成） -> Slice D（部署运维）
 ```
 
-- Slice A 已完成并通过测试。
-- Slice B/C/D 尚未实现，不得在 Gate 3 报告中声称已交付。
+- Slice A、Slice B 已完成并通过测试。
+- Slice C/D 尚未实现，不得在 Gate 3 报告中声称已交付。
 - 所有后续代码必须继续在本 active Change 的 BUILD 阶段完成。
