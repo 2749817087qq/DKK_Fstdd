@@ -76,11 +76,28 @@ C:/Python311/python.exe -m pytest upstream/tests/test_hub_ops.py -q
 
 结果：**3 passed / 0 failed**，退出码 0。
 
-云端部署尚未执行；部署属于远端运维动作，必须单独获得授权后才能执行。当前 Gate 3 验收边界应明确是否要求真实云端部署。
+## 六、云端部署与备份实测
 
-## 六、全量回归
+D哥已明确授权执行云端部署。通过 `tools/deploy_hub.sh` 部署到 `ubuntu@43.134.236.80`：
 
-在提交 Slice A/B 及两个遗留 change 归档记录后，从法定源 `D:/tools/FSTDD/stdd-repo/upstream` 执行全量套件：
+| 检查项 | 实测结果 |
+|---|---|
+| 上传 md5 | 本地与远端均为 `d4ea5eb31821cd41e371d4a947d4e635` |
+| systemd | `fstdd-hub.service` = **active** |
+| 监听 | **127.0.0.1:8788**，未对公网监听 |
+| 健康检查 | `{"ok": true, "tasks": 0, "online_nodes": 0}` |
+| SQLite 备份 | `/home/ubuntu/fstdd-hub/backups/fstdd-hub-20260917T041218Z.sqlite3`，48K，已生成 |
+| 8787 隔离 | 本次部署未修改 `fstdd-inbox.service` 或 8787 数据目录 |
+
+SSH 输出出现远端主机 ED25519 指纹变更警告（当前 `SHA256:Fj27h...`，本机 known_hosts 有旧 ECDSA 记录），但本次连接因部署脚本显式使用 `StrictHostKeyChecking=no` 仍成功。该主机密钥告警应在后续运维中核实并清理旧 known_hosts 记录，不能长期忽略。
+
+## 七、验收边界
+
+代码、脚本、本地测试以及云端 systemd/监听/health/备份验收均已完成；本报告可作为 BUILD 阶段质量报告。
+
+## 八、全量回归
+
+在提交 Slice A/B/C/D 及两个遗留 change 归档记录后，从法定源 `D:/tools/FSTDD/stdd-repo/upstream` 执行全量套件：
 
 ```bash
 C:/Python311/python.exe -m pytest tests -q
@@ -88,6 +105,4 @@ C:/Python311/python.exe -m pytest tests -q
 
 结果：**586 passed / 0 failed**，退出码 0。
 
-其中包含 Slice A/B/C/D 新增测试以及两个已归档 change 的相关测试。pytest 退出时偶发的批量临时目录清理守卫不影响用例汇总；本次汇总本身为 583 passed。
-
-代码、脚本和本地测试均已完成；云端真实部署尚未执行，因此这份报告在真实云端 systemd/监听/备份演练完成前仍是 BUILD 验收报告，不替代远端运维验收。
+其中包含 Slice A/B/C/D 新增测试以及两个已归档 change 的相关测试。pytest 退出时偶发的批量临时目录清理守卫不影响用例汇总；本次汇总本身为 586 passed。

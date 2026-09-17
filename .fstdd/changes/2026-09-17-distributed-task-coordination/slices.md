@@ -46,9 +46,9 @@
 | **实现** | `tools/deploy_hub.sh`：独立 systemd unit、127.0.0.1 监听、md5 校验、幂等重启、端状态验证；`tools/hub_backup.sh`：SQLite 在线备份与 14 天保留；`tools/hub_healthcheck.py`：只读健康检查 |
 | **对应 TC** | TC-DTC-009、TC-DTC-010 |
 | **依赖** | Slice B、Slice C |
-| **风险** | 8787/8788/裸库共享服务器磁盘，远端 SSH 命令可能重复执行；实际云端部署仍需 D哥明确允许后执行 |
-| **验证结果** | `upstream/tests/test_hub_ops.py`：**3 passed**；静态验证 loopback、systemd 幂等、md5、禁止 pkill、SQLite backup、健康检查只读 |
-| **状态** | done（脚本与测试完成；尚未执行云端部署） |
+| **风险** | 8787/8788/裸库共享服务器磁盘，远端 SSH 命令可能重复执行 |
+| **验证结果** | `upstream/tests/test_hub_ops.py`：**3 passed**；静态验证 loopback、systemd 幂等、md5、禁止 pkill、SQLite backup、健康检查只读；云端实测 `fstdd-hub.service=active`、`127.0.0.1:8788` 监听、`/health` 返回 `ok=true`，SQLite 备份文件已生成 |
+| **状态** | done |
 
 ## 执行顺序
 
