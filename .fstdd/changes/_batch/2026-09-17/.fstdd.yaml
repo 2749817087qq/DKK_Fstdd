@@ -1,0 +1,25 @@
+batch_id: '2026-09-17'
+batch_type: monthly
+closed_at: '2026-09-17T18:14:42+00:00'
+created_at: '2026-09-17T18:10:42'
+current_phase: understand
+description: inbox_server 按 EXP-ID 覆盖落盘去重（同 ID 重复提交不再堆积时间戳副本；2026-09-17 待审核池 319 文件/50
+  唯一 ID 的根治）
+items:
+- added_at: '2026-09-17T18:14:04+00:00'
+  description: inbox_server._store 改按 EXP-ID 覆盖写（tools/inbox_server.py ~10 行）；测试 test_inbox_endpoint.py
+    A20/A20b/A20c/A25/A5 语义同步（5 改 1 增）；68 passed
+- added_at: '2026-09-17T18:14:41+00:00'
+  description: 修复 batch close 的 naive/aware 比较 TypeError（created_at 无 tz 时补 UTC，batch.py
+    2 行）
+max_items: 20
+mode: batch
+phases:
+  build:
+    status: pending
+  deliver:
+    status: pending
+  spec:
+    status: pending
+  understand:
+    status: pending

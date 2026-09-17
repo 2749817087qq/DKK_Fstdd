@@ -15,7 +15,7 @@
 
 分组
 ----
-  A. 端点协议与落盘      (29)  —— 路由/状态码/元数据头/校验/敏感内容/落盘不覆盖
+  A. 端点协议与落盘      (29)  —— 路由/状态码/元数据头/校验/敏感内容/按 ID 覆盖落盘
   B. 限流语义            (5)   —— 按条数计数、Retry-After、被拒不计数
   C. 客户端分批与重试    (10)  —— export_files / _chunk_experiences /
                                  _post_experiences / publish_via_inbox
@@ -263,7 +263,7 @@ class TestAEndpointProtocol:
         assert r.status == 200
         assert "id" in r.data
         assert r.data["id"] == server.names()[0]
-        assert r.data["id"].startswith("EXP-A5-")
+        assert r.data["id"] == "EXP-A5.md"
         assert r.data["id"].endswith(".md")
 
     def test_a6_batch_three_stores_three_files(self, server):
@@ -424,11 +424,12 @@ class TestAEndpointProtocol:
         assert "POSIX home path" in r.data["errors"][0]["error"]
         assert server.files() == []
 
-    def test_a20_same_second_duplicate_is_not_overwritten(self, server,
-                                                          monkeypatch):
-        """同一秒内同名提交两次 → 2 个文件、加 -1 序号、内容都在（修复的覆盖 bug）。
+    def test_a20_same_id_overwrites_previous(self, server, monkeypatch):
+        """同一 ID 重复提交 → 按 ID 覆盖落盘（1 个文件，内容为最新一条）。
 
-        冻结 `datetime.now()` 让「同一秒」成为确定条件，而不是碰运气。
+        2026-09-17 决策（D哥 确认）：同 ID = 同一条经验的重复导出，
+        保留时间戳副本零价值（待审核池 319 文件/50 唯一 ID 实证），
+        改为覆盖写，received_at 头随每次提交更新。冻结时间验证语义确定。
         """
         fixed = INBOX.datetime(2026, 9, 16, 12, 0, 0, tzinfo=INBOX.timezone.utc)
 
@@ -442,26 +443,27 @@ class TestAEndpointProtocol:
         r1 = server.post_single("EXP-DUP", "第一条内容")
         r2 = server.post_single("EXP-DUP", "第二条内容")
         assert r1.status == 200 and r2.status == 200
-        assert r1.data["id"] != r2.data["id"]
 
-        # 注意：不能断言 list 顺序 —— "-" (0x2D) < "." (0x2E)，
-        # 按名排序时 "-1.md" 会排在 ".md" 前面，这里只关心「两个文件都在」。
-        assert set(server.names()) == {
-            "EXP-DUP-20260916T120000Z.md",
-            "EXP-DUP-20260916T120000Z-1.md",
-        }, server.names()
+        assert server.names() == ["EXP-DUP.md"], server.names()
         text = server.all_text()
-        assert "第一条内容" in text, "先提交的内容被覆盖了"
-        assert "第二条内容" in text, "后提交的内容丢了"
+        assert "第二条内容" in text, "覆盖后应为最新内容"
+        assert "第一条内容" not in text, "旧副本应被覆盖（防堆积）"
 
-    def test_a20b_repeated_same_id_produces_two_files(self, server):
-        """真实时间下连续两次同 id 提交 → 2 个文件且两份内容都在（不覆盖）。"""
+    def test_a20b_repeated_same_id_stays_one_file(self, server):
+        """真实时间下连续两次同 id 提交 → 仍 1 个文件，内容为后者。"""
         assert server.post_single("EXP-DUP2", "正文甲").status == 200
         assert server.post_single("EXP-DUP2", "正文乙").status == 200
         files = server.files()
-        assert len(files) == 2
+        assert len(files) == 1, f"同 ID 重复提交不得堆积副本: {server.names()}"
         text = server.all_text()
-        assert "正文甲" in text and "正文乙" in text
+        assert "正文乙" in text
+        assert "正文甲" not in text
+
+    def test_a20c_distinct_ids_are_distinct_files(self, server):
+        """不同 ID 仍是不同文件（覆盖语义只作用于同 ID）。"""
+        assert server.post_single("EXP-X1", "甲").status == 200
+        assert server.post_single("EXP-X2", "乙").status == 200
+        assert set(server.names()) == {"EXP-X1.md", "EXP-X2.md"}
 
     def test_a21_post_unknown_path_404(self, server):
         """POST 到未知路径 → 404，不落盘。"""
@@ -486,17 +488,17 @@ class TestAEndpointProtocol:
         assert server.get("/health?verbose=1").status == 200
 
     def test_a25_experience_id_sanitized_and_truncated_in_filename(self, server):
-        """落盘文件名用 sanitize(eid)：非法字符换 _、截断 80 字符；头里保留原值。"""
+        """落盘文件名 = sanitize(eid).md：非法字符换 _、截断 80 字符；头里保留原值。"""
         assert server.post_single("a/b c", "含非法字符的 id").status == 200
         name = server.names()[0]
-        assert name.startswith("a_b_c-")
+        assert name == "a_b_c.md", name
         assert "/" not in name and " " not in name
         assert "\nexperience_id: a/b c\n" in server.all_text()
 
         long_eid = "L" * 100
         assert server.post_single(long_eid, "超长 id").status == 200
         new = [n for n in server.names() if n.startswith("L")][0]
-        assert new.split("-")[0] == "L" * 80
+        assert new == "L" * 80 + ".md", new
 
 
 # ===========================================================================

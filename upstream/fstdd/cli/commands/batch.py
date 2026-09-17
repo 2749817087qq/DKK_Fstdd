@@ -414,6 +414,8 @@ def _cmd_batch_close(project_root: Path, force: bool = False) -> None:
             if len(items) <= 1 and created_str:
                 try:
                     created = datetime.fromisoformat(created_str)
+                    if created.tzinfo is None:
+                        created = created.replace(tzinfo=timezone.utc)
                     age_minutes = (datetime.now(timezone.utc) - created).total_seconds() / 60
                     if age_minutes < 60:
                         print(f"  ⚠️  批次仅 {len(items)} 项、才开了 {int(age_minutes)} 分钟。")
