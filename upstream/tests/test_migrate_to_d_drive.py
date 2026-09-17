@@ -14,6 +14,7 @@
 """
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -201,22 +202,36 @@ class TestDSkillPaths:
             return []
         return sorted(SKILL_DIR.glob("fstdd*/SKILL.md"))
 
-    def test_d1_no_c_workspace_path(self):
-        """迁移前实测 6 个 skill 含 C 盘工作区路径 —— 本变更要消除它。"""
+    def test_d1_no_non_d_project_path(self):
+        """skill 里凡**项目路径**（含 stdd-repo / FSTDD），都必须在 D 盘。
+
+        ⚠️ 判据不能写成「无 C: 路径」—— skill 里的
+        `"C:\\Python311\\python.exe"` 本身就在 C 盘，那是**工具**不是我们的资产。
+        也不能写成「不含某个具体 C 盘子串」—— 那样只要换个目录名就漏过
+        （变异验证实测：把路径改成 `C:/old-place` 就能骗过基于子串的断言）。
+
+        正确判据：**凡含 `stdd-repo` 或 `FSTDD` 的绝对路径，必须以 `D:` 开头。**
+        """
         skills = self._skills()
         if not skills:
             pytest.skip("未安装 skill")
-        bad = [p.parent.name for p in skills
-               if "WorkBuddy AI/2026-" in p.read_text(encoding="utf-8", errors="replace")]
-        assert bad == [], "以下 skill 仍指向 C 盘工作区: %s" % bad
+        bad = []
+        for p in skills:
+            text = p.read_text(encoding="utf-8", errors="replace")
+            for m in re.finditer(r'"([A-Za-z]:[\\/][^"]*)"', text):
+                path = m.group(1).replace("\\", "/")
+                if ("stdd-repo" in path or "FSTDD" in path) and not path.startswith("D:"):
+                    bad.append("%s -> %s" % (p.parent.name, path))
+        assert bad == [], "skill 中存在非 D 盘的项目路径:\n  " + "\n  ".join(bad)
 
     def test_d2_points_to_d_drive(self):
+        """至少 6 个 skill 应指向 D 盘（阶段 skill 都引用 upstream，fstdd-fin 例外）。"""
         skills = self._skills()
         if not skills:
             pytest.skip("未安装 skill")
         ok = [p.parent.name for p in skills
               if "D:/tools/FSTDD" in p.read_text(encoding="utf-8", errors="replace")]
-        assert len(ok) >= 5, "指向 D 盘的 skill 仅 %d 个: %s" % (len(ok), ok)
+        assert len(ok) >= 6, "指向 D 盘的 skill 仅 %d 个: %s" % (len(ok), ok)
 
 
 # ---------------------------------------------------------------------------
