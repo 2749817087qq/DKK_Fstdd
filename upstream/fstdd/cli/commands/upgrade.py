@@ -335,9 +335,9 @@ def _migrate_constitution(project_root: Path, old_version: str) -> list:
 def _write_upgrade_notes(project_root: Path, old_ver: str, new_ver: str) -> None:
     """V3.0.2: Write structured upgrade notes for AI self-learning on SessionStart."""
     import yaml as _yaml
-    from datetime import datetime as _dt
+    from datetime import datetime as _dt, timezone as _tz
     notes = {
-        "upgraded_at": _dt.now(_dt.timezone.utc).isoformat(),
+        "upgraded_at": _dt.now(_tz.utc).isoformat(),
         "from_version": old_ver,
         "to_version": new_ver,
         "changes": [

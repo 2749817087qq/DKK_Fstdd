@@ -58,8 +58,8 @@ EXEMPTIONS: list[dict] = [
     # ── comparison：曾 naive 的比较点，已修为 aware UTC（备案） ──
     {"file": "fstdd/cli/commands/batch.py", "pattern": "datetime.now(timezone.utc)",
      "category": "comparison", "reason": "批次年龄比较，aware UTC 无 naive/aware 混比"},
-    {"file": "fstdd/cli/commands/guard.py", "pattern": "_dt.now(_dt.timezone.utc)",
-     "category": "comparison", "reason": "僵尸 change 检测，aware UTC——曾会被 except 静默吞掉"},
+    {"file": "fstdd/cli/commands/guard.py", "pattern": "_dt.now(_tz.utc)",
+     "category": "comparison", "reason": "僵尸 change / 卡壳检测，aware UTC（_tz=timezone，Slice 8 修正 _dt.timezone 误写）"},
     {"file": "fstdd/cli/commands/status.py", "pattern": "datetime.now(timezone.utc)",
      "category": "comparison", "reason": "7 天新鲜度比较，aware UTC"},
 ]

@@ -320,3 +320,20 @@ backfill 回填）、证据须带观测时刻（observed_at + 观测时 HEAD，�
 - 观测时刻 → `tools/check_timestamps.py`（TC-TSN-001..007 覆盖）
 - 时效检测 → 同上检测器（SC-016）
 - 巡检三态 → `baseline.py` check（TC-CAL-001..009 覆盖）
+
+### ⏳ Slice 8 — 跨切面与回归（执行中，2026-09-17T18:20:00+00:00）
+
+| TC | 项目 | 结果 |
+|---|---|---|
+| XCUT-001 | 全量套件 | 首跑 2 failed + 4 errors（三处真缺陷，见 test-report 二）；修复后复跑中 |
+| XCUT-002 | 凭证扫描 | ✅ 本 change 62 文件 0 真凭证命中（误报均为 skill ID 命名 sk-*） |
+| XCUT-003 | verify_eol | ✅ 7/7 通过 |
+| XCUT-004 | 新增测试 | ✅ 50 函数（收集 53 例）≥ 52 TC |
+| XCUT-005 | skill 标准 | ✅ 6/7（TC-SES-004 既存，不劣于基线） |
+
+**首跑抓出的三处真缺陷（已全部修复，test-report.md 二详述）**：
+1. `_dt.timezone.utc` 误写 ×3（upgrade/guard×2）→ AttributeError 被 except 吞掉，
+   僵尸/卡壳检测静默失效；改 `_tz.utc` + 豁免清单同步
+2. init.py 内嵌宪法模板缺第 7 节 → 新生成项目与仓库宪法分叉；模板补齐，
+   逐字节一致已验证
+3. test_b3 随缺口联动失败，修复后复跑通过

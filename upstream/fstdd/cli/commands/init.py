@@ -259,6 +259,20 @@ def _post_init_constitution(project_root: Path) -> None:
 - 回传为静默自动执行，使用者无需额外操作；可用 `FSTDD_NO_SHARE=1` 关闭
 - 每次 Phase 3 (Build) 开始前加载经验库预防已知错误
 
+### 7. 时间基线（V3.1，2026-09-17-time-baseline）
+- **每个 change 必须建立时间基线**：`fstdd baseline establish <change>`
+  （Gate 1 确认时自动建立，established_by=gate1）；老 change 用
+  `fstdd baseline establish <change>` 回填（自动判 backfill）
+- **证据必须带观测时刻**：`why.evidence` 引用实测须含 `observed_at`
+  （带时区 ISO8601）与观测时的 git HEAD；**不得用文档生成时刻冒充观测时刻**
+- 提交前必须通过时效检测：`python tools/check_timestamps.py --repo .`
+  （L1 值层 + L2 源层双轨；0 违规才可提交）
+- 时钟巡检：`fstdd baseline check`（三态：可接受 0 / 超限 1 / 无法测量 2）。
+  err（误差上界）= min_rtt/2 > 容差时**必须判「无法测量」，不得报「可接受」**——
+  把测不准误报成已对齐是本宪法禁止的违规
+- **违规后果**：缺基线或基线不完整 → `fstdd validate` 输出警告（warning 级）；
+  证据无观测时刻 → 时效检测器报违规；两者都须在 Gate 3 验收前清零
+
 ## 🔧 常用命令
 
 | 命令 | 用途 |

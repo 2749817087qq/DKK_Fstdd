@@ -183,7 +183,7 @@ _ZOMBIE_DAYS = 7  # V3.0.1: changes inactive > 7 days are considered zombie
 def _is_zombie(change_dir: Path) -> bool:
     """Check if a change is zombie (stale > ZOMBIE_DAYS without phase progress)."""
     import yaml as _yaml
-    from datetime import datetime as _dt, timedelta as _td
+    from datetime import datetime as _dt, timedelta as _td, timezone as _tz
     stdd_yaml = change_dir / ".fstdd.yaml"
     if not stdd_yaml.exists():
         return False
@@ -193,7 +193,7 @@ def _is_zombie(change_dir: Path) -> bool:
         return False
     try:
         lm = _dt.fromisoformat(last_mod)
-        if _dt.now(_dt.timezone.utc) - lm > _td(days=_ZOMBIE_DAYS):
+        if _dt.now(_tz.utc) - lm > _td(days=_ZOMBIE_DAYS):
             return True
     except Exception:
         pass
@@ -494,7 +494,7 @@ def _assess_and_recommend(project_root: Path,
 def _check_phase_integrity_guard(project_root: Path) -> list[str]:
     """V3.0.1: Check if any phase has been stuck/skipped too long. Returns warnings."""
     import yaml as _yaml
-    from datetime import datetime as _dt
+    from datetime import datetime as _dt, timezone as _tz
     warnings = []
     changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
@@ -514,7 +514,7 @@ def _check_phase_integrity_guard(project_root: Path) -> list[str]:
         spec_done = phases.get("spec", {}).get("status") == "completed"
         build_time = phases.get("build", {}).get("completed_at", "")
         spec_time = phases.get("spec", {}).get("completed_at", "")
-        now = _dt.now(_dt.timezone.utc)
+        now = _dt.now(_tz.utc)
         if build_done and not deliver_done:
             try:
                 bt = _dt.fromisoformat(build_time)
