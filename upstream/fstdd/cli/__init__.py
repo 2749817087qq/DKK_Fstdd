@@ -22,7 +22,7 @@ COMMAND_GROUPS = [
     ("管控", ["guard", "ci", "bootcamp", "upgrade", "install"]),
     ("工具", ["canon", "proposal", "extract-proposal", "dependency-graph",
               "structure", "index", "agent", "hooks", "skill"]),
-    ("维护", ["experience", "knowledge", "fix", "init"]),
+    ("维护", ["experience", "knowledge", "fix", "init", "baseline"]),
     ("批量", ["batch"]),
 ]
 
@@ -58,6 +58,7 @@ _CMD_HELP = {
     "knowledge": "跨项目知识图谱",
     "bootcamp": "AI 训练营 (5 关卡)",
     "install": "安装 STDD 到指定平台",
+    "baseline": "时间基线管理 (establish/show/check)",
 }
 
 
@@ -432,6 +433,18 @@ def main() -> None:
     p_bootcamp.add_argument("--module", dest="module", default=None,
                             help="start: 指定关卡编号")
 
+    # V3.1: baseline — 时间基线管理（2026-09-17-time-baseline / Slice 1）
+    p_baseline = subparsers.add_parser("baseline", help="时间基线管理 (V3.1)", parents=[parent])
+    p_baseline.add_argument("subcommand", nargs="?",
+                            choices=["establish", "show", "check"],
+                            help="动作 (establish/show/check)")
+    p_baseline.add_argument("change", nargs="?", default="",
+                            help="establish/show: change 名（默认最近的）")
+    p_baseline.add_argument("--by", dest="by", default="", help="establish: 建立者标识")
+    p_baseline.add_argument("--force", action="store_true", help="establish: 覆盖已有基线")
+    p_baseline.add_argument("--format", choices=["text", "json"], default="text",
+                            help="show/check: 输出格式")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -484,6 +497,8 @@ def main() -> None:
         "knowledge": "fstdd.cli.commands.knowledge.cmd_knowledge",
         # V3.0.x new commands
         "bootcamp": "fstdd.cli.commands.bootcamp.cmd_bootcamp",
+        # V3.1: baseline — 时间基线管理
+        "baseline": "fstdd.cli.commands.baseline._dispatch",
     }
 
     if args.command in commands:
