@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-17-migrate-to-d-drive: proposals/2026-09-17-migrate-to-d-drive.yaml
+specs:
+  agent:
+    2026-09-17-migrate-to-d-drive: specs/agent/2026-09-17-migrate-to-d-drive.yaml
+  code:
+    2026-09-17-migrate-to-d-drive: specs/code/2026-09-17-migrate-to-d-drive.yaml
+version: '2.9'

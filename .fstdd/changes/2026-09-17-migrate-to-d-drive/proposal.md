@@ -1,0 +1,75 @@
+# 整体迁移到 D:/tools/FSTDD（防 C 盘重装丢资料）
+
+<!-- source_hash: b12d4f165a4af64c -->
+<!-- generated_at: 2026-09-17T08:59:09.329154 -->
+<!-- canonical: canonical/proposals/2026-09-17-migrate-to-d-drive.yaml -->
+
+## Why
+
+D哥 指出：**「本次 change 完成后，先文件整体保存归档到本文件夹，
+再整体复制到 `D:/tools/FSTDD` 去，防止因为后面安装 C 盘导致资料全部丢失。
+今后的开发就在 fstdd 文件夹了。属于刚开始工作疏忽。」**
+
+## 风险是真实的
+
+目前**全部 FSTDD 资产都在 C 盘**：
+
+| 位置 | 文件数 |
+|---|---|
+| `C:\Users\Administrator\WorkBuddy AI\2026-09-14-18-36-54\stdd-repo\` | 2385 |
+| 同上 `\backups\` | 2954 |
+| 同上 `\.workbuddy-ai\` | 39 |
+| 同上 根文件（`push_stdd_repo.sh`） | 1 |
+| **合计** | **≈ 5379** |
+
+这些是**数月开发成果 + 完整证据链（change 归档、经验库、知识图谱、备份）**。
+C 盘重装 = 全部丢失。而 D 盘是数据盘，不随系统重装。
+
+## 同时要解决的连带问题
+
+上一轮 change（`canonical-in-workspace`）把法定源定在**工作区内**（C 盘），
+因此**已安装 skill 的固化路径指向 C 盘工作区** —— 这恰恰是最脆弱的位置。
+迁移后必须重装 skill，使其指向 D 盘。
+
+## 「整体复制」的确切含义
+
+D哥 说「整体复制到 D:/tools/FSTDD」→ 目标是**工作区的完整镜像**，不是只搬仓库：
+
+```
+D:/tools/FSTDD/            ← 今后开发根（D 盘，不随 C 盘重装丢失）
+   stdd-repo/              ← 法定源（git 仓库）
+   backups/                ← 归档与备份
+   .workbuddy-ai/          ← 记忆 / 临时
+   push_stdd_repo.sh
+```
+
+C 盘工作区**保留**（作为历史归档），但**今后开发在 D 盘**。
+
+
+## What Changes
+
+- 把工作区整体（stdd-repo + backups + .workbuddy-ai + 根文件）复制到 `D:/tools/FSTDD/`
+- 校验复制完整性：文件数 + 逐文件哈希 + git 状态一致
+- 确认 `D:/tools/FSTDD/stdd-repo` 为**新的法定源**（完整 git 历史 + tag + remote）
+- 从 D 盘重装 7 个 skill，使内固化路径指向 `D:/tools/FSTDD/stdd-repo`
+- 在 D 盘跑三项校验与全量测试，确认迁移后环境自洽
+- 更新 `docs/WORKBUDDY_INSTALL_NOTES.md` 与项目记忆：法定源改到 D 盘
+
+### New Capabilities
+
+- **d-drive-home**：FSTDD 资产落于 D 盘，不随 C 盘系统重装丢失
+
+### Modified Capabilities
+
+- **canonical-source**：法定源由 C 盘工作区改为 `D:/tools/FSTDD/stdd-repo`
+- **skill-path-binding**：skill 内固化路径指向 D 盘
+
+## Success Criteria
+
+- [ ] `D:/tools/FSTDD/` 下文件数与 C 盘工作区一致，且逐文件哈希一致
+- [ ] `D:/tools/FSTDD/stdd-repo` 的 git HEAD、tag、remote 与 C 盘一致
+- [ ] 从 D 盘运行三项校验全绿：`verify_eol` 7/7、`verify_skill_standards` 7/7、`verify_rename` 8/8
+- [ ] 从 D 盘运行全量测试 543 passed（无回归）
+- [ ] 已安装 skill 的固化路径指向 `D:/tools/FSTDD/stdd-repo`，SHALL NOT 含 C 盘工作区路径
+- [ ] C 盘工作区**保留未删**（作为历史归档）
+- [ ] 文档与项目记忆反映「法定源在 D 盘」

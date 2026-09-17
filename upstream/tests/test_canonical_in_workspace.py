@@ -103,9 +103,15 @@ class TestBDocs:
         assert "| `~/.workbuddy-ai/Fstdd` | **法定源**" not in doc
 
     def test_b2_outside_copy_marked_archived(self):
+        """区外副本必须被标注为归档/非权威。
+
+        > 2026-09-17 迁移到 D 盘后，文档措辞由「已归档 + canonical-archived 路径」
+        > 改为「更早一轮的归档副本」。断言改为查**实质**（非权威 + 归档），
+        > 不绑定具体措辞 —— 否则文档每改一次措辞就要改一次测试。
+        """
         doc = self._doc()
-        assert "已归档" in doc
-        assert "canonical-archived" in doc
+        assert "归档" in doc, "文档未说明区外副本已归档"
+        assert "不是法定源" in doc or "不再是法定源" in doc, "未说明它已非权威"
 
     def test_b3_github_still_upload_target(self):
         doc = self._doc()

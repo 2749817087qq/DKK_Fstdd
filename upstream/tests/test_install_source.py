@@ -206,7 +206,7 @@ class TestCContractAndDocs:
         doc = (REPO / "docs/WORKBUDDY_INSTALL_NOTES.md").read_text(encoding="utf-8")
         assert "法定源" in doc and "上传目标" in doc
         assert "不是源" in doc or "不是权威" in doc, "必须明确 GitHub 不是权威来源"
-        assert "已归档" in doc, "必须说明区外副本已归档"
+        assert "归档" in doc, "必须说明历史位置已归档"
         assert "git push origin master --tags" in doc, "必须给出上传命令"
 
 

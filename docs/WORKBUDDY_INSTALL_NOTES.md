@@ -1,46 +1,48 @@
 # FSTDD 全局安装说明（WorkBuddy）
 
 安装时间：2026-09-14
-最近修订：2026-09-17（**法定源收进工作区**）
+最近修订：2026-09-17（**整体迁移到 D 盘**）
 来源仓库：https://github.com/leonai42/stdd （master 分支，V3.0.5，MIT License）
 许可：MIT（详见仓库 LICENSE）
 
-## 0. 位置与权威关系（2026-09-17 确权）
+## 0. 位置与权威关系（2026-09-17 最终确权）
 
 ```
-   工作区  C:\Users\Administrator\WorkBuddy AI\2026-09-14-18-36-54\
-   ┌──────────────────────────────────────────────────────────┐
-   │  stdd-repo/   ← **法定源**（唯一权威；git 仓库；              │
-   │                 完整历史 + tag fstdd-v1.0.0）               │
-   │      │  安装器从这里读；skill 内固化路径指向它               │
-   │      └── push origin ──> GitHub DKK_Fstdd（**上传目标**）    │
-   │                                                          │
-   │  backups/       ← 含区外副本的归档                          │
-   │  .workbuddy-ai/ ← 记忆 / 临时                              │
-   │  inbox/         ← 待审核池暂存（gitignored 运行产物）        │
-   └──────────────────────────────────────────────────────────┘
+   D:/tools/FSTDD/            ← 今后开发根（**D 盘，不随 C 盘系统重装丢失**）
+   ┌───────────────────────────────────────────────────────┐
+   │  stdd-repo/   ← **法定源**（唯一权威；git 仓库；          │
+   │                 完整历史 + tag fstdd-v1.0.0）            │
+   │      │  安装器从这里读；skill 内固化路径指向它            │
+   │      └── push origin ──> GitHub DKK_Fstdd（**上传目标**） │
+   │                                                       │
+   │  backups/       ← 归档与备份（含本地裸库 stdd-repo.git）  │
+   │  .workbuddy-ai/ ← 记忆 / 临时 / .gh_token（GitHub 凭证） │
+   └───────────────────────────────────────────────────────┘
+
+   C:\Users\Administrator\WorkBuddy AI\2026-09-14-18-36-54\
+       ← **历史归档**（迁移时刻的快照），不再开发
 ```
 
 | 位置 | 角色 |
 |---|---|
-| 工作区 `stdd-repo/` | **法定源**。安装器从这里读；skill 内固化路径指向它 |
+| **`D:/tools/FSTDD/stdd-repo/`** | **法定源**（唯一权威）。安装器从这里读；skill 内固化路径指向它 |
 | `2749817087qq/DKK_Fstdd`（GitHub） | **上传目标**（不是源）。由法定源 `git push origin master --tags` 上传 |
-| `~/.workbuddy-ai/Fstdd` | ⚠️ **已归档**，**不再是法定源**。完整副本在 `backups/canonical-archived-*/`；原目录保留未删 |
+| `C:\…\2026-09-14-18-36-54\` | **历史归档**（迁移时刻快照），保留不删 |
+| `~/.workbuddy-ai/Fstdd` | ⚠️ 更早一轮的归档副本，**不是法定源** |
 | `D:/Programs/DKK_Fstdd` | ⚠️ **另一程序的调试副本，不要动**，不是我们的安装源 |
 
-> **为什么收进工作区**：D哥 要求「所有开发 FSTDD 产生的文件，包括真源，全部归档到工作区文件夹」。
-> 此前把真源放在区外（理由：避免 skill 路径固化到会话目录），代价是真源散落在工作区外。
-> 收拢前已按 git blob 哈希逐个比对，确认 `stdd-repo` 是内容超集，未丢失任何东西。
+> **为什么迁到 D 盘**：C 盘系统重装会丢失全部 FSTDD 资产
+> （迁移前实测 C 盘约 5381 个文件，含全部 change 归档、经验库、知识图谱、备份）。
+> D 盘是数据盘，不随系统重装。**今后开发一律在 `D:/tools/FSTDD/`。**
 
 ### 同步操作
 
 ```bash
-# 工作区 → GitHub（含 tag）
-cd <工作区>/stdd-repo && git push origin master --tags
+# D 盘 → GitHub（含 tag）
+cd D:/tools/FSTDD/stdd-repo && git push origin master --tags
 
-# 若日后仍需与区外副本互同步（当前不再需要）：
-#   git push canonical master      # 工作区 → 区外副本（需其 receive.denyCurrentBranch=updateInstead）
-#   git fetch canonical && git merge --ff-only FETCH_HEAD   # 反向（本机远程跟踪引用不 materialize）
+# D 盘 → 本地裸库（备份）
+git push local master --tags
 ```
 
 > **为什么用 git 而不是手工 cp**：2026-09-16 一天内发生两次漂移（宪法陈旧、verify 脚本两份不一致），

@@ -1,0 +1,32 @@
+change_id: 2026-09-17-migrate-to-d-drive
+complexity_score: null
+current_phase: build
+design_adjustments:
+  count: 0
+last_modified: '2026-09-17T09:01:31.358141'
+mode: standard
+phases:
+  build:
+    status: in_progress
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T09:01:30'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 BUILD（6 项决策 + 15 TC 认可）
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T08:59:09'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 SPEC（整体迁移到 D:/tools/FSTDD）
+    status: completed
+score_confidence: null
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'
