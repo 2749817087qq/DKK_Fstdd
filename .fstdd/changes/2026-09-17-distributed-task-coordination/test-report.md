@@ -48,11 +48,23 @@ C:/Python311/python.exe -m pytest upstream/tests/test_fstdd_hub.py -q
 
 覆盖重点：并发安全的事务领取、重复创建/领取幂等、租约过期回收、旧 token 拒绝、失败/阻塞记录、消息 ack 和未注册节点拒绝。
 
-## 四、尚未完成的切片
+## 四、Slice C 执行结果
 
-Slice C（Git 分支/worktree/串行集成）、Slice D（8788 部署与恢复）尚未实现，不能将本报告作为完整分布式系统的 Gate 3 质量报告。
+Slice C 已实现 `tools/fstdd_git.py`：任务分支和仓库外 worktree、固定基线 SHA、保守 scope 冲突判定、干净目标分支上的 ff-only 串行集成。冲突、脏目标、非 `task/*` 分支和基线漂移均直接拒绝，不强推、不自动 reset。
 
-## 五、全量回归
+执行命令：
+
+```bash
+C:/Python311/python.exe -m pytest upstream/tests/test_fstdd_git.py -q
+```
+
+结果：**6 passed / 0 failed**，退出码 0。
+
+## 五、尚未完成的切片
+
+Slice D（8788 部署与恢复）尚未实现，不能将本报告作为完整分布式系统的 Gate 3 质量报告。
+
+## 六、全量回归
 
 在提交 Slice A/B 及两个遗留 change 归档记录后，从法定源 `D:/tools/FSTDD/stdd-repo/upstream` 执行全量套件：
 

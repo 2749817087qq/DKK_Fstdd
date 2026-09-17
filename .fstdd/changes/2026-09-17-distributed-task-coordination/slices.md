@@ -32,12 +32,12 @@
 
 | 项 | 内容 |
 |---|---|
-| **实现** | 每任务 task 分支、仓库外 worktree、基线 SHA、集成者串行 merge、冲突 blocked |
+| **实现** | `tools/fstdd_git.py` 提供每任务 `task/<task_id>` 分支、仓库外 worktree、固定基线 SHA、scope 冲突检查、干净 master 上的 ff-only 串行集成；冲突/脏目标直接失败，不强推、不自动 reset |
 | **对应 TC** | TC-DTC-007、TC-DTC-008、TC-DTC-016 |
 | **依赖** | Slice B；服务器裸库可用 |
 | **风险** | 分支漂移、scope 重叠、master 并发写入和 GitHub 镜像失败 |
-| **验证结果** | 待实现 |
-| **状态** | pending |
+| **验证结果** | `upstream/tests/test_fstdd_git.py`：**6 passed**；覆盖外部 worktree、重复请求、分支基线冲突、scope 冲突、ff-only 集成和脏目标拒绝 |
+| **状态** | done |
 
 ### Slice D — 8788 部署与恢复运维（hub-ops）
 
@@ -57,6 +57,6 @@ Slice A（审计与 FSTDD 证据基础） -> Slice B（控制面闭环）
 Slice C（Git 集成） -> Slice D（部署运维）
 ```
 
-- Slice A、Slice B 已完成并通过测试。
-- Slice C/D 尚未实现，不得在 Gate 3 报告中声称已交付。
+- Slice A、Slice B、Slice C 已完成并通过测试。
+- Slice D 尚未实现，不得在 Gate 3 报告中声称已交付。
 - 所有后续代码必须继续在本 active Change 的 BUILD 阶段完成。
