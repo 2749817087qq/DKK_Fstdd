@@ -70,7 +70,10 @@ phases:
         verified_at: '2026-09-17T19:37:35+08:00'
     status: completed
   deliver:
-    status: in_progress
+    # DELIVER 各步骤均已完成（归档 / specs 合并 / canon verify 2-2 / structure merge /
+    # 经验回传 21 条 / 知识图谱 merge / commit a2061a2 已推送 server + GitHub）。
+    # 未创建 tag：本仓 tag 仅 `fstdd-v1.0.0`，按「tag 用于发布、不用于单个 change」的惯例处理。
+    status: completed
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-09-17T16:06:38'
