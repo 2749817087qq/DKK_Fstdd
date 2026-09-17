@@ -25,6 +25,16 @@ phases:
       项变更 C1–C8 / 4 个新增 capability / 8 条成功标准）。同轮确认：执行模式采纳 thorough（复杂度评分 13）；C8（canon
       DC-HASH 由字节哈希改为 EOL 归一后的内容哈希）保留在本 change 内，与 C1/C3 同批落地。
     status: completed
+long_range:
+  enabled: true
+  mode: "full_auto"
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-09-17T23:27:46+0800'
+  pre_auth_by: dialog
+  iteration_limit: 10
+  notes: >-
+    D哥 于 2026-09-17T23:2x 经确认框选择「确认全部」：授权 A①②③④ + B⑤～⑫
+    （含 ssh 只读时钟巡检、Git 写操作 commit/push server+local）；Gate 3 仍为强制确认门。
 score_confidence: preliminary
 status: active
 task_type: code
