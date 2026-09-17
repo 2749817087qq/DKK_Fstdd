@@ -362,7 +362,10 @@ class TestBContractText:
             text = (REPO / rel).read_text(encoding="utf-8")
             assert "Phase 5" not in text, f"{rel} 仍含旧阶段 Phase 5"
             assert re.findall(r"(?<!F)STDD", text) == [], f"{rel} 仍有裸 STDD"
-            assert not re.search(r"(?<![A-Za-z])stdd(?![a-z])", text), (
+            # 右边界同样要排除路径/文件片段：服务器真实路径 `fstdd-git/stdd-repo.git`
+            # 里的 `stdd` 不是旧命令名。只放宽右边界（`-` `/` `.`），
+            # 裸命令名（后跟空格、标点或行尾）仍会被捕获。
+            assert not re.search(r"(?<![A-Za-z])stdd(?![a-z\-/.])", text), (
                 f"{rel} 仍有 stdd 旧命令名"
             )
 

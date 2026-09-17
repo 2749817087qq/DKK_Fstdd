@@ -1,0 +1,33 @@
+change_id: 2026-09-17-server-bare-repo-mirror
+complexity_score: null
+current_phase: build
+design_adjustments:
+  count: 0
+last_modified: '2026-09-17T13:49:14.466378'
+mode: standard
+phases:
+  build:
+    status: in_progress
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T13:49:09'
+    confirmed_by: dialog
+    confirmed_evidence: D哥确认：方案可执行，允许进入 BUILD 并执行（原文「确认 可执行」「继续」）。数据面设计沿用上一轮 Gate
+      2 已确认的三层架构，凭证改用仓库级 Deploy Key。
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T13:49:03'
+    confirmed_by: dialog
+    confirmed_evidence: D哥指令：补建服务器裸库 + GitHub 镜像（最核心，且不依赖 agent 信息，现在就能做），随后两次「继续」授权执行。
+    status: completed
+score_confidence: null
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'
