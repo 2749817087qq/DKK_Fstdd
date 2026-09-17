@@ -1,0 +1,246 @@
+# 2026-09-17-time-baseline.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-09-17-time-baseline"
+  title: "时间基线：让每份产出都能回答「何时、基于什么状态」"
+  created: "2026-09-17T16:02:38+08:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    FSTDD 的产出**无法回答两个基本问题**：「这条信息是什么时候采集的？」「它基于哪个代码/数据版本？」
+
+    这不是理论担忧 —— 在 D哥 指出后做了全仓实测，**九个相关词在宪法里全部零命中**：
+
+      | 检索词 | 宪法 `FSTDD_CONSTITUTION.md` 命中数 |
+      |---|---|
+      | 时间 / 时效 / 基线 / 新鲜 / 时钟 / 时间戳 / 时刻 / timestamp / 过期 | **0（全部）** |
+
+    具体缺口有六处，每一处都有实测证据（见 evidence）：
+
+      1. **没有"时间基线"这个概念** —— 流程里没有任何一处要求记录或校验时间
+      2. **时间戳格式三种形态并存，且多数不带时区** → 跨机协作时无法排序、无法比较
+      3. **"生成时刻"冒充"采集时刻"** —— `generated_at` 是渲染时刻，与信息实际采集时刻无关
+      4. **没有代码/数据版本锚点** —— 只有"被分派的任务"才有 `base_git_sha`，
+         **本地发起的 change 完全没有**；`git log` 与产物之间没有可追溯的连接
+      5. **证据不带观测时刻** —— `why.evidence` 写着"只读巡检实测"，却没写**何时**测的，
+         无法判断证据是否已过期
+      6. **跨机时钟无法验证** —— 实测本机 ↔ 服务器单次往返 5.5–6.2s，连"两台机器的时钟
+         是否一致"都无法在秒级上确认；3 台机器中的另外 2 台**从本机完全不可达**
+
+    危害是**静默的**：所有产物看上去都有时间戳，所以没人会觉得缺什么；
+    但真到需要判断"这份证据还成立吗""这个结论是基于哪个提交得出的"时，答案并不存在。
+    对 6 个 agent / 3 台机器的协作而言，"谁在什么时候基于什么说的"是协作的**最低前提**。
+
+  motivation: |
+    为什么现在做：
+
+      1. **D哥 在 Gate 1 明确指出**：「我使用 agent 的时候，很多都不建立时间基线，
+         这个需要进入到 FSTDD 中去。」并补充范围含「3 台机器及 FSTDD 自身的时钟对齐」
+      2. **正好卡在 BUILD 之前** —— 下一阶段要跑真实的镜像失败实测。若证据不带观测时刻
+         与代码版本，"什么时候测的、基于哪个提交测的"将永远无法回答，
+         而这正是最需要证据可信的时候
+      3. **节点数只会增加** —— 当前 3 台机器 / 6 个 agent；基线缺失的代价随节点数放大
+      4. **越早越便宜** —— 时间基线是**横切契约**；等大量产物生成后再回填，
+         成本远高于现在把它写进模板与宪法
+
+  evidence: |
+    全部为本机只读实测，观测时刻 **2026-09-17T16:02+08:00**，观测时 HEAD = `c11789a`。
+
+    **(1) 宪法零命中**
+    `grep -c` 逐词统计 `FSTDD_CONSTITUTION.md`：
+    时间 0 / 时效 0 / 基线 0 / 新鲜 0 / 时钟 0 / 时间戳 0 / 时刻 0 / timestamp 0 / 过期 0。
+
+    **(2) 时间戳格式三种形态并存**（同一个 change 内）
+    | 字段 | 实测值 | 带时区？ |
+    |---|---|---|
+    | `canonical/proposals/*.yaml` → `meta.created` | `2026-09-17T14:18:03.135357` | ❌ |
+    | `canonical/specs/code/*.yaml` → `meta.created` | `2026-09-17T15:43:57+08:00` | ✅ |
+    | `.fstdd.yaml` → `phases.understand.confirmed_at` | `2026-09-17T15:21:49` | ❌ |
+    | `proposal.md` → `generated_at` | `2026-09-17T15:56:11.800867` | ❌ |
+
+    → 4 个字段、**3 个无时区**。而控制面 `tools/fstdd_hub.py:99` 用的是
+    `datetime.now(timezone.utc).isoformat()`（UTC 带时区）→ **第 4 种形态**；
+    CLI 与控制面的时间**不可直接比较**。
+    **且这不是历史遗留**：本 change 由 `fstdd new` 生成时，
+    `meta.created` 被写成 `2026-09-17T16:02:17.968509` —— **CLI 此刻仍在产出 naive 时间戳**。
+
+    **(3) 生成时刻 ≠ 采集时刻**
+    同一个 change 实测：`proposal.yaml` 的 `created` = `14:18:03`，
+    而 `proposal.md` 的 `generated_at` = `15:56:11` —— **相差 1 小时 38 分**。
+    若引用的是更早的实测数据，产物看上去仍然"很新"。
+
+    **(4) 无代码版本锚点**
+    `grep -rn base_git_sha`（排除 archive）只命中三处：`tools/fstdd_hub.py:62`（tasks 表定义）、
+    `:178` / `:194`（读写）、`upstream/tests/test_fstdd_hub.py:69`。
+    → `base_git_sha` **只存在于 hub 的 tasks 表**，即**只有"被分派的任务"才有代码基线**；
+    **本地发起的 change 完全没有**。`.fstdd.yaml` 中只有 `last_modified` 与各 Gate 的
+    `confirmed_at`，**没有任何 sha 字段**。
+
+    **(5) 证据不带观测时刻**
+    上一轮 change 的 `why.evidence` 逐条写着"只读巡检实测"、
+    "实测 mirror.log 21 行 / 2 次镜像 / WARN 0 次"，但**没有任何一条记录观测时刻或当时的 sha**。
+
+    **(6) 跨机时钟无法验证**（本次实测）
+    - 本机 → 服务器 ssh 单次往返（持久连接下 10 次采样）：
+      **5093 / 5898 / 5595 / 5935 / 5524 / 6083 / 5931 / 5710 / 5544 / 6239 ms**
+      → **~5.5–6.2s**，抖动达秒级
+    - `ping 43.134.236.80` → **100% 丢包**（ICMP 被防火墙封禁）→ 拿不到更干净的 RTT 基准
+    - NTP 式估算（假设往返对称）给出稳定读数「服务器 − 本机 ≈ **+3.0s**」，
+      但对称假设本身被上面的秒级抖动否定 → **该读数不可采信**
+    - **结论：目前连"两台机器的时钟是否一致"都无法在秒级上验证**
+    - 服务器侧：`System clock synchronized: yes`、`NTP service: active`、
+      `Time zone: Asia/Shanghai (CST, +0800)` —— 服务器是**已对齐**的
+    - 本机（Windows）**无任何对齐记录**；3 台机器中另外 2 台
+      **在本机 `~/.ssh/config` 中不存在**（只有 `fstdd-hub` 一个 Host 条目）→ 完全不可知
+
+    **(7) 现有机制反而放大问题**
+    `canon verify` 的 `DC-HASH` 对 YAML **原始字节**做哈希（`canon.py:299`）——
+    任何时间字段改动都会触发 DC-HASH 失配。做时间基线时必须同时处理这个耦合，
+    否则"补时间"会连带打断双轨校验。
+
+    **(8) 状态文件自相矛盾（Gate 2 确认后当场实测）**
+    `2026-09-17-mirror-failure-alert` 在 Gate 2 确认后，`.fstdd.yaml` 同时存在两个互相矛盾的字段：
+    `current_phase: understand`（陈旧）与 `phases.spec.status: completed`（已更新）。
+    后果：`fstdd phase status` 忠实输出「Next: Phase 2: SPEC」——
+    **在 spec 阶段已完成之后，工具仍在提示去做 spec**。
+    这说明"当前处于哪个阶段"本身就是一个**没有基线、可能陈旧的状态**，
+    且没有任何机制能发现它已失真。
+
+what_changes:
+  - id: C1
+    type: new
+    description: |
+      【基线契约】为每个 change 定义显式时间基线：`baseline.at`（基线时刻）、
+      `baseline.base_git_sha`（代码版本锚点）、`baseline.node_id`（在哪个节点建立）、
+      `baseline.clock_source`（时间取自哪里）。写入 `.fstdd.yaml`，
+      使"本地发起的 change"也拥有与被分派任务同等的基线。
+  - id: C2
+    type: new
+    description: |
+      【统一时间戳规范】全仓时间戳统一为**带时区的 ISO 8601**（UTC 或显式 offset），
+      禁止 naive 时间戳。CLI 与控制面采用同一规范，使两者时间可直接比较与排序。
+  - id: C3
+    type: new
+    description: |
+      【证据时效标注】`why.evidence` / spec 的 `evidence` / test-report 的证据条目
+      必须带 `observed_at`（观测时刻）与观测时的 `base_git_sha`，
+      使"这份证据还成立吗"成为可判定问题，而不是靠印象。
+  - id: C4
+    type: new
+    description: |
+      【产物头部基线块】产物头部同时呈现三个**不同**的时刻：
+      `created_at`（信息采集）/ `generated_at`（渲染）/ `baseline.at`（基线建立），
+      并附 `base_git_sha`，消除"渲染时刻冒充采集时刻"。
+  - id: C5
+    type: new
+    description: |
+      【时钟对齐巡检】提供一条命令报告各节点与本机的时钟偏差，
+      并给出**三态判定**：偏差可接受 / 偏差超限 / **无法测量**（如 RTT 抖动过大、
+      节点不可达）。三态必须可区分 —— 否则会把"测不准"误报成"已对齐"。
+  - id: C6
+    type: modified
+    description: |
+      【宪法条款】在 `FSTDD_CONSTITUTION.md` 中增加时间基线条款，
+      并让 Gate 检查引用它，使"记录时间基线"从"好习惯"变成**强制契约**。
+  - id: C7
+    type: modified
+    description: |
+      【模板同步】`proposal` / `design` / `spec` / `test-plan` / `test-report` 模板
+      同步加上基线字段与观测时刻字段，使新 change 默认即符合规范。
+  - id: C8
+    type: modified
+    description: |
+      【DC-HASH 耦合】`canon verify` 的源哈希改为**对归一后的内容**哈希
+      （先做 EOL 归一再哈希），使"时间字段变更 / 行尾归一"不再导致双轨校验误报失败。
+
+capabilities:
+  new:
+    - name: "时间基线契约"
+      description: |
+        每个 change 都有显式基线（时刻 + 代码版本 + 节点 + 时间来源），
+        本地发起的 change 不再是没有基线的二等公民。
+    - name: "统一时间戳规范"
+      description: |
+        全仓时间戳为带时区的 ISO 8601，CLI 与控制面一致；
+        naive 时间戳成为可被静态检查发现的错误。
+    - name: "证据时效标注"
+      description: |
+        证据条目带观测时刻与观测时的代码版本，使证据"过期"成为可判定的事实。
+    - name: "时钟对齐巡检"
+      description: |
+        一条命令给出各节点时钟偏差与三态判定（可接受 / 超限 / 无法测量），
+        把"时钟是否对齐"从假设变成可验证的结论。
+  modified:
+    - name: "FSTDD 宪法"
+      description: |
+        增加时间基线条款，使基线记录成为 Gate 强制检查项，而非建议。
+    - name: "产物模板与 CLI"
+      description: |
+        模板默认携带基线字段；CLI 统一时间戳格式并新增基线检查命令。
+    - name: "canon 双轨校验"
+      description: |
+        `DC-HASH` 由「原始字节哈希」改为「EOL 归一后的内容哈希」，
+        解除与行尾治理的耦合。
+
+constraints:
+  - "不得引入服务器常驻服务：时钟巡检必须是一次性命令，与既有运维范式一致"
+  - "时钟巡检必须幂等且只读 —— 本环境经 ssh 的命令会执行两次"
+  - "必须区分「偏差超限」与「无法测量」，不得把测量失败静默当作通过"
+  - "时区必须显式声明，不得依赖运行机器的本地时区设置"
+  - "不得要求所有机器使用同一时区，只要求显式可比较"
+  - "改动时间字段会触发现有 DC-HASH 失配 —— 必须与 C8 同批处理，不得分两次"
+  - "宪法条款必须与代码/模板一致：文档不得教人做已被禁止或已废弃的事"
+
+stakeholders:
+  - "D哥（需求提出者与 Gate 确认人）"
+  - "6 个 AI agent / 3 台开发机（基线的主要消费者）"
+  - "服务器（L1 数据面 + L2 控制面所在节点）"
+
+risk_areas:
+  - capability: "时钟对齐巡检"
+    risk: "把「测不准」误报为「已对齐」，或把网络抖动当成时钟偏差"
+    mitigation: "三态判定（可接受 / 超限 / 无法测量）；以 RTT 抖动作为可信度门槛，超出即报「无法测量」"
+  - capability: "统一时间戳规范"
+    risk: "存量产物格式不一，一次性统一会打断 DC-HASH 并产生巨大 diff"
+    mitigation: "只覆盖活跃 change 与模板；归档不回溯；与 C8（内容哈希）同批落地"
+  - capability: "时间基线契约"
+    risk: "基线字段沦为形式 —— 填了但不影响任何判断"
+    mitigation: "让 Gate 检查引用它；并在 C3 中把观测时刻用于「证据是否过期」的判定"
+  - capability: "canon 双轨校验"
+    risk: "改哈希算法会让所有既有 source_hash 一次性失效"
+    mitigation: "先归一内容再计算；提供一次性重新生成路径；配套测试覆盖「干净克隆可校验」"
+
+non_goals:
+  - "给所有机器强制部署 NTP 或自动校时（本变更只做**检测与报告**，不做自动修正）"
+  - "时间戳的密码学签名或防篡改（属审计链议题，另立）"
+  - "历史归档 change 的时间字段回填（只处理活跃 change 与模板）"
+  - "规定全组织统一使用某个时区（只要求显式声明、可比较）"
+  - "修复 `extract-proposal` 解析不出 capabilities 的契约断层（同属工具链缺陷，但为独立议题）"
+  - "由 AI 自动确认任何 Gate（宪法明令禁止）"
+
+critical:
+  is_critical: true
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: true
+
+anchoring:
+  level: L2
+  reference_changes:
+    - "2026-09-17-server-bare-repo-mirror（巡检命令与退出码三态判定的参考实现）"
+    - "2026-09-17-mirror-failure-alert（证据与巡检范式的直接前序）"
+  anchor_implementations: []
+
+success_criteria:
+  - "宪法 `FSTDD_CONSTITUTION.md` 中存在时间基线条款，且至少 1 个 Gate 的检查引用它"
+  - "新建 change 的 `.fstdd.yaml` 含 `baseline.at` / `baseline.base_git_sha` / `baseline.node_id` / `baseline.clock_source` 四项且均非空"
+  - "全仓时间字段扫描：活跃 change 与模板中的时间戳 100% 带时区，naive 时间戳为 0 个"
+  - "`fstdd baseline check` 给出明确判定与退出码，且**三态可区分**（可接受 / 超限 / 无法测量）"
+  - "任一 change 的产物能回答「何时采集、基于哪个 sha」；`created_at` 与 `generated_at` 不同时二者都可见"
+  - "`canon verify` 在**干净克隆**（LF 工作区）上通过 2/2 —— 消除「只有生成它的机器能校验通过」"
+  - "既有工程测试套件保持全绿（以本 change 建立基线时的收集数为准；截至 2026-09-17 22:5x 为 641 收集用例 / 640 passed / 1 skipped）"
+  - "仓库中不出现任何凭证：以既有凭证扫描规则检查（`ghp_` / `github_pat_` / `sk-` / `AKIA` / 私钥头）命中数为 0"
