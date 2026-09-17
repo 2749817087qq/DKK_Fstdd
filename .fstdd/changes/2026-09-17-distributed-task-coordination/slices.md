@@ -43,12 +43,12 @@
 
 | 项 | 内容 |
 |---|---|
-| **实现** | 独立 systemd unit、127.0.0.1 监听、健康检查、SQLite 冷备、容量告警、与 8787 隔离 |
+| **实现** | `tools/deploy_hub.sh`：独立 systemd unit、127.0.0.1 监听、md5 校验、幂等重启、端状态验证；`tools/hub_backup.sh`：SQLite 在线备份与 14 天保留；`tools/hub_healthcheck.py`：只读健康检查 |
 | **对应 TC** | TC-DTC-009、TC-DTC-010 |
 | **依赖** | Slice B、Slice C |
-| **风险** | 8787/8788/裸库共享服务器磁盘，远端 SSH 命令可能重复执行 |
-| **验证结果** | 待实现 |
-| **状态** | pending |
+| **风险** | 8787/8788/裸库共享服务器磁盘，远端 SSH 命令可能重复执行；实际云端部署仍需 D哥明确允许后执行 |
+| **验证结果** | `upstream/tests/test_hub_ops.py`：**3 passed**；静态验证 loopback、systemd 幂等、md5、禁止 pkill、SQLite backup、健康检查只读 |
+| **状态** | done（脚本与测试完成；尚未执行云端部署） |
 
 ## 执行顺序
 
@@ -57,6 +57,6 @@ Slice A（审计与 FSTDD 证据基础） -> Slice B（控制面闭环）
 Slice C（Git 集成） -> Slice D（部署运维）
 ```
 
-- Slice A、Slice B、Slice C 已完成并通过测试。
-- Slice D 尚未实现，不得在 Gate 3 报告中声称已交付。
+- Slice A、Slice B、Slice C、Slice D 的代码/脚本和测试已完成。
+- Slice D 的云端部署尚未执行；Gate 3 前必须完成一次经授权的部署或明确记录不部署的验收边界。
 - 所有后续代码必须继续在本 active Change 的 BUILD 阶段完成。

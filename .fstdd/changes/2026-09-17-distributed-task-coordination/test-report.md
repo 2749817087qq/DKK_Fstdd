@@ -60,9 +60,23 @@ C:/Python311/python.exe -m pytest upstream/tests/test_fstdd_git.py -q
 
 结果：**6 passed / 0 failed**，退出码 0。
 
-## 五、尚未完成的切片
+## 五、Slice D 执行结果
 
-Slice D（8788 部署与恢复）尚未实现，不能将本报告作为完整分布式系统的 Gate 3 质量报告。
+Slice D 已完成本地可验证的运维资产：
+
+- `tools/deploy_hub.sh`：独立 `fstdd-hub.service`、仅监听 `127.0.0.1:8788`、上传 md5 校验、按端口停旧进程、`systemctl enable --now`、重启后检查 `is-active`/监听/health。
+- `tools/hub_backup.sh`：SQLite WAL checkpoint + 在线 backup，保留 14 天。
+- `tools/hub_healthcheck.py`：只读 `/health` 检查。
+
+执行命令：
+
+```bash
+C:/Python311/python.exe -m pytest upstream/tests/test_hub_ops.py -q
+```
+
+结果：**3 passed / 0 failed**，退出码 0。
+
+云端部署尚未执行；部署属于远端运维动作，必须单独获得授权后才能执行。当前 Gate 3 验收边界应明确是否要求真实云端部署。
 
 ## 六、全量回归
 
@@ -72,8 +86,8 @@ Slice D（8788 部署与恢复）尚未实现，不能将本报告作为完整�
 C:/Python311/python.exe -m pytest tests -q
 ```
 
-结果：**577 passed / 0 failed**，退出码 0。
+结果：**583 passed / 0 failed**，退出码 0。
 
-其中包含 Slice A/B 新增测试以及两个已归档 change 的相关测试。pytest 退出时偶发的批量临时目录清理守卫不影响用例汇总；本次汇总本身为 577 passed。
+其中包含 Slice A/B/C/D 新增测试以及两个已归档 change 的相关测试。pytest 退出时偶发的批量临时目录清理守卫不影响用例汇总；本次汇总本身为 583 passed。
 
-Slice C/D 仍未实现，因此这份报告是当前 BUILD 中间报告，不是完整分布式系统的 Gate 3 质量报告。
+代码、脚本和本地测试均已完成；云端真实部署尚未执行，因此这份报告在真实云端 systemd/监听/备份演练完成前仍是 BUILD 验收报告，不替代远端运维验收。
