@@ -3,7 +3,7 @@ complexity_score: null
 current_phase: build
 design_adjustments:
   count: 0
-last_modified: '2026-09-17T11:14:43.457231'
+last_modified: '2026-09-17T12:05:18.089392'
 mode: standard
 phases:
   build:
@@ -12,6 +12,14 @@ phases:
         new_tests: 7
         tc_coverage: TC-GATE-110,TC-GATE-111,TC-GATE-112,TC-GATE-113;phase-record-slice
         verified_at: '2026-09-17T11:05:00'
+      C:
+        new_tests: 6
+        tc_coverage: TC-DTC-007,TC-DTC-008,TC-DTC-016
+        verified_at: '2026-09-17T11:45:00'
+      D:
+        new_tests: 3
+        tc_coverage: TC-DTC-009,TC-DTC-010
+        verified_at: '2026-09-17T12:00:00'
     status: in_progress
   deliver:
     status: pending
