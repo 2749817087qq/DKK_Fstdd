@@ -131,12 +131,17 @@ def test_aud_004_severity_and_response_consistency():
 
 def test_aud_005_detection_paths_flagged():
     table = yaml.safe_load(_audit_table_path().read_text(encoding="utf-8"))
+    all_files = {Path(p["file"]).name for p in table["points"]}
     flagged = [
         p for p in table["points"]
         if p["classification"] == "意外吞错" and p.get("detection_path")
     ]
-    files = {Path(p["file"]).name for p in flagged}
-    # 三大检测家族必须有人在册：guard 守卫 / 时效扫描 / 基线与校验
-    assert "guard.py" in files, "guard 检测路径无吞错点在册"
-    assert "check_timestamps.py" in files, "时效扫描路径无吞错点在册"
+    # 三大检测家族必须在表内被覆盖（任意分类即可）：guard 守卫 / 时效扫描 / 基线与校验。
+    # 注意：随失败有声改造推进，某家族可能已无「意外吞错」点（点被修复或被勘误
+    # 重判为合理容错），因此断言只要求「扫描器没有对某家族视而不见」，
+    # 不要求代码继续保留 bug。
+    assert "guard.py" in all_files, "guard 守卫家族未进审计表（扫描器可能漏扫）"
+    assert "check_timestamps.py" in all_files, "时效扫描家族未进审计表（扫描器可能漏扫）"
+    assert any(f in all_files for f in ("baseline.py", "validate.py", "gate.py")), \
+        "基线与校验家族未进审计表（扫描器可能漏扫）"
     assert flagged, "检测路径吞错点清单为空"

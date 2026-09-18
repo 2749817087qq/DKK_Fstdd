@@ -18,6 +18,13 @@ meta:
   - EA-022 upstream/fstdd/cli/commands/validate.py:106
   - EA-028 tools/check_timestamps.py:186
   - EA-029 tools/check_timestamps.py:209
+  errata:
+  - id: EA-010
+    from: 意外吞错/p1
+    to: 合理容错
+    evidence: git show 699c583:upstream/fstdd/cli/commands/guard.py 第 315 行逐字核对 +
+      函数 docstring + 调用点语义
+    policy: 不回改归档表（D6）；新判仅落活表与 test-report
 points:
 - id: EA-026
   file: tools/check_skill_metadata.py
@@ -84,11 +91,12 @@ points:
   line: 330
   stmt: return False
   handler: 'except Exception:'
-  classification: 意外吞错
-  severity: p1
-  response: 升级 change
-  detection_path: true
-  justification: 守卫路径判定 fail-open：异常时 return False = 未受保护文件被放行编辑。守卫必须 fail-closed
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 【ERR-001 勘误后新判】_is_workflow_artifact 语义为 True=放行白名单，False=非白名单→Guard
+    拒绝编辑；异常 return False ⇒ fail-closed，方向安全。原判（fail-open）方向说反，见 test-report ERR-001
 - id: EA-013
   file: upstream/fstdd/cli/commands/index.py
   line: 66
