@@ -1,8 +1,9 @@
 change_id: 2026-09-19-notices-authenticity-gate
 complexity_score: 10
-current_phase: understand
+current_phase: spec
 design_adjustments:
-  count: 0
+  count: 5
+  file: design-adjustments.md
 mode: thorough
 phases:
   build:
@@ -10,14 +11,20 @@ phases:
   deliver:
     status: pending
   spec:
-    status: pending
-  understand:
     status: in_progress
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-19T01:15:06'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 2026-09-19 01:14 回复 Please continue. 确认提案范围/8条成功标准/thorough
+      模式，批准进入 Phase 2
+    status: completed
 score_confidence: preliminary
 status: active
 task_type: code
 traceability:
-  spec_scenarios: 0
-  tc_cases: 0
+  spec_requirements: 6
+  spec_scenarios: 18
+  tc_cases: 21
   test_functions: 0
 version: '3.0'

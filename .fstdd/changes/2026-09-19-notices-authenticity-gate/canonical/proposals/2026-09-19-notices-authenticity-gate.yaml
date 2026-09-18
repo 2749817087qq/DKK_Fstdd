@@ -132,8 +132,15 @@ critical:
     cross_system: false
 
 anchoring:
-  level: L1
-  reference_changes: []
+  level: L3
+  reference_changes:
+    - "FSTDD003-sliceS2S3（2026-09-18 协作 slice）：`FSTDD003-sliceS2S3.patch` /
+      `-tests.txt` / `FSTDD003复-协作开发-S2S3.md` —— 本节点对 `tools/` 做 TDD 改动的既有做法：
+      RED→GREEN 留痕、文件域白名单、偏离显式记录、不代删审计活表"
+    - "FSTDD003-EXP-20260918-CODE-1：「宁可可见、不可沉默」原则来源 ——
+      C2 把未验证凭证移入隔离区而非静默丢弃，即该原则在本变更中的应用"
+    - "FSTDD003收-撤回令-伪造署名指令.md（K 授权，2026-09-18 19:00）：处置边界的权威依据 ——
+      回退至灰度 baseline、凭证保留现场不删、不主动附 X-FSTDD-Token，C4 据此设计"
   anchor_implementations: []
 
 success_criteria:

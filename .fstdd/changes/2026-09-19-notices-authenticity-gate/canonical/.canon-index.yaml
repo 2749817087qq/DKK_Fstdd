@@ -5,5 +5,6 @@ specs:
   agent:
     2026-09-19-notices-authenticity-gate: specs/agent/2026-09-19-notices-authenticity-gate.yaml
   code:
-    2026-09-19-notices-authenticity-gate: specs/code/2026-09-19-notices-authenticity-gate.yaml
+    notice-authenticity-verification: specs/code/notice-authenticity-verification.yaml
+    notice-execution-pipeline: specs/code/notice-execution-pipeline.yaml
 version: '2.9'

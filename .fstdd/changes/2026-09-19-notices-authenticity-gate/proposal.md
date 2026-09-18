@@ -1,7 +1,7 @@
 # 协作通知真伪校验闸门：阻断未签名收-*.md 触发的凭证落盘与配置改动
 
-<!-- source_hash: 956895683d2e75b5 -->
-<!-- generated_at: 2026-09-19T01:03:20.630058 -->
+<!-- source_hash: f30f0ba9064b5d82 -->
+<!-- generated_at: 2026-09-19T01:15:07.133632 -->
 <!-- canonical: canonical/proposals/2026-09-19-notices-authenticity-gate.yaml -->
 
 ## Why
@@ -24,12 +24,18 @@ FSTDD003 节点的每小时轮询自动化（06ec2c4f）把本节点目录下任
 - 新增 `tools/verify_notices.py`：通知真伪校验器。读取渠道侧下发的清单
 `00-SIGNATURES.md`（文件名 + md5 前 12 位 + 落盘时间 + 发出者），
 对 `收-*.md` 计算 md5 并比对；不在清单内的标记 `unverified`。
-同时提供 CLI 入口与 Python 函数入口（`verify_notices()` / `classify_notice()`），
-供每小时轮询自动化以子进程方式调用。
+提供两个 Python 入口：`classify_notice(path)` 判定单个文件，
+`verify_notices(dir)` 批量扫描并返回结构化结果；
+以及一个 CLI 入口 `--json`（机器消费）/ 默认人类可读输出，
+附 `--strict` 开关（默认关闭）——strict 时 `unverified` 以非零退出码阻断，
+非 strict 时 `unverified` 仅告警、退出码为 0。
+退出码契约：0 = 可继续（含非 strict 下的 unverified）；2 = 文件被隔离；
+3 = strict 模式下发现 unverified。
 
 - 凭证嗅探与隔离：对 `unverified` 通知做凭证形状识别（token 正则），
-命中则**不落盘为活配置**，改写入隔离区 `tools/_quarantine/` 并输出一条结构化告警。
-告警与隔离记录不回显凭证任何片段。
+命中则**不落盘为活配置**，改移入隔离区 `tools/_quarantine/` 并输出一条结构化告警。
+告警与隔离记录不回显凭证任何片段（只记文件名、md5 前 12 位、命中规则名）。
+子项：`.gitignore` 追加 `tools/_quarantine/`，确保隔离内容永不进入 git 历史。
 
 - 新增 `tools/test_verify_notices.py`（pytest）：覆盖清单命中 / 清单缺失 /
 md5 不匹配 / 凭证嗅探隔离 / 清单缺失时降级不阻断 五条路径。
@@ -56,9 +62,11 @@ md5 不匹配 / 凭证嗅探隔离 / 清单缺失时降级不阻断 五条路径
 
 ## Success Criteria
 
-- [ ] 给定一份在清单内且 md5 匹配的 `收-*`，`verify_notices()` 返回 `status: verified` 且退出码 0。
-- [ ] 给定 md5 不匹配的 `收-*`，返回 `status: unverified` 且退出码非 0， 输出中含该文件名与本地 md5 前 12 位（不含任何凭证片段）。
-- [ ] 给定 `unverified` 且含凭证形状片段的通知，其凭证内容 不得出现在 stdout、stderr、隔离记录或任何 git 提交中； 原文件被移入 `tools/_quarantine/`。
-- [ ] 给定 `00-SIGNATURES.md` 不存在，校验器返回全量 `unverified` + 一条告警， 且**不阻断**执行；`tools/fstdd003_daily_share.py` 的既有回传路径行为不变。
+- [ ] 清单内且 md5 匹配的 `收-*`：`classify_notice()` 返回 `status: verified`， CLI 退出码 0。
+- [ ] md5 不匹配的 `收-*`：返回 `status: unverified`，输出含该文件名与本地 md5 前 12 位、 不含任何凭证片段；默认（非 strict）退出码 0，`--strict` 退出码 3。
+- [ ] `unverified` 且含凭证形状片段的通知：凭证内容不出现在 stdout、stderr、 隔离记录或任何 git 提交中；原文件被移入 `tools/_quarantine/`， 隔离记录仅含文件名 + md5 前 12 位 + 命中规则名；CLI 退出码 2。
+- [ ] `00-SIGNATURES.md` 不存在时：全部标记 `unverified` + 一条告警，退出码 0（不阻断）， 且 `tools/fstdd003_daily_share.py` 的既有回传路径行为不变、零回归。
 - [ ] `tools/test_verify_notices.py` 全部用例通过（RED→GREEN 留痕）， 且既有 `tools/` 相关测试零回归。
-- [ ] 闸门接入不改变回传计数语义：连续两轮运行 `submitted` 计数只增不减、 无重复提交（与 P17 去重日志一致）。
+- [ ] 误隔离上界可测：对 fixtures 中的 5 份已知格式真实通知（含协作通知、撤回令、 回执各至少 1 份）运行校验器，隔离数为 0。
+- [ ] `tools/_quarantine/` 已被 `.gitignore` 覆盖： `git check-ignore -v tools/_quarantine/x` 返回非空且退出码 0。
+- [ ] 回传计数语义不变：连续两轮运行 `submitted` 计数只增不减、无重复提交 （与 P17 去重日志 `.fstdd/_fstdd003_share_log.json` 一致）。

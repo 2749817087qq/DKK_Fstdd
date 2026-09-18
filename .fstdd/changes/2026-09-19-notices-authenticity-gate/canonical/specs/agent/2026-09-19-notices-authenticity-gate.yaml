@@ -1,18 +1,144 @@
 # agent_spec.yaml — Agent 验证规格（Canonical YAML）
+# change: 2026-09-19-notices-authenticity-gate
+# coding 任务：CP 检查点对应 spec.yaml 的 Scenario，assertions 对应 THEN
+# 对应行为规格：
+#   specs/code/notice-authenticity-verification.yaml（REQ-001..005 / SC-001..015）
+#   specs/code/notice-execution-pipeline.yaml      （REQ-006 / SC-016..018）
 
 meta:
-  task_id: "TODO: 任务标识"
+  task_id: "notices-authenticity-gate"
   change_id: "2026-09-19-notices-authenticity-gate"
-  created: "2026-09-19T00:59:30.225166"
+  created: "2026-09-19T01:30:00"
   task_type: code
-  system: "TODO: 目标系统描述"
+  system: |
+    FSTDD003 节点协作通知处理链路（tools/ 域）。新增 tools/verify_notices.py
+    作为 00-SIGNATURES.md 清单校验 + 凭证形状嗅探 + 隔离闸门，供每小时轮询
+    自动化 06ec2c4f 以子进程方式调用；tools/fstdd003_daily_share.py 保持不变。
 
 preconditions:
-  - "TODO: 前置条件 1"
+  - "Python 3.13 隔离 venv 就绪（C:\\Users\\Administrator\\.workbuddy-ai\\binaries\\python\\envs\\default），含 pytest 9.1.1（已实测）"
+  - "D:\\FSTDD003\\tools\\ 可写；不触碰 ~/.workbuddy-ai/FSTDD/upstream/"
+  - "tools/fstdd003_daily_share.py 基线已记录：4623 B，git diff HEAD -- tools/ 为空（供 SC-016 断言）"
+  - ".fstdd/_fstdd003_token.txt 基线已记录：65 B，mtime 2026-09-18 17:53（供 SC-018 断言）"
+  - ".gitignore 现有 6 行，不含 tools/_quarantine/（SC-011 需先追加再断言）"
+  - "不新建 00-SIGNATURES.md（Q2 待 K 裁定）；测试用自造清单，置于 tmp_path"
+  - "禁 git add -A；仓库 remote 数 = 0，不 push"
 
 steps:
-  - action: "TODO: 操作步骤 1"
-    verify: "TODO: 验证方法 1"
+  - id: "CP-001"
+    description: "RED — 先写测试，全部用例跑出全红"
+    action: |
+      写 tools/test_verify_notices.py，覆盖 REQ-001..006 全部 18 个 Scenario +
+      3 个补充边界用例（共 21 个 TC）；此时 tools/verify_notices.py 不存在。
+      运行：python -m pytest tools/test_verify_notices.py -q
+    assertions:
+      - type: exit_code
+        expected: 1
+      - type: stderr_contains
+        expected: "ModuleNotFoundError"
+    verify: "pytest 全红；失败原因一律为 ModuleNotFoundError: verify_notices，不得有语法错误或 fixture 错误"
+
+  - id: "CP-002"
+    description: "GREEN-1 — 清单判定与降级路径"
+    action: |
+      实现 verify_notices.py 的 classify_notice() 与清单解析，覆盖
+      SC-001/002/003/004/005（verified / md5_mismatch / not_in_manifest /
+      manifest_missing / 空清单）。
+    assertions:
+      - type: exit_code
+        expected: 0
+    verify: "TC-NAV-001..005 全绿；空清单与清单缺失的 reason 可区分（SC-005 断言）"
+
+  - id: "CP-003"
+    description: "GREEN-2 — 凭证嗅探、隔离与 .gitignore 覆盖"
+    action: |
+      实现凭证嗅探 + 隔离 + .gitignore 追加 tools/_quarantine/，覆盖 SC-006..011。
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: exit_code
+        expected: 0
+    verify: |
+      TC-NAV-006..011 全绿；git check-ignore -v tools/_quarantine/x 退出码 0；
+      隔离记录仅含 filename / md5_prefix / rule / timestamp 四键
+    assertions_detail:
+      - "SC-006/010：token 字面值 fs9k2m7x4q1w8e5r 不出现在 stdout、stderr、隔离记录"
+      - "SC-007：verified 且含凭证的文件不得进入隔离路径"
+      - "SC-008：5 份真实格式 fixtures 全部登记入清单时隔离数为 0"
+      - "SC-009：隔离区文件字节与原文一致，原位置文件不存在"
+
+  - id: "CP-004"
+    description: "GREEN-3 — CLI 与退出码契约"
+    action: |
+      实现 CLI（--json / --strict）与退出码契约，覆盖 SC-012/013/014/015。
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: exit_code
+        expected: 3
+      - type: exit_code
+        expected: 2
+      - type: stdout_contains
+        expected: "\"exit_code\""
+    verify: |
+      非 strict + unverified → 0；--strict + unverified → 3；隔离 → 2；
+      2 与 3 并存 → 3（strict 优先）；--json 顶层键恰好 4 个（results /
+      quarantined / warnings / exit_code）
+
+  - id: "CP-005"
+    description: "回归保护 — 证明回传链路零改动"
+    action: |
+      实现 SC-016/017/018 断言：回传脚本 diff 为空、P17 计数语义不变、
+      凭证现场文件内容与 mtime 不变。
+    assertions:
+      - type: diff_empty
+        expected: true
+      - type: file_exists
+        expected: true
+      - type: exit_code
+        expected: 0
+    verify: |
+      TC-NEP-001..003 全绿；git diff tools/fstdd003_daily_share.py 为空；
+      _fstdd003_token.txt 内容与 mtime 不变；verify_notices 源码不含
+      _fstdd003_token.txt 字符串
+    assertions_detail:
+      - "SC-016：fstdd003_daily_share.py 不含 X-FSTDD-Token，不含读取 token 文件的代码路径"
+      - "SC-017：两轮运行 submitted 只增不减、无重复经验 id，闸门不写 _fstdd003_share_log.json"
+      - "SC-018：凭证现场文件内容与 mtime 均不变"
+
+  - id: "CP-006"
+    description: "补充边界 + 收尾提交"
+    action: |
+      补齐 3 个补充用例（TC-NAV-016 畸形清单条目 / TC-NAV-017 目录不存在优雅降级 /
+      TC-NAV-018 清单重复登记）；显式路径 git add + commit；确认隔离区未入库；
+      对已提交历史做凭证字面值搜索（TC-NAV-010 第三面）；记录任何偏离到
+      design-adjustments.md（不得静默）。
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: exit_code
+        expected: 0
+    verify: |
+      21 个 TC 全绿；git log -1 显示本变更提交；git status 中 tools/_quarantine/
+      不出现；design-adjustments.md 已含本 Phase 2 的全部偏离记录
+
+rollback:
+  steps:
+    - "git revert <本变更提交>（普通 revert，不 force push；仓库 remote 数 = 0）"
+    - "删除 tools/verify_notices.py 与 tools/test_verify_notices.py"
+    - "从 .gitignore 移除 tools/_quarantine/ 一行（其余 6 行保持不变）"
+    - "tools/_quarantine/ 若非空：先人工确认隔离文件已归档到审计链，再删除目录；不得静默删除"
+    - "无需回滚：tools/fstdd003_daily_share.py（本变更零改动）、.fstdd/_fstdd003_token.txt（保留现场）、自动化 06ec2c4f（本变更不修改）、~/.workbuddy-ai/FSTDD/upstream/（本变更不触碰）"
+  notes: |
+    回滚后系统回到「渠道零防伪」原状，09-18 类伪造通知风险重新存在。
+    因此回滚应视为临时措施，须在回滚回执中向 K 说明闸门未生效的原因。
 
 expected_outcomes:
-  - "TODO: 预期结果 1"
+  - "tools/verify_notices.py 存在，仅依赖 stdlib（hashlib/json/pathlib/re/argparse/shutil），不含任何网络调用"
+  - "tools/test_verify_notices.py 存在，21 个 TC 全绿（RED→GREEN 留痕），其中 P0 十个全绿"
+  - ".gitignore 恰好新增一行 tools/_quarantine/"
+  - "tools/fstdd003_daily_share.py 零改动；.fstdd/_fstdd003_token.txt 内容与 mtime 不变"
+  - "verify_notices 的 stdout / stderr / 隔离记录中不出现任何凭证字面值"
+  - "退出码契约稳定：0 不阻断 / 2 隔离 / 3 strict 阻断（3 优先于 2）"
+  - "不修改 06ec2c4f 自动化、不修改上游代码、不 push、不 git add -A"
+  - "Gate 2 之后所有偏离均已记录到 design-adjustments.md"
