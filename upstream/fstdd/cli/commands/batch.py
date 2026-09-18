@@ -107,7 +107,7 @@ def _create_batch(project_root: Path, strategy: str = "monthly") -> Path:
         "batch_type": strategy,
         "batch_id": batch_id,
         "description": "",
-        "created_at": now.strftime("%Y-%m-%dT%H:%M:%S"),
+        "created_at": utc_now_iso(),
         "closed_at": None,
         "max_items": max_items,
         "items": [],

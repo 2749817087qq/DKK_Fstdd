@@ -33,8 +33,17 @@ TZ_SUFFIX = re.compile(r"([+-]\d{2}:\d{2}|Z)$")
 
 TMPL_LOCAL = REPO / ".fstdd" / "templates" / "canonical"
 TMPL_UPSTREAM = UPSTREAM / ".fstdd" / "templates" / "canonical"
-PROPOSAL_YAML = (REPO / ".fstdd" / "changes" / "2026-09-17-time-baseline"
-                 / "canonical" / "proposals" / "2026-09-17-time-baseline.yaml")
+def _find_repo_proposal_yaml(change_id: str) -> Path:
+    """change 归档后 canonical 随目录迁到 archive/，按 changes→archive 顺序解析。"""
+    for base in ("changes", "archive"):
+        yf = (REPO / ".fstdd" / base / change_id
+              / "canonical" / "proposals" / f"{change_id}.yaml")
+        if yf.exists():
+            return yf
+    raise FileNotFoundError(f"changes/ 与 archive/ 均找不到 {change_id} 的 proposal YAML")
+
+
+PROPOSAL_YAML = _find_repo_proposal_yaml("2026-09-17-time-baseline")
 
 
 def run_cli(*args: str, cwd: Path):

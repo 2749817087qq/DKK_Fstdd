@@ -1,7 +1,7 @@
 batch_id: '2026-09-17'
 batch_type: monthly
 closed_at: '2026-09-17T18:14:42+00:00'
-created_at: '2026-09-17T18:10:42'
+created_at: '2026-09-17T18:10:42+00:00'
 current_phase: understand
 description: inbox_server 按 EXP-ID 覆盖落盘去重（同 ID 重复提交不再堆积时间戳副本；2026-09-17 待审核池 319 文件/50
   唯一 ID 的根治）
