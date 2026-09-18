@@ -1,0 +1,140 @@
+# -*- coding: utf-8 -*-
+"""TC-AUD-001..005 — 吞异常审计表：完整性、零漂移、分类合法、理由覆盖、分级齐备。
+
+审计表是 `.fstdd/changes|archive/<change>/audit/except-points.yaml`，
+由 tools/audit_silent_except.py 的扫描结果人工分类产出。
+本测试组确保证据链可信：表与代码实况零漂移（改代码不改表 = 红）。
+"""
+from __future__ import annotations
+
+import importlib.util
+import sys
+from pathlib import Path
+
+import pytest
+import yaml
+
+REPO = Path(__file__).resolve().parents[2]
+
+AUDIT_MODULE = REPO / "tools" / "audit_silent_except.py"
+VALID_CLASSES = {"合理容错", "意外吞错", "收窄建议"}
+VALID_RESPONSES = {"放行", "加警告", "升级 change"}
+
+
+def _load_audit_module():
+    spec = importlib.util.spec_from_file_location("audit_silent_except", AUDIT_MODULE)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _audit_table_path() -> Path:
+    """change 归档后随目录迁到 archive/，按 changes→archive 顺序解析。"""
+    for base in ("changes", "archive"):
+        p = (REPO / ".fstdd" / base / "2026-09-18-silent-failure-audit"
+             / "audit" / "except-points.yaml")
+        if p.is_file():
+            return p
+    raise FileNotFoundError("changes/ 与 archive/ 均找不到审计表")
+
+
+# --------------------------------------------------------------------------- #
+# TC-AUD-001 — 扫描器与审计表存在且可读
+# --------------------------------------------------------------------------- #
+
+def test_aud_001_scanner_and_table_exist():
+    assert AUDIT_MODULE.is_file(), "缺 tools/audit_silent_except.py 扫描器"
+    table = _audit_table_path()
+    assert table.is_file(), f"缺审计表: {table}"
+    data = yaml.safe_load(table.read_text(encoding="utf-8"))
+    assert data.get("points"), "审计表 points 为空"
+
+
+# --------------------------------------------------------------------------- #
+# TC-AUD-002 — 表与实况扫描零漂移（指纹集合相等 + 行号容差）
+# --------------------------------------------------------------------------- #
+
+def test_aud_002_table_matches_live_scan():
+    mod = _load_audit_module()
+    live = mod.scan()  # 实况扫描
+    table = yaml.safe_load(_audit_table_path().read_text(encoding="utf-8"))
+    recorded = table["points"]
+
+    def keyed(points):
+        """指纹 = (file, stmt, handler, 同指纹序号)。同文件多处 pass 靠序号区分。"""
+        seen: dict = {}
+        out = []
+        for p in points:
+            k = (p["file"], p["stmt"].strip(), p["handler"])
+            n = seen.get(k, 0)
+            seen[k] = n + 1
+            out.append((k, n, p))
+        return out
+
+    live_k = keyed(live)
+    rec_k = keyed(recorded)
+    live_keys = sorted((k, n) for k, n, _ in live_k)
+    rec_keys = sorted((k, n) for k, n, _ in rec_k)
+    assert live_keys == rec_keys, (
+        f"审计表与实况扫描漂移: 新增未记录 {set(live_keys) - set(rec_keys)}; "
+        f"记录了但已消失 {set(rec_keys) - set(live_keys)}"
+    )
+    # 行号容差 ±5（插入代码导致位移可容忍，指纹已保证同一处）
+    live_by_key = {(k, n): p for k, n, p in live_k}
+    for k, n, r in rec_k:
+        l = live_by_key[(k, n)]
+        assert abs(int(r["line"]) - int(l["line"])) <= 5, (
+            f"{r['id']} 行号漂移过大: 表 {r['line']} vs 实况 {l['line']}"
+        )
+
+
+# --------------------------------------------------------------------------- #
+# TC-AUD-003 — 分类合法、理由覆盖率 ≥90%
+# --------------------------------------------------------------------------- #
+
+def test_aud_003_classification_and_justification():
+    table = yaml.safe_load(_audit_table_path().read_text(encoding="utf-8"))
+    pts = table["points"]
+    assert len(pts) >= 25, f"吞异常点异常少: {len(pts)}（观测基线 29）"
+    for p in pts:
+        assert p["classification"] in VALID_CLASSES, (
+            f"{p.get('id')} 分类非法: {p.get('classification')}"
+        )
+        assert p.get("justification", "").strip(), f"{p.get('id')} 缺分类理由"
+    justified = sum(1 for p in pts if p.get("justification", "").strip())
+    assert justified / len(pts) >= 0.9, "理由覆盖率 <90%"
+
+
+# --------------------------------------------------------------------------- #
+# TC-AUD-004 — 吞错点必须有严重度与响应分级；合理容错必须放行
+# --------------------------------------------------------------------------- #
+
+def test_aud_004_severity_and_response_consistency():
+    table = yaml.safe_load(_audit_table_path().read_text(encoding="utf-8"))
+    for p in table["points"]:
+        pid = p.get("id", "?")
+        if p["classification"] == "意外吞错":
+            assert p.get("severity") in ("p1", "p2"), f"{pid} 吞错点缺严重度"
+            assert p.get("response") in VALID_RESPONSES - {"放行"}, (
+                f"{pid} 吞错点不允许「放行」"
+            )
+        elif p["classification"] == "合理容错":
+            assert p.get("response") == "放行", f"{pid} 合理容错应放行"
+        assert p.get("detection_path") in (True, False), f"{pid} 缺 detection_path 标记"
+
+
+# --------------------------------------------------------------------------- #
+# TC-AUD-005 — 检测路径上的吞错点（B3 家族）必须全部被识别
+# --------------------------------------------------------------------------- #
+
+def test_aud_005_detection_paths_flagged():
+    table = yaml.safe_load(_audit_table_path().read_text(encoding="utf-8"))
+    flagged = [
+        p for p in table["points"]
+        if p["classification"] == "意外吞错" and p.get("detection_path")
+    ]
+    files = {Path(p["file"]).name for p in flagged}
+    # 三大检测家族必须有人在册：guard 守卫 / 时效扫描 / 基线与校验
+    assert "guard.py" in files, "guard 检测路径无吞错点在册"
+    assert "check_timestamps.py" in files, "时效扫描路径无吞错点在册"
+    assert flagged, "检测路径吞错点清单为空"
