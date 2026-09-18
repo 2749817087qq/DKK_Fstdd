@@ -1,0 +1,255 @@
+meta:
+  title: 全仓裸 except 吞异常点审计表
+  change: 2026-09-18-detection-silence-fixes
+  refreshed_from: 2026-09-18-silent-failure-audit
+  observed_at: '2026-09-18T03:48:00+00:00'
+  observed_base_git_sha: 3a4ad974beb042db473dbf00780382d8f530f1d8
+  scanner: tools/audit_silent_except.py
+  total: 24
+  by_classification:
+    合理容错: 14
+    意外吞错: 10
+  note: 活表：置于 active change 下由本 change 维护；归档表不动（D6 决策）。行号供定位参考，零漂移校验以 (file, stmt)
+    指纹为准（±5 行容差）
+points:
+- id: EA-026
+  file: tools/check_skill_metadata.py
+  line: 124
+  stmt: return False
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 无 yaml 库时跳过该校验：校验器显式降级并注释说明，可接受
+- id: EA-027
+  file: tools/check_timestamps.py
+  line: 137
+  stmt: continue
+  handler: 'except Exception:'
+  classification: 意外吞错
+  severity: p1
+  response: 升级 change
+  detection_path: true
+  justification: 逐文件扫描遇坏文件 continue → 该文件被静默跳过，扫描覆盖缩水却报「零 naive」。L2 守卫核心路径
+- id: EA-028
+  file: tools/check_timestamps.py
+  line: 186
+  stmt: continue
+  handler: 'except Exception:'
+  classification: 意外吞错
+  severity: p1
+  response: 升级 change
+  detection_path: true
+  justification: change YAML 扫描解析失败跳过：同上，覆盖静默缩水
+- id: EA-029
+  file: tools/check_timestamps.py
+  line: 209
+  stmt: continue
+  handler: 'except Exception:'
+  classification: 意外吞错
+  severity: p1
+  response: 升级 change
+  detection_path: true
+  justification: proposal.md 头 ten 行扫描失败跳过：同上族
+- id: EA-001
+  file: upstream/fstdd/cli/commands/baseline.py
+  line: 88
+  stmt: return {}
+  handler: 'except Exception:'
+  classification: 意外吞错
+  severity: p2
+  response: 加警告
+  detection_path: true
+  justification: 基线 YAML 损坏时当空基线处理：应警告「基线文件损坏」而非静默视同未建立
+- id: EA-002
+  file: upstream/fstdd/cli/commands/baseline.py
+  line: 312
+  stmt: return []
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: true
+  justification: ssh 时钟探测失败返回空读数 → 三态「无法测量」，fail-safe 设计正确（TC-CAL-009 语义）
+- id: EA-003
+  file: upstream/fstdd/cli/commands/batch.py
+  line: 709
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 意外吞错
+  severity: p2
+  response: 加警告
+  detection_path: true
+  justification: batch close 的 Gate 3 确认失败被吞 → 批次闭合但证据链静默缺失。流程检测家族
+- id: EA-004
+  file: upstream/fstdd/cli/commands/canon.py
+  line: 138
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 读取 change task_type 决定 spec 目录：失败按默认 code 处理，信息读取容错
+- id: EA-005
+  file: upstream/fstdd/cli/commands/fix.py
+  line: 63
+  stmt: continue
+  handler: 'except Exception:'
+  classification: 意外吞错
+  severity: p2
+  response: 加警告
+  detection_path: false
+  justification: 批量重写遇坏文件跳过：重写覆盖静默缩水，应计数报告跳过了多少文件
+- id: EA-006
+  file: upstream/fstdd/cli/commands/gate.py
+  line: 153
+  stmt: continue
+  handler: 'except Exception:'
+  classification: 意外吞错
+  severity: p2
+  response: 加警告
+  detection_path: true
+  justification: Gate 2 自动生成 spec Human View 时单条 YAML 失败跳过：该能力 spec 静默缺失，gate 输出仍显示成功数
+- id: EA-010
+  file: upstream/fstdd/cli/commands/guard.py
+  line: 330
+  stmt: return False
+  handler: 'except Exception:'
+  classification: 意外吞错
+  severity: p1
+  response: 升级 change
+  detection_path: true
+  justification: 守卫路径判定 fail-open：异常时 return False = 未受保护文件被放行编辑。守卫必须 fail-closed
+- id: EA-013
+  file: upstream/fstdd/cli/commands/index.py
+  line: 66
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 索引读取 change 状态失败 → phase 显示 unknown，信息展示容错
+- id: EA-014
+  file: upstream/fstdd/cli/commands/init.py
+  line: 198
+  stmt: continue
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 多平台守卫安装探测：单平台异常 continue 试下一平台，设计即探测式
+- id: EA-015
+  file: upstream/fstdd/cli/commands/init.py
+  line: 322
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 读取 IDE settings 探测守卫钩子：探测失败仅少一条状态提示
+- id: EA-016
+  file: upstream/fstdd/cli/commands/knowledge.py
+  line: 151
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 远端知识图谱拉取失败 → 降级本地/空图，多源降级设计
+- id: EA-017
+  file: upstream/fstdd/cli/commands/knowledge.py
+  line: 169
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 本地克隆图读取失败 → 空图兜底，同降级族
+- id: EA-018
+  file: upstream/fstdd/cli/commands/phase.py
+  line: 39
+  stmt: return None
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: batch 助手 import 失败 → 无打开批次，探测式调用
+- id: EA-019
+  file: upstream/fstdd/cli/commands/status.py
+  line: 108
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 意外吞错
+  severity: p1
+  response: 升级 change
+  detection_path: true
+  justification: 僵尸清单：naive last_mod 与 aware now 相减 TypeError 被吞 → 该 change 永不进僵尸列表。B3
+    实例
+- id: EA-020
+  file: upstream/fstdd/cli/commands/status.py
+  line: 125
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 守卫激活状态展示（Claude 源）：解析失败落到 OpenCode/Codex 源继续探测，有兜底
+- id: EA-021
+  file: upstream/fstdd/cli/commands/status.py
+  line: 135
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 守卫激活状态展示（OpenCode 源）：展示型检测，失败只是少一条 ✅ 提示
+- id: EA-022
+  file: upstream/fstdd/cli/commands/validate.py
+  line: 106
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 意外吞错
+  severity: p1
+  response: 升级 change
+  detection_path: true
+  justification: 基线状态读取失败 → 基线完整性警告整体丢失，validate 报得比实际干净。B3 家族
+- id: EA-023
+  file: upstream/fstdd/cli/commands/work.py
+  line: 35
+  stmt: return None
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 同 phase.py：_find_open_batch 探测容错
+- id: EA-024
+  file: upstream/fstdd/cli/utils.py
+  line: 106
+  stmt: return None
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 版本探测读取失败 → None 版本，信息展示容错
+- id: EA-025
+  file: upstream/fstdd/cli/utils.py
+  line: 119
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: version 文件 YAML 解析失败 → 继续其他探测路径

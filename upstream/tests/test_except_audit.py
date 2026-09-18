@@ -29,12 +29,12 @@ def _load_audit_module():
 
 
 def _audit_table_path() -> Path:
-    """change 归档后随目录迁到 archive/，按 changes→archive 顺序解析。"""
+    """活表优先：changes 下任一 change 的 audit/except-points.yaml（字典序首个），
+    其次 archive 兜底。表随维护 change 迁移，不硬编码 change id。"""
     for base in ("changes", "archive"):
-        p = (REPO / ".fstdd" / base / "2026-09-18-silent-failure-audit"
-             / "audit" / "except-points.yaml")
-        if p.is_file():
-            return p
+        hits = sorted((REPO / ".fstdd" / base).glob("*/audit/except-points.yaml"))
+        if hits:
+            return hits[0]
     raise FileNotFoundError("changes/ 与 archive/ 均找不到审计表")
 
 
@@ -95,7 +95,9 @@ def test_aud_002_table_matches_live_scan():
 def test_aud_003_classification_and_justification():
     table = yaml.safe_load(_audit_table_path().read_text(encoding="utf-8"))
     pts = table["points"]
-    assert len(pts) >= 25, f"吞异常点异常少: {len(pts)}（观测基线 29）"
+    # 数量下限是「扫描器没跑成」的哨兵：观测基线 29，detection-silence-fixes
+    # 修复 5 点后降至 24，后续随修复继续下降。显著低于 20 才说明扫描器漏扫。
+    assert len(pts) >= 20, f"吞异常点异常少: {len(pts)}（观测基线 29，修复后递减）"
     for p in pts:
         assert p["classification"] in VALID_CLASSES, (
             f"{p.get('id')} 分类非法: {p.get('classification')}"

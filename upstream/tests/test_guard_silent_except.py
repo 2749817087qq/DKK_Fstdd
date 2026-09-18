@@ -26,11 +26,12 @@ def _load():
 
 
 def _table_path() -> Path:
+    """活表优先：changes 下任一 change 的 audit/except-points.yaml（字典序首个），
+    其次 archive 兜底。表随维护 change 迁移，不硬编码 change id。"""
     for base in ("changes", "archive"):
-        p = (REPO / ".fstdd" / base / "2026-09-18-silent-failure-audit"
-             / "audit" / "except-points.yaml")
-        if p.is_file():
-            return p
+        hits = sorted((REPO / ".fstdd" / base).glob("*/audit/except-points.yaml"))
+        if hits:
+            return hits[0]
     raise FileNotFoundError("审计表不存在")
 
 

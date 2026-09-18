@@ -113,8 +113,13 @@ def _count_changed_files(project_root: Path) -> int:
         if result.returncode == 0:
             files = [f for f in result.stdout.strip().split("\n") if f]
             return len(files)
-    except Exception:
-        pass
+        import sys as _sys
+        print("  guard-warn: git diff 失败（非 git 仓库或无提交），变更计数不可用，按 0 处理",
+              file=_sys.stderr)
+    except Exception as e:
+        import sys as _sys
+        print(f"  guard-warn: git diff 异常（{type(e).__name__}），变更计数不可用，按 0 处理",
+              file=_sys.stderr)
     return 0
 
 
@@ -136,6 +141,8 @@ def _check_file_type_mismatch(project_root: Path, task_type: str) -> tuple:
             timeout=5,
         )
         if result.returncode != 0:
+            import sys as _sys
+            print("  guard-warn: git diff 失败，task_type 占比检测跳过", file=_sys.stderr)
             return False, ""
 
         files = [f for f in result.stdout.strip().split("\n") if f]
@@ -147,8 +154,9 @@ def _check_file_type_mismatch(project_root: Path, task_type: str) -> tuple:
                 f"⚠️  task_type='{task_type}' 但已修改 {len(code_files)} 个代码文件 "
                 f"({int(code_ratio * 100)}%)。建议转为 code change 或新开 code change 管理代码修改。"
             )
-    except Exception:
-        pass
+    except Exception as e:
+        import sys as _sys
+        print(f"  guard-warn: task_type 占比统计异常（{type(e).__name__}），检测跳过", file=_sys.stderr)
     return False, ""
 
 
@@ -179,6 +187,11 @@ def _find_open_batch(project_root: Path):
 
 _ZOMBIE_DAYS = 7  # V3.0.1: changes inactive > 7 days are considered zombie
 
+def _utc(dt):
+    """naive -> UTC 归一（写入方即 UTC，D2 决策）；aware 原样返回。"""
+    from datetime import timezone as _tz
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=_tz.utc)
+
 
 def _is_zombie(change_dir: Path) -> bool:
     """Check if a change is zombie (stale > ZOMBIE_DAYS without phase progress)."""
@@ -192,11 +205,13 @@ def _is_zombie(change_dir: Path) -> bool:
     if not last_mod:
         return False
     try:
-        lm = _dt.fromisoformat(last_mod)
+        lm = _utc(_dt.fromisoformat(last_mod))
         if _dt.now(_tz.utc) - lm > _td(days=_ZOMBIE_DAYS):
             return True
     except Exception:
-        pass
+        import sys as _sys
+        print(f"  guard-warn: {change_dir.name} last_modified 不可解析，僵尸判定跳过",
+              file=_sys.stderr)
     return False
 
 
@@ -517,20 +532,20 @@ def _check_phase_integrity_guard(project_root: Path) -> list[str]:
         now = _dt.now(_tz.utc)
         if build_done and not deliver_done:
             try:
-                bt = _dt.fromisoformat(build_time)
+                bt = _utc(_dt.fromisoformat(build_time))
                 hours = (now - bt).total_seconds() / 3600
                 if hours > 24:
                     warnings.append(f"  ⚠️ {change_dir.name}: Build完成 {hours:.0f}h 但 DELIVER 尚未开始（需 Gate 3 + test-report.md）")
             except Exception:
-                pass
+                warnings.append(f"  ⚠️ {change_dir.name}: build completed_at 不可解析（{build_time!r}），滞后检测跳过")
         if spec_done and not build_done:
             try:
-                st = _dt.fromisoformat(spec_time)
+                st = _utc(_dt.fromisoformat(spec_time))
                 hours = (now - st).total_seconds() / 3600
                 if hours > 24:
                     warnings.append(f"  ⚠️ {change_dir.name}: Spec完成 >24h 但 Build 尚未开始")
             except Exception:
-                pass
+                warnings.append(f"  ⚠️ {change_dir.name}: spec completed_at 不可解析（{spec_time!r}），滞后检测跳过")
     return warnings
 
 
@@ -776,6 +791,13 @@ def cmd_guard_status(args: argparse.Namespace) -> None:
         print(f"    active change:  {active_dir.name} (phase: {phase}) — {status}")
     else:
         print("    active change:  None — 🔒 只读")
+
+    # F-2 接线：滞后检测接入状态输出（不接 guard check 热路径，D4 决策）
+    lag_warnings = _check_phase_integrity_guard(project_root)
+    if lag_warnings:
+        print("  Phase Lag 警告:")
+        for w in lag_warnings:
+            print(w)
 
 
 def _write_guard_settings(settings_file: Path, guard_cmd: str) -> None:
