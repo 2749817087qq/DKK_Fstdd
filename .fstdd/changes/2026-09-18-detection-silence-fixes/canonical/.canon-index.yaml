@@ -1,0 +1,6 @@
+designs: {}
+proposals:
+  2026-09-18-detection-silence-fixes: proposals/2026-09-18-detection-silence-fixes.yaml
+specs:
+  code: {}
+version: '2.9'
