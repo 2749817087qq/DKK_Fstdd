@@ -147,8 +147,21 @@ class TestCArchive:
         a = self._archive()
         if a is None or not OUTSIDE.exists():
             pytest.skip("归档或原目录不存在（可能已被清理）")
-        n_src = sum(1 for p in OUTSIDE.rglob("*") if p.is_file())
-        n_dst = sum(1 for p in a.rglob("*") if p.is_file())
+
+        def _content_files(root: Path):
+            """只数内容文件：排除 VCS 元数据（.git 目录）。
+
+            .git 是版本库元数据、不是被归档的内容；且它会随
+            「在该目录里 git init/加 remote」这类外部动作自行出现或变化，
+            与「归档是否完整」无关（实测 2026-09-18：源多出 .git/config 一份）。
+            """
+            return [
+                p for p in root.rglob("*")
+                if p.is_file() and ".git" not in p.relative_to(root).parts
+            ]
+
+        n_src = len(_content_files(OUTSIDE))
+        n_dst = len(_content_files(a))
         assert n_dst == n_src, "归档文件数 %d != 源文件数 %d" % (n_dst, n_src)
 
     def test_c3_source_not_deleted(self):
