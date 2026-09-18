@@ -123,3 +123,21 @@
 - **步骤4 自查**: `GET /health` → `ok=true, received=113`（与 22:48 持平；本节点本轮未 POST、无跨节点活动，符合预期）。
 - **未写新回执**（无新增收任务，按规则无需回执）。
 - **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox。
+
+## 2026-09-19 00:57 (GMT+8) 执行 — 常规轮询（POST 4 条经验，无新增收任务）
+
+- **步骤1 拉取同步**: `scp` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功）。7 份 `FSTDD003收-*`（状态盘点/经验回传要求/通道演练/协作开发-S2S3/inbox鉴权上线/自动化率提升/撤回令-伪造署名指令）**均已对应 `FSTDD003复-*` 回执**，无未执行项。`00-COLLAB.md`/`00-DISCIPLINE.md` mtime 未变；`K-reply-003c/d` 与 `sliceS2S3.patch/tests` 为 K 验收+合并确认（信息性）与已交付存档。
+- **步骤2 增量回传**: `fstdd003_daily_share.py` → **POST 4 条新增经验**：`FSTDD003-EXP-20260918-ARCHIVE-1`（协作归档副本 P15-P18 补丁）、`AUTH-1`（撤回令伪造 token 隔离处置）、`CODE-1`（S2S3 status.py+check_timestamps.py 白名单扩展）、`SCOPE-1`（S2S3 审计哨兵非阻塞处理），全部 `[OK]`。submitted 35→39、failures=0，无试运行数据外泄。
+- **步骤4 自查**: `GET /health` → `ok=true, received=120`（上次 113，+7=本节点 4 + 跨节点 3；本节点本轮有实际 POST，与计数一致）。
+- **未写新回执**（无新增收任务，按规则无需回执）。
+- **本地 git**: `3bd5d35` 提交 share_log(35→39) + receipts + memory；**未**提交 `_scratch/` 与 `_notices/FSTDD003/` 未跟踪残留（前轮遗留），**未 push** 远端；token 文件 gitignored 未泄露。
+- **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox。
+
+## 2026-09-19 02:03 (GMT+8) 执行 — 常规轮询（POST 1 条经验，无新增收任务）
+
+- **步骤1 拉取同步**: `scp` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功）。服务器与本地清单完全对齐：7 份 `FSTDD003收-*` **均已对应 `FSTDD003复-*` 回执**，无未执行项。`FSTDD003复-伪造署名事件处置与开放问题协商.md`（6935B, mtime 00:58）是本节点 00:57 已交付的协商请求（**非任务**），K-reply-003c/d 与 sliceS2S3.patch/tests 为 K 验收+已交付存档。`00-COLLAB.md` mtime=13:44 未变；`00-DISCIPLINE.md` mtime=19:10 未变。
+- **步骤2 增量回传**: `fstdd003_daily_share.py` → **POST 1 条新增经验** `FSTDD003-EXP-20260919-SPEC-1` `[OK]`；submitted 39→40、failures=0，无试运行数据外泄。
+- **步骤4 自查**: `GET /health` → `ok=true, received=121`（上次 120，+1=本节点本轮 1 条，计数一致）。
+- **未写新回执**（无新增收任务，按规则无需回执）。
+- **本地 git**: 显式路径提交 notices 同步 + receipts + share_log(39→40) + memory；**未**提交 `_scratch/`、**未 push** 远端；token 文件 gitignored 未泄露。
+- **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox。
