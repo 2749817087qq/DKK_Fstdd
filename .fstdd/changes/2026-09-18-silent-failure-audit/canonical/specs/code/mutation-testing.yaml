@@ -1,0 +1,47 @@
+# spec.yaml - 行为规格（Canonical YAML）
+meta:
+  capability: "mutation-testing"
+  change_id: "2026-09-18-silent-failure-audit"
+  created: "2026-09-18T00:50:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-010
+    description: "关键检测路径各有 ≥1 个变异测试，注入已知缺陷必红"
+    scenarios:
+      - id: SC-010
+        confidence: high
+        evidence: "EXP-20260917-B3：guard 僵尸/卡壳检测全哑但正常路径测试在跑——覆盖率≠有效性"
+        given: "关键检测路径：guard 僵尸检测、guard 卡壳检测、check_timestamps L1 值层、check_timestamps L2 源层、validate 基线警告"
+        when: "向其依赖注入一个已知必触发该检测的缺陷"
+        then: "检测报出（红）"
+        and:
+          - "每个路径的变异测试可独立运行（pytest -k 可选中）"
+      - id: SC-011
+        confidence: high
+        evidence: "EXP-20260917-A3：恢复现场不得写成正常路径最后一步"
+        given: "变异测试执行完毕（无论断言成败）"
+        when: "检查被测环境状态"
+        then: "注入的缺陷已恢复（try/finally），后续测试不受污染"
+        and:
+          - "恢复后检测恢复绿（变异测试双自证的后半段）"
+      - id: SC-012
+        confidence: medium
+        evidence: "项目经验：测试绿了 ≠ 断言有效"
+        given: "一个变异测试"
+        when: "审查其有效性"
+        then: "含双自证：注入后必红 + 恢复后必绿"
+        and:
+          - "自证逻辑内联在同一条用例里（不接受「另一个测试验过它」）"
+  - id: REQ-011
+    description: "注入方式必须是真实代码路径上的真实缺陷，不得打桩绕过被检测逻辑"
+    scenarios:
+      - id: SC-013
+        confidence: high
+        evidence: "EXP-20260917-B2：注入式单测抓不到真值路径的时钟基准错误——桩掉关键调用等于没测"
+        given: "变异测试设计"
+        when: "选择注入手段"
+        then: "优先选择 monkeypatch 被测代码的内部依赖或临时写入缺陷数据"
+        and:
+          - "不得 mock 掉被检测的函数本身（否则检测永远没机会执行）"
+          - "注入点即真实执行路径上的点"

@@ -1,0 +1,115 @@
+# 2026-09-18-silent-failure-audit.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-09-18-silent-failure-audit"
+  title: "静默失效系统性排查：让每个「零命中」的检测都证明自己在干活"
+  created: "2026-09-18T08:34:35+08:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    检测/校验/告警逻辑被 `except` 吞掉异常后会**静默全哑**——不报错、不告警、
+    输出看起来一切正常，但保护早已失效。这是比崩溃更糟的失败形态：
+    崩溃至少告诉你坏了，静默失效让你**以为**有保护。
+
+    这不是假想。2026-09-17 的 time-baseline change 全量回归抓出实证（EXP-20260917-B3）：
+
+      - `upgrade.py:340` 与 `guard.py:196,517` 三处写成 `_dt.now(_dt.timezone.utc)`
+        （`_dt` 是 datetime **类**、timezone 是**模块**属性）→ 必抛 AttributeError
+      - 全部被外层 `except Exception` 吞掉 → **guard 的僵尸 change 检测与卡壳检测
+        长期全哑，无人知晓**；直到真实路径被测试执行才暴露
+      - 更隐蔽的是：静态检测器（check_timestamps L2）只查「now() 是否带时区参数」
+        的**形态**，`_dt.timezone.utc` 形态上"正确"——检测器给了假安全感
+
+    而这类点位全仓有多少？2026-09-18T08:34Z 只读实测（观测时 HEAD = 6c5d390）：
+
+      | 统计口径 | 数量 |
+      |---|---|
+      | `except [Exception]` 块首语句为 pass/continue/空返回 的总点位 | **29 处 / 16 个文件** |
+      | 其中文件名含检测语义的（check/verify/guard/validate…） | **11 处 / 4 个文件** |
+      | 密度最高 | guard.py 6 处、status.py 3 处、check_timestamps.py 3 处 |
+
+    29 处中大部分是**合理的**（探测类操作失败返回 None，如 ssh 不可达），
+    但「合理」目前只靠读代码的人眼判断——没有任何机制区分
+    「故意容错」与「意外吞错」。这正是 A1 经验的同族问题：
+    工具自身故障与产物缺陷不可区分。
+
+    危害是**复利式**的：每多一处哑检测，用户对「绿」的信任就被稀释一分；
+    当真正的缺陷出现时，它混在一片假绿里没人看。
+
+  motivation: |
+    为什么现在做：
+
+      1. **伤口还热** —— B3 是 24 小时前刚花真金白银学到的教训
+         （guard 两条检测线全哑），同类模式未排查
+      2. **刚落地的防线需要自证** —— time-baseline 交付了 check_timestamps
+         检测器、baseline 巡检三态、宪法第 7 节时效要求；这些**新防线本身**
+         也是 except 包裹的检测逻辑，同样需要证明"红的时候真的红"
+      3. **规模可控** —— 29 处点位，逐个审计 + 关键路径变异测试，一个
+         standard 级 change 装得下；拖下去点位只会更多
+      4. **方法论可复用** —— 产出「哑检测排查清单 + 变异测试模板」，
+         沉淀为经验与工具，后续每个新检测逻辑照单验收
+
+  evidence:
+    observed_at: "2026-09-18T08:34:00+08:00"
+    observed_base_git_sha: "6c5d390"
+    details: |
+      全部为本机只读实测，观测时刻 **2026-09-18T08:34+08:00**，观测时 HEAD = `6c5d390`。
+
+      **(1) B3 实证（前 change 全量回归输出）**
+
+      ```
+      AttributeError: type object 'datetime.datetime' has no attribute 'timezone'
+        upgrade.py:340  ← _write_upgrade_notes 的 upgraded_at
+      ```
+      guard.py 两处（196/517）无直接测试覆盖，靠修复后同模式 grep 全仓补抓。
+
+      **(2) 全仓吞异常点盘点（本次观测）**
+
+      扫描口径：`upstream/fstdd` + `tools/` 全部 .py；
+      `except [Exception]` 块且首语句为 pass / continue / return None 等空操作。
+      结果：**29 处 / 16 个文件**；含检测语义的 11 处 / 4 个文件。
+
+      按文件分布 top：guard.py 6、status.py 3、check_timestamps.py 3、
+      utils.py 2、baseline.py 2、init.py 2、knowledge.py 2，其余各 1。
+
+      **(3) 现有防线的盲区**
+
+      check_timestamps L2 对 `_dt.timezone.utc` 零告警（形态合法）——
+      证明静态形态检查不足以发现语义级静默失效，需要行为级证据（变异测试）。
+
+what_changes:
+  - description: "29 处吞异常点位逐个审计，分类为「故意容错」/「意外吞错」/「需收窄异常类型」，意外吞错处修复并补测试"
+    rationale: "盘点已给出完整清单；审计是逐个读上下文的人肉判断 + 真跑代码路径验证"
+  - description: "对 ≥3 处关键检测路径建立变异测试（注入已知缺陷验证检测真的会红）"
+    rationale: "B3 的教训：静态检查给假安全感，只有行为级证据能证明检测在干活；覆盖 guard 僵尸/卡壳检测、check_timestamps、validate 基线警告"
+  - description: "新增 tools/audit_silent_except.py：枚举吞异常点位并强制要求逐条标注豁免理由（带理由清单入仓），无理由的新增点位在 CI 报出"
+    rationale: "把「人肉记得检查」变成「工具强制检查」，防新增回潮"
+  - description: "except 块内一律留痕（logger.debug 最低限度），禁止裸 pass 出现在检测/校验函数"
+    rationale: "让异常至少可见；与宪法第 7 节「检测静默失效」精神一致"
+  - description: "方法论沉淀：经验条目 + stdd-build skill 的验收清单增项（新检测逻辑必须附变异测试）"
+    rationale: "A1/B3 的复用：每个新检查上线前证明它能响"
+
+out_of_scope:
+  - "上游仓库（leonai42/stdd）的同类问题——只治 FSTDD 自有层"
+  - "把 29 处全部消除——探测类合理容错保留，本 change 管「分类与证明」不管「清零」"
+  - "崩溃恢复/重试策略设计——那是健壮性专题，非本 change 范围"
+
+success_criteria:
+  - "29 处点位 100% 有审计结论（容错豁免 / 修复 / 收窄异常类型），逐条记录理由"
+  - "关键检测路径（guard 僵尸/卡壳、check_timestamps L1/L2、validate 基线警告）各有 ≥1 个变异测试，注入已知缺陷必红"
+  - "audit_silent_except.py 入仓并纳入 CI：未标注理由的新增吞异常点被报出（含自证：对当前 29 处全过）"
+  - "全量工程测试无回归（基线 692 passed / 694 collected）"
+  - "经验条目入库（.fstdd/experiences/EXP-20260918-*.md），stdd-build 验收清单增项落地"
+
+constraints:
+  - "审计脚本只读：枚举与报告不得修改被审计文件"
+  - "修复不得改变既有检测的判定语义——只修「异常被吞」和「检测本身写错」，不改「检测标准松紧」"
+  - "变异测试注入的缺陷必须 try/finally 恢复（EXP-20260917-A3），恢复现场不得写成正常路径最后一步"
+  - "合理容错（探测类返回 None）不得为了「清零」而删——删除需说明行为变化"
+
+risks:
+  - "29 处中可能还有 B3 同类已哑检测，修复时暴露连锁测试失败 → 预期内，逐处按 TDD 处理"
+  - "变异测试写错（注入失败或恢复失败）会造成假信心 → 每个变异测试先自证：注入后检测必红、恢复后必绿"
