@@ -44,5 +44,5 @@ curl -X POST http://43.134.236.80:8787/api/share-experience \
 ## 你的凭证
 
 ```
-64fd04209e37b28523139bca2224739c9e20025d197fa4f85c2e52c61b8a8f66
+<REDACTED-REVOKED-TOKEN>
 ```
