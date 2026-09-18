@@ -1,0 +1,21 @@
+batch_id: '2026-09-18'
+batch_type: monthly
+closed_at: '2026-09-18T00:37:52+00:00'
+created_at: '2026-09-18T00:36:30'
+current_phase: understand
+description: skill 交互修复：AskUserQuestion 选项必须保留自由文本入口（D哥 反馈：选项卡里没有提交其他建议的对话框，只能一直点选项）
+items:
+- added_at: '2026-09-18T00:37:41+00:00'
+  description: stdd-spec Step 8 选项清单加「✏️ 其他建议（自由输入）」+ 交互铁律（AskUserQuestion 必须留自由文本入口，UI
+    不支持则改用纯文本提问）；stdd-build 运行协议增第 8 条同规则
+max_items: 20
+mode: batch
+phases:
+  build:
+    status: pending
+  deliver:
+    status: pending
+  spec:
+    status: pending
+  understand:
+    status: pending
