@@ -95,9 +95,9 @@ def test_aud_002_table_matches_live_scan():
 def test_aud_003_classification_and_justification():
     table = yaml.safe_load(_audit_table_path().read_text(encoding="utf-8"))
     pts = table["points"]
-    # 数量下限是「扫描器没跑成」的哨兵：观测基线 29，detection-silence-fixes
-    # 修复 5 点后降至 24，后续随修复继续下降。显著低于 20 才说明扫描器漏扫。
-    assert len(pts) >= 20, f"吞异常点异常少: {len(pts)}（观测基线 29，修复后递减）"
+    # 数量下限只是「扫描器没跑成」的哨兵：观测基线 29，随每轮失败有声改造
+    # 单调递减（detection-silence-fixes 已修复 11 点 → 18）。低于 10 说明漏扫。
+    assert len(pts) >= 10, f"吞异常点异常少: {len(pts)}（观测基线 29，修复后递减）"
     for p in pts:
         assert p["classification"] in VALID_CLASSES, (
             f"{p.get('id')} 分类非法: {p.get('classification')}"
