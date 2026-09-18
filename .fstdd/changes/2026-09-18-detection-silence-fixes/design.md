@@ -56,3 +56,11 @@ guard.py:315 经实现前实证（except 路径 `return False` = 不放行 =
 - 单元级：capfd 断言 stderr 警告，或返回值/报告字段。
 - 端到端：F-1（status CLI）、F-2（guard status CLI）CLI 级验证。
 - 审计表刷新后哨兵 `--check` 通过作为 XCUT 门槛。
+
+## 实施期决策补充（2026-09-18 Slice 1 后）
+
+- **D8 审计活表迁移**：哨兵/审计测试原硬编码 silent-failure-audit 的表路径。
+  本 change 修复 5 个吞异常点后归档表必然漂移，而 D6 禁止回改归档表。
+  定案：活表置于 active change（`changes/2026-09-18-detection-silence-fixes/audit/except-points.yaml`，
+  指纹合并自归档表，24 点），两处测试改为 `changes→archive` 字典序 glob 解析，
+  不硬编码 change id；表随维护 change 迁移。aud_003 数量下限 29→20（修复递减语义）。
