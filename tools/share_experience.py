@@ -113,6 +113,30 @@ FILE_EXTS = {
     "sock", "pid", "so", "dll", "dylib", "conf", "service", "socket",
 }
 
+# 已知域名后缀白名单 —— 域名脱敏采用「宁漏勿误」策略：TLD 不在本表中的一律保留原文。
+#
+# 原因：域名正则 `\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b` 会把「标识符.方法名」整类吃掉，
+# 实测被误杀的包括 sqlite3.connect / conn.execute / time.monotonic / re.compile /
+# rsplit / timezone 等公开技术标识符。这些内容被替换后，经验文档的技术内核会
+# 整段失效（曾经把两篇经验的根因代码块和唯一修复方案全吃成 <DOMAIN>）。
+#
+# 判据（见 EXP-20260915-B3）：**漏脱敏可补救，误脱敏不可逆**。
+# 内网域名由专门的规则（local/internal/corp/lan）先行处理，不依赖本表。
+KNOWN_TLDS = {
+    # 通用顶级域
+    "com", "net", "org", "edu", "gov", "mil", "int",
+    # 国别/地区
+    "cn", "hk", "tw", "mo", "jp", "kr", "sg", "uk", "us", "de", "fr", "ru",
+    "au", "ca", "in", "it", "es", "nl", "se", "ch",
+    # 常用新通用域
+    "io", "dev", "ai", "app", "co", "me", "info", "biz", "tech", "cloud",
+    "xyz", "online", "site", "top", "shop", "store", "wiki", "blog", "work",
+    # 组合国别域
+    "com.cn", "net.cn", "org.cn", "co.uk", "com.hk",
+    # 内网域（防御性保留，正常由内网域名规则先行命中）
+    "local", "internal", "corp", "lan", "intranet",
+}
+
 # 脱敏规则：(正则, 替换, 说明)
 SANITIZE_RULES: list[tuple[re.Pattern, str, str]] = [
     # 凭证类优先（避免被后续规则切碎）
@@ -155,6 +179,10 @@ def sanitize(text: str, enabled: bool = True) -> tuple[str, list[str]]:
         if tld in FILE_EXTS:          # 形如 README.md / design.yaml
             return raw
         if d in PUBLIC_DOMAINS:
+            return raw
+        # 宁漏勿误：TLD 不在已知后缀表里的（sqlite3.connect / conn.execute /
+        # time.monotonic 这类「标识符.方法名」）一律保留 —— 误脱敏不可逆。
+        if tld not in KNOWN_TLDS:
             return raw
         hits.append("域名")
         return "<DOMAIN>"
