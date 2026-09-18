@@ -12,7 +12,12 @@ design_adjustments:
 mode: standard
 phases:
   build:
-    status: pending
+    confirmed_actor: ai
+    confirmed_at: '2026-09-18T01:30:42+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 对 Gate 3 回复『Please continue』确认（2026-09-18 对话）：全量 711 passed
+      零失败（首个全绿）；EOL 7/7；哨兵通过；审计表 29 点全覆盖零漂移；TDD 抓获 F-1 活跃豁免/F-2 零接线两 P1
+    status: completed
   deliver:
     status: pending
   spec:
@@ -30,7 +35,7 @@ phases:
       08:45+08:00 对话）
     status: completed
 score_confidence: null
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 0
