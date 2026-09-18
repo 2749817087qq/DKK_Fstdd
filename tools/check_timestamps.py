@@ -173,49 +173,63 @@ def _walk_yaml_values(node: object, path: str, out: list[tuple[str, str]]):
 
 
 def scan_change_values(repo: Path) -> list[dict]:
-    """L1 值层：活跃 change 的 .fstdd.yaml + canonical YAML 的所有字符串值。"""
+    """L1 值层：活跃 change 的 .fstdd.yaml + canonical YAML 的所有字符串值。
+    COV-001: YAML 解析失败的 change 文件 → 记 scan_error（不再静默跳过）。
+    """
     import yaml
 
-    violations: list[dict] = []
+    items: list[dict] = []
     changes = repo / ".fstdd" / "changes"
     if not changes.is_dir():
-        return violations
+        return items
     for yf in sorted(changes.rglob("*.yaml")) + sorted(changes.rglob("*.yml")):
         try:
             data = yaml.safe_load(yf.read_text(encoding="utf-8"))
-        except Exception:
+        except Exception as e:
+            items.append({
+                "location": str(yf.relative_to(repo)),
+                "category": "scan_error",
+                "reason": f"YAML 解析失败: {e}",
+            })
             continue
         pairs: list[tuple[str, str]] = []
         _walk_yaml_values(data, "$", pairs)
         for path, value in pairs:
             if is_naive_timestamp(value):
-                violations.append({
+                items.append({
                     "location": f"{yf.relative_to(repo)} {path}",
                     "category": "naive_value",
                     "snippet": value[:120],
                 })
-    return violations
+    return items
 
 
 def scan_human_view_headers(repo: Path) -> list[dict]:
-    """L1 值层：Human View 头部 generated_at 注释。"""
-    violations: list[dict] = []
+    """L1 值层：Human View 头部 generated_at 注释。
+    COV-002: proposal.md 不可读 → 记 scan_error（不再静默跳过）。
+    """
+    items: list[dict] = []
     changes = repo / ".fstdd" / "changes"
     if not changes.is_dir():
-        return violations
+        return items
     for md in sorted(changes.rglob("proposal.md")):
         try:
             head = "\n".join(md.read_text(encoding="utf-8").splitlines()[:10])
-        except Exception:
+        except Exception as e:
+            items.append({
+                "location": str(md.relative_to(repo)),
+                "category": "scan_error",
+                "reason": f"proposal.md 读取失败: {e}",
+            })
             continue
         m = re.search(r"generated_at:\s*([0-9T:.+-]+)", head)
         if m and not _TZ_SUFFIX.search(m.group(1)):
-            violations.append({
+            items.append({
                 "location": f"{md.relative_to(repo)} <!-- generated_at -->",
                 "category": "naive_value",
                 "snippet": m.group(1),
             })
-    return violations
+    return items
 
 
 def find_stale_exemptions(root: Path) -> list[str]:
@@ -234,7 +248,9 @@ def find_stale_exemptions(root: Path) -> list[str]:
 
 
 def full_scan(repo: Path) -> dict:
-    """TC-TSN-007：全仓扫描（只读）。返回违规清单 + naive 计数 + 显式范围。"""
+    """TC-TSN-007：全仓扫描（只读）。返回违规清单 + naive 计数 + 显式范围 + scan_errors。
+    COV-003: 新增 scan_errors 键单列扫描失败；naive_count / violations 语义不回归。
+    """
     repo = repo.resolve()
     scopes = [
         "L1 .fstdd/changes/**/.fstdd.yaml（活跃 change 状态文件）",
@@ -244,18 +260,22 @@ def full_scan(repo: Path) -> dict:
         "L2 upstream/fstdd/**/*.py（CLI 源码）",
         "L2 tools/*.py（工具脚本）",
     ]
-    violations = []
-    violations += scan_change_values(repo)
-    violations += scan_human_view_headers(repo)
+    items: list[dict] = []
+    items += scan_change_values(repo)
+    items += scan_human_view_headers(repo)
     src_root = repo / "upstream" / "fstdd"
     if src_root.is_dir():
-        violations += scan_sources(src_root)["violations"]
+        items += scan_sources(src_root)["violations"]
     tools_root = repo / "tools"
     if tools_root.is_dir():
-        violations += scan_sources(tools_root)["violations"]
+        items += scan_sources(tools_root)["violations"]
+    # D5: scan_error 单列，不污染 naive_count / violations 语义
+    scan_errors = [i for i in items if i.get("category") == "scan_error"]
+    violations = [i for i in items if i.get("category") != "scan_error"]
     return {
         "naive_count": len(violations),
         "violations": violations,
+        "scan_errors": scan_errors,
         "scopes": scopes,
     }
 

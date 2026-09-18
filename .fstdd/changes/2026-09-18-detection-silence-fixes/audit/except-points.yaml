@@ -5,12 +5,19 @@ meta:
   observed_at: '2026-09-18T03:48:00+00:00'
   observed_base_git_sha: 3a4ad974beb042db473dbf00780382d8f530f1d8
   scanner: tools/audit_silent_except.py
-  total: 24
+  total: 18
   by_classification:
-    合理容错: 14
-    意外吞错: 10
-  note: 活表：置于 active change 下由本 change 维护；归档表不动（D6 决策）。行号供定位参考，零漂移校验以 (file, stmt)
-    指纹为准（±5 行容差）
+    合理容错: 13
+    意外吞错: 5
+  note: 活表：置于 active change 下由本 change 维护；归档表不动（D6 决策）。S1/S2S3/S4a 共修复 11 个点（本表已移除），行号随代码变动刷新，零漂移校验以
+    (file, stmt) 指纹为准（±5 行容差）
+  voiced_by_change:
+  - EA-001 upstream/fstdd/cli/commands/baseline.py:88
+  - EA-003 upstream/fstdd/cli/commands/batch.py:709
+  - EA-021 upstream/fstdd/cli/commands/status.py:135
+  - EA-022 upstream/fstdd/cli/commands/validate.py:106
+  - EA-028 tools/check_timestamps.py:186
+  - EA-029 tools/check_timestamps.py:209
 points:
 - id: EA-026
   file: tools/check_skill_metadata.py
@@ -32,39 +39,9 @@ points:
   response: 升级 change
   detection_path: true
   justification: 逐文件扫描遇坏文件 continue → 该文件被静默跳过，扫描覆盖缩水却报「零 naive」。L2 守卫核心路径
-- id: EA-028
-  file: tools/check_timestamps.py
-  line: 186
-  stmt: continue
-  handler: 'except Exception:'
-  classification: 意外吞错
-  severity: p1
-  response: 升级 change
-  detection_path: true
-  justification: change YAML 扫描解析失败跳过：同上，覆盖静默缩水
-- id: EA-029
-  file: tools/check_timestamps.py
-  line: 209
-  stmt: continue
-  handler: 'except Exception:'
-  classification: 意外吞错
-  severity: p1
-  response: 升级 change
-  detection_path: true
-  justification: proposal.md 头 ten 行扫描失败跳过：同上族
-- id: EA-001
-  file: upstream/fstdd/cli/commands/baseline.py
-  line: 88
-  stmt: return {}
-  handler: 'except Exception:'
-  classification: 意外吞错
-  severity: p2
-  response: 加警告
-  detection_path: true
-  justification: 基线 YAML 损坏时当空基线处理：应警告「基线文件损坏」而非静默视同未建立
 - id: EA-002
   file: upstream/fstdd/cli/commands/baseline.py
-  line: 312
+  line: 315
   stmt: return []
   handler: 'except Exception:'
   classification: 合理容错
@@ -72,16 +49,6 @@ points:
   response: 放行
   detection_path: true
   justification: ssh 时钟探测失败返回空读数 → 三态「无法测量」，fail-safe 设计正确（TC-CAL-009 语义）
-- id: EA-003
-  file: upstream/fstdd/cli/commands/batch.py
-  line: 709
-  stmt: pass
-  handler: 'except Exception:'
-  classification: 意外吞错
-  severity: p2
-  response: 加警告
-  detection_path: true
-  justification: batch close 的 Gate 3 确认失败被吞 → 批次闭合但证据链静默缺失。流程检测家族
 - id: EA-004
   file: upstream/fstdd/cli/commands/canon.py
   line: 138
@@ -184,7 +151,7 @@ points:
   justification: batch 助手 import 失败 → 无打开批次，探测式调用
 - id: EA-019
   file: upstream/fstdd/cli/commands/status.py
-  line: 108
+  line: 150
   stmt: pass
   handler: 'except Exception:'
   classification: 意外吞错
@@ -195,7 +162,7 @@ points:
     实例
 - id: EA-020
   file: upstream/fstdd/cli/commands/status.py
-  line: 125
+  line: 160
   stmt: pass
   handler: 'except Exception:'
   classification: 合理容错
@@ -203,26 +170,6 @@ points:
   response: 放行
   detection_path: false
   justification: 守卫激活状态展示（Claude 源）：解析失败落到 OpenCode/Codex 源继续探测，有兜底
-- id: EA-021
-  file: upstream/fstdd/cli/commands/status.py
-  line: 135
-  stmt: pass
-  handler: 'except Exception:'
-  classification: 合理容错
-  severity: null
-  response: 放行
-  detection_path: false
-  justification: 守卫激活状态展示（OpenCode 源）：展示型检测，失败只是少一条 ✅ 提示
-- id: EA-022
-  file: upstream/fstdd/cli/commands/validate.py
-  line: 106
-  stmt: pass
-  handler: 'except Exception:'
-  classification: 意外吞错
-  severity: p1
-  response: 升级 change
-  detection_path: true
-  justification: 基线状态读取失败 → 基线完整性警告整体丢失，validate 报得比实际干净。B3 家族
 - id: EA-023
   file: upstream/fstdd/cli/commands/work.py
   line: 35

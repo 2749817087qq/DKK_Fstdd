@@ -85,7 +85,10 @@ def _load_yaml(path: Path) -> dict:
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         return data if isinstance(data, dict) else {}
-    except Exception:
+    except Exception as exc:
+        # DV-009/DFX-008：损坏文件必须出声；沿用「无基线」安全默认，调用方按缺省处理
+        print(f"  ⚠️  基线文件损坏（{path.name}: {type(exc).__name__}），按空配置处理",
+              file=sys.stderr)
         return {}
 
 

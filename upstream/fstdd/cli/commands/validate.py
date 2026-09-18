@@ -27,9 +27,15 @@ def cmd_validate(args: argparse.Namespace) -> None:
             errors.append(f"缺少必需文件: {f}")
 
     state_file = change_dir / ".fstdd.yaml"
+    state = {}
+    state_error = None
     if state_file.exists():
-        with open(state_file, "r", encoding="utf-8") as f:
-            state = yaml.safe_load(f) or {}
+        # DV-008/DFX-007：基线状态不可读必须有声，不得让解析异常冒泡或静默通过
+        try:
+            with open(state_file, "r", encoding="utf-8") as f:
+                state = yaml.safe_load(f) or {}
+        except Exception as exc:
+            state_error = exc
         valid_phases = ["understand", "spec", "build", "deliver"]
         for phase in state.get("phases", {}):
             if phase not in valid_phases:
@@ -92,10 +98,13 @@ def cmd_validate(args: argparse.Namespace) -> None:
     # TC-TB-008：基线完整性检查（warning 级 —— 不使校验失败）
     state_file = change_dir / ".fstdd.yaml"
     if state_file.exists():
-        try:
-            import yaml as _yaml
-            state = _yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
-            baseline = state.get("baseline") or {}
+        # 复用首次读取结果（同一文件，避免二次 IO）；不可读时只报「状态不可读」，
+        # 不叠加「未建立」以免同一根因产生两条相互矛盾的警告
+        if state_error is not None:
+            warnings.append(f"基线: 状态不可读（.fstdd.yaml 解析失败: "
+                            f"{type(state_error).__name__}）")
+        else:
+            baseline = (state or {}).get("baseline") or {}
             missing = [k for k in ("at", "base_git_sha", "node_id", "clock_source")
                        if not baseline.get(k)]
             if not baseline:
@@ -103,8 +112,6 @@ def cmd_validate(args: argparse.Namespace) -> None:
                                 "`fstdd baseline establish` 回填）")
             elif missing:
                 warnings.append(f"基线: 不完整（缺 {', '.join(missing)}）")
-        except Exception:
-            pass
 
     print()
     if errors:

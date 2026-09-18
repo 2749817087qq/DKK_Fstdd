@@ -82,33 +82,58 @@ def cmd_status(args: argparse.Namespace) -> None:
 
 
 def _show_zombie_changes(project_root: Path, current_name: str) -> None:
-    """V3.0.1: Show zombie changes in changes/ directory."""
+    """V3.0.1: Show zombie changes in changes/ directory.
+
+    DFX-005 (F-1 修正): 取消活跃豁免 —— 活跃停滞 change 照常上报，名字后加
+        「（当前活跃）」标注，提示「当前正在推进却已停滞」。
+    DFX-006: 不可解析 last_modified 不再静默跳过 —— stderr 警告 + 进「无法判定」
+        提示，避免覆盖缺口被「零僵尸」报告掩盖。
+    """
     from datetime import datetime, timezone, timedelta
     changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         return
     zombies = []
+    undetermined = []
     for d in sorted(changes_dir.iterdir()):
         if not d.is_dir() or d.name.startswith("_") or d.name.startswith("."):
-            continue
-        if d.name == current_name:
             continue
         yf = d / ".fstdd.yaml"
         if not yf.exists():
             continue
         import yaml
-        data = yaml.safe_load(yf.read_text(encoding="utf-8")) or {}
+        try:
+            data = yaml.safe_load(yf.read_text(encoding="utf-8")) or {}
+        except Exception as e:
+            # 状态文件本身损坏：无法判断，警告但不中断扫描
+            print(f"  ⚠️ [警告] 僵尸检测: 无法解析 {d.name} 的状态文件（{e}），已跳过",
+                  file=sys.stderr)
+            continue
         last_mod = data.get("last_modified", "")
         if not last_mod:
             continue
         try:
             lm = datetime.fromisoformat(last_mod)
-            if datetime.now(timezone.utc) - lm > timedelta(days=7):
-                zombies.append(d.name)
+            if lm.tzinfo is None:
+                lm = lm.replace(tzinfo=timezone.utc)  # D2: naive 按 UTC 归一，零警告
+            is_zombie = (datetime.now(timezone.utc) - lm) > timedelta(days=7)
         except Exception:
-            pass
+            # DFX-006: last_modified 不可解析 → 警告 + 无法判定
+            print(f"  ⚠️ [警告] 僵尸检测: {d.name} 的 last_modified 不可解析（{last_mod!r}），"
+                  f"无法判定是否僵尸", file=sys.stderr)
+            undetermined.append(d.name)
+            continue
+        if is_zombie:
+            if d.name == current_name:
+                zombies.append(f"{d.name}（当前活跃）")  # D3 / F-1 修正
+            else:
+                zombies.append(d.name)
+
     if zombies:
         print(f"  ⚠️ 僵尸 Change ({len(zombies)}): {', '.join(zombies)} — 建议 stdd abort 清理")
+    if undetermined:
+        print(f"  ⚠️ 僵尸检测无法判定 ({len(undetermined)}): "
+              f"{', '.join(undetermined)} — 请检查其 last_modified 字段")
 
 
 def _show_guard_status(project_root: Path) -> None:

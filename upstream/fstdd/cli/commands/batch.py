@@ -703,11 +703,15 @@ def _cmd_batch_deliver(project_root: Path, batch: Path,
     (batch / "test-report.md").write_text("\n".join(lines), encoding="utf-8")
 
     # Confirm batch build + set deliver (V3.0.5: 带 confirmed_by 通道声明，落审计字段)
+    import sys
     from .gate import _confirm_gate
     try:
         _confirm_gate(3, batch, confirmed_by=confirmed_by, evidence=evidence)
-    except Exception:
-        pass
+    except Exception as exc:
+        # DV-010/DFX-009：Gate 3 确认失败必须有声，但不得阻断闭合
+        # （业务决策：闭合优先，确认失败留痕由 K 终审时补正）
+        print(f"  ⚠️  Gate 3 确认失败（{type(exc).__name__}: {exc}），批次仍继续闭合",
+              file=sys.stderr)
     _update_batch_phase(batch, "deliver")
 
     print(f"  ✅ 批级交付完成: test-report.md 已生成")
