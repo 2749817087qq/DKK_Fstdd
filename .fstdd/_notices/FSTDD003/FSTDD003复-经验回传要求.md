@@ -25,4 +25,4 @@
 ## 现状小结
 - `experiences/` 现含 8 条真实增量（K 点名：EXTRACT-1 / MULTIWS-1 / REGISTRY-1 / CRIT-1 / DESIGN-1 / GUI-1 / GUI-2 / GUI-3），全部 ASCII、已脱敏、已在服务端落地。
 - 回传通道统一走 `http://43.134.236.80:8787`（POST `/api/share-experience`），不再直推 GitHub；GitHub 仅本地 commit。
-- 每小时轮询自动化已建（拉 notices→执行→POST→回执），待补 SSH 取件 / 回执写回服务器步骤。
+- 每小时轮询自动化已建（拉 notices→执行→POST→回执）；SSH 通道已通（私钥 `/d/id_ed25519`，D 盘根目录），取件与回执写回服务器步骤现已落地，本回执即经 scp 写回 `/home/ubuntu/fstdd-notices/FSTDD003/`。
