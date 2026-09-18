@@ -173,6 +173,35 @@ python tools/share_experience.py --export             # 只导出不回传
 | **P12** | **`extract-proposal` 对 Gate 生成物系统性失效 + `what_changes` 虚增** | **高** |
 | **P13** | **嵌套工作区下 change 落到父工作区 + canonical 双轨回退静默写错位置** | 中 |
 | **P14** | **`init` 自动拉社区经验必失败 + 报错把 404 归因成"网络不可用"** | 低 |
+| **P15** | **`fstdd` CLI 经裸 `python3` 运行报 `ModuleNotFoundError: No module named 'yaml'`**；须用隔离 venv python + Git Bash 下 `$(cygpath -m ~/.workbuddy-ai/FSTDD/upstream/bin/fstdd)` 转换路径，否则 `~` 展开成 `/c/Users` 被 Windows Python 解析失败 | 中 |
+| **P16** | **SSH 私钥位置**：节点服务器私钥恒在 **D 盘根 `/d/id_ed25519`**（ed25519），**不是** `$USERPROFILE/.ssh/id_ed25519`；scp/ssh 用 `-i /d/id_ed25519 -o StrictHostKeyChecking=no`，Host `ubuntu@43.134.236.80`。误用 `.ssh/` 那把会 `Permission denied (publickey)`（假阻塞） | 高 |
+| **P17** | **服务端不去重**：同 `experience_id` 重复 POST 会累加 `received` 计数。本地须用 `.fstdd/_fstdd003_share_log.json` 记录已提交 ID（`tools/fstdd003_daily_share.py` 据此增量发），否则每日重发污染计数 | 中 |
+| **P18** | **回执闭环**：K 下发的 `FSTDD00X收-<主题>.md` 任务，完成后写 `FSTDD00X复-<主题>.md` 经 scp 回 `ubuntu@43.134.236.80:/home/ubuntu/fstdd-notices/FSTDD00X/`（仅本节点目录，禁碰他人文件夹）。回执四要素：标题/收到时间/执行结果/未完成项（见 00-NOTICE.md 第四节） | 中 |
+
+### P15 速记（Windows 本机跑 fstdd CLI 必踩）
+- 隔离 Python 二进制 `C:/Users/Administrator/.workbuddy-ai/binaries/python/versions/3.13.12/python.exe` 缺 `yaml`；`pyyaml` 装在 venv `C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe`。
+- 正确姿势：
+  ```bash
+  VENV_PY="C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe"
+  CLI=$(cygpath -m ~/.workbuddy-ai/FSTDD/upstream/bin/fstdd)
+  "$VENV_PY" "$CLI" status
+  ```
+- **绝不**裸调 `python3 bin/fstdd` 或把 `~` 直接拼进 Windows 路径。
+
+### P16 速记（SSH 密钥，别再问第二遍）
+- 密钥文件：`D:/id_ed25519`（Git Bash 写作 `/d/id_ed25519`）。**不是** `C:/Users/Administrator/.ssh/`。
+- 连通验证：`ssh -i /d/id_ed25519 -o StrictHostKeyChecking=no ubuntu@43.134.236.80 "echo OK"`。
+- 取 notices：`scp -i /d/id_ed25519 -o StrictHostKeyChecking=no "ubuntu@43.134.236.80:/home/ubuntu/fstdd-notices/FSTDD00X/*" D:/FSTDD003/.fstdd/_notices/FSTDD00X/`。
+- 回执回写：`scp -i /d/id_ed25519 -o StrictHostKeyChecking=no D:/FSTDD003/.fstdd/_notices/FSTDD00X/FSTDD00X复-*.md ubuntu@43.134.236.80:/home/ubuntu/fstdd-notices/FSTDD00X/`。
+
+### P17 速记（增量去重）
+- 端点 `http://<IP>:8787/api/share-experience` 无凭证；`GET /health` 返回 `received` 计数。
+- 试运行时曾把 34 条全量重发 → 计数虚高。固化：helper `tools/fstdd003_daily_share.py` 读 `experiences/FSTDD003-EXP-*.md`，与 `.fstdd/_fstdd003_share_log.json` 的 `submitted` 比对，只发新增；每次成功 POST 后把 ID 写入该 log。
+
+### P18 速记（回执闭环）
+- 服务器目录纪律（00-DISCIPLINE）：只读写自己 `FSTDD00X/` 文件夹，根文件只读，K 的 memory 文件夹禁入。
+- 命名：经验 `FSTDD00X-EXP-<日期>-<编号>.md` 仅 ASCII；中文标题进 frontmatter `title`，否则被编码层吃成 `____-______.md` 无法索引。
+- 试运行数据（EXP-20260915/16/17 系列）不再发；原始工具 `share_experience.py` 的 `collect_local()` 读 `.fstdd/experiences/EXP-*.md` 是重发源头，已把 26 个旧 `EXP-*.md` 迁至 `.fstdd/_legacy_trial/` 归档。
 
 ### P12 速记（最值得记住的一条）
 
