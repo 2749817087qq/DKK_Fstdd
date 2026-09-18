@@ -1,0 +1,33 @@
+meta:
+  capability: scan-coverage
+  title: L2 时效守卫扫描覆盖可观测（scan_errors）
+  spec_version: '1.0'
+  change: 2026-09-18-detection-silence-fixes
+  status: draft
+
+overview: |
+  check_timestamps 三个扫描循环（源码逐文件 / change YAML / proposal.md 头）
+  的文件级失败此前 continue 静默跳过——「零违规」报告可能掩盖覆盖缺口
+  （坏文件根本没被扫）。本能力把扫描失败转为可观测的 scan_error 记录。
+
+requirements:
+  - id: COV-001
+    text: scan_change_values 遇 YAML 解析失败的 change 文件时，返回含
+      category=scan_error 的违规项（含 location），不再静默跳过
+    priority: P1
+  - id: COV-002
+    text: 源码逐文件扫描与 proposal.md 扫描同理：单文件失败记 scan_error
+    priority: P1
+  - id: COV-003
+    text: full_scan 返回结构含 scan_errors 列表；既有 naive_count /
+      violations 语义不回归
+    priority: P1
+
+invariants:
+  - 扫描的判定标准（naive 定义、扫描范围）不变
+  - scan_error 不混入 naive_count（两者分列，避免污染判定）
+
+test_mapping:
+  COV-001: COV-001
+  COV-002: COV-002
+  COV-003: COV-003

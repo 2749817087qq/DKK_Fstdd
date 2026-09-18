@@ -2,5 +2,8 @@ designs: {}
 proposals:
   2026-09-18-detection-silence-fixes: proposals/2026-09-18-detection-silence-fixes.yaml
 specs:
-  code: {}
+  code:
+    audit-errata: specs/code/audit-errata.yaml
+    detection-voice: specs/code/detection-voice.yaml
+    scan-coverage: specs/code/scan-coverage.yaml
 version: '2.9'

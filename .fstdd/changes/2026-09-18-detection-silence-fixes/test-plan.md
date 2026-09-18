@@ -1,69 +1,57 @@
-# <版本> 测试方案与详细案例
+# detection-silence-fixes 测试方案与详细案例
 
-> 版本：<版本号>
-> 创建日期：<YYYY-MM-DD>
-> 对应 Phase 2 Spec：<spec 文件列表>
+> 版本：v1
+> 创建日期：2026-09-18
+> 对应 Phase 2 Spec：`specs/code/detection-voice`、`specs/code/scan-coverage`、`specs/code/audit-errata`
 
 ## 一、测试策略
 
-### 1.1 测试金字塔
+- **先行类型**：每修复点先写「有声」断言（RED），再实现（GREEN）。
+- **测试分层**：单元级（capfd 断言 stderr / 返回值）为主；F-1、F-2 必须 CLI 端到端。
+- **不变量守卫**：修复不得改变检测阈值（7 天僵尸、24h 滞后、3 文件 50% 占比
+  等），既有变异测试（test_mutation_alive.py）全量复跑作为回归锚。
+- **哨兵门槛**：审计表刷新后 `tools/audit_silent_except.py --check` 必须通过。
 
-<描述单元/集成/E2E 比例和侧重点>
+## 二、测试案例
 
-### 1.2 测试原则
+### detection-voice（guard / status / validate / baseline / batch / fix / gate）
 
-- <原则 1>
-- <原则 2>
-
-### 1.3 已有测试资产
-
-| 测试文件 | 用例数 | 类型 | 覆盖范围 |
-|----------|--------|------|----------|
-| <文件路径> | <数量> | 单元/集成 | <覆盖描述> |
-
-## 二、详细测试案例
-
-### 功能 N：<功能名称>
-
-<对应 spec Requirement>
-
-#### 案例 N.1 — <案例标题>
-
-| 字段 | 内容 |
-|------|------|
-| **ID** | TC-<CAPABILITY>-<NNN> |
-| **对应 Spec** | <capability>/spec.md → Scenario: <场景名> |
-| **优先级** | P0 / P1 / P2 |
-| **预置条件** | <GIVEN → Arrange> |
-| **输入** | <WHEN → Act> |
-| **预期结果** | <THEN + AND → Assert> |
-| **当前状态** | ✅ 已覆盖 / ❌ 测试缺 |
-
-## 三、测试执行矩阵
-
-| 功能模块 | 单元测试 | 集成测试 | E2E | 状态 |
-|----------|---------|----------|-----|------|
-| <模块名> | <覆盖情况> | <覆盖情况> | <覆盖情况> | 🟢/🟡/🔴 |
-
-## 四、回归风险矩阵
-
-| 风险区域 | V<版本> 改动 | 已有回归保护 | 风险等级 |
-|----------|-------------|-------------|---------|
-| <区域> | <改动描述> | <已有测试> | 🟢/🟡/🔴 |
-
-## 五、建议补充顺序
-
-1. **第一优先**（部署前必补）：<P0 案例列表>
-2. **第二优先**（部署后尽快补）：<P1 案例列表>
-3. **第三优先**（后续补）：<P2 案例列表>
-
-## 六、证据记录
-
-> 每条引用实测数据的证据必须可定位**观测时刻**与**代码版本**（TC-EPR-002）。
-
-| 证据 | observed_at（带时区） | observed_base_git_sha | 来源 |
+| TC ID | 层级 | 场景 | 断言 |
 |---|---|---|---|
-| TODO：证据描述 | 2026-01-01T00:00:00+00:00 | TODO | TODO：命令 / 输出位置 |
+| DFX-001 | 单元 | 非 git 目录调 `_count_changed_files` | stderr 含「git」警告；返回 0 |
+| DFX-002 | 单元 | git diff 失败时 `_check_file_type_mismatch` | stderr 警告；返回 (False, "") |
+| DFX-003 | 单元 | `_is_zombie` 遇 naive last_mod（8 天前） | 返回 True（归一后判定） |
+| DFX-004 | CLI | `fstdd guard status`：Build 完成 25h 未 DELIVER | 输出含「Phase Lag」与「Build完成」 |
+| DFX-005 | CLI | `fstdd status`：唯一 change 活跃停滞 8 天 | 输出含僵尸清单 + change 名 +「当前活跃」标注 |
+| DFX-006 | 单元 | `_show_zombie_changes` 遇不可解析 last_mod | stderr 警告；该 change 进「无法判定」提示 |
+| DFX-007 | CLI | `fstdd validate`：基线状态文件损坏 | 输出含「基线」警告而非静默通过 |
+| DFX-008 | 单元 | `_load_yaml` 遇损坏基线文件 | 返回 {} 且 stderr 含「损坏」警告 |
+| DFX-009 | CLI | batch close 时 _confirm_gate 抛错 | stderr 警告「Gate 3 确认失败」；批次仍闭合 |
+| DFX-010 | CLI | `fstdd fix` 遇不可读 py 文件 | 结束报告含跳过计数 ≥1 |
+| DFX-011 | CLI | Gate 2 含损坏 spec YAML | 输出含该 spec 警告；其余 spec 正常生成 |
 
-- `observed_at` 是**信息采集时刻**，不是文档生成时刻（generated_at 与此无关）。
-- 缺 `observed_at` 的证据时效判为「无法判定」（undetermined），**不等同未过期**。
+### scan-coverage（check_timestamps）
+
+| TC ID | 层级 | 场景 | 断言 |
+|---|---|---|---|
+| COV-001 | 单元 | change YAML 含不可解析内容 | scan_change_values 返回含 `category=scan_error` 项 |
+| COV-002 | 单元 | proposal.md 不可读 | scan_human_view_headers 返回 scan_error 项 |
+| COV-003 | 单元 | full_scan 汇总 | report 含 `scan_errors` 键；既有 naive_count 断言不回归 |
+
+### audit-errata（勘误与哨兵）
+
+| TC ID | 层级 | 场景 | 断言 |
+|---|---|---|---|
+| ERR-001 | 文档 | test-report 含 315 勘误对照（原判/实证/新判/依据） | 四要素齐备 |
+| ERR-002 | 哨兵 | 审计表刷新（修复改变代码形态）后 `--check` | 通过（0 未覆盖） |
+| ERR-003 | 回归 | 既有 test_mutation_alive.py 全量 | 5 passed（阈值未被收紧） |
+
+## 三、执行矩阵（Slice 预分）
+
+| Slice | 内容 | TC |
+|---|---|---|
+| S1 | guard 家族（DFX-001..004） | 4 |
+| S2 | status 家族 F-1（DFX-005/006） | 2 |
+| S3 | check_timestamps（COV-001..003） | 3 |
+| S4 | 流程家族（DFX-007..011） | 5 |
+| S5 | 勘误+哨兵+XCUT（ERR-001..003 + 全量） | 3+ |

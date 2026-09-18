@@ -1,7 +1,7 @@
 # 检测静默失效修复包（审计 15 处吞错 + F-1/F-2 + 审计勘误）
 
 <!-- source_hash: b595d4a0d93aff91 -->
-<!-- generated_at: 2026-09-18T02:28:03+00:00 -->
+<!-- generated_at: 2026-09-18T02:54:57+00:00 -->
 <!-- canonical: canonical/proposals/2026-09-18-detection-silence-fixes.yaml -->
 
 ## Why

@@ -1,0 +1,68 @@
+meta:
+  capability: detection-voice
+  title: 检测路径失败有声化（guard/status/validate/baseline/batch/fix/gate）
+  spec_version: '1.0'
+  change: 2026-09-18-detection-silence-fixes
+  status: draft
+
+overview: |
+  审计表 15 处「意外吞错」中除 check_timestamps 三处（另立 scan-coverage）
+  与已勘误的 guard.py:315 外的全部修复点。统一形态：检测失败时 stderr
+  警告 + 安全默认值；naive 时间戳按 UTC 归一（不告警）；阈值一律不变。
+
+requirements:
+  - id: DV-001
+    text: _count_changed_files 在非 git 环境或 git 失败时必须向 stderr 打印警告并返回 0
+    priority: P1
+  - id: DV-002
+    text: _check_file_type_mismatch 的 git 统计失败时必须警告并返回 (False, "")
+    priority: P1
+  - id: DV-003
+    text: _is_zombie 对 naive last_modified 按 UTC 归一后判定；不可解析时警告
+    priority: P1
+  - id: DV-004
+    text: cmd_guard_status 输出 Phase Lag 警告段（接入 _check_phase_integrity_guard）
+    priority: P1
+  - id: DV-005
+    text: _check_phase_integrity_guard 内 build/spec completed_at naive 归一
+    priority: P2
+  - id: DV-006
+    text: _show_zombie_changes 取消活跃豁免；活跃僵尸加「（当前活跃）」标注
+    priority: P1
+  - id: DV-007
+    text: _show_zombie_changes 不可解析 last_mod → stderr 警告 + 变更列表提示
+    priority: P2
+  - id: DV-008
+    text: validate 基线状态不可读 → 追加「基线: 状态不可读」警告
+    priority: P1
+  - id: DV-009
+    text: baseline._load_yaml 损坏文件 → stderr「基线文件损坏」警告 + 返回 {}
+    priority: P2
+  - id: DV-010
+    text: batch close 的 Gate 3 确认失败 → stderr 警告，批次流程不中断
+    priority: P2
+  - id: DV-011
+    text: fix 命令跳过文件计数并在结束报告
+    priority: P2
+  - id: DV-012
+    text: Gate 2 spec Human View 生成失败逐条收集，结束统一警告
+    priority: P2
+
+invariants:
+  - 僵尸阈值 7 天、滞后阈值 24h、失配阈值（≥3 文件且 >50%）全部不变
+  - 所有警告走 stderr，stdout 结构化输出不受污染
+  - 守卫类默认值保持 fail-closed
+
+test_mapping:
+  DV-001: DFX-001
+  DV-002: DFX-002
+  DV-003: DFX-003
+  DV-004: DFX-004
+  DV-005: DFX-004
+  DV-006: DFX-005
+  DV-007: DFX-006
+  DV-008: DFX-007
+  DV-009: DFX-008
+  DV-010: DFX-009
+  DV-011: DFX-010
+  DV-012: DFX-011

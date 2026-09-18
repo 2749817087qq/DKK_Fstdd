@@ -1,3 +1,9 @@
+baseline:
+  at: '2026-09-18T02:54:57+00:00'
+  base_git_sha: c00a6055a02ed766901dfc0d436c7b3450151bc1
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-1MEQDMR
 change_id: 2026-09-18-detection-silence-fixes
 complexity_score: null
 current_phase: understand
@@ -12,7 +18,11 @@ phases:
   spec:
     status: pending
   understand:
-    status: pending
+    confirmed_actor: ai
+    confirmed_at: '2026-09-18T02:54:57+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 对 Gate 1 回复『Please continue』确认（2026-09-18 10:45+08:00 对话），无范围调整
+    status: completed
 score_confidence: null
 status: active
 task_type: code
