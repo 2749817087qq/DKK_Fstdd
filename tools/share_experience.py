@@ -890,9 +890,11 @@ def main() -> int:
     idx = ["# 经验库（对外回传）", "",
            f"> 由 `tools/share_experience.py` 导出，共 {written} 条，"
            f"导出时间 {datetime.datetime.now(datetime.timezone.utc):%Y-%m-%d %H:%M} UTC", "",
-           "| ID | 标题 | 来源 |", "|---|---|---|"]
+           "| ID | 标题 | 文件 |", "|---|---|---|"]
     for e, _, _ in prepared:
-        idx.append(f"| {e['id']} | {e['fm'].get('title', '-')} | {e['source']} |")
+        # 链接必须指向**导出后的文件名**（{id}.md，可能带归属前缀），
+        # 不能用 e['source']（源文件名）—— 两者不一致会让索引链接全断。
+        idx.append(f"| {e['id']} | {e['fm'].get('title', '-')} | [{e['id']}.md](./{e['id']}.md) |")
     (OUT_DIR / "README.md").write_text("\n".join(idx) + "\n", encoding="utf-8", newline="\n")
 
     # 回传指引（面向 AI Agent）。
