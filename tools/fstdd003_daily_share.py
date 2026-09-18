@@ -2,7 +2,8 @@
 """FSTDD003 每日增量回传 helper。
 
 把 experiences/FSTDD003-EXP-*.md 中**尚未回传**的经验，增量 POST 到
-fstdd 自建接收端点（无凭证），并维护提交记录避免每日重复刷屏审核池。
+fstdd 自建接收端点（inbox 鉴权上线后，自动附带 X-FSTDD-Token 头），
+并维护提交记录避免每日重复刷屏审核池。
 
 唯一的对外动作：POST http://43.134.236.80:8787/api/share-experience
 （fstdd 自有服务器，数据不外发第三方；与 GitHub push 无关）。
@@ -29,6 +30,20 @@ _spec.loader.exec_module(se)
 
 ENDPOINT = se.inbox_url().rstrip("/") + "/api/share-experience"
 RETRY = 4
+TOKEN_PATH = REPO_ROOT / ".fstdd" / "_fstdd003_token.txt"
+
+
+def load_token() -> str:
+    """读取本地凭证（gitignore 排除，绝不进经验正文/GitHub）。
+
+    返回空串表示未配置 —— 灰度期仍可走 legacy-ip 放行，但应尽快补齐。
+    """
+    if TOKEN_PATH.exists():
+        try:
+            return TOKEN_PATH.read_text(encoding="utf-8").strip()
+        except Exception:
+            return ""
+    return ""
 
 
 def load_log() -> dict:
@@ -46,8 +61,11 @@ def save_log(log: dict) -> None:
         json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def post_one(eid: str, content: str):
-    """POST 单条经验，429/5xx 按指数退避重试，其余 4xx 立即失败。"""
+def post_one(eid: str, content: str, token: str = ""):
+    """POST 单条经验，429/5xx 按指数退避重试，其余 4xx 立即失败。
+
+    token 非空时附带 X-FSTDD-Token 鉴权头（inbox 鉴权上线后要求）。
+    """
     body = json.dumps(
         {"experiences": [{"experience_id": eid, "content": content, "author": ""}]},
         ensure_ascii=False).encode("utf-8")
@@ -56,6 +74,8 @@ def post_one(eid: str, content: str):
         req = urllib.request.Request(ENDPOINT, data=body, method="POST")
         req.add_header("Content-Type", "application/json")
         req.add_header("User-Agent", "fstdd003-daily-share")
+        if token:
+            req.add_header("X-FSTDD-Token", token)
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
                 data = json.loads(r.read().decode("utf-8", "replace") or "{}")
@@ -84,6 +104,11 @@ def post_one(eid: str, content: str):
 
 def main() -> None:
     log = load_log()
+    token = load_token()
+    if token:
+        print("[INFO] 已加载节点凭证，将携带 X-FSTDD-Token 头 POST")
+    else:
+        print("[WARN] 未找到本地凭证（%s），灰度期走 legacy-ip 放行" % TOKEN_PATH)
     done = set(log.get("submitted", []))
     files = sorted(EXP_DIR.glob("FSTDD003-EXP-*.md"))
     new = [f for f in files if f.stem not in done]
@@ -95,7 +120,7 @@ def main() -> None:
     for f in new:
         content = f.read_text(encoding="utf-8", errors="replace")
         clean, _hits = se.sanitize(content, True)  # 强制脱敏（路径/IP/域名/凭证/邮箱）
-        ok_flag, res = post_one(f.stem, clean)
+        ok_flag, res = post_one(f.stem, clean, token)
         if ok_flag:
             log.setdefault("submitted", []).append(f.stem)
             ok += 1

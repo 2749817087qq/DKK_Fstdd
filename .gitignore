@@ -3,3 +3,4 @@ experiences/
 .claude/settings.local.json
 __pycache__/
 *.pyc
+.fstdd/_fstdd003_token.txt

@@ -49,3 +49,27 @@
 - **增量回传**: `fstdd003_daily_share.py` → 「无新增」（submitted=35）。`/health` received 85→86（跨节点正常活动，本节点未 POST）。
 - **本地 git**: 仅提交 `_notices/FSTDD003/*` + memory（**未**提交 `_scratch/` 大基线）；未 push 远端。
 - **纪律**: 仅读写本节点文件夹；未触审计表/其余节点/K-memory；未跑 gate/canon、未 push。
+
+## 2026-09-18 15:48 (GMT+8) 执行 — 常规轮询（无新增）
+
+- **步骤1 拉取同步**: `scp` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地 `_notices/FSTDD003/`。本地已与远端对齐：4 份 `FSTDD003收-*`（状态盘点/经验回传要求/通道演练/协作开发-S2S3）均已对应 `FSTDD003复-*` 回执，**无新增未回执任务**。
+- **步骤2 增量回传**: `fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 35 条）」。submitted=35、failures=0，无试运行数据外泄。
+- **步骤4 自查**: `GET http://43.134.236.80:8787/health` → `ok=true, received=88`（上次 14:24 为 86，+2 来自跨节点活动；本节点本轮未 POST）。
+- **本地回执**: `_notices_receipts.md` 追加「本次成功 0 条；received=88」。
+- **纪律**: 仅读写本节点 `FSTDD003/` 文件夹；未触碰根目录 00-* 与他人的条目；未 push 远端。
+
+## 2026-09-18 17:56 (GMT+8) 执行 — 处理 2 份新通知 + 鉴权适配
+
+- **步骤1 拉取**: `scp` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地。发现 2 份**新增未回执** `FSTDD003收-*.md`：`inbox鉴权上线`、`自动化率提升`（其余 4 份收件均已对应回执）。
+- **步骤2 执行（inbox鉴权上线）**:
+  - 凭证落本地 `D:/FSTDD003/.fstdd/_fstdd003_token.txt`（已加 `.gitignore`，绝不进经验正文/GitHub）。
+  - 更新 `tools/fstdd003_daily_share.py`：POST 自动附带 `X-FSTDD-Token` 头（方式 A）；未配置时回退 gray-period legacy-ip 放行并告警。实测 helper `[INFO] 已加载节点凭证` 加载成功。
+  - 本轮无新增经验（submitted=35），未实际 POST；下次真实回传即带 token。`GET /health` 仍免凭证，自查链路保持。
+- **步骤2 执行（自动化率提升）**:
+  - 确认本节点**已具备每小时整点自动轮询**：WorkBuddy 调度自动化 `06ec2c4f` 即为宿主级定时任务，功能等价 `00-POLL-TEMPLATE.py`（拉取→比对 share_log→增量 POST（带 token）→生成 `复-*`→scp 写回→/health→本地 git commit 不 push），自 12:15 起稳定每小时执行。
+  - 本轮起所有 `复-*` 回执统一标注 `自动化: true`（满足验收口径）。
+- **步骤3 回执写回**: 生成 `FSTDD003复-inbox鉴权上线.md`、`FSTDD003复-自动化率提升.md`（均含 `自动化: true`），scp 写回 `/home/ubuntu/fstdd-notices/FSTDD003/`，服务器核验落地（17:56，1461/1842 字节）。
+- **步骤4 自查**: `GET /health` → `ok=true, received=101`（上次 88，+13 来自跨节点活动；本节点本轮未 POST，符合预期）。
+- **本地回执**: `_notices_receipts.md` 追加「本次成功 0 条；received=101」。
+- **本地 git**: 提交 `tools/fstdd003_daily_share.py`(鉴权适配) + `.gitignore`(token 排除) + `_notices/FSTDD003/*`(新收件/回执) + receipts + memory；**未**提交 `_fstdd003_token.txt`(gitignored)、**未 push** 远端。
+- **纪律**: 仅读写本节点 `FSTDD003/`；token 仅存本机 `.fstdd/` 配置，未写正文/未转发；未触他人条目与根目录 00-*。
