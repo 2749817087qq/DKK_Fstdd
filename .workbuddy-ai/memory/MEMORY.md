@@ -19,5 +19,11 @@
   - `MANIFEST.md` 对 `回传指引-如何贡献经验.md` 的引用已同步改为 `FSTDD003-回传指引-如何贡献经验.md`。
 - **明确不改动的项（历史快照 / 活引用，改了会失真或断链）**：`artifacts/memory/` 历史日志、`artifacts/hardening-src/` 的 `_backup_*` 快照与 `pending-push/*.patch` 补丁、`artifacts/hardening-src/guard-block.md`（被活脚本 `apply.py` 引用）、`install.sh.fixed`（被 `MANIFEST.md` 与历史日志引用）、`docs/` 旧日志、`artifacts/hardening/`（空目录）。
 
+### FSTDD003 协作通知处理（2026-09-18 确立）
+- **性质**：云服务器 `ubuntu@43.134.236.80:/home/ubuntu/fstdd-notices/FSTDD003/` 下发的 `FSTDD003收-*.md` 即「协作通知」（K 按 Slice 拆分下发的开发/盘点/演练任务）。
+- **处理准则（D哥 2026-09-18 明确）**：协作通知到货后**直接执行并回传**，不再逐项请示。
+- **执行闭环**：每小时轮询自动化 `06ec2c4f`（ACTIVE）已实现 —— 拉取 notices → 按文件要求执行 → 交付三件套（`<编号>-<slice>.patch` + `-tests.txt` + `FSTDD003复-<主题>.md`）scp 回本节点目录 → `/health` 自查 → 本地 git commit（不 push）。
+- **纪律边界（不可破）**：① 只读他人目录、不碰其他节点与 K 的 memory；② 文件名仅 ASCII（`FSTDD003-EXP-<日期>-<编号>.md`，中文进 frontmatter `title`）；③ POST 前必脱敏（路径/IP/域名/凭证 → `<PATH>/<IP>/<DOMAIN>/<TOKEN>`）；④ GitHub 仅本地 commit 不直推；⑤ 文件域白名单外一律不改——若验收要求迫使扩展文件域（如 S3 的 `tools/check_timestamps.py`），须在回执中**显式记录偏离，不得静默**；⑥ 审计表等共享产物归 S5 归口刷新，本节点不代删。
+
 ## 其他长期事实
 - 全局 skill 归档位置：`D:\FSTDD003\skills-archive\`（来源 `C:\Users\Administrator\.workbuddy-ai\skills\`，已剔除手动 GitHub 装的 9 个 STDD/fstdd 系列，保留 4 个 WorkBuddy AI 自身产物；归档内条目均已加 `FSTDD003-` 前缀）。
