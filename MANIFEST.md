@@ -45,7 +45,7 @@ D:\FSTDD003\
 | `EXP-20260917-INSTALL-4.md` | 同上 | 注释与实现矛盾 + 未 export + 实例 home 隔离 |
 | `EXP-20260917-INSTALL-5.md` | 同上 | 4 项未合入 + `for`/`shift` 根因 |
 | 其余 23 个 `EXP-*.md` | 同上 | 历史经验（09-15 A1–A6/B1–B4、09-16 INSTALL-1~3/RUN-1~2、哈希 ID） |
-| `README.md` / `SUBMIT.md` / `回传指引-如何贡献经验.md` | 同上 | 导出索引与回传指引 |
+| `FSTDD003-README.md` / `FSTDD003-SUBMIT.md` / `FSTDD003-CONTRIB-GUIDE.md` | 同上 | 导出索引与回传指引（文件名已统一为 ASCII） |
 
 ### tools/ — 可独立运行的工具
 

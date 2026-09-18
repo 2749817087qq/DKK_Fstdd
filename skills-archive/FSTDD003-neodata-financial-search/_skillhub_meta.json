@@ -1,0 +1,24 @@
+{
+  "name": "NeoData金融搜索服务",
+  "installedAt": 1789188243242,
+  "source": "marketplace",
+  "version": "1.0.0",
+  "skillId": "skill_2053082432761950208",
+  "examples_zh": [
+    "查询 Apple 和 Microsoft 最近一个季度的营收变化",
+    "比较 Nvidia、AMD 和 Intel 的公开财务指标",
+    "获取美元指数和主要货币汇率的最新数据",
+    "整理一份全球市场研究用的公开金融数据摘要"
+  ],
+  "examples_en": [
+    "Check revenue changes for Apple and Microsoft in the latest quarter",
+    "Compare public financial metrics for Nvidia, AMD, and Intel",
+    "Fetch the latest US Dollar Index and major FX rates",
+    "Create a public financial data summary for global market research"
+  ],
+  "description_zh": "全球多市场金融数据搜索服务，自然语言查询股票、基金、宏观、外汇、大宗商品等全品类金融数据",
+  "description_en": "Natural language financial data search across global markets: stocks, funds, macro, forex & commodities",
+  "iconSource": "https://openplatform-cdn.codebuddy.ai/public/skills/icons/neodata-financial-search.png",
+  "iconLocalPath": "C:\\Users\\Administrator\\.workbuddy-ai\\skills\\neodata-financial-search\\_icon.png",
+  "iconDownloadedFrom": "https://openplatform-cdn.codebuddy.ai/public/skills/icons/neodata-financial-search.png"
+}

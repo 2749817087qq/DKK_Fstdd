@@ -200,6 +200,40 @@ change `2026-09-18-gui-skeleton-credential`：25 条 TC 全通过、5/5 切片�
 - **`.bat` 里的逻辑测不了**：把依赖探测抽成 `check_deps.py` 后 TC 才有确定断言；
   中文 `.bat` 需按 **GBK** 写入（cmd 默认代码页）。
 
+### P17 — Phase 4 的 CLI 路径基准三套并存（`EXP-20260918-GUI-2`）
+
+`canon.py` 用 `.fstdd/changes/<change>`；`structure.py` 用裸 `Path.cwd()/changes/<change>`；
+`archive` 又只在**工作区根**能找到 change。同一个 CWD 下必然有的命令能跑、有的 not found。
+
+三个连带后果：
+1. **`canon verify` 只能在归档前跑**，而 `fstdd-deliver` 文档把 verify 排在归档之后 → 必然失败。
+2. **`structure delta` 必须 CWD=`.fstdd`**，于是结构索引写到 `.fstdd/.fstdd/code-structure/`（凭空多一层）。
+3. **`structure delta` 产物恒为空**：它只枚举 change 目录里的非 `.md/.yaml` 文件，而那里只有 md/yaml。
+
+根因：V2.9 把 change 目录搬到 `.fstdd/changes/`，`canon.py` 跟了、`structure.py` 没跟。
+**升级改了一半路径约定。**
+
+规避（本次实测有效）：
+`canon verify`（工作区根）→ `structure delta`（CWD=`.fstdd`）→ 清 `.fstdd/.fstdd`
+→ `archive`（工作区根）→ 手工合并 canonical 到 `.fstdd/canonical/`。
+
+### P18 — 长程模式下 RED 阶段会被静默跳过（`EXP-20260918-GUI-3`）
+
+7 个切片里只有前 3 个真跑了 RED；后 4 个是先写实现再补测试，**一次就绿**。
+`fstdd-build` 要求 RED→GREEN，但没有强制检查点，长程 `full_auto` 下这条约束被绕过。
+
+**补偿手段**：优先用**运行时变异**（在解释器里改常量/函数输入，如 `MIN_INTERVAL=0.0`、
+`FREQ_HINTS=()`），**不要改源文件** —— 本次一次文件级变异让分页循环跑飞到
+`max_pages=10000`，pytest 挂住 4 分钟只能 kill，还要从备份还原。
+
+**建议**：把「本切片 RED 失败数」写进 `slices.md` 记录，事后可核对；
+测试报告里如实标注哪些切片没跑 RED。
+
 ### 遗留项
 
 - [ ] P16 已记录，无需改工具（属使用方式问题）。
+- [ ] **P18 待反馈**：建议长程模式在每个切片 GREEN 前强制校验 RED 失败数 > 0。
+- [ ] **P17 待反馈**：建议 CLI 统一用「向上找 `.fstdd/` 标记」确定 project_root；
+      `canon verify` 支持读 `archive/<change>`；`structure delta` 改为扫真实变更源码文件。
+      另建议 `fstdd-deliver` 文档的 Step 顺序改为
+      `canon verify` → `structure delta` → `archive` → `structure merge` → canon 合并。
