@@ -33,7 +33,7 @@ requirements:
     text: _show_zombie_changes 不可解析 last_mod → stderr 警告 + 变更列表提示
     priority: P2
   - id: DV-008
-    text: validate 基线状态不可读 → 追加「基线: 状态不可读」警告
+    text: validate 基线状态不可读 → 追加「基线：状态不可读」警告
     priority: P1
   - id: DV-009
     text: baseline._load_yaml 损坏文件 → stderr「基线文件损坏」警告 + 返回 {}

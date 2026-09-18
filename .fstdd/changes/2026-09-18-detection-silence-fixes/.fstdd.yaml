@@ -16,7 +16,12 @@ phases:
   deliver:
     status: pending
   spec:
-    status: pending
+    confirmed_actor: ai
+    confirmed_at: '2026-09-18T02:59:51+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 对 Gate 2 回复『Please continue』确认（2026-09-18 对话）：design 7
+      决策 + test-plan 17 TC + 3 能力 spec，canon 双轨 2/2
+    status: completed
   understand:
     confirmed_actor: ai
     confirmed_at: '2026-09-18T02:54:57+00:00'
