@@ -25,5 +25,12 @@
 - **执行闭环**：每小时轮询自动化 `06ec2c4f`（ACTIVE）已实现 —— 拉取 notices → 按文件要求执行 → 交付三件套（`<编号>-<slice>.patch` + `-tests.txt` + `FSTDD003复-<主题>.md`）scp 回本节点目录 → `/health` 自查 → 本地 git commit（不 push）。
 - **纪律边界（不可破）**：① 只读他人目录、不碰其他节点与 K 的 memory；② 文件名仅 ASCII（`FSTDD003-EXP-<日期>-<编号>.md`，中文进 frontmatter `title`）；③ POST 前必脱敏（路径/IP/域名/凭证 → `<PATH>/<IP>/<DOMAIN>/<TOKEN>`）；④ GitHub 仅本地 commit 不直推；⑤ 文件域白名单外一律不改——若验收要求迫使扩展文件域（如 S3 的 `tools/check_timestamps.py`），须在回执中**显式记录偏离，不得静默**；⑥ 审计表等共享产物归 S5 归口刷新，本节点不代删。
 
+### FSTDD003 每日收纳判据（2026-09-19 确立，替代「目录存在即跳过」）
+- **规则**：每日 00:10 收纳自动化（`270a0ea8`）判断「是否已归档」一律用**源/副本 mtime 比较**，不用存在性判断——`源 -nt 副本 → 覆盖刷新`；存在性判断只用于「首次归档」。
+- **触发原因**：`fstdd-experience-archive` 副本落后源 11.5 小时（13:25 vs 01:59），被「目录存在即跳过」漏掉，丢失 P15–P18 四条缺陷速查（含 P16 SSH 密钥位置，高）。见 `experiences/FSTDD003-EXP-20260918-ARCHIVE-1.md`。
+- **配套动作**：① 复制用 `cp -r "$SRC/." "$DST/"`（`cp -r "$SRC" "$DST"` 会嵌一层同名子目录）；② 刷新后必须 `diff -r` 校验字节一致；③ 一个 skill 只保**单副本**，不双写 `skills-archive/` 与 `artifacts/skills/`（避免两处漂移）；④ 日志须分别记录「刷新 N 个 / 跳过 N 个」，不只记新增。
+- **git 提交**：本仓库**禁止 `git add -A`**（会连带暂存 `_scratch/stdd-dev/` 25MB 基线与内嵌 git 仓库，产生坏 gitlink）——一律显式路径提交。仓库 remote 数=0，永不 push。
+- **experiences/ 不进 git**：该目录被 `.gitignore`（P11），经验文档留存靠每小时云端回传通道（自动化 `06ec2c4f`），本地 git 提交只覆盖 `skills-archive/`、`docs/`、`memory/`。
+
 ## 其他长期事实
 - 全局 skill 归档位置：`D:\FSTDD003\skills-archive\`（来源 `C:\Users\Administrator\.workbuddy-ai\skills\`，已剔除手动 GitHub 装的 9 个 STDD/fstdd 系列，保留 4 个 WorkBuddy AI 自身产物；归档内条目均已加 `FSTDD003-` 前缀）。
