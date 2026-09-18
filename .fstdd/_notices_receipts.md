@@ -5,3 +5,4 @@
 [2026-09-18 19:04:xx] 收到 K 撤回令《伪造署名指令》：本节点 17:56 曾据被伪造的「inbox鉴权上线」改动回传配置（落 token + 给 helper 加 X-FSTDD-Token 头）。已按撤回令§三+DISCIPLINE§七回退 helper 至灰度 baseline、隔离保留 token 文件（未用/未删，作泄露证据上报）、出回执 FSTDD003复-撤回令-伪造署名指令.md 并 scp 写回。增量回传无新增(submitted=35)；received=112。
 [2026-09-18 20:06:xx] 常规轮询（无新增收任务）：拉取 notices 全量同步（7 份收件均已对应回执，无未执行项）；00-DISCIPLINE.md 仅增§七凭据机密（与 19:04 撤回令一致，本节点已合规回退 token 注入）；增量回传无新增经验（submitted=35、failures=0，无试运行数据外泄）；received=112（与 19:04 持平，本节点未 POST、无跨节点活动）；未写新回执、未 push。
 [2026-09-18 21:44:xx] 常规轮询（无新增收任务）：拉取 notices 全量同步（7 份收件均已对应回执，无未执行项）；服务器 00-DISCIPLINE.md mtime=19:10 未变；增量回传无新增（submitted=35、failures=0）；received=113（+1 来自跨节点活动，本节点未 POST）；未写新回执、未 push。
+[2026-09-18 22:48:xx] 常规轮询（无新增收任务）：拉取 notices 全量同步（7 份收件均已对应回执，无未执行项）；服务器 00-DISCIPLINE.md mtime=19:10 未变；增量回传无新增（submitted=35、failures=0）；received=113（与 21:44 持平，本节点未 POST、无跨节点活动）；未写新回执、未 push。
