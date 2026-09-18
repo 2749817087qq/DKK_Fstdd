@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-19-notices-authenticity-gate: proposals/2026-09-19-notices-authenticity-gate.yaml
+specs:
+  agent:
+    2026-09-19-notices-authenticity-gate: specs/agent/2026-09-19-notices-authenticity-gate.yaml
+  code:
+    2026-09-19-notices-authenticity-gate: specs/code/2026-09-19-notices-authenticity-gate.yaml
+version: '2.9'

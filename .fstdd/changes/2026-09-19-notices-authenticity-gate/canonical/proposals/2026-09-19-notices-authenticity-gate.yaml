@@ -1,0 +1,156 @@
+# 2026-09-19-notices-authenticity-gate.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `fstdd canon generate` 生成。
+
+meta:
+  change_id: "2026-09-19-notices-authenticity-gate"
+  title: "协作通知真伪校验闸门：阻断未签名收-*.md 触发的凭证落盘与配置改动"
+  created: "2026-09-19T00:59:30.225166"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    FSTDD003 节点的每小时轮询自动化（06ec2c4f）把本节点目录下任意新增的
+    `FSTDD003收-*.md` 一律视为权威指令直接执行，而 `from:` 字段只是文件内
+    自声明的字符串，渠道侧没有任何签名、摘要或来源校验。
+
+    2026-09-18 16:32–16:34，13 份署 `from: K` 的文件实际由 `hub-infra-agent`(S)
+    未经 K 授权写入。本节点 17:56 读到 `FSTDD003收-inbox鉴权上线.md` 后，把其中
+    携带的**明文凭证落盘**到 `<PATH>/.fstdd/_fstdd003_token.txt`，并修改
+    `tools/fstdd003_daily_share.py` 使其 POST 时自动附带 `X-FSTDD-Token` 鉴权头——
+    即一次完全未授权的回传链路配置变更。K 于 19:00 下发撤回令后，本节点回退了代码、
+    保留凭证现场并按 DISCIPLINE §七.4 上报，但根因（渠道零防伪）未修：
+    下一次同类伪造文件到货，同样的未授权动作会原样重演。
+
+  motivation: |
+    该缺口已在 09-18 当天真实触发一次凭证泄露，且节点侧无任何机制可发现之
+    （无签名可验、无清单可比、凭证落盘无告警）。它属于「静默失败」的一类：
+    一切看起来正常工作，只是配置已经被别人改过。
+
+    09-18 傍晚已在本节点立项整改但尚未走 FSTDD 流程；本提案把它固化为可验证的变更。
+    详见 `experiences/FSTDD003-EXP-20260918-AUTH-1.md`。
+
+what_changes:
+  - id: C1
+    description: |
+      新增 `tools/verify_notices.py`：通知真伪校验器。读取渠道侧下发的清单
+      `00-SIGNATURES.md`（文件名 + md5 前 12 位 + 落盘时间 + 发出者），
+      对 `收-*.md` 计算 md5 并比对；不在清单内的标记 `unverified`。
+      提供两个 Python 入口：`classify_notice(path)` 判定单个文件，
+      `verify_notices(dir)` 批量扫描并返回结构化结果；
+      以及一个 CLI 入口 `--json`（机器消费）/ 默认人类可读输出，
+      附 `--strict` 开关（默认关闭）——strict 时 `unverified` 以非零退出码阻断，
+      非 strict 时 `unverified` 仅告警、退出码为 0。
+      退出码契约：0 = 可继续（含非 strict 下的 unverified）；2 = 文件被隔离；
+      3 = strict 模式下发现 unverified。
+    type: new
+  - id: C2
+    description: |
+      凭证嗅探与隔离：对 `unverified` 通知做凭证形状识别（token 正则），
+      命中则**不落盘为活配置**，改移入隔离区 `tools/_quarantine/` 并输出一条结构化告警。
+      告警与隔离记录不回显凭证任何片段（只记文件名、md5 前 12 位、命中规则名）。
+      子项：`.gitignore` 追加 `tools/_quarantine/`，确保隔离内容永不进入 git 历史。
+    type: new
+  - id: C3
+    description: |
+      新增 `tools/test_verify_notices.py`（pytest）：覆盖清单命中 / 清单缺失 /
+      md5 不匹配 / 凭证嗅探隔离 / 清单缺失时降级不阻断 五条路径。
+      严格 RED→GREEN 执行，且含一条「凭证片段绝不进入 stdout/隔离记录」的断言。
+    type: new
+  - id: C4
+    description: |
+      灰度兼容：`00-SIGNATURES.md` 不存在或清单无匹配记录时，
+      校验器输出 `unverified` 而非阻断执行链路（仅告警），并保证
+      `tools/fstdd003_daily_share.py` 的既有回传路径行为不变、零回归。
+    type: modified
+
+capabilities:
+  new:
+    - name: notice-authenticity-verification
+      description: |
+        校验协作通知的真实性：按 `00-SIGNATURES.md` 清单核对文件名与 md5 摘要，
+        并对未通过校验的通知携带的凭证做识别与隔离。校验结果可被
+        每小时轮询自动化消费，用于决定「执行 / 隔离 / 仅告警」三态。
+  modified:
+    - name: notice-execution-pipeline
+      description: |
+        本节点「收到 `收-*` 即执行」的链路增加一道前置校验：
+        校验结果参与执行决策。闸门设计为可插拔——清单缺失时降级为
+        全量 `unverified` 提示，不阻断既有协作效率，也不改动回传链路。
+
+constraints:
+  - 文件域仅限 `D:\FSTDD003\tools\`；不得修改 `~/.workbuddy-ai/FSTDD/upstream/`（上游）、
+    `changes/`、审计活表，不得触碰其他节点目录与 K-memory（00-DISCIPLINE 铁律 1）。
+  - 凭证绝不进入经验正文、日志正文与 git 历史；隔离区文件同样必须被 `.gitignore` 覆盖。
+  - 不得改变 `tools/fstdd003_daily_share.py` 的既有回传语义：本轮起保持灰度期
+    legacy-ip baseline，不主动附带任何 `X-FSTDD-Token`。
+  - 不得修改或删除已保留现场的 `.fstdd/_fstdd003_token.txt`（等待 K/S 指定销毁方式，见 Q1）。
+  - 不 push 任何 git remote（本仓库 remote 数=0，GitHub 仅本地 commit）。
+  - "`git add` 一律显式路径，禁用 `git add -A`（会连带暂存 `_scratch/` 25MB 基线与内嵌 git 仓库）。"
+
+stakeholders:
+  - FSTDD003 节点（本节点，自动化 06ec2c4f 与 270a0ea8）
+  - K（FSTDD 经验库归口节点）——渠道侧 `00-SIGNATURES.md` 清单的产出方
+  - hub-infra-agent (S)——被撤回令点名的实际写入者，需知情以便修复其分发逻辑
+  - D哥（用户）——凭证销毁方式的最终裁定人
+
+risk_areas:
+  - capability: notice-authenticity-verification
+    risk: |
+      清单缺失或过期时若实现成「阻断执行」，会中断 K 的协作通知交付，
+      与 2026-09-18 15:32 确立的「到货即执行」准则直接冲突，造成任务漏接。
+    mitigation: |
+      闸门默认降级为告警而非阻断（C4）；阻断行为只作为显式开关
+      `--strict`，由 K 在确认渠道侧清单机制已落地后再启用。
+  - capability: notice-authenticity-verification
+    risk: |
+      凭证嗅探若误判，可能把正常通知内容写入隔离区；若误判方向相反（漏判），
+      则伪造凭证仍可落盘。
+    mitigation: |
+      误判方向取「宁可隔离」；隔离区保留原文并标注 `quarantined: unverified_source`，
+      便于事后人工复核。误判率由 C3 的用例固定：已知格式通知 100% 不误隔离。
+  - capability: notice-execution-pipeline
+    risk: |
+      接入闸门可能破坏既有回传链路（09-18 曾出现提交计数污染类问题）。
+    mitigation: |
+      校验器与回传逻辑解耦：以子进程方式调用，退出码与 stdout 契约写进 C3 断言；
+      回传侧不读校验器内部状态。回归断言保证 `fstdd003_daily_share.py` 行为不变。
+
+non_goals:
+  - 不实现渠道侧签名/密钥分发机制（属 K 侧，节点侧只消费清单）。
+  - 不修改每小时轮询自动化 `06ec2c4f` 的调度周期与 prompt，不修改每日收纳自动化 `270a0ea8`。
+  - 不删除、不清空、不改名已保留现场的凭证文件（等待 K/S 指定销毁方式）。
+  - 不修改 `~/.workbuddy-ai/FSTDD/upstream/` 下任何代码
+    （`tools/check_timestamps.py` 的 `scan_sources` EA-027 残留另经 K 裁定，见 Q4）。
+  - 不解决「审计表 vs 代码指纹漂移」的 CI 化（已作为建议提给 K，见 Q5）。
+
+critical:
+  is_critical: true
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L1
+  reference_changes: []
+  anchor_implementations: []
+
+success_criteria:
+  - "清单内且 md5 匹配的 `收-*`：`classify_notice()` 返回 `status: verified`，
+    CLI 退出码 0。"
+  - "md5 不匹配的 `收-*`：返回 `status: unverified`，输出含该文件名与本地 md5 前 12 位、
+    不含任何凭证片段；默认（非 strict）退出码 0，`--strict` 退出码 3。"
+  - "`unverified` 且含凭证形状片段的通知：凭证内容不出现在 stdout、stderr、
+    隔离记录或任何 git 提交中；原文件被移入 `tools/_quarantine/`，
+    隔离记录仅含文件名 + md5 前 12 位 + 命中规则名；CLI 退出码 2。"
+  - "`00-SIGNATURES.md` 不存在时：全部标记 `unverified` + 一条告警，退出码 0（不阻断），
+    且 `tools/fstdd003_daily_share.py` 的既有回传路径行为不变、零回归。"
+  - "`tools/test_verify_notices.py` 全部用例通过（RED→GREEN 留痕），
+    且既有 `tools/` 相关测试零回归。"
+  - "误隔离上界可测：对 fixtures 中的 5 份已知格式真实通知（含协作通知、撤回令、
+    回执各至少 1 份）运行校验器，隔离数为 0。"
+  - "`tools/_quarantine/` 已被 `.gitignore` 覆盖：
+    `git check-ignore -v tools/_quarantine/x` 返回非空且退出码 0。"
+  - "回传计数语义不变：连续两轮运行 `submitted` 计数只增不减、无重复提交
+    （与 P17 去重日志 `.fstdd/_fstdd003_share_log.json` 一致）。"
