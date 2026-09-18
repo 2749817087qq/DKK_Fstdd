@@ -1,0 +1,34 @@
+=== FSTDD003 Slice S2+S3 — pytest 完整输出 ===
+datetime: 2026-09-18T06:41:28Z
+python: Python 3.13.14
+
+----- 本 slice 测试（test_status_voice.py：DFX-005/006 + COV-001..003）-----
+============================= test session starts =============================
+platform win32 -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Administrator\.workbuddy-ai\binaries\python\envs\default\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\FSTDD003\_scratch\stdd-dev\stdd-repo\upstream
+configfile: pyproject.toml
+collecting ... collected 5 items
+
+upstream\tests\test_status_voice.py::test_dfx_005_active_stalled_change_flagged PASSED [ 20%]
+upstream\tests\test_status_voice.py::test_dfx_006_unparseable_lastmod_warns_and_undetermined PASSED [ 40%]
+upstream\tests\test_status_voice.py::test_cov_001_broken_yaml_scan_error PASSED [ 60%]
+upstream\tests\test_status_voice.py::test_cov_002_unreadable_proposal_scan_error PASSED [ 80%]
+upstream\tests\test_status_voice.py::test_cov_003_full_scan_has_scan_errors_key PASSED [100%]
+
+============================== 5 passed in 1.62s ==============================
+
+----- 回归：既有时效/突变/检测测试（应全绿，证明 naive_count 语义不回归）-----
+  D:\FSTDD003\_scratch\stdd-dev\stdd-repo\upstream\tests\test_detection_voice.py:111: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    ago25h = (datetime.utcnow() - timedelta(hours=25)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+16 passed, 3 warnings in 45.18s
+
+----- 已知红线：审计哨兵 test_aud_002（ERR-002，属 S5 归口合并时刷新审计表，本 slice 预期红）-----
+E         Use -v to get more diff
+
+upstream\tests\test_except_audit.py:78: AssertionError
+=========================== short test summary info ===========================
+FAILED upstream\tests\test_except_audit.py::test_aud_002_table_matches_live_scan
+1 failed in 0.17s

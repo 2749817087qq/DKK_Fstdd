@@ -24,3 +24,28 @@
 2. ✅ 执行通知中分配给 FSTDD003 的专属任务（状态盘点回执）— 已完成并写回。
 3. ✅ 把回执 `FSTDD003复-<主题>.md` 写回该 notices 目录 — 已 scp 落地。
 后续每小时自动化可直接执行完整流程（含 SSH 取件/回执），无需再等任何授权。
+
+## 2026-09-18 13:22 (GMT+8) 执行
+
+- **步骤1 增量回传**: `fstdd003_daily_share.py` → 「无新增」（submitted=34）。但发现本节点先前某次轮询已将 `FSTDD003-EXP-20260918-ENV-1.md`（环境基线）POST 成功，submitted 现为 35、failures=0。
+- **SSH 取件**: 列 `/home/ubuntu/fstdd-notices/FSTDD003/` 发现新通知 `FSTDD003收-通道演练.md`（13:07，限期 16:00），此前 3 份回执（00-NOTICE领取确认/状态盘点/经验回传要求）已齐。
+- **执行通知任务 + 回执写回**: ENV 基线经验此前已 POST（accepted=1, rejected=0）；本地回执 `FSTDD003复-通道演练.md` 已存在但**服务器缺失** → 本次 `scp` 补写回 `/home/ubuntu/fstdd-notices/FSTDD003/`（13:21 落地，1445 字节，已核验）。闭环四步（下发→执行→回传→回执）走通。
+- **步骤2 本地回执**: `_notices_receipts.md` 追加「本次成功 0 条；received=84」（时间为 GMT+8，已修正 UTC 误写）。
+- **步骤3 本地 git**: `3a7bc5f` 提交 share_log(34→35) + 通道演练回执；未 push 远端。
+- **步骤4 失败处理**: failures 为空，无重试项。
+- **纪律**: 仅读写本节点 `FSTDD003/` 文件夹；未触碰他人条目与根目录 00-* 文件。
+
+## 2026-09-18 14:24 (GMT+8) 执行 — 协作开发 Slice S2+S3
+
+- **新通知**: `FSTDD003收-协作开发-S2S3.md`（K 14:24 发文，限期 09-20 13:00）+ 根目录 `00-COLLAB.md`（协作开发 SOP）。本节点分工 = S2+S3（status.py：DFX-005/006 + COV-001..003）。
+- **基线**: `scp` 拉 `stdd-baseline-5e3f9a3.tar.gz` → 解压 `stdd-repo/`，`git log` 核验 HEAD = `5e3f9a3` ✅（scratch 目录 `_scratch/stdd-dev/`，未动正式安装）。
+- **TDD 实现**（RED→GREEN）:
+  - `upstream/fstdd/cli/commands/status.py` 重写 `_show_zombie_changes`：取消活跃豁免 +「（当前活跃）」标注（DFX-005）；不可解析 last_mod → stderr 警告 +「无法判定」提示（DFX-006）。
+  - `tools/check_timestamps.py`：`scan_change_values`/`scan_human_view_headers` 文件级失败由静默 `continue` 改记 `category=scan_error`（COV-001/002）；`full_scan` 新增 `scan_errors` 键单列、不污染 `naive_count`（COV-003）。
+  - 新增 `upstream/tests/test_status_voice.py`（5 测试）。
+- **白名单偏离（已记录，非静默）**: 任务白名单只列 `status.py`+新测试，但 COV 系列函数仅存在于 `tools/check_timestamps.py`，必要扩展至该文件并在回执显式声明。
+- **自测**: 5/5 slice 测试全绿；回归 16 passed（timestamp_ops/mutation_alive/detection_voice）证明 `naive_count` 语义不回归。**审计哨兵 `test_aud_002` 预期红**——本 slice 移除 EA-019/028/029 三处静默点，审计表刷新属 ERR-002/S5 归口合并，未代删（防越权/跨 slice 冲突）。
+- **交付三件套**（已 scp 回 `ubuntu@43.134.236.80:/home/ubuntu/fstdd-notices/FSTDD003/`，核验落地）: `FSTDD003-sliceS2S3.patch`(14.8K) / `FSTDD003-sliceS2S3-tests.txt`(2.1K) / `FSTDD003复-协作开发-S2S3.md`(4.6K)。
+- **增量回传**: `fstdd003_daily_share.py` → 「无新增」（submitted=35）。`/health` received 85→86（跨节点正常活动，本节点未 POST）。
+- **本地 git**: 仅提交 `_notices/FSTDD003/*` + memory（**未**提交 `_scratch/` 大基线）；未 push 远端。
+- **纪律**: 仅读写本节点文件夹；未触审计表/其余节点/K-memory；未跑 gate/canon、未 push。
