@@ -369,3 +369,21 @@
 - **本地 git**: 显式路径提交 `.fstdd/_notices_receipts.md` + `.fstdd/_notices/FSTDD003/FSTDD003收-凭证安装硬时限.md` + `.fstdd/_notices/FSTDD003/FSTDD003复-凭证安装硬时限.md` + `.workbuddy-ai/memory/2026-09-20.md` + automation memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`；**未 push** 远端；`_fstdd003_token.txt` 与新凭证路径均 gitignored 未泄露。
 - **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；**未回显任何凭证片段**；未自行改造 helper、未猜测凭证值（严格按 K §四 "不要自行改造"）；未 push 远端。
 - **距硬时限 08:00**: 6h06m 缓冲。下一轮 02:54 若 K 补发凭证文件即自动拾取、写入 `.fstdd/_fstdd003_credential.txt`、POST 归因、更新回执；否则等 K 兜底方案。
+
+## 2026-09-20 03:07 (GMT+8) 执行 — 处置 K 2 份新通知（SOP + 工作量规划）
+
+- **步骤1 拉取同步**: `scp -i /d/id_ed25519` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功）。发现 **2 份新增未回执** `FSTDD003收-*.md`：
+  - `FSTDD003收-编写《per-node 接入 SOP》+ 跨平台验证.md`（K 09-20 01:54 发文，priority 高，限期 12:00）
+  - `FSTDD003收-工作量与资源规划要求.md`（K 09-20 02:27 发文，priority 高，D哥 02:25 指示**工作方式变更**：从"等派活"转为"自规划产能、自拆并行、自调度子代理与外部模型"）
+  - 此前 10 份 `FSTDD003收-*` 均已对应 `FSTDD003复-*` 回执。
+- **SOP 文档（✅ 完成）**: 撰写 `FSTDD003-接入SOP.md`（8172B，8 节）：① 授权链路（K 授权 ≠ 凭证下发，两件事分开）② 凭证载体三处红线（`_credential.txt` / 下发载体用完即删 / 伪造凭证归档不读不写不删）③ 客户端带 `X-FSTDD-Token` 参考实现（`load_credential()` / `_post_once()` / `post_one()` 完整代码）④ 自证生效三步（helper 自检 / POST 一次 / received 归因）⑤ 常见坑 6 项（凭证缺失 / 401 / 403 / 非 hex 格式 / 服务端 chown 缓存 / MSYS2 路径）⑥ 跨平台差异表（MSYS2 / Win 原生 / Linux）⑦ MSYS2 特别提示（venv python / cygpath / 多行 commit / 中文正则 `\b` 坑）⑧ 交付清单 5 项 checklist。
+- **回执 1**: `FSTDD003复-编写《per-node 接入 SOP》+ 跨平台验证.md`（6390B）—— SOP ✅ 完成；凭证安装 ⏸ 阻塞（凭证文件仍未抵达，参见 01:56 硬时限回执）；跨平台验证 ❌ 阻塞（依赖 002 `fstdd_selfcheck.py`，按 DISCIPLINE 本节点不能读 002 文件夹，等 K 中转到本节点文件夹）。
+- **回执 2**: `FSTDD003复-工作量与资源规划.md`（6432B）—— §二.1 四栏完整提交：产能盘点（4 核/16GB/115GB D 盘/无 token 预算表/归因数=0）+ 任务清单 8 项（含 3 项"自认该做"：经验沉淀 EXP-20260919/20 / helper 单元测试 / skill `fstdd-msys2-pitfalls`）+ 并行策略（敏感操作不外派、每小时轮询串行、子代理后台跑测试与文档、脚本替代确定性任务）+ 风险 4 项（凭证持续未抵达 / 002 脚本未中转 / token 预算未知 / 主代理串行瓶颈）；§二.2+§二.3 子代理分工表具体到"哪个子任务交给谁"。
+- **步骤2 增量回传**: `fstdd003_daily_share.py` → **POST 2 条新增经验** `FSTDD003-EXP-20260919-E2E-1` + `FSTDD003-EXP-20260919-MOCK-1` `[OK]`。submitted 43→45、failures=0，无试运行数据外泄。
+- **步骤3 回执写回**: 3 份文件 scp 写回 `/home/ubuntu/fstdd-notices/FSTDD003/`，服务器 03:05 落地核验（SOP 6827B / 回执1 5464B / 回执2 6432B）。
+- **步骤4 自查**: `GET /health` → `ok=true, received=158`（上次 01:54 为 154，+4=本节点 2+跨节点 2；与本轮实际 POST 一致）。
+- **本地 git**: 显式路径提交 6 个 notices 文件 + share_log(43→45) + receipts + automation memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`；**未 push** 远端；`_fstdd003_token.txt` 与新凭证路径均 gitignored 未泄露。
+- **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未触碰 002 文件夹（跨平台验证阻塞原因）；未回显任何凭证片段；未 push 远端。
+- **距硬时限 08:00**: ~5h 缓冲。距 SOP 限期 12:00: ~9h。距每日 21:00 复盘: ~18h。
+- **待办（下一轮）**: 持续观察 K 是否下发 `FSTDD003收-凭证下发-轮换-2.md`（凭证值）或 `fstdd_selfcheck.py`（002 自检脚本，通过 K 中转）；凭证抵达即写 `.fstdd/_fstdd003_credential.txt` + POST 归因 + 更新回执；脚本抵达即在 MSYS2 环境实跑 + 输出差异清单 + 写 `FSTDD003复-跨平台验证.md`；21:00 前完成《当日复盘》。
+- **教训（工作方式变更）**：K/D哥 02:25 指示把节点从"被动等派活"转为"主动规划产能"。核心动作：① 每日 09:00 前提交《当日工作计划》（含产能盘点/任务清单/并行策略/风险）② 主动拆子任务给子代理（敏感操作不外派、长任务后台）③ 主动用外部模型（贵模型判断、便宜模型搬运、脚本替代确定性任务）④ 每日 21:00 提交《当日复盘》。自认该做的任务也要显式列出（不能只等 K 派活）。
