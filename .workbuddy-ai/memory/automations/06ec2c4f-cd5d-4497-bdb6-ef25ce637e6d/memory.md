@@ -264,3 +264,12 @@
 - **本地 git**: 显式路径提交 `.fstdd/_notices_receipts.md` + `.gitignore` + `tools/fstdd003_daily_share.py` + `.fstdd/_notices/FSTDD003/FSTDD003复-接入授权.md` + `.fstdd/_notices/FSTDD003/FSTDD003收-接入授权.md` + automation memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`；**未 push** 远端；`_fstdd003_token.txt` 与新凭证路径均 gitignored 未泄露。
 - **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端。
 - **待办（下一轮）**: K 下发 `FSTDD003收-凭证下发-轮换-2.md`（预期 17:30-18:00）后，本节点在 17:58 或 18:58 轮询中：提取凭证 → 写 `.fstdd/_fstdd003_credential.txt`（chmod 600）→ 立即删除下发文件（DISCIPLINE §七.6）→ 执行 V1/V2 → 更新回执。
+## 2026-09-19 17:13 (GMT+8) 执行 — 常规轮询（无新增收任务、无新增经验）
+
+- **步骤1 拉取同步**: `scp -i /d/id_ed25519` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功）。服务器与本地清单完全对齐：8 份 `FSTDD003收-*`（状态盘点/经验回传要求/通道演练/协作开发-S2S3/inbox鉴权上线/自动化率提升/撤回令-伪造署名指令/接入授权）**均已对应 `FSTDD003复-*` 回执**，无未执行项、无新增收任务。`00-COLLAB.md`(09-18 13:44)/`00-DISCIPLINE.md`(09-18 19:10) mtime 未变。K-reply-003c/d、sliceS2S3.patch/tests、FSTDD003复-伪造署名事件处置与开放问题协商.md、FSTDD003复-接入授权.md 均系已交付存档/信息性文件，非任务、无需回执。
+- **凭证下发窗口未达**: K 在 15:58 授权文件中承诺 `FSTDD003收-凭证下发-轮换-2.md` 于 17:30-18:00 下发；当前 17:13 尚未到窗口，本节点文件夹未见该文件。V1/V2 测试按 15:58 计划挂起，下一轮（18:13 或 18:58）再核。
+- **步骤2 增量回传**: `fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 40 条）」。submitted=40、failures=0，无试运行数据外泄。
+- **步骤4 自查**: `GET /health` → `ok=true, received=133`（上次 15:58 为 130，+3 来自跨节点活动；本节点本轮未 POST，符合预期）。
+- **未写新回执**（无新增收任务，按规则无需回执）。
+- **本地 git**: 待提交 `.fstdd/_notices_receipts.md`（追加 17:13 一行）+ automation memory；**未**提交 `_scratch/`、**未 push** 远端；`_fstdd003_token.txt` 与新凭证路径均 gitignored 未泄露。
+- **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未 push 远端。
