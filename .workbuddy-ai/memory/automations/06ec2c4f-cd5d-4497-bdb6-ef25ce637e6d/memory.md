@@ -409,3 +409,13 @@
 - **本地 git**: 显式路径提交 `.fstdd/_notices_receipts.md` + `.fstdd/_notices/FSTDD003/*`（mtime 刷新）+ automation memory + workspace memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`；**未 push** 远端；token 文件与新凭证路径均 gitignored 未泄露。
 - **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端。
 - **距硬时限 08:00**: 2h46m 缓冲。下一轮 06:14 若 K 补发 `FSTDD003收-凭证下发-*.md` 即自动拾取、写入 `.fstdd/_fstdd003_credential.txt`(chmod 600)、立即删除下发文件（DISCIPLINE §七.6）、执行 V1（期望 200+node_id=FSTDD003 归因）+ V3 计数核对、更新回执；否则持续挂起等 K，不主动重跑 V2（无旧枚明文可测）。
+## 2026-09-20 06:17 (GMT+8) 执行 — 常规轮询（无新增收任务、无新增经验）
+
+- **步骤1 拉取同步**: `scp -i /d/id_ed25519` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功，26 个文件 mtime 全部刷新至 06:18-06:19）。服务器与本地清单完全对齐：13 份 `FSTDD003收-*`（状态盘点/经验回传要求/通道演练/协作开发-S2S3/inbox鉴权上线/自动化率提升/撤回令-伪造署名指令/接入授权/凭证验证补充/澄清问询-凭证验证补充/凭证安装硬时限/编写《per-node 接入 SOP》+跨平台验证/工作量与资源规划要求）**均已对应 `FSTDD003复-*` 回执**（注：「工作量与资源规划要求」对应回执名 `FSTDD003复-工作量与资源规划.md`，历史命名差异非任务遗漏），无未执行项、无新增收任务。`00-COLLAB.md`(09-18 13:44)/`00-DISCIPLINE.md`(09-18 19:10) mtime 未变。K-reply-003c/d/e、sliceS2S3.patch/tests、FSTDD003复-* 各份均系已交付存档/信息性文件，非任务、无需回执。
+- **凭证下发文件持续未见**: K-reply-003e 承诺的 `FSTDD003收-凭证下发-补发.md`（第 11+ 轮轮询）仍未落盘；V1 保持未执行状态、隔离凭证 `_fstdd003_token.txt` 保留现场未用未删、`.fstdd/_fstdd003_credential.txt` 保持不存在（helper 白名单 baseline 零回归）。
+- **步骤2 增量回传**: `fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 45 条）」。submitted=45、failures=0，无试运行数据外泄。
+- **步骤4 自查**: `GET /health` → `ok=true, received=161`（与 05:14 持平；本节点本轮未 POST、无跨节点活动，符合预期）。
+- **未写新回执**（无新增收任务，按规则无需回执）。
+- **本地 git**: 显式路径提交 `.fstdd/_notices_receipts.md` + automation memory + workspace memory；**未**提交 `_scratch/`、**未 push** 远端；token 文件与新凭证路径均 gitignored 未泄露。
+- **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端。
+- **距硬时限 08:00**: 1h43m 缓冲。下一轮 07:17 若 K 补发 `FSTDD003收-凭证下发-*.md` 即自动拾取、写入 `.fstdd/_fstdd003_credential.txt`(chmod 600)、立即删除下发文件（DISCIPLINE §七.6）、执行 V1（期望 200+node_id=FSTDD003 归因）+ V3 计数核对、更新回执；否则持续挂起等 K，不主动重跑 V2（无旧枚明文可测）。
