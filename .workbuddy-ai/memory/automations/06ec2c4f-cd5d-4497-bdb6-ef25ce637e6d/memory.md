@@ -192,3 +192,12 @@
 - **步骤4 自查**: `GET /health` → `ok=true, received=121`（与 07:20 持平；本节点本轮未 POST、无跨节点活动，符合预期）。
 - **未写新回执**（无新增收任务，按规则无需回执）。
 - **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未 push 远端；token 文件 gitignored 未泄露。
+
+## 2026-09-19 09:28 (GMT+8) 执行 — 常规轮询（无新增收任务、无新增经验）
+
+- **步骤1 拉取同步**: `scp` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功）。服务器与本地清单完全对齐：7 份 `FSTDD003收-*`（状态盘点/经验回传要求/通道演练/协作开发-S2S3/inbox鉴权上线/自动化率提升/撤回令-伪造署名指令）**均已对应 `FSTDD003复-*` 回执**，无未执行项。服务器侧 mtime 未新增：`00-COLLAB.md`=09-18 13:44、`00-DISCIPLINE.md`=09-18 19:10、K-reply-003c/d=09-18 17:07/17:25。`FSTDD003复-伪造署名事件处置与开放问题协商.md`(09-19 00:58)、sliceS2S3.patch/tests(09-18 14:43) 均为已交付存档/信息性文件，非任务、无需回执。
+- **步骤2 增量回传**: `fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 40 条）」。submitted=40、failures=0，无试运行数据外泄。
+- **步骤4 自查**: `GET /health` → `ok=true, received=121`（与 08:25 持平；本节点本轮未 POST、无跨节点活动，符合预期）。
+- **未写新回执**（无新增收任务，按规则无需回执）。
+- **本地 git**: 提交 `.fstdd/_notices_receipts.md`（追加 08:25+09:28 两行）+ automation memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`；**未 push** 远端；token 文件 gitignored 未泄露。
+- **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未 push 远端；token 文件 gitignored 未泄露。
