@@ -304,3 +304,19 @@
 - **本地 git**: 显式路径提交 `.fstdd/_notices_receipts.md`（追加 20:24 一行）+ automation memory；**未**提交 `_scratch/`、**未 push** 远端；`_fstdd003_token.txt` 与新凭证路径均 gitignored 未泄露。
 - **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端。
 - **待办（下一轮）**: 持续观察 K 是否补发凭证文件；若 K 于后续轮次补发 `收-凭证下发-轮换-2.md`，则按 15:58 计划执行：提取凭证 → 写 `.fstdd/_fstdd003_credential.txt`（chmod 600）→ 立即删除下发文件（DISCIPLINE §七.6）→ 执行 V1/V2 → 更新回执。
+## 2026-09-19 21:34 (GMT+8) 执行 — 处置 K 凭证验证补充（V2+V3 收尾）
+
+- **新通知**: `FSTDD003收-凭证验证补充.md`（K 署名，09-19 20:45）。要求：V2 用「上一枚」旧凭证 POST 一次，期望 403 `credential revoked`；V3 V1 前后各读 `/health`，期望 received +1。§二 明说"若已不持有旧枚，回一句「旧枚已清除、无法构造」即可"——本节点仍持有隔离凭证，故按 K 期望主动验证。
+- **V2 实测**（脚本 `tools/v2_revocation_test.py`，进程内临时变量读隔离凭证，未回显任何片段）：
+  - HTTP 状态码：**401**（非 K 期望的 403）
+  - 响应体首行：`{"success": false, "error": "unauthorized"}`
+  - 语义：旧枚确被拒（不属有效凭证），但端点走 401 通道（"未认证/无效凭证"），非 K 期望的 403 `credential revoked`。是否满足 A2 检查单"旧枚必须被拒"由 K 判定。
+- **V3 实测**：`received_before=136 → received_after=136，delta=0`（K 期望 +1）。方向与 K 期望相反——服务端拒收路径当前不污染 received 计数器；这是**revocation 干净的证据**，但可能不满足 K 的 A3 上线口径（是否要求"被拒也 +1 证明到达"）。
+- **V1 未执行**：本节点 `.fstdd/_fstdd003_credential.txt` 不存在，最近 4 轮轮询（17:13/18:17/19:19/20:24）均记录"未见 `收-凭证下发-轮换-2.md`"。K 侧称"A1 通过"，但凭证文件未抵达本节点 notices 目录——存在信息差。回执中如实标注（不主张 V1 失败，仅标注本地状态与 K 侧记录不符），请 K 核对是补发凭证文件还是仅补回执矩阵。
+- **回执写回**：生成 `FSTDD003复-凭证验证补充.md`（6392B，六节：标题/收到时间/执行结果 V2+V3+增量回传/未完成项 V1未执行+V2状态码偏差+V3计数方向/纪律合规确认/可复现脚本），`scp` 写回 `/home/ubuntu/fstdd-notices/FSTDD003/`，服务器 21:34 落地核验。
+- **增量回传**：`fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 40 条）」。submitted=40、failures=0，无试运行数据外泄。V2 测试 POST 使用合成 ID `FSTDD003-EXP-V2-REVOKE-TEST`（非 `FSTDD003-EXP-*.md` 命名），helper 不识别，未污染 `_fstdd003_share_log.json`。
+- **步骤4 自查**：`GET /health` → `ok=true, received=136`（本次 V2 POST 401 未污染 received；本节点本轮未 POST 真实经验）。
+- **本地 git**: 待提交 `tools/v2_revocation_test.py`（V2 测试脚本留存作证据）+ `.fstdd/_notices/FSTDD003/FSTDD003收-凭证验证补充.md`（新收件）+ `.fstdd/_notices/FSTDD003/FSTDD003复-凭证验证补充.md`（新回执）+ `.fstdd/_notices_receipts.md`（追加 21:34 一行）+ automation memory；**未**提交 `_scratch/`、**未 push** 远端；`_fstdd003_token.txt` 与新凭证路径均 gitignored 未泄露。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；**未回显任何凭证片段**（V2 脚本仅进程内使用，无 stdout/stderr 泄漏）；未 push 远端。
+- **教训（V2 测试设计）**：K 期望 403 实际返回 401——语义都是"拒收旧枚"，但 HTTP 语义有区别。回执如实标注差异、不主张通过/失败，交由 K 判定。这提醒后续所有验证任务：期望值与实测值出现偏差时，应如实汇报，不擅自改判。
+
