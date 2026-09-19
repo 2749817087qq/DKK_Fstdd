@@ -358,3 +358,14 @@
 - **本地 git**: 显式路径提交 `.fstdd/_notices_receipts.md` + `.workbuddy-ai/memory/2026-09-20.md` + automation memory；**未**提交 `_scratch/`、**未 push** 远端；token 文件与新凭证路径均 gitignored 未泄露。
 - **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端。
 
+
+## 2026-09-20 01:54 (GMT+8) 执行 — 处置 K《凭证安装硬时限》
+
+- **新通知**: `FSTDD003收-凭证安装硬时限.md`（K 署名，priority 最高，硬时限 08:00）。K §一 事实：服务端 `tokens.json` 已注册本节点 active 凭证，但 inbox 147 份中本节点归因数=0（所有 POST 走白名单放行）；同批 004/006/002/005 已可归因（7/5/4/3）。§二 硬时限 08:00 前装凭证 + 回执；§三 09:00 白名单整体拆除；§四「若无法读取凭证，请立即回执说明（不要自行改造），08:00 前告知」→ K 会转兜底方案。
+- **本节点状态**：helper 接入机制 09-19 15:58 已按 K 授权实施（`load_credential()`+`X-FSTDD-Token`+白名单回退，零回归）；但凭证值文件 `FSTDD003收-凭证下发-轮换-2.md` 从 09-19 17:13 起 9+ 轮轮询未见落盘，`.fstdd/_fstdd003_credential.txt` 从未创建；隔离凭证 `_fstdd003_token.txt`（09-18 19:04 撤回令事件遗留）保留现场、未用、未删、未参与任何 POST。
+- **回执写回**: 生成 `FSTDD003复-凭证安装硬时限.md`（6321B，六节：标题/收到时间/执行结果含 6 项合规确认/未完成项含 3.1 凭证未抵达+3.2 POST HTTP 码待测+3.3 归因数=0/§四 兜底方案请求两项择一/纪律合规确认/下一轮 02:54 行动计划），scp 写回 `/home/ubuntu/fstdd-notices/FSTDD003/`，服务器 01:56 落地核验。
+- **步骤2 增量回传**: `fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 43 条）」。submitted=43、failures=0，无试运行数据外泄。
+- **步骤4 自查**: `GET /health` → `ok=true, received=154`（上次 00:52 为 147，+7 来自跨节点活动；本节点本轮未 POST）。
+- **本地 git**: 显式路径提交 `.fstdd/_notices_receipts.md` + `.fstdd/_notices/FSTDD003/FSTDD003收-凭证安装硬时限.md` + `.fstdd/_notices/FSTDD003/FSTDD003复-凭证安装硬时限.md` + `.workbuddy-ai/memory/2026-09-20.md` + automation memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`；**未 push** 远端；`_fstdd003_token.txt` 与新凭证路径均 gitignored 未泄露。
+- **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；**未回显任何凭证片段**；未自行改造 helper、未猜测凭证值（严格按 K §四 "不要自行改造"）；未 push 远端。
+- **距硬时限 08:00**: 6h06m 缓冲。下一轮 02:54 若 K 补发凭证文件即自动拾取、写入 `.fstdd/_fstdd003_credential.txt`、POST 归因、更新回执；否则等 K 兜底方案。
