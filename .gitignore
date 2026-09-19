@@ -4,3 +4,4 @@ experiences/
 __pycache__/
 *.pyc
 .fstdd/_fstdd003_token.txt
+.fstdd/_fstdd003_credential.txt

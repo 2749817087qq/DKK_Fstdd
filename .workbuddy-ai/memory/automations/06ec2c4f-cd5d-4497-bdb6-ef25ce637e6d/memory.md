@@ -245,3 +245,22 @@
 - **未写新回执**（无新增收任务，按规则无需回执）。
 - **本地 git**: 显式路径提交 `.fstdd/_notices_receipts.md`（追加 14:57 一行）+ automation memory；**未**提交 `_scratch/`、**未 push** 远端；token 文件 gitignored 未泄露。
 - **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未 push 远端；token 文件 gitignored 未泄露。
+
+## 2026-09-19 15:58 (GMT+8) 执行 — 处置 K 授权《接入授权》
+
+- **步骤1 拉取同步**: `scp -i /d/id_ed25519` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地。发现 1 份**新通知** `FSTDD003收-接入授权.md`（K 署名，09-19 15:34，priority 高）；此前 7 份 `FSTDD003收-*` 均已对应 `FSTDD003复-*` 回执，无未执行项。`00-COLLAB.md`(13:44)/`00-DISCIPLINE.md`(19:10) mtime 未变。K-reply-003c/d、sliceS2S3.patch/tests、FSTDD003复-伪造署名事件处置与开放问题协商.md 均系已交付存档/信息性文件，非任务、无需回执。
+- **K 授权解读**（关键区分，非 19:04 撤回令遗留问题）：
+  - `FSTDD003收-接入授权.md` 由 **K 署名**（from: K, 09-19 15:34），针对"接入机制"（读文件+X-FSTDD-Token+白名单回退）作**书面授权**——这是对 09-18 19:04 撤回令遗留问题的正式处置（K 引用了节点质疑"凭证下发 ≠ 授权把 X-FSTDD-Token 接入回传客户端脚本"）。
+  - 但**凭证值本身未下发**：授权文件 §三 指向 `FSTDD003收-凭证下发-轮换.md`、§四 说今日 17:00-17:30 铸发、17:30-18:00 K 逐节点下发 `FSTDD003收-凭证下发-轮换-2.md`——两者本节点文件夹均**未见**。
+  - K 明确建议"现在先把**接入机制**做好，17:30 那轮**只换文件里的值**即可"—— 本节点按此实施。
+- **实施内容**（K 授权 §二 边界）:
+  - `tools/fstdd003_daily_share.py` 新增：`load_credential()`（读 `.fstdd/_fstdd003_credential.txt`，文件不存在/为空返回 None）、`_post_once()`（单次 POST，可带/不带 token）、`_post_with_retry()`（白名单完整 RETRY=4 指数退避）、`_is_auth_related()`（401/403/超时判定）；`post_one()` 逻辑：凭证存在 → 单次带 token 尝试 → 失败且鉴权相关则回退白名单；凭证不存在 → 直接白名单（灰度 baseline 零回归）。
+  - `.gitignore` 新增 `.fstdd/_fstdd003_credential.txt`。
+  - 语法检查通过（venv python `py_compile`）；本轮执行输出「无新增需回传的经验（已提交记录 40 条）」—— baseline 行为未回归。
+- **隔离凭证处置**（DISCIPLINE §七.4）：`.fstdd/_fstdd003_token.txt`（65B, 09-18 17:53）系 19:04 撤回令事件伪造/泄露凭证，**保留现场、未用、未删、未参与 V2 测试**（避免触发滥用告警）；哈希是否与授权文件所列作废枚 `7b0d61b27e87057e`(006)/`eb70369c5f87dc78`(002) 匹配本节点不主动核验、不回显。若 K 需要 V2 由本节点主动验证，需 K 明确授权。
+- **回执写回**：生成 `FSTDD003复-接入授权.md`（6589B）含五要素：① 机制接入完成（是），② 接入方式（读 `.fstdd/_fstdd003_credential.txt` + `X-FSTDD-Token` 头 + 白名单回退），③ V1 未完成（凭证未抵达，承诺 K 下发 `收-凭证下发-轮换-2.md` 后下一轮补齐），④ V2 未完成（隔离凭证未参与测试），⑤ 脚本合规性 6 项确认（未硬编码/未打印凭证/保留白名单回退/未删旧路径/Git 排除/经验正文脱敏）。`scp` 写回 `/home/ubuntu/fstdd-notices/FSTDD003/`，服务器 16:07 落地核验。
+- **步骤2 增量回传**: `fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 40 条）」。submitted=40、failures=0，无试运行数据外泄。
+- **步骤4 自查**: `GET /health` → `ok=true, received=130`（上次 12:49 为 128，+2 来自跨节点活动；本节点本轮未 POST，符合预期）。
+- **本地 git**: 显式路径提交 `.fstdd/_notices_receipts.md` + `.gitignore` + `tools/fstdd003_daily_share.py` + `.fstdd/_notices/FSTDD003/FSTDD003复-接入授权.md` + `.fstdd/_notices/FSTDD003/FSTDD003收-接入授权.md` + automation memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`；**未 push** 远端；`_fstdd003_token.txt` 与新凭证路径均 gitignored 未泄露。
+- **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端。
+- **待办（下一轮）**: K 下发 `FSTDD003收-凭证下发-轮换-2.md`（预期 17:30-18:00）后，本节点在 17:58 或 18:58 轮询中：提取凭证 → 写 `.fstdd/_fstdd003_credential.txt`（chmod 600）→ 立即删除下发文件（DISCIPLINE §七.6）→ 执行 V1/V2 → 更新回执。
