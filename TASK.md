@@ -80,6 +80,17 @@ tags: [install, hardening, experience-upload, distributed]
       危害：SC-ID 失去全局唯一性，而 test-plan / `agent_spec.yaml` 正是靠 SC-ID 做映射。
       最小修法：`archive.py` 冲突检测补 `#### Scenario: (SC-\d+)` 维度 + 打印带变更名前缀的引用建议。
       详见 `experiences/FSTDD003-EXP-20260919-ARCHIVE-1.md`。
+- [ ] **P20 待修（本节点 2026-09-19 发现）**：`archive` 的「Specs 已合并到 specs/」**只合并 Human View**
+      （`<ws>/.fstdd/specs/<cap>/spec.md`），**项目级 canonical 双轨未同步** ——
+      `<ws>/.fstdd/canonical/specs/{code,agent}/`、`canonical/proposals/` 与 `.canon-index.yaml` 都不会更新，
+      归档后必须手工补三步（cp proposal + cp 4 个 spec yaml + 往索引字典按 key 插行）。
+      最小修法：把输出文案改成「Human View 已合并到 specs/；canonical/ 需手工同步」。
+      详见 `experiences/FSTDD003-EXP-20260919-ARCHIVE-2.md`。
+- [ ] **P21 待修（流程侧，非 CLI 缺陷）**：变异测试暴露的两类「形同虚设断言」没有现成检查手段 ——
+      ① 裸 `in file` 关键词断言会命中**注释/文档**而非代码；② 服务层常量被 worker 覆盖后，
+      只测路由层 ⇒ 该字段**不可观测**，注入变异也不变红。
+      建议在 Phase 3 清单加一条：「每个切片 GREEN 后，对最关键的那条断言做 1 次变异注入验证」。
+      详见 `experiences/FSTDD003-EXP-20260919-MUTATE-1.md`。
 
 ## 6. 第四轮（2026-09-17 · 真实业务变更实战）
 
@@ -283,3 +294,38 @@ change `2026-09-18-gui-skeleton-credential`：25 条 TC 全通过、5/5 切片�
       若有，跨变更引用一律带变更名前缀」。
 - [ ] 本次四个变更**均未跑 `canon verify`**（P17 的 CWD 基准问题仍在）——
       归档前的验证只用了 `git status` + 单测，属已知降级。
+
+## 12. 第十一轮（2026-09-19 · archiver-gui · 第 3 批 `2026-09-18-gui-articles-fetch`）
+
+| 项 | 内容 |
+|---|---|
+| 变更 | `2026-09-18-gui-articles-fetch`（文章管理 F4 + 抓取正文 F5） |
+| 复杂度 / 模式 | 12 / `thorough` |
+| 四道门 | Gate 1 ✅ · Gate 2 ✅ · Gate 3 ✅（均 `confirmed_by: dialog`） |
+| 测试 | 本批 39 条，全量 **95 passed / 0 failed** |
+| 交付 | commit `27e3711` + tag `gui-articles-fetch-v1` |
+
+### 有效做法（值得固化）
+
+- **8 个切片全部真跑 RED**（17 errors → 16 errors → 5 failed），
+  修正了第 2 批「S4~S7 先写实现后补测试」的问题 —— 代价是多花一轮往返，但换来了可信度。
+- **变异测试真的要做**：17 次注入里抓出 **2 条假绿**（P21），
+  其中一条是「关键词断言命中注释」，另一条是「服务层常量被上层覆盖」。
+  没跑变异的话这两条会一路绿到交付。
+- **归档前先跑 `canon verify`**（P17 的 CWD 基准要求）：本次 2/2 通过（DC-HASH / DC-FIELD）。
+- **归档后必查四项**（P19 + P20 合并成一条清单）：项目级 canonical 有文件、
+  proposal 在、索引里三条路径都能对上真实文件、master spec 无跨变更撞号。
+
+### 本轮发现的新缺陷
+
+- **P20**：`archive` 只合并 Human View，项目级 canonical 双轨与 `.canon-index.yaml` 未同步
+  （详见 `experiences/FSTDD003-EXP-20260919-ARCHIVE-2.md`）。
+- **P21**（流程侧）：两类形同虚设的断言，靠变异测试才暴露
+  （详见 `experiences/FSTDD003-EXP-20260919-MUTATE-1.md`）。
+
+### 遗留项（本轮新增）
+
+- [ ] P20 待修 / P21 待修 —— 见顶层「5. 遗留项」。
+- [ ] 本轮归档后 `.pager` 组件类仍缺：`archiver-gui/web/static/app.css` 有单测要求
+      **逐字节等于** `archiver-design/mockups/assets/app.css`（TC-SVC-003），设计侧已冻结，
+      分页器只能复用 `.toolbar`。等设计侧解冻后补。
