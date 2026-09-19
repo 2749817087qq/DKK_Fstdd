@@ -13,6 +13,12 @@
 - **偏离任务书**：未用 `git add -A`（会暂存 `_scratch/` 25MB 基线 + 内嵌 git 仓库），改显式路径提交。
 - 详见 `D:\FSTDD003\.workbuddy-ai\memory\2026-09-18.md` 末尾「00:10 每日收纳」段。
 
+### 2026-09-20 00:10 运行（收纳对象 2026-09-19）— 第 2 轮
+- **skill**：刷新 1 个（`fstdd-experience-archive`，副本落后源 22.6h、缺 P19 SC 撞号速查段）/ 跳过其余 16 个（当日无变更）。`diff -r` 字节一致校验通过。
+- **经验文档**：0 新增 —— 09-19 的 4 条 EXP（SPEC-1 / ARCHIVE-1 / ARCHIVE-2 / MUTATE-1）均由人工当日落盘并登记入索引。无未捕获的 FSTDD 特有坑点。
+- **git**：显式路径提交（禁 `git add -A`）。未 push。
+- 详见 `D:\FSTDD003\.workbuddy-ai\memory\2026-09-19.md` 末尾「00:10 每日收纳」段。
+
 ## 下次运行须知（固化判据）
 1. **skill 判据 = mtime 比较**，不是「目录存在即跳过」：
    `if [ -d "$DST" ] && [ "$SRC" -nt "$DST" ]; then cp -r "$SRC/." "$DST/"; fi` → 再 `diff -r` 校验。

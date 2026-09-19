@@ -177,6 +177,24 @@ python tools/share_experience.py --export             # 只导出不回传
 | **P16** | **SSH 私钥位置**：节点服务器私钥恒在 **D 盘根 `/d/id_ed25519`**（ed25519），**不是** `$USERPROFILE/.ssh/id_ed25519`；scp/ssh 用 `-i /d/id_ed25519 -o StrictHostKeyChecking=no`，Host `ubuntu@43.134.236.80`。误用 `.ssh/` 那把会 `Permission denied (publickey)`（假阻塞） | 高 |
 | **P17** | **服务端不去重**：同 `experience_id` 重复 POST 会累加 `received` 计数。本地须用 `.fstdd/_fstdd003_share_log.json` 记录已提交 ID（`tools/fstdd003_daily_share.py` 据此增量发），否则每日重发污染计数 | 中 |
 | **P18** | **回执闭环**：K 下发的 `FSTDD00X收-<主题>.md` 任务，完成后写 `FSTDD00X复-<主题>.md` 经 scp 回 `ubuntu@43.134.236.80:/home/ubuntu/fstdd-notices/FSTDD00X/`（仅本节点目录，禁碰他人文件夹）。回执四要素：标题/收到时间/执行结果/未完成项（见 00-NOTICE.md 第四节） | 中 |
+| **P19** | **`archive` 合并 master specs 时 SC 编号跨变更静默重复**：冲突检测只比 `### Requirement:` 标题，**漏检 SC-ID 撞号** → `specs/<cap>/spec.md` 里出现两组 `SC-001..N`，归档输出仍显示「Specs 已合并到 specs/」无警告。危害：SC-ID 失去全局唯一性，而 test-plan / `agent_spec.yaml` 正是靠它做映射 | 中 |
+
+### P19 速记（归档后必查）
+
+- **触发条件**：本次归档的 capability **之前已存在于** `.fstdd/specs/` 下
+  （首次归档走 `shutil.copy2`，不会撞）。**同一 capability 被 ≥2 个变更改过 = 必然撞号**。
+- **源码**：`fstdd/cli/commands/archive.py:57-78` —— 合并是**追加**（内容不丢，这点对），
+  但 `existing_reqs & new_reqs` 只比 Requirement 标题。
+- **归档后必跑三查**：
+  ```bash
+  grep -o "^#### Scenario: SC-[0-9]*" .fstdd/specs/*/spec.md | sort | uniq -c | awk '$1>1'   # 撞号
+  grep -c "^> Change:" .fstdd/specs/*/spec.md                                                 # 多组 header
+  grep -c "^#### Scenario:" .fstdd/specs/<cap>/spec.md                                        # 应等于各变更之和
+  ```
+- **处理原则**：**不擅自重编 master spec 的 SC-ID**（会破坏 Gate 已确认的 traceability）。
+  内容确认没丢即可，**跨变更引用一律带变更名前缀**（`<change>/SC-002`），不裸用 `SC-002`。
+- **真源永远是归档原件**：`archive/<change>/canonical/specs/code/*.yaml` 逐变更独立编号。
+- 详见 `experiences/FSTDD003-EXP-20260919-ARCHIVE-1.md`。
 
 ### P15 速记（Windows 本机跑 fstdd CLI 必踩）
 - 隔离 Python 二进制 `C:/Users/Administrator/.workbuddy-ai/binaries/python/versions/3.13.12/python.exe` 缺 `yaml`；`pyyaml` 装在 venv `C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe`。
