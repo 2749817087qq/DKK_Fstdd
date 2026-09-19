@@ -4,7 +4,7 @@ schema: fstdd-distributed-task/v0.1
 title: FSTDD 安装/运行工程测试与经验回传
 status: archived          # pending | running | blocked | done | archived
 created: 2026-09-12
-updated: 2026-09-18
+updated: 2026-09-19
 node: WORKBUDDY-AI-WIN   # 执行节点标识（本实例）
 owner: D哥
 mode: fstdd              # 走 FSTDD 四阶段 + 三确认门
@@ -73,6 +73,13 @@ tags: [install, hardening, experience-upload, distributed]
 - [ ] **P14 待修**：`init` 自动拉社区经验必失败（registry 指向的仓库无 release → 404），
       且 `_post_init_experiences()` 用 `except Exception` 把 404 归因成"网络不可用"；
       提示里的命令名仍是旧 `stdd`。
+- [ ] **P19 待修（本节点 2026-09-19 发现）**：`archive` 合并 master specs 时，
+      冲突检测只比 `### Requirement:` **标题**，**漏检 SC-ID 跨变更撞号** →
+      `.fstdd/specs/<cap>/spec.md` 里静默出现两组 `SC-001..N`（实测 SC-001~004 各 2 次），
+      归档输出仍显示「Specs 已合并到 specs/」无任何警告。
+      危害：SC-ID 失去全局唯一性，而 test-plan / `agent_spec.yaml` 正是靠 SC-ID 做映射。
+      最小修法：`archive.py` 冲突检测补 `#### Scenario: (SC-\d+)` 维度 + 打印带变更名前缀的引用建议。
+      详见 `experiences/FSTDD003-EXP-20260919-ARCHIVE-1.md`。
 
 ## 6. 第四轮（2026-09-17 · 真实业务变更实战）
 
@@ -237,3 +244,42 @@ change `2026-09-18-gui-skeleton-credential`：25 条 TC 全通过、5/5 切片�
       `canon verify` 支持读 `archive/<change>`；`structure delta` 改为扫真实变更源码文件。
       另建议 `fstdd-deliver` 文档的 Step 顺序改为
       `canon verify` → `structure delta` → `archive` → `structure merge` → canon 合并。
+
+---
+
+## 11. 第十轮（2026-09-19 · reits-writer 写作层 ②→⑥ 四个变更连跑）
+
+**场景**：`reits-writer` 工作区，把 REITs 写作链路从「② 定角度」一路做到「⑥ 排版导出」，
+四个 FSTDD 变更连续走完四阶段（含 2 个长程模式、1 个普通模式）。
+
+| # | change | complexity | 模式 | 切片 | 结果 |
+|---|---|---|---|---|---|
+| 1 | `2026-09-18-writing-pack` | 9 / thorough | 长程 | 6 | ② 定角度 + ③ 大纲 交付 |
+| 2 | `2026-09-18-writepack-polish` | 7 / standard | 普通 | 3 | 大纲 15 段 → 4 段 |
+| 3 | `2026-09-18-draft-skeleton` | 9 / thorough | 长程 | 4 | ⑤ 成稿 交付 |
+| 4 | `2026-09-18-typeset` | 8 / thorough | 长程 | 3 | ⑥ 排版导出 交付 |
+
+**四道门全部由用户显式确认**（`confirmed_by: dialog`，evidence 逐条落进 `.fstdd.yaml`）。
+测试从 0 → 90 个（写作层），采集层 55 个无回归。
+
+### 有效做法（值得固化）
+
+- **小变更把 Phase 1+2 一次做完、两道门一起过**：`writepack-polish` 用这招省了一轮往返，
+  用户接受（回复「Please continue.」即视为两门齐过，evidence 里写明）。
+- **`gate approve --gate 2` 会自动生成 spec.md Human View**，`--gate 1` 生成 proposal.md Human View。
+  不必手工维护这两份。
+- **长程模式下的 Gate 3 仍需用户确认**：本次四次都是「我先给 Gate 3 确认框 + 结论摘要，
+  用户回「确认」/「Please continue.」后再 `gate approve`」。长程 ≠ 免 Gate。
+
+### 本节点发现的新缺陷
+
+- **P19**：`archive` 合并 master specs 时 SC 编号跨变更静默重复
+  （冲突检测只比 Requirement 标题）。详见 `experiences/FSTDD003-EXP-20260919-ARCHIVE-1.md`。
+
+### 遗留项
+
+- [ ] **P19 待修**：见顶层遗留项与 `FSTDD003-EXP-20260919-ARCHIVE-1.md`。
+- [ ] 建议 `fstdd-deliver` 的 Phase 4 清单加一条：「归档后检查 master spec 是否含多组同号 SC；
+      若有，跨变更引用一律带变更名前缀」。
+- [ ] 本次四个变更**均未跑 `canon verify`**（P17 的 CWD 基准问题仍在）——
+      归档前的验证只用了 `git status` + 单测，属已知降级。
