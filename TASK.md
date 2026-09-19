@@ -4,7 +4,7 @@ schema: fstdd-distributed-task/v0.1
 title: FSTDD 安装/运行工程测试与经验回传
 status: archived          # pending | running | blocked | done | archived
 created: 2026-09-12
-updated: 2026-09-19
+updated: 2026-09-20
 node: WORKBUDDY-AI-WIN   # 执行节点标识（本实例）
 owner: D哥
 mode: fstdd              # 走 FSTDD 四阶段 + 三确认门
@@ -91,6 +91,24 @@ tags: [install, hardening, experience-upload, distributed]
       只测路由层 ⇒ 该字段**不可观测**，注入变异也不变红。
       建议在 Phase 3 清单加一条：「每个切片 GREEN 后，对最关键的那条断言做 1 次变异注入验证」。
       详见 `experiences/FSTDD003-EXP-20260919-MUTATE-1.md`。
+- [ ] **P22 待修（流程侧，非 CLI 缺陷）**：两类「假东西掩盖真路径」——
+      ① 逐用例手塞假依赖（`session=object()`）⇒ 被测代码自己「不注入时自建依赖」那段
+      **覆盖率恒为 0**，真机第一次真跑每篇抛 `'NoneType' object has no attribute 'get'`
+      （95 条用例 95 次手塞，等于真实路径一次没走）；
+      ② 造的假数据被**被测代码自己的归一化函数**改写（`link_key` 在冒号处截断 +
+      丢非 ASCII ⇒ 5 篇去重成 1 篇、两个中文号名撞成一个）。
+      建议：凡可注入依赖**必须有至少一条不注入的用例**；Harness 要记录「收到了什么依赖」；
+      造数助手一律带条数自检断言。
+      详见 `experiences/FSTDD003-EXP-20260919-MOCK-1.md`。
+- [ ] **P23 待修（流程侧，非 CLI 缺陷）**：真机 E2E 不可替代，且其盲区与变异测试**互补**——
+      变异测不到「从未被执行过的代码」，E2E 才能抓到（本批 3 个 bug：session 未建 /
+      状态栏 JS 从不加 `.show` / 已抓过的被静默跳过显示「成功 0 篇」）。
+      另：真数据还暴露两类实验室看不见的口径偏差 —— 抽样取前 N 把全量估成 63 GB
+      （索引按时间倒序，前排全是带图大篇；改等距抽样 → 2.2 GB）；
+      「失败 1,264 篇」不带原因（两份索引根本不写 `dir`，这些篇导出必失败）。
+      建议：Phase 3 完成定义里写死「UI 类变更 ≥1 条真浏览器 E2E + ≥1 条真数据跑批」；
+      估算类算法禁止 `rows[:N]`；聚合计数必须能拆原因分类。
+      详见 `experiences/FSTDD003-EXP-20260919-E2E-1.md`。
 
 ## 6. 第四轮（2026-09-17 · 真实业务变更实战）
 
@@ -329,3 +347,61 @@ change `2026-09-18-gui-skeleton-credential`：25 条 TC 全通过、5/5 切片�
 - [ ] 本轮归档后 `.pager` 组件类仍缺：`archiver-gui/web/static/app.css` 有单测要求
       **逐字节等于** `archiver-design/mockups/assets/app.css`（TC-SVC-003），设计侧已冻结，
       分页器只能复用 `.toolbar`。等设计侧解冻后补。
+
+## 13. 第十二轮（2026-09-20 · archiver-gui · 第 4 批 `2026-09-18-gui-export` + 第 3 批 E2E 补跑）
+
+| 项 | 内容 |
+|---|---|
+| 变更 | `2026-09-18-gui-export`（导出屏：配置/估算 + 执行/历史，md / html / epub） |
+| 复杂度 / 模式 | 12 / `thorough` |
+| 四道门 | Gate 1 ✅（`D1=A 如实做` / `D2=A 自己写`）· Gate 2 ✅ · Gate 3 ✅（均 `confirmed_by: dialog`） |
+| 测试 | 本批 34 条，全量 **137 passed / 0 failed**；变异 12 次注入 **12/12 被抓** |
+| 交付 | commit `4a91401` + tag `gui-export-v1`（四批 tag 齐：`gui-skeleton-credential-v1` / `gui-accounts-sync-v1` / `gui-articles-fetch-v1` / `gui-export-v1`） |
+
+### 本轮最大收获：真机 E2E 抓出 3 个单测全绿也漏掉的 bug（P22 + P23）
+
+先按 D哥 要求把第 3 批欠的 3 条 E2E 跑掉，结果第一次真抓取就崩：
+
+1. **`run_fetch` 从未建 session**（`_make_session()` 写了没调用）→ 真抓每篇
+   `'NoneType' object has no attribute 'get'`。原因：**每个用例都手塞 `session=object()`**，
+   真实构造路径覆盖率 0。→ 补 `session = session or _make_session()` + TC-FET-022/023。
+2. **状态栏 JS 从不加 `.show`**（CSS 是 `display:none` + `.show{display:flex}`）
+   → 长任务界面零反馈，暂停/取消按钮跟着藏起来 = 无法中断。→ 补 `classList.toggle` + TC-FET-020。
+3. **已抓过的静默跳过** → 真库 28,665 篇**全部**已抓，默认路径下界面显示「成功 0 篇」无解释。
+   → 加 force 开关 + 弹框提示 + TC-FET-019/021。
+
+**结论：变异测试与 E2E 是互补不是替代** —— 变异只能改「被执行到的代码」，
+「根本没被执行」和「只在真数据下才触发」这两类洞只有 E2E 能发现。
+
+### 真数据暴露的两类口径偏差
+
+- **体积估算 63.5 GB → 2.2 GB**：抽样取「前 30 篇」，而索引按发布时间倒序、
+  前排全是刚抓的带图大篇。改**等距抽样** `rows[::step][:limit]` 后回到 2.2 GB。
+- **「失败 1,264 篇」没有解释**：三份索引里 `articles.jsonl`(435) 与 `net_archive`(829)
+  **根本不写 `dir`** → 这些篇导出必失败。加 `no_body_count()` + 界面前置提示 +
+  中文失败原因（「索引里没有正文落盘路径（dir 为空）—— 这篇得先抓取正文才能导出」）。
+- 顺带核实的事实：全库 28,669 篇里**只有 1.4%（386 篇）有本地图片**，
+  28,279 篇无图。导出屏如实报「无本地图片 28,279 篇」，不假装嵌入成功。
+
+### 有效做法（值得固化）
+
+- **E2E 脚本自己要先挑对样本**：按 `estimate()` 逐号筛 `no_body == 0`。
+  37 个号里只有 3 个合格 —— 不筛就会随机挑到必失败的号，然后误判成产品 bug（本轮踩了两次）。
+- **产物级断言**：E2E-005 导完 EPUB 后**解压 zip 数章节**，断言「章节数 == 成功篇数」
+  （21 vs 21），比「接口返回 200」强得多。⚠ ebooklib 会额外产出 `nav.xhtml`，计数要排除。
+- **真写 EPUB 走 ebooklib**（D2=A 自己写）：一篇一章 + 本地图 `EpubImage` +
+  按号分书 + `tmp.replace()` 原子落地。实测 21 篇 → 1 本 / 102 KB / 2.0 s。
+- **四个 `.num` 一律留空**、估算值标「估算」，不放假数据 —— 真数据下 28,669 / 2.2 GB 全部对得上。
+
+### 本轮发现的新缺陷
+
+- **P22**（流程侧）：假依赖 / 假数据掩盖真路径（详见 `experiences/FSTDD003-EXP-20260919-MOCK-1.md`）。
+- **P23**（流程侧）：真机 E2E 不可替代 + 真数据口径偏差（详见 `experiences/FSTDD003-EXP-20260919-E2E-1.md`）。
+
+### 遗留项（本轮新增）
+
+- [ ] P22 / P23 待修 —— 见顶层「5. 遗留项」。
+- [ ] 本批 8 个切片**未严格先 RED**（先写实现后补测试），已在 `slices.md` 如实标注 ——
+      与第 3 批「8 切片全真 RED」相比是退步，下批要补回来。
+- [ ] `archiver-gui` 四批已全部交付（骨架+凭证 / 公众号+同步 / 文章+抓取 / 导出），
+      功能面封闭；`.pager` 组件类仍缺（同 §12 遗留），等设计侧解冻。

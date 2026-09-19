@@ -1,6 +1,6 @@
 ---
 name: fstdd-experience-archive
-description: "把 FSTDD 使用过程中发现的问题 / 新建或修改的 skill 归档到 D:\\FSTDD003（分布式任务根，task_id=FSTDD003）。当用户说「FSTDD 的问题记得保存」「归档到 FSTDD003」「经验回传」「FSTDD 报错要记录」，或你在用 fstdd 跑 UNDERSTAND/SPEC/BUILD/DELIVER 时踩到坑（CLI 报错、生成物对不上、change 落错目录、Gate 状态异常）时使用。含 FSTDD 本机定位、EXP 条目格式、目录命名、索引与 TASK.md 更新规则，以及 P1–P14 已知缺陷速查。"
+description: "把 FSTDD 使用过程中发现的问题 / 新建或修改的 skill 归档到 D:\\FSTDD003（分布式任务根，task_id=FSTDD003）。当用户说「FSTDD 的问题记得保存」「归档到 FSTDD003」「经验回传」「FSTDD 报错要记录」，或你在用 fstdd 跑 UNDERSTAND/SPEC/BUILD/DELIVER 时踩到坑（CLI 报错、生成物对不上、change 落错目录、Gate 状态异常）时使用。含 FSTDD 本机定位、EXP 条目格式、目录命名、索引与 TASK.md 更新规则，以及 P1–P23 已知缺陷速查（含 Phase 4 归档必查四项、变异测试盲区、假依赖掩盖真路径）。"
 agent_created: true
 version: 1.0.0
 license: unknown
@@ -158,7 +158,7 @@ python tools/share_experience.py --export             # 只导出不回传
 
 ---
 
-## 五、已知缺陷速查（P1–P14，别重复踩）
+## 五、已知缺陷速查（P1–P23，别重复踩）
 
 | 编号 | 问题 | 严重度 |
 |---|---|---|
@@ -178,6 +178,10 @@ python tools/share_experience.py --export             # 只导出不回传
 | **P17** | **服务端不去重**：同 `experience_id` 重复 POST 会累加 `received` 计数。本地须用 `.fstdd/_fstdd003_share_log.json` 记录已提交 ID（`tools/fstdd003_daily_share.py` 据此增量发），否则每日重发污染计数 | 中 |
 | **P18** | **回执闭环**：K 下发的 `FSTDD00X收-<主题>.md` 任务，完成后写 `FSTDD00X复-<主题>.md` 经 scp 回 `ubuntu@43.134.236.80:/home/ubuntu/fstdd-notices/FSTDD00X/`（仅本节点目录，禁碰他人文件夹）。回执四要素：标题/收到时间/执行结果/未完成项（见 00-NOTICE.md 第四节） | 中 |
 | **P19** | **`archive` 合并 master specs 时 SC 编号跨变更静默重复**：冲突检测只比 `### Requirement:` 标题，**漏检 SC-ID 撞号** → `specs/<cap>/spec.md` 里出现两组 `SC-001..N`，归档输出仍显示「Specs 已合并到 specs/」无警告。危害：SC-ID 失去全局唯一性，而 test-plan / `agent_spec.yaml` 正是靠它做映射 | 中 |
+| **P20** | **`archive` 的「Specs 已合并到 specs/」只合并 Human View**（`<ws>/.fstdd/specs/<cap>/spec.md`），**项目级 canonical 双轨未同步** —— `canonical/specs/{code,agent}/`、`canonical/proposals/`、`.canon-index.yaml` 全都不动，必须手工补三步。文案诚实但极易被误读成「已全部合并」 | 中 |
+| **P21**（流程侧） | **两类形同虚设的断言**：① 裸 `in file` 关键词断言会命中**注释/文档**而非代码；② 服务层常量被 worker 显式覆盖后，只测路由层 ⇒ 该字段**不可观测**，注入变异也不变红。17 次变异注入才抓出 2 条假绿 | 高 |
+| **P22**（流程侧） | **两类「假东西掩盖真路径」**：① 逐用例手塞假依赖（`session=object()`）⇒ 被测代码「不注入时自建依赖」那段**覆盖率恒为 0**，真机第一次真跑每篇抛 `'NoneType' object has no attribute 'get'`；② 造的假数据被**被测代码自己的归一化函数**改写（`link_key` 冒号截断 + 丢非 ASCII ⇒ 5 篇去重成 1 篇） | 高 |
+| **P23**（流程侧） | **真机 E2E 不可替代，且与变异测试互补**：变异只能改「被执行到的代码」，测不到「根本没执行」和「只在真数据下才触发」的两类洞（实测 95 单测 + 17 变异全绿仍漏 3 个 bug）。另：真数据才暴露的两类口径偏差 —— 抽样取前 N 把全量估成 63 GB（索引按时间倒序，前排全是带图大篇；改等距抽样 → 2.2 GB）、「失败 1,264 篇」不带原因（两份索引根本不写 `dir`） | 高 |
 
 ### P19 速记（归档后必查）
 
@@ -195,6 +199,32 @@ python tools/share_experience.py --export             # 只导出不回传
   内容确认没丢即可，**跨变更引用一律带变更名前缀**（`<change>/SC-002`），不裸用 `SC-002`。
 - **真源永远是归档原件**：`archive/<change>/canonical/specs/code/*.yaml` 逐变更独立编号。
 - 详见 `experiences/FSTDD003-EXP-20260919-ARCHIVE-1.md`。
+
+### P20–P23 速记（Phase 3/4 必查，四条都不是 CLI 缺陷，是流程纪律）
+
+- **P20 归档后必查四项**（P19 + P20 合并成一条清单，跑完 `archive` 立刻验）：
+  ```bash
+  ls .fstdd/canonical/specs/code/ .fstdd/canonical/specs/agent/    # 1 本次 capability 在
+  ls .fstdd/canonical/proposals/<change>.yaml                      # 2 proposal 在
+  grep -n "<change>" .fstdd/canonical/.canon-index.yaml            # 3 索引三条路径对得上真实文件
+  grep -ho "id: SC-[A-Z]*-[0-9]*" .fstdd/canonical/specs/code/*.yaml | sort | uniq -d   # 4 无撞号（应为空）
+  ```
+  ⚠ `archive` 打印「Specs 已合并到 specs/」**不等于** canonical 已同步 —— 那句只覆盖 Human View。
+- **P21 变异测试要写进流程**：每个切片 GREEN 后，对最关键的那条断言做 1 次注入验证。
+  两类高发假绿：裸 `in file`（命中注释）、只测路由层（服务层值被 worker 覆盖后不可观测）。
+- **P22 可注入依赖的铁律**：
+  ① 凡「依赖可注入」的函数，**必须至少有一条不注入的用例**（不注入 = 生产路径）；
+  ② 可注入参数的默认值优先用「真身」而非 `None`（`session=None` 这种签名是在邀请调用方漏传）；
+  ③ Harness 要记录「收到了什么依赖」，不只是「被调用几次」；
+  ④ 造数据前**先读被测代码自己的归一化函数**（`link_key` 类），警惕截断（冒号/斜杠）与字符集过滤（非 ASCII）；
+  ⑤ 造完先 `assert len(rows) == N` 再断言别的（撞号去重会在第一条就爆）。
+- **P23 E2E 与真数据铁律**：
+  ① UI 类变更**至少 1 条真浏览器 E2E + 1 条真数据跑批**，写进 Phase 3 完成定义；
+  ② 断言要落在**产物**上（导出完解压数章节），不是「接口返回 200」；
+  ③ 估算类算法**禁止 `rows[:N]`**，一律等距 `rows[::step][:N]`（索引常按时间倒序，取前 N 会失真，实测 63 GB → 2.2 GB）；
+  ④ 聚合里凡是「失败/跳过」计数，**必须能拆出原因分类**并给出下一步动作；
+  ⑤ E2E 失败**先怀疑样本再怀疑产品**（本轮「失败 1 篇」排查两轮才发现是选中的号本身有 1 篇无 `dir`）；
+  ⑥ E2E 脚本要**自己先筛合格样本**（按 `estimate()` 逐号筛，37 个号里只有 3 个合格）。
 
 ### P15 速记（Windows 本机跑 fstdd CLI 必踩）
 - 隔离 Python 二进制 `C:/Users/Administrator/.workbuddy-ai/binaries/python/versions/3.13.12/python.exe` 缺 `yaml`；`pyyaml` 装在 venv `C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe`。
