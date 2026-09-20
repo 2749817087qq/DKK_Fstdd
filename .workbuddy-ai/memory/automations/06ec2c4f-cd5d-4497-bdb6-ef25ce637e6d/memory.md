@@ -530,3 +530,20 @@
 - **本地 git**：待提交 `.fstdd/_notices_receipts.md`（追加 16:45 一行）+ `.fstdd/_notices/FSTDD003/*`（mtime 刷新）+ automation memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`；**未 push** 远端；token 文件与新凭证路径均 gitignored 未泄露。
 - **距每日 21:00 复盘**：~4h15m。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端；token 与新凭证路径均 gitignored 未泄露。
+
+## 2026-09-20 18:00 (GMT+8) 执行 — 处理新收件 + helper 代理残留防御
+
+- **Step 0 对账（拉取前）**：服务器 14 份 `FSTDD003收-*`（比上轮 +1：`FSTDD003收-助001接入与SOP收尾.md`，K 签发, priority=中）→ 本地 16 份 `FSTDD003复-*`；精确匹配 12 + 命名差异 1（工作量与资源规划要求↔工作量与资源规划）+ 3 份历史存档无对应收-（00-NOTICE领取确认/伪造署名事件协商/凭证安装）；**1 份待补**：`FSTDD003收-助001接入与SOP收尾.md`。
+- **Step 1 拉取同步**：`scp -i /d/id_ed25519` 全量拉取（静默成功）。31 文件 mtime 全部刷新至 18:00 前后。
+- **Step 2 紧急快通道**：新件 priority=中，未触发。
+- **Step 3 执行新件（助001接入与SOP收尾）**：
+  - 交付 `FSTDD003复-给001的接入要点.md`：三段式（卡在哪自查命令 / 自证三判据 / 坑清单 6 条）。
+  - 交付 `FSTDD003复-SOP收尾.md`：两条修订说明（B4 拆白名单后变化 + V2 补测判据放宽）。
+  - `FSTDD003-接入SOP.md` 就地升级 `status: 修订 v1.1`，追加 §9「B4 已拆白名单后的变化」+ §10「如何补测 V2」。
+  - 三份文件 scp 回 `/home/ubuntu/fstdd-notices/FSTDD003/`，服务器核验落地。
+- **Step 3 增量回传（POST 3 条）**：`fstdd003_daily_share.py` → `[OK] SNAPSHOT-1` + `[OK] VERIFY-1` + `[OK] PROXY-1`（新增经验）。submitted 46→49、failures=0，无试运行数据外泄。
+- **Step 3 helper 代理残留防御**：POST 首次连 2 次全部 `WinError 10061`，curl 通 Python 不通 → 判定系统代理残留（mitmproxy 抓包脚本已停但注册表 `ProxyServer=127.0.0.1:65000` 未清，netstat 显示 65000 无 LISTEN 只有一堆 SYN_SENT）。修 helper：`_post_once` 改用 `build_opener(ProxyHandler({}))` 绕过代理。修复后 POST 立即 [OK]。**记录为 `FSTDD003-EXP-20260920-PROXY-1.md`**。
+- **Step 4 自查**：`GET /health` → `ok=true, received=172`（上次 16:45 为 169，+3=本节点本轮 3 条，计数一致）。
+- **本地 git**：`883756c` 提交 helper + SOP + 2 回执 + 新收件 + receipts + share_log(46→49)；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`、`docs/VERIFY_SPEC_ISSUES_2026-09-20_workbench.md`、TASK.md、`experiences/`(gitignored)；**未 push** 远端；token 与新凭证路径均 gitignored 未泄露。
+- **距每日 21:00 复盘**：~3h。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端。
