@@ -518,3 +518,15 @@
 - **未写新回执**（无新增收任务，按规则无需回执）。
 - **距每日 21:00 复盘**：~5h26m。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端；token 与新凭证路径均 gitignored 未泄露。
+
+## 2026-09-20 16:45 (GMT+8) 执行 — 常规轮询（无新增收任务、无新增经验）
+
+- **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 13 份 `FSTDD003收-*`（状态盘点/经验回传要求/通道演练/协作开发-S2S3/inbox鉴权上线/自动化率提升/撤回令-伪造署名指令/接入授权/凭证验证补充/澄清问询-凭证验证补充/凭证安装硬时限/编写《per-node 接入 SOP》+跨平台验证/工作量与资源规划要求）→ 本地 16 份 `FSTDD003复-*`（13 精确匹配 + 1 命名差异「工作量与资源规划要求」↔「工作量与资源规划」（Y 是 X 子串）+ 3 份无对应收-的历史存档：00-NOTICE领取确认/伪造署名事件协商/凭证安装），**0 份待补**；按「只从收找复、绝不反向」不补建。
+- **Step 1 拉取同步**：`scp -i /d/id_ed25519` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功，31 文件 mtime 全部刷新至 16:46-16:47）。`00-COLLAB.md`(09-18 13:44)/`00-DISCIPLINE.md`(09-18 19:10) mtime 未变；K-reply-003c/d/e(09-20 03:30) 仍为最新信息性文件，无 K-reply-003f；FSTDD003-接入SOP.md、sliceS2S3.patch/tests、FSTDD003复-* 各份均系已交付存档/信息性文件，非任务、无需回执。
+- **Step 2 紧急快通道**：`FSTDD003收-凭证安装硬时限.md` 仍标 priority:最高，但对应回执 `FSTDD003复-凭证安装硬时限.md`(09-20 01:56) + `FSTDD003复-凭证安装.md`(09-20 10:48) 均已闭环——凭证 09-20 10:45 已装（`.fstdd/_fstdd003_credential.txt` 48B, chmod 600）、V1 POST 200 + node_id=FSTDD003 归因、V2 POST 401 白名单拆除均已通过（10:53 独立复核），下发文件本地+服务器两侧已删除，无需重跑。
+- **Step 3 增量回传**：`fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 46 条）」。submitted=46、failures=0，无试运行数据外泄。
+- **Step 4 自查**：`GET /health` → `ok=true, received=169`（与 15:34 持平；本节点本轮未 POST、无跨节点活动，符合预期）。
+- **未写新回执**（无新增收任务，按规则无需回执）。
+- **本地 git**：待提交 `.fstdd/_notices_receipts.md`（追加 16:45 一行）+ `.fstdd/_notices/FSTDD003/*`（mtime 刷新）+ automation memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`；**未 push** 远端；token 文件与新凭证路径均 gitignored 未泄露。
+- **距每日 21:00 复盘**：~4h15m。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端；token 与新凭证路径均 gitignored 未泄露。
