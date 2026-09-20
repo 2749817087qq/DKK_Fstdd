@@ -483,3 +483,16 @@
 - **本地 git**: 显式路径提交 `.fstdd/_notices_receipts.md`（追加 12:13 一行）+ `.fstdd/_fstdd003_share_log.json`(45→46) + `.fstdd/_notices/FSTDD003/`（mtime 刷新）+ `.workbuddy-ai/memory/2026-09-20.md` + automation memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`；**未 push** 远端；token 与新凭证路径均 gitignored 未泄露。
 - **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端。
 - **距每日 21:00 复盘**: ~8h47m。
+
+## 2026-09-20 13:17 (GMT+8) 执行 — 常规轮询（无新增收任务、无新增经验）
+
+- **Step 0 对账（拉取前）**：服务器 13 份 `FSTDD003收-*` → 本地 13 份 `FSTDD003复-*` 回执（12 精确匹配 + 1 命名差异「工作量与资源规划要求」↔「工作量与资源规划」），**0 份待补**。
+- **Step 1 拉取同步**：`scp -i /d/id_ed25519` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功，31 文件 mtime 全部刷新至 13:18-13:19）。服务器 mtime 与本地清单完全对齐：13 份 `FSTDD003收-*` **均已对应 `FSTDD003复-*` 回执**，无未执行项、无新增收任务。`00-COLLAB.md`(09-18 13:44)/`00-DISCIPLINE.md`(09-18 19:10) mtime 未变。K-reply-003e 仍为最新信息性文件（09-20 03:30），无 K-reply-003f。
+- **Step 0 对账（拉取后）**：仍 13/13 回执齐全，无未执行项。
+- **Step 2 紧急快通道**：无 `priority: 最高` 新件，未触发。
+- **Step 3 增量回传**：`fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 46 条）」。submitted=46、failures=0，无试运行数据外泄。
+- **Step 4 自查**：`GET /health` → `ok=true, received=169`（与 12:13 持平；本节点本轮未 POST、无跨节点活动，符合预期）。
+- **凭证下发文件持续未见**：`FSTDD003收-凭证下发-*.md` 第 15+ 轮未见——但 `.fstdd/_fstdd003_credential.txt`(48B, 09-20 10:45) 已装且 V1 POST 200 归因 + V2 POST 401 白名单拆除均已闭环（10:53 复核），凭证已就位、无需再收下发文件。
+- **未写新回执**（无新增收任务，按规则无需回执）。
+- **距每日 21:00 复盘**：~7h43m。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端；token 与新凭证路径均 gitignored 未泄露。
