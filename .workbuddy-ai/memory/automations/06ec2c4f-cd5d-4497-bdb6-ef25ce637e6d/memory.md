@@ -470,3 +470,16 @@
 - **信息差与自愈**：本轮 automation memory 无 10:45 执行记录，但服务器+本地+凭证文件+回执四者状态一致——说明该次处理由本自动化 09:37 后一次轮询完成但 automation memory 追加步骤漏记。**本轮起将 10:45 处置段补齐到 automation memory（即本段）**，后续轮询遇到凭证/回执/文件状态与 automation memory 不同步时，一律以磁盘状态为准并如实回填 automation memory。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；**未回显任何凭证片段**（48B 内容未读取、未哈希、未比对）；未 push 远端；token 与凭证文件均 gitignored 未泄露。
 - **下一步（11:53）**：预期 K 不再补发凭证（凭证安装已闭环、白名单拆除已生效、V1/V2 均通过），持续观察服务器是否下发新的 `FSTDD003收-*.md`；21:00 前需提交《当日复盘》。
+
+## 2026-09-20 12:13 (GMT+8) 执行 — 常规轮询（POST 1 条经验，无新增收任务）
+
+- **Step 0 对账（拉取前）**: 服务器 13 份 `FSTDD003收-*`（inbox鉴权上线/凭证安装硬时限/凭证验证补充/协作开发-S2S3/工作量与资源规划要求/接入授权/撤回令-伪造署名指令/澄清问询-凭证验证补充/状态盘点/经验回传要求/编写《per-node 接入 SOP》+跨平台验证/自动化率提升/通道演练）→ 本地 13 份 `FSTDD003复-*` 回执。**匹配明细**：12 份精确同名 + 1 份命名差异（`收-工作量与资源规划要求` ↔ `复-工作量与资源规划`，Y 是 X 子串，判为已回执不重发）。**对账结果：13 任务 / 13 已回执 / 0 待补**。
+- **Step 1 拉取同步**: `scp -i /d/id_ed25519` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（2m01s 后台完成，31 文件 mtime 全部刷新至 12:08-12:10）。`00-COLLAB.md`(13:44)/`00-DISCIPLINE.md`(19:10) 内容未变（仅 mtime 刷新）。K-reply-003c/d/e、sliceS2S3.patch/tests、FSTDD003-接入SOP.md、FSTDD003复-* 各份均系已交付存档/信息性文件，非任务、无需回执。
+- **Step 0 对账（拉取后）**: 仍 13/13 回执齐全，无未执行项、无新增收任务。
+- **Step 2 紧急快通道**: 无 `priority: 最高` 新件，未触发。
+- **Step 3 增量回传**: `fstdd003_daily_share.py` → **POST 1 条新增经验** `FSTDD003-EXP-20260920-RED-1` `[OK]`。脚本自动识别 `.fstdd/_fstdd003_credential.txt`(48B, 09-20 10:45 已装) 存在 → 使用带凭证模式（`X-FSTDD-Token` 头）。submitted 45→46、failures=0，无试运行数据外泄。
+- **Step 4 自查**: `GET /health` → `ok=true, received=169`（上次 10:53 为 168，+1=本节点本轮 1 条，计数一致）。首次 health 与 share POST 并行调用时序导致返回 168，`sleep 2` 后复查 169 一致。
+- **未写新回执**（无新增收任务，按规则无需回执）。
+- **本地 git**: 显式路径提交 `.fstdd/_notices_receipts.md`（追加 12:13 一行）+ `.fstdd/_fstdd003_share_log.json`(45→46) + `.fstdd/_notices/FSTDD003/`（mtime 刷新）+ `.workbuddy-ai/memory/2026-09-20.md` + automation memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`；**未 push** 远端；token 与新凭证路径均 gitignored 未泄露。
+- **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端。
+- **距每日 21:00 复盘**: ~8h47m。
