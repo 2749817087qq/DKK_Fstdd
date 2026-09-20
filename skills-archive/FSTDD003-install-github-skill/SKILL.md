@@ -3,6 +3,8 @@ name: install-github-skill
 description: "从 GitHub 仓库手动安装 Agent Skill 到 WorkBuddy 用户级全局目录（~/.workbuddy-ai/skills/）。当推荐市场搜不到某个 skill、或用户要求「全局安装 X skill」时使用。含安全审计步骤与路径错配、frontmatter 重复等常见坑的处理。"
 agent_created: true
 version: 1.0.0
+license: unknown
+
 ---
 
 # 从 GitHub 手动全局安装 Skill

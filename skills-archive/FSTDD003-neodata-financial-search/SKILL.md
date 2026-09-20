@@ -10,6 +10,8 @@ display_name: "neodata-financial-search"
 display_name_en: "neodata-financial-search"
 visibility: "public"
 icon: "https://codebuddy-platform-1258344699.cos.accelerate.myqcloud.com/public/45edac6b-2078-4678-89f3-6f9800cf5e5f/avatar/skill/au_288a8989-924.png"
+license: unknown
+
 ---
 
 # NeoData Financial Search — 自然语言通用金融数据搜索服务

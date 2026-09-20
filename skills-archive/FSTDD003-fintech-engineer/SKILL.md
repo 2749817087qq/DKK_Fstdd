@@ -7,6 +7,8 @@ version: 1.0.2
 display_name: "金融科技工程师"
 display_name_en: "Fintech Engineer"
 visibility: "public"
+license: unknown
+
 ---
 
 <!-- Main content in SKILLS.md -->

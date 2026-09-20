@@ -3,6 +3,8 @@ name: stdd-hardening
 description: "STDD 本地加固：禁止 stdd-deliver 把项目经验自动发到外部站点。升级 STDD、重装技能、初始化新项目、或怀疑防线被覆盖时使用；含一键施加/检查/网络层兜底脚本。"
 agent_created: true
 version: 1.1.0
+license: unknown
+
 ---
 
 # STDD 数据外发加固

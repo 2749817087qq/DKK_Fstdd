@@ -2,6 +2,9 @@
 name: stdd-file-convention
 description: STDD V3.0.5「文件约定式」项目的 Phase 4 DELIVER 落地手册（适用于无 bin/stdd CLI 的项目）。当需要把已通过 Gate 3 的 change 归档、合并规范到 specs/ 与 canonical/ 双轨、更新 .canon-index.yaml、同步知识图谱、打版本标签时使用。含 Gate 文件落盘格式、归档目录命名、canonical 双轨一致性校验、提交范围纪律（只暂存变更相关文件）、以及无 CLI 时的等价脚本。
 agent_created: true
+version: unknown
+license: unknown
+
 ---
 
 # STDD「文件约定式」Phase 4 DELIVER 落地手册
