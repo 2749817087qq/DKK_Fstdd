@@ -45,9 +45,33 @@
     "FSTDD003-EXP-20260919-MUTATE-1",
     "FSTDD003-EXP-20260919-E2E-1",
     "FSTDD003-EXP-20260919-MOCK-1",
-    "FSTDD003-EXP-20260920-RED-1"
+    "FSTDD003-EXP-20260920-RED-1",
+    "FSTDD003-EXP-20260920-SNAPSHOT-1",
+    "FSTDD003-EXP-20260920-VERIFY-1",
+    "FSTDD003-EXP-20260920-PROXY-1"
   ],
-  "failures": [],
+  "failures": [
+    {
+      "id": "FSTDD003-EXP-20260920-SNAPSHOT-1",
+      "reason": "<urlopen error [WinError 10061] 由于目标计算机积极拒绝，无法连接。>",
+      "time": "2026-09-20T17:56:26.666167"
+    },
+    {
+      "id": "FSTDD003-EXP-20260920-VERIFY-1",
+      "reason": "<urlopen error [WinError 10061] 由于目标计算机积极拒绝，无法连接。>",
+      "time": "2026-09-20T17:56:28.677598"
+    },
+    {
+      "id": "FSTDD003-EXP-20260920-SNAPSHOT-1",
+      "reason": "<urlopen error [WinError 10061] 由于目标计算机积极拒绝，无法连接。>",
+      "time": "2026-09-20T17:56:56.009145"
+    },
+    {
+      "id": "FSTDD003-EXP-20260920-VERIFY-1",
+      "reason": "<urlopen error [WinError 10061] 由于目标计算机积极拒绝，无法连接。>",
+      "time": "2026-09-20T17:56:58.041790"
+    }
+  ],
   "seeded_at": "2026-09-18",
   "note": "首次预制：本批已在手动回传中提交至接收端点（含本助手初次误重发的副本，服务端会去重）",
   "last_post": {

@@ -44,6 +44,13 @@ _spec.loader.exec_module(se)
 ENDPOINT = se.inbox_url().rstrip("/") + "/api/share-experience"
 RETRY = 4
 
+# 显式绕过系统代理（mitmproxy 抓包脚本设的 127.0.0.1:65000）。
+# 抓包脚本把系统代理写入注册表，进程退出后代理端口不再监听，
+# 但注册表残留会让 urllib 的 POST 全部 WinError 10061；
+# 用 build_opener(ProxyHandler({})) 强制直连，规避该问题。
+# 参考 D 哥经验：https://memory 中「抓包用的系统代理会把本机回环请求也吃掉」。
+_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
 
 def load_log() -> dict:
     if LOG_PATH.exists():
@@ -94,7 +101,7 @@ def _post_once(body: bytes, credential: str | None):
     if credential:
         req.add_header("X-FSTDD-Token", credential)
     try:
-        with urllib.request.urlopen(req, timeout=60) as r:
+        with _OPENER.open(req, timeout=60) as r:
             data = json.loads(r.read().decode("utf-8", "replace") or "{}")
             return (data.get("success") is True
                     and data.get("rejected", 1) == 0), data
