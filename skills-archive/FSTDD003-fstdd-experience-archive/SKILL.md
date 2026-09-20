@@ -177,10 +177,12 @@ python tools/share_experience.py --export             # 只导出不回传
 | **P16** | **SSH 私钥位置**：节点服务器私钥恒在 **D 盘根 `/d/id_ed25519`**（ed25519），**不是** `$USERPROFILE/.ssh/id_ed25519`；scp/ssh 用 `-i /d/id_ed25519 -o StrictHostKeyChecking=no`，Host `ubuntu@43.134.236.80`。误用 `.ssh/` 那把会 `Permission denied (publickey)`（假阻塞） | 高 |
 | **P17** | **服务端不去重**：同 `experience_id` 重复 POST 会累加 `received` 计数。本地须用 `.fstdd/_fstdd003_share_log.json` 记录已提交 ID（`tools/fstdd003_daily_share.py` 据此增量发），否则每日重发污染计数 | 中 |
 | **P18** | **回执闭环**：K 下发的 `FSTDD00X收-<主题>.md` 任务，完成后写 `FSTDD00X复-<主题>.md` 经 scp 回 `ubuntu@43.134.236.80:/home/ubuntu/fstdd-notices/FSTDD00X/`（仅本节点目录，禁碰他人文件夹）。回执四要素：标题/收到时间/执行结果/未完成项（见 00-NOTICE.md 第四节） | 中 |
+| **P19** | **收/复 对账缺失导致回执漏发（2026-09-20 真实事故）**：仅"拉取本轮新任务→执行"的线性流程，不会核对"服务器所有 `收-*` 是否都有 `复-*`"。`FSTDD003收-凭证下发-补发.md`（priority: 最高，10:12 到）因落在上一轮 hourly 拉取（09:39）之后、下一轮（10:39）之前，漏发回执，靠人工发现。平台自动化调度器最小粒度为 **HOURLY（无 15 分钟 / MINUTELY 选项）** | 高 |
 | **P19** | **`archive` 合并 master specs 时 SC 编号跨变更静默重复**：冲突检测只比 `### Requirement:` 标题，**漏检 SC-ID 撞号** → `specs/<cap>/spec.md` 里出现两组 `SC-001..N`，归档输出仍显示「Specs 已合并到 specs/」无警告。危害：SC-ID 失去全局唯一性，而 test-plan / `agent_spec.yaml` 正是靠它做映射 | 中 |
 | **P20** | **`archive` 的「Specs 已合并到 specs/」只合并 Human View**（`<ws>/.fstdd/specs/<cap>/spec.md`），**项目级 canonical 双轨未同步** —— `canonical/specs/{code,agent}/`、`canonical/proposals/`、`.canon-index.yaml` 全都不动，必须手工补三步。文案诚实但极易被误读成「已全部合并」 | 中 |
 | **P21**（流程侧） | **两类形同虚设的断言**：① 裸 `in file` 关键词断言会命中**注释/文档**而非代码；② 服务层常量被 worker 显式覆盖后，只测路由层 ⇒ 该字段**不可观测**，注入变异也不变红。17 次变异注入才抓出 2 条假绿 | 高 |
 | **P22**（流程侧） | **两类「假东西掩盖真路径」**：① 逐用例手塞假依赖（`session=object()`）⇒ 被测代码「不注入时自建依赖」那段**覆盖率恒为 0**，真机第一次真跑每篇抛 `'NoneType' object has no attribute 'get'`；② 造的假数据被**被测代码自己的归一化函数**改写（`link_key` 冒号截断 + 丢非 ASCII ⇒ 5 篇去重成 1 篇） | 高 |
+| **P24**（流程侧） | **「先写实现后补测试」的变更事后补救 = 切片级 revert 重放**：摘掉该切片引入的实现 → 只跑它的 TC → 必须变红 → 按字节还原。实测 36/36 变红，并抓出三类变异/E2E 都抓不到的洞：① 兜底分支让断言恒真（`X if cond else <整个文件>`）；② `in src` 关键词断言（改名即失效，P21 再现）；③ 切片↔TC 映射是事后追认的（实测 3 条归错）。⚠ 补丁坑：改名目标串**不能保留原串作为子串**，否则补丁等于没打、重放给出假的绿 | 高 |
 | **P23**（流程侧） | **真机 E2E 不可替代，且与变异测试互补**：变异只能改「被执行到的代码」，测不到「根本没执行」和「只在真数据下才触发」的两类洞（实测 95 单测 + 17 变异全绿仍漏 3 个 bug）。另：真数据才暴露的两类口径偏差 —— 抽样取前 N 把全量估成 63 GB（索引按时间倒序，前排全是带图大篇；改等距抽样 → 2.2 GB）、「失败 1,264 篇」不带原因（两份索引根本不写 `dir`） | 高 |
 
 ### P19 速记（归档后必查）
@@ -199,6 +201,21 @@ python tools/share_experience.py --export             # 只导出不回传
   内容确认没丢即可，**跨变更引用一律带变更名前缀**（`<change>/SC-002`），不裸用 `SC-002`。
 - **真源永远是归档原件**：`archive/<change>/canonical/specs/code/*.yaml` 逐变更独立编号。
 - 详见 `experiences/FSTDD003-EXP-20260919-ARCHIVE-1.md`。
+
+### P24 速记（没走 RED 的变更如何事后补）
+
+- **做法**：逐个切片打「revert 补丁」摘掉该切片引入的实现（service / router / index.html / app.js），
+  只跑该切片名下的 TC，断言**必须变红**，跑完 `path.write_bytes(raw)` **按字节还原**（`finally` 里做）。
+  开头先跑一遍基线，确认「未打补丁时全绿」—— 否则变红毫无意义。
+- **它能抓到变异和 E2E 都抓不到的洞**：变异改的是**实现**，这验的是**断言与映射**。
+  三种手段互补，缺一个就有盲区。
+- **三类高发洞**：
+  ① 兜底分支（`X if cond else <整个文件>`）→ 拆成两条断言，先断言 `cond` 再断言内容，禁止兜底；
+  ② `in src` 关键词断言 → 改行为断言；
+  ③ 切片↔TC 映射错 → 用「摘掉这个切片的实现，它会红吗」来判定归属，比「看起来相关」可靠。
+- **🔴 补丁自身的两个坑**：
+  ① 改名目标串**必须不保留原串作为子串**（`renderExportWarn → renderExportWarnOff` = 没打补丁，给出假的绿）；
+  ② `_apply()` 里的 `assert old in src` **拦不住**「替换后原串仍命中」 → 补 `assert old not in new`。
 
 ### P20–P23 速记（Phase 3/4 必查，四条都不是 CLI 缺陷，是流程纪律）
 
