@@ -453,3 +453,20 @@
 - **本地 git**: 显式路径提交 `.fstdd/_notices_receipts.md` + `.workbuddy-ai/memory/2026-09-20.md` + automation memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`；**未 push** 远端；token 文件与新凭证路径均 gitignored 未泄露。
 - **纪律**: 仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端。
 - **待办（下一轮 10:37）**: 持续观察 K 是否补发 `FSTDD003收-凭证下发-*.md`（注意可能文件名继续变化）；09:00 白名单拆除已过——若 K 侧已执行拆除而凭证仍未抵达，本节点下轮 POST 将失败，需 K 补发凭证或明确新窗口；本节点不会自行改造 helper，严格按 K §四。
+
+## 2026-09-20 10:53 (GMT+8) 执行 — 常规轮询（无新增收任务、无新增经验；凭证安装已闭环）
+
+- **Step 0 对账（自愈核心）**：拉取前服务器 13 份 `FSTDD003收-*` → 13 份 `FSTDD003复-*` 回执（含 10:45 新增的 `FSTDD003复-凭证安装.md`），**无缺回执任务**。对账结果：13 份任务 / 13 份已回执 / 0 份待补。
+- **Step 1 拉取同步**：`scp -i /d/id_ed25519` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功，31 个文件 mtime 全部刷新至 10:55-10:56）。`00-COLLAB.md`(09-18 13:44)/`00-DISCIPLINE.md`(09-18 19:10) mtime 未变。K-reply-003c/d/e、sliceS2S3.patch/tests、FSTDD003-接入SOP.md、FSTDD003复-* 各份均系已交付存档/信息性文件，非任务、无需回执。
+- **Step 0 拉取后对账**：仍 13/13 回执齐全，无未执行项。
+- **关键状态变化（本轮首次观察到）**：`.fstdd/_fstdd003_credential.txt` 已存在（48B, mtime 10:45）——**K 补发凭证事件在 09:37 → 10:45 窗口内已被处置**：本节点已写入凭证、V1 POST 200 归因成功、V2 POST 401 白名单拆除生效、下发文件已删除（本地+服务器两侧）。回执 `FSTDD003复-凭证安装.md`(1893B) 已 scp 写回服务器 `/home/ubuntu/fstdd-notices/FSTDD003/`（服务器 mtime 10:48 已核验）。
+- **本轮直接探测验证**（独立复核 10:45 处置结论）：
+  - `curl -X POST http://43.134.236.80:8787/api/share-experience` 不带 `X-FSTDD-Token` → **HTTP 401 unauthorized**（白名单确已拆除、服务端鉴权强制生效）。
+  - 隔离凭证 `_fstdd003_token.txt`(65B, mtime 09-18 17:53) 保留现场未用未删（DISCIPLINE §七.4）。
+  - `.fstdd/_fstdd003_credential.txt` 权限 600，路径在 `.gitignore` 内不入 git。
+- **Step 2 增量回传**：`fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 45 条）」。submitted=45、failures=0，无试运行数据外泄。
+- **Step 4 自查**：`GET /health` → `ok=true, received=168`（上次 09:37 为 164，+4 来自跨节点活动；本节点本轮未 POST 真实经验，V2 探测 401 不污染计数）。
+- **未写新回执**（无新增收任务，按规则无需回执）。
+- **信息差与自愈**：本轮 automation memory 无 10:45 执行记录，但服务器+本地+凭证文件+回执四者状态一致——说明该次处理由本自动化 09:37 后一次轮询完成但 automation memory 追加步骤漏记。**本轮起将 10:45 处置段补齐到 automation memory（即本段）**，后续轮询遇到凭证/回执/文件状态与 automation memory 不同步时，一律以磁盘状态为准并如实回填 automation memory。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人条目与根目录 00-*（只读）；未触碰 K-memory/inbox；**未回显任何凭证片段**（48B 内容未读取、未哈希、未比对）；未 push 远端；token 与凭证文件均 gitignored 未泄露。
+- **下一步（11:53）**：预期 K 不再补发凭证（凭证安装已闭环、白名单拆除已生效、V1/V2 均通过），持续观察服务器是否下发新的 `FSTDD003收-*.md`；21:00 前需提交《当日复盘》。
