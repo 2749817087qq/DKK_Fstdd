@@ -23,9 +23,17 @@
 - **skill**：刷新 7 个（mtime 判据）—— `skills-archive/`：data-repair-migration（+9.5h）/ fintech-engineer（+2.9h）/ install-github-skill（+2.9h）/ neodata-financial-search（+2.9h）/**新增** memory-detail-sink（09-20 12:50 首次产出）；`artifacts/skills/`：stdd-file-convention（+3.6h）/ stdd-hardening（+3.6h）。跳过其余 11 个。`diff -r` 7/7 通过。
 - **经验文档**：**新增 1 条** `FSTDD003-EXP-20260920-RECON-1`（每小时轮询缺收/复 对账，priority-最高任务落 09:39↔10:39 轮询窗口，回执漏发 1h27m；三空档根因 + 防护三件套 + P19 固化 + 磁盘/memory 双向核对纪律）。README 索引同步。
   - 判据：09-20 有 14 次轮询，10:12 是当日唯一「FSTDD 特有事故」（其他都是常规轮询或已入 EXP 的人工事件）；无未捕获的 FSTDD 特有坑点。
-- **git**：显式路径提交 9 个 skill 副本 + memory 日志 + automation memory；未提交 `_scratch/`、内嵌 git repo、`TASK.md`（当日无关修改）、`docs/VERIFY_SPEC_ISSUES_2026-09-20_workbench.md`（当日无关新建）；remote 数=0 未 push。
+- **git**：显式路径提交 9 个 skill 副本 + memory 日志 + automation memory；未提交 `_scratch/`、内嵌 git repo、`TASK.md`（当日无关修改）、`docs/VERIFY_SPEC_ISSUES_2026-09-20_workbench.md`（当日无关新建）；remote 数=0 未 push。commit `5d4b573`（amended，第一次提交 `2d92971` 因 `@'... '@` here-string 语法在标题首尾误留 `@`，已 `--amend -F-` 重写为干净消息）。
 - **偏离任务书**：未用 `git add -A`（理由同前两轮）。
 - 详见 `D:\FSTDD003\.workbuddy-ai\memory\2026-09-20.md` 末尾「00:10 每日收纳」段。
+
+### 2026-09-22 00:10 运行（收纳对象 2026-09-21）— 第 4 轮
+- **skill**：**新增 1 个** `FSTDD003-silent-failure-guards`（09-21 11:18 首次产出，`agent_created: true`，16077B，「静默失败」六模式 + 守卫变异自检）/ 跳过 13 个（mtime 判据）。`diff -r` 字节一致通过。
+- **经验文档**：**新增 2 条** —— `FSTDD003-EXP-20260921-RECUR-1`（🔴 对账机制结构性盲区：周期性义务无独立文件名，09-21 全天 22 轮对账「0 待补」全是假阴，欠账 2 天；含与 RECON-1 的边界表）、`FSTDD003-EXP-20260921-RELEASE-1`（升级验证 V2 未通过：commit message 声称升版但树里版本 blob 未更新，3.0.6 blob 在对象库却**未被任何提交引用** —— 对象存在性 ≠ 对象可达性）。README 索引同步（变更日志 1 行 + 表 2 行）。
+  - 判据：grep 确认「周期性」「3.0.6」「升级验证」「未被任何提交引用」在既有 EXP 中**零命中**；09-21 已落盘的 4 条 EXP（JUNCTION/LIFECYCLE/DRIFT/FLOW）全部来自 `工作台` change，与本节点 09-21 升级验证/复盘补交是不同事件源。
+- **git**：显式路径提交 skill 副本 + memory 日志 + automation memory；`experiences/` 被 gitignore 不进 git；未提交 `TASK.md`（144 行当日无关增量）、`_scratch/`、3 个 `docs/*.md`（人手工产出，非本运行输出）、内嵌 git repo；remote 数=0 未 push。
+- **偏离任务书**：未用 `git add -A`（同前 3 轮）。
+- 详见 `D:\FSTDD003\.workbuddy-ai\memory\2026-09-21.md` 末尾「00:10 每日收纳」段。
 
 ## 下次运行须知（固化判据）
 1. **skill 判据 = mtime 比较**，不是「目录存在即跳过」：
