@@ -1,0 +1,69 @@
+# inbox-deploy — 行为规格（Canonical YAML，modified capability）
+meta:
+  capability: "inbox-deploy"
+  change_id: "2026-09-18-inbox-api-only-write"
+  created: "2026-09-18T09:00:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-101
+    description: "部署脚本幂等加固：建用户、收权限、显式 env 声明、端状态校验"
+    scenarios:
+      - id: SC-101
+        confidence: high
+        evidence: "memory: 远端命令会被执行两次 —— 部署命令必须幂等；既有 deploy_inbox_server.sh 已声明幂等"
+        given: "目标机可能已存在或不存在 fstdd-inbox 用户与既有服务"
+        when: "连续两次执行 deploy_inbox_server.sh"
+        then: "两次 SHALL 均以 exit 0 结束，且端状态一致（服务 active、属主与权限不变）"
+        and:
+          - "fstdd-inbox 用户 SHALL 存在且 shell 为 nologin"
+          - "收目录属主 SHALL 为 fstdd-inbox:fstdd-inbox"
+      - id: SC-102
+        confidence: high
+        evidence: "deployed 单元含 EnvironmentFile=/home/ubuntu/fstdd-inbox-server/inbox.env；token 属机密，不允许脚本生成或回显"
+        given: "远端 /home/ubuntu/fstdd-inbox-server/inbox.env 缺失"
+        when: "执行部署脚本"
+        then: "脚本 SHALL 提前中止并以非 0 退出"
+        and:
+          - "SHALL 打印明确处置指导（先恢复 env 文件，不自动创建、不上传）"
+          - "SHALL 不修改既有 systemd 单元、不重启服务"
+      - id: SC-103
+        confidence: high
+        evidence: "当前本地部署模板缺 EnvironmentFile 行 —— 重跑会静默丢鉴权（双漂移陷阱）"
+        given: "部署脚本写出 systemd 单元"
+        when: "检查单元文件内容"
+        then: "SHALL 含 User=fstdd-inbox"
+        and:
+          - "SHALL 含 EnvironmentFile= 行"
+          - "SHALL 含 UMask=0022（保证日志文件 other 可读）"
+          - "SHALL 不含 pkill -f inbox_server（会匹配 ssh 命令行自身，历史事故）"
+      - id: SC-104
+        confidence: high
+        evidence: "memory §4: 测试绿了 ≠ 断言有效；后置校验必须逐条输出且含负向断言"
+        given: "部署与重启完成"
+        when: "执行后置校验"
+        then: "权限断言、ubuntu 写入负向探测、API 正向落盘、/health 四组断言 SHALL 逐条输出 PASS/FAIL"
+        and:
+          - "任一断言 FAIL SHALL 使校验整体以非 0 退出"
+          - "校验 SHALL 输出可贴回简报的原文证据（命令 + 输出）"
+
+  - id: REQ-102
+    description: "消除源码-部署漂移，并把漂移防护写进测试"
+    scenarios:
+      - id: SC-105
+        confidence: high
+        evidence: "observed_at=2026-09-18T08:53:00+00:00 实测：repo tools/inbox_server.py md5 742827d9 ≠ 服务端 2b58b70b"
+        given: "部署完成后"
+        when: "比对仓库与服务端文件 md5"
+        then: "tools/inbox_server.py SHALL 与服务端部署版 md5 一致"
+        and:
+          - "比对结果 SHALL 写入交付证据（含两处 md5 原文）"
+      - id: SC-106
+        confidence: medium
+        evidence: "upstream/tests/test_inbox_endpoint.py 现有 A/B/C 三组 44 用例，进程内起真实服务器"
+        given: "仓库内既有 pytest 套件"
+        when: "执行 upstream 全量 pytest"
+        then: "既有用例 SHALL 全绿（无回归）"
+        and:
+          - "新增鉴权用例组（SC-006..SC-009 对应）SHALL 通过"
+          - "新增部署脚本静态守护用例（SC-103 对应）SHALL 通过"

@@ -1,0 +1,61 @@
+# inbox-deploy — Agent 验证规格（Canonical YAML，modified capability）
+meta:
+  task_id: "verify-inbox-deploy"
+  change_id: "2026-09-18-inbox-api-only-write"
+  task_type: configuration
+  system: "本地 tools/deploy_inbox_server.sh + 远端 /etc/systemd/system/fstdd-inbox.service"
+  preconditions:
+    - "远端 /home/ubuntu/fstdd-inbox-server/inbox.env 存在（缺失时脚本必须中止，见 CP-11）"
+    - "本地仓库为 stdd-repo（法定源），工作区已确认无未提交的无关改动"
+
+steps:
+  - id: CP-11
+    description: "env 缺失时必须中止且不改服务"
+    action: "临时重命名远端 inbox.env 后执行 deploy_inbox_server.sh，随后恢复 env"
+    assertions:
+      - type: exit_code
+        expected: 1
+      - type: stdout_contains
+        expected: "中止"
+
+  - id: CP-12
+    description: "单元关键行守卫（重部署不回退鉴权）"
+    action: "ssh fstdd-hub \"systemctl cat fstdd-inbox\""
+    assertions:
+      - type: stdout_contains
+        expected: "User=fstdd-inbox"
+      - type: stdout_contains
+        expected: "EnvironmentFile="
+      - type: stdout_contains
+        expected: "UMask=0022"
+
+  - id: CP-13
+    description: "幂等性：连续两次执行部署脚本端状态一致"
+    action: "连续两次执行 deploy_inbox_server.sh，比较 systemctl is-active 与属主输出"
+    assertions:
+      - type: stdout_contains
+        expected: "active"
+      - type: stdout_contains
+        expected: "fstdd-inbox fstdd-inbox"
+
+  - id: CP-14
+    description: "后置校验四组断言逐条输出（权限/负向/正向/health）"
+    action: "部署脚本 verify 段输出 PASS/FAIL 清单"
+    assertions:
+      - type: stdout_contains
+        expected: "PASS"
+      - type: exit_code
+        expected: 0
+
+  - id: CP-15
+    description: "静态守护：脚本不得出现危险模式"
+    action: "grep -n 'pkill -f inbox_server' tools/deploy_inbox_server.sh"
+    assertions:
+      - type: exit_code
+        expected: 1
+
+rollback:
+  steps:
+    - "git 回滚 tools/deploy_inbox_server.sh 与 tools/inbox_server.py 到变更前 commit"
+    - "按 inbox-api-only-write 的 rollback 步骤回退服务单元 User 与目录属主"
+    - "sudo systemctl daemon-reload && sudo systemctl restart fstdd-inbox"

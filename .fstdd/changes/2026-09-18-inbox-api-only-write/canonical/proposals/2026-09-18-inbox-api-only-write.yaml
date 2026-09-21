@@ -1,0 +1,82 @@
+# 2026-09-18-inbox-api-only-write.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-09-18-inbox-api-only-write"
+  title: "inbox 收目录收口：仅服务用户可写（scp 直写被文件系统拒绝）"
+  created: "2026-09-18T08:55:00+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    FSTDD 经验 inbox（/home/ubuntu/fstdd-inbox）的写权限对 ssh 登录用户 ubuntu
+    完全开放，而六个节点 agent 均以 ubuntu 身份 scp 直写该目录。试运行数据
+    （EXP-20260915/16/17 系列）在 09-18 一天内被四次重发（10:25、14:00、16:01 等），
+    全部绕过 POST API 的限流、去重与脱敏校验（received 计数未随 17 个文件跳变，
+    实证为 scp 直写）。API 层的一切防护（鉴权/限流/敏感拒收）在数据面上形同虚设。
+  evidence:
+    observed_at: "2026-09-18T08:41:00+00:00"   # 16:41 CST 小时简报巡检
+    observed_base_git_sha: "deployed-2b58b70b"  # 服务端在跑版本（鉴权版），repo 内副本尚未同步
+    details: |
+      1. 服务器 /home/ubuntu/fstdd-inbox 属主 ubuntu:ubuntu，模式 drwxrwxr-x，
+         服务 fstdd-inbox.service 以 User=ubuntu 运行 —— 与节点 scp 同一身份，无边界。
+      2. 09-18 16:01，EXP-20260915-A1..A6/B1..B4（10 个）mtime 全部刷新，
+         新增 EXP-20260916-C1..C4、EXP-20260917-D1..D3（7 个），received 仅 88→97，
+         17 文件直写但 API 计数未增 → scp 绕过实证。
+      3. 仓库源码漂移：repo 内 tools/inbox_server.py（742827d9）落后于服务端部署版
+         （2b58b70b，含 09-18 鉴权加固 + inbox.env）。当前 deploy_inbox_server.sh
+         重跑会用旧代码覆盖鉴权版，且模板缺 EnvironmentFile 行 —— 双漂移陷阱。
+
+what_changes:
+  - description: "同步：repo tools/inbox_server.py 吸收服务端鉴权版（含 X-FSTDD-Token/Bearer/IP 白名单灰度），消除源码-部署漂移"
+    type: modified
+  - description: "新增：部署脚本建专用系统用户 fstdd-inbox（nologin），收目录 chown 至该用户并收紧权限；systemd 单元 User=fstdd-inbox + EnvironmentFile 显式声明 + UMask=0022；远端 inbox.env 不存在则中止（绝不覆盖既有凭证）"
+    type: modified
+  - description: "新增：部署后置校验（幂等）——namei 权限断言 + ubuntu 身份写入探测必须 EACCES + API POST 落地成功 + /health 正常"
+    type: modified
+  - description: "运维：现存 EXP-20260915/16/17-* 试运行文件移入收目录内 quarantine/（可逆 mv，不删除），退出每日合并视野"
+    type: modified
+
+capabilities:
+  new:
+    - name: "inbox-api-only-write"
+      description: "收目录写权限仅属服务运行用户 fstdd-inbox；非服务身份（节点 scp / 人工直写）被文件系统拒绝；ubuntu 只读（server.log 巡检、/health 不受影响）"
+  modified:
+    - name: "inbox-deploy"
+      description: "deploy_inbox_server.sh 从「传代码+起服务」升级为幂等加固部署：建用户/收权限/显式 env 声明/端状态校验，杜绝重部署回退鉴权"
+
+constraints:
+  - "服务短暂重启窗口（秒级），期间 POST/health 不可用 —— 选低峰执行并先行确认"
+  - "fstdd-inbox 用户 nologin、无家目录，最小权限"
+  - "inbox.env（token + IP 白名单）属机密：只校验存在性，不回显、不上传、不入库"
+  - "quarantine 只移不删；如需彻底清理另走人工确认"
+  - "notices 目录（节点 scp 回执通道）不在本次变更范围，保持 ubuntu 可写"
+
+stakeholders:
+  - "D哥（决策与验收）"
+  - "K（归口端，部署执行与节点通知）"
+  - "FSTDD001–006（被告知：scp 直写 inbox 将被拒绝，回传一律走 POST API）"
+
+risk_areas:
+  - "生产服务重启：若单元/权限改错，回传链路中断 —— 缓解：部署脚本幂等 + 后置校验 + 备份（fstdd-hub-backup 不含 inbox 目录，本次先 tar 快照收目录）"
+  - "鉴权版代码回灌 repo 时若手工复制出错，部署后鉴权静默丢失 —— 缓解：md5 与端上行为双重断言（401/legacy-ip 日志）"
+
+non_goals:
+  - "不改动 notices 目录写模型（节点 scp 回执保留）"
+  - "不实现文件系统级审计/manifest 对账（权限收口后非服务写入已不可能，属过度设计）"
+  - "不清理 quarantine 内文件"
+  - "不改限流/批量/敏感拒收等业务逻辑"
+
+critical: "收目录属主改为 fstdd-inbox 后，任何以 ubuntu 身份的写入（含 K 自己）都被拒 —— K 后续合并/清理一律走 sudo 或 API"
+
+anchoring: "接口契约不变：POST /api/share-experience 与 GET /health 的请求响应格式保持现状"
+
+success_criteria:
+  - "部署后 namei -l 显示 /home/ubuntu/fstdd-inbox 属主为 fstdd-inbox:fstdd-inbox，目录无 ubuntu 写位"
+  - "以 ubuntu 身份向收目录 scp/touch 探测文件返回 Permission denied（负向断言，实测输出为证）"
+  - "带 token POST 1 条测试经验返回 accepted=1 且文件落盘、received 递增；无 token 非白名单 IP POST 返回 401"
+  - "systemctl is-active fstdd-inbox = active，且 EnvironmentFile 行存在于单元中（重跑 deploy 脚本不回退）"
+  - "repo tools/inbox_server.py 与服务端部署版 md5 一致（漂移清零）"
+  - "EXP-20260915/16/17-* 共 30 个文件全部位于 quarantine/（09-18 16:41 实测清单），收目录根下零残留"
+  - "既有 pytest 套件（含 test_inbox_endpoint.py）全绿，新增鉴权用例（RED→GREEN）入套件"

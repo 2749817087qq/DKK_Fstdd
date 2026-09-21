@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-18-inbox-api-only-write: proposals/2026-09-18-inbox-api-only-write.yaml
+specs:
+  agent:
+    2026-09-18-inbox-api-only-write: specs/agent/2026-09-18-inbox-api-only-write.yaml
+  code:
+    2026-09-18-inbox-api-only-write: specs/code/2026-09-18-inbox-api-only-write.yaml
+version: '2.9'

@@ -1,0 +1,33 @@
+baseline:
+  at: '2026-09-18T08:58:13+00:00'
+  base_git_sha: 5e3f9a35e914fde314373acf70702a64fc53cfe0
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-1MEQDMR
+change_id: 2026-09-18-inbox-api-only-write
+complexity_score: null
+current_phase: understand
+design_adjustments:
+  count: 0
+mode: standard
+phases:
+  build:
+    status: pending
+  deliver:
+    status: pending
+  spec:
+    status: pending
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-18T08:58:13+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认（D哥 2026-09-18 16:57，Gate 1 展示后回复『确认』）
+    status: completed
+score_confidence: null
+status: active
+task_type: configuration
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

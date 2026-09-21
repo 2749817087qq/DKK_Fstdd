@@ -1,0 +1,96 @@
+# inbox-api-only-write — 行为规格（Canonical YAML）
+meta:
+  capability: "inbox-api-only-write"
+  change_id: "2026-09-18-inbox-api-only-write"
+  created: "2026-09-18T09:00:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-001
+    description: "收目录属主与权限：仅服务运行用户 fstdd-inbox 可写，ubuntu 只读"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "observed_at=2026-09-18T08:41:00+00:00 只读实测：ls -ld /home/ubuntu/fstdd-inbox → drwxrwxr-x ubuntu ubuntu；服务单元 User=ubuntu —— 与节点 scp 同身份"
+        given: "服务 fstdd-inbox 以用户 fstdd-inbox 运行，收目录已 chown 至该用户"
+        when: "以 ubuntu 身份执行 touch /home/ubuntu/fstdd-inbox/.perm-probe"
+        then: "操作 SHALL 失败，输出含 Permission denied 且退出码非 0"
+        and:
+          - "收目录下 SHALL 不存在 .perm-probe 文件"
+          - "namei -l /home/ubuntu/fstdd-inbox SHALL 显示属主 fstdd-inbox:fstdd-inbox"
+          - "目录权限位 SHALL 为 0755（属主外无写位）"
+      - id: SC-002
+        confidence: high
+        evidence: "proposal: what_changes 第 2 项（建专用用户 + 收权限）"
+        given: "服务运行中，客户端持有效 token"
+        when: "POST /api/share-experience 提交 1 条经验（带 X-FSTDD-Token）"
+        then: "SHALL 返回 200 且 accepted=1"
+        and:
+          - "新落盘文件 SHALL 位于收目录且属主为 fstdd-inbox"
+          - "GET /health 的 received SHALL 相对提交前 +1"
+      - id: SC-003
+        confidence: high
+        evidence: "K 每小时巡检依赖 ssh ubuntu 读 server.log（16:41 简报实测），收口后必须仍可读"
+        given: "收目录已收权"
+        when: "以 ubuntu 身份 tail /home/ubuntu/fstdd-inbox/server.log 并 curl /health"
+        then: "两项 SHALL 均成功（权限收口不得破坏只读巡检链路）"
+        and:
+          - "server.log 文件权限 SHALL 允许 other 读（0644 或更宽）"
+
+  - id: REQ-002
+    description: "非 API 写入通道（scp / 人工直写）被文件系统拒绝"
+    scenarios:
+      - id: SC-004
+        confidence: high
+        evidence: "observed_at=2026-09-18T08:41:00+00:00 实测：16:01 有 17 个 .md 落盘/刷新而 received 仅 88→97 —— scp 直写绕过 API 实证"
+        given: "节点以 ubuntu 身份 scp 一个 .md 文件到收目录"
+        when: "执行 scp 传输"
+        then: "传输 SHALL 失败（Permission denied，exit≠0）"
+        and:
+          - "收目录中 SHALL 不存在该文件"
+          - "server.log 中 SHALL 不出现该文件的 accepted 记录"
+      - id: SC-005
+        confidence: high
+        evidence: "observed_at=2026-09-18T08:41:00+00:00 实测：服务端 EXP-2026091[567]-*.md 计 30 个"
+        given: "部署执行时收目录根下存在 EXP-20260915/16/17-* 试运行文件共 30 个"
+        when: "部署脚本执行 quarantine 步骤"
+        then: "这 30 个文件 SHALL 全部移入收目录下 quarantine/ 子目录"
+        and:
+          - "收目录根下 SHALL 不再存在匹配 EXP-2026091[567]-*.md 的文件"
+          - "quarantine/ 内文件 SHALL 数量守恒（30，只移不删）"
+
+  - id: REQ-003
+    description: "鉴权与限流语义不因本次变更回退，且鉴权版源码回灌仓库"
+    scenarios:
+      - id: SC-006
+        confidence: high
+        evidence: "proposal: what_changes 第 1 项（repo 吸收服务端鉴权版）；deployed md5 2b58b70b"
+        given: "服务端已配置 FSTDD_INBOX_TOKEN"
+        when: "来自白名单外 IP 的无凭证 POST"
+        then: "SHALL 返回 401 且 body 含 unauthorized"
+        and:
+          - "server.log SHALL 出现 '[inbox] 401 <- <ip>' 行"
+      - id: SC-007
+        confidence: medium
+        evidence: "deployed 版 _authorized() 灰度分支；16:41 server.log 尾部有 legacy-ip 放行行"
+        given: "服务端已配置 token 且请求源 IP 在 FSTDD_INBOX_ALLOW_IPS 内"
+        when: "无凭证 POST"
+        then: "SHALL 放行（200 accepted=1）"
+        and:
+          - "server.log SHALL 出现 legacy-ip 放行行"
+      - id: SC-008
+        confidence: medium
+        evidence: "deployed 版 main() 中 auth ON/OFF 启动打印分支"
+        given: "未配置 FSTDD_INBOX_TOKEN"
+        when: "任意来源 POST"
+        then: "SHALL 返回 200（保持开放兼容旧行为）"
+        and:
+          - "启动日志 SHALL 含 'auth: OFF' 警告"
+      - id: SC-009
+        confidence: high
+        evidence: "00-NOTICE 规定节点发完经验要拉 /health 看计数；AUTH-1 回执明确 /health 免鉴权"
+        given: "任意鉴权配置"
+        when: "GET /health"
+        then: "SHALL 返回 200 且 received 等于收目录 *.md 数量"
+        and:
+          - "SHALL 不要求任何凭证"
