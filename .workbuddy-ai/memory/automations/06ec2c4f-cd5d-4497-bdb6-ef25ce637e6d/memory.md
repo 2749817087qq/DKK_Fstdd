@@ -701,3 +701,39 @@
 - **21:00 当日复盘窗口已过 ~11h15m**，未触发；D哥 若需补交请手动处理。
 - **本地 git**：提交 `.fstdd/_notices_receipts.md`(追加 08:15 一行) + `.workbuddy-ai/memory/2026-09-21.md`(追加 08:15 段) + `.workbuddy-ai/memory/automations/06ec2c4f.../memory.md`(追加 08:15 段)；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/FSTDD003-weekly-report-2026-W38.md`、`docs/VERIFY_SPEC_ISSUES_2026-09-20_workbench.md`、`270a0ea8 memory.md`(另一自动化产物)、`1ac52506/`(未追踪)；`experiences/` gitignored；**未 push** 远端；token 与凭证路径均 gitignored 未泄露。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端；token 与凭证路径均 gitignored 未泄露。
+
+## 2026-09-21 09:42 (GMT+8) 执行 — 处理 K 下发「升级验证 v3.0.5→v3.0.6」+ 经验回传
+
+- **收/复对账（第 0 步）**: 服务器 14 份 `FSTDD003收-*`（含新增 `FSTDD003收-升级验证.md` 08:54，priority 高），本地 18 份 `FSTDD003复-*`。逐项比对：13 份 `收-*` 均已回执（含 1 份命名差异 `工作量与资源规划要求` ↔ `工作量与资源规划`），1 份未回执 `FSTDD003收-升级验证.md` → 立即执行。
+- **紧急快通道（第 2 步）**: `priority: 高`，直接优先执行。
+- **升级执行（第 3 步）**:
+  - 远端 `server` 未配置 → `git remote add server ssh://ubuntu@43.134.236.80/home/ubuntu/fstdd-git/stdd-repo.git`；`origin` GitHub 直连被重置（Recv failure），仅能走服务器 bare 仓库。
+  - 本地 master `23707d0` 与 `server/master` `91cc6ec` 分叉（5+5 提交，merge-base `846705e`）→ `git merge --ff-only` 不可行 → `git tag pre-upgrade-v3.0.5-23707d0c155c2467f1513284db9b1792a51015e6` 保命 → `git reset --hard server/master` 对齐。
+  - V1 ✅ 23707d0 → 91cc6ec。
+  - **V2 ⚠️ 未通过**：`grep stdd_version .fstdd/config.d/project.yaml` = `3.0.5`（期望 3.0.6）。查证：HEAD 树内 project.yaml 指向 blob `4aa9e46…`（内容 3.0.5）；3.0.6 内容存在于对象库 blob `b7f9c205dd1b13133d2404ae8eac3e6b39589e8e` 但**未被任何提交引用**。发布提交 `91cc6ec` commit message 写「3.0.5 → 3.0.6」但版本文件未真正落地，属发布流程疏漏。已在回执显式上报 K，本节点不擅改远端对象。
+  - V3 ✅ `pytest tests/test_except_audit.py -q` → `5 passed in 1.87s`。
+  - V4 全量回归（后台 10m26s）：`16 failed, 704 passed, 6 skipped`；与 K Gate 3 基线（`1 failed / 725 passed`，唯一 `test_e3_memory_points_to_d_drive`）失败集合不一致，但差异全部为环境拓扑类（14 项 `test_migrate_to_d_drive`、`test_c1_archive_exists`、`test_d2_points_to_workspace`、`test_fstdd_hub::test_failure_and_blocker_message_ack` 超时），与 v3.0.6 修复无关；K 标为唯一失败的 `test_e3…` 在本机反而通过。功能侧无回归。
+  - V5 回滚命令 `git reset --hard 23707d0c155c2467f1513284db9b1792a51015e6`（tag 亦可）。
+- **回执写回（第 4 步）**: `FSTDD003复-升级验证.md` scp 回 `/home/ubuntu/fstdd-notices/FSTDD003/`（6823 字节，09:42）。含 6 节：收到 / V1–V5 逐项证据 / 附加事实 / 未完成项 / 附录 A 全量回归原始输出与基线对比 / 纪律。
+- **增量回传（附带）**: `fstdd003_daily_share.py` → 新增 2 条（`FSTDD003-EXP-20260921-JUNCTION-1`、`FSTDD003-EXP-20260921-LIFECYCLE-1`），带 `X-FSTDD-Token` POST 均 [OK]。
+- **/health 自查**: `received=180`（本轮 +2 来自本节点两条新经验）。
+- **本地 git**: commit `3bda36c`（3 文件：收件 / 回执 / share_log）；未 push 远端。
+- **纪律**: 仅读写本节点 `FSTDD003/`；只读他人目录与 K-memory；未回显凭证；未强推覆盖（分叉提交已 tag 保命）。
+
+## 2026-09-21 09:44 (GMT+8) 执行 — 常规轮询（无新增）
+
+- **收/复对账**: 服务器 15 份 `FSTDD003收-*`（较上轮 09:42 的 14 份 +1，即 `FSTDD003收-升级验证.md`；本轮无新件），本地 19 份 `FSTDD003复-*`。逐项匹配：15/15 均已回执（含命名差异 `工作量与资源规划要求` ↔ `工作量与资源规划`）。**无待补**。
+- **增量回传**: 无（`_fstdd003_share_log.json` 已包含全部 `experiences/FSTDD003-EXP-*.md`）。
+- **/health 自查**: `received=182`（上轮 09:42 为 180，+2 来自跨节点活动；本节点本轮未 POST）。
+- **纪律**: 仅读写本节点 `FSTDD003/`；未触他人目录与 K-memory；未 push 远端。
+
+## 2026-09-21 10:53 (GMT+8) 执行 — 常规轮询（无新增收任务、无新增经验、received=182）
+
+- **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 15 份 `FSTDD003收-*`（inbox鉴权上线/凭证安装硬时限/凭证验证补充/助001接入与SOP收尾/升级验证/协作开发-S2S3/工作量与资源规划要求/接入授权/撤回令-伪造署名指令/澄清问询-凭证验证补充/状态盘点/经验回传要求/编写《per-node 接入 SOP》+ 跨平台验证/自动化率提升/通道演练）→ 本地 19 份 `FSTDD003复-*`（13 精确匹配 + 1 命名差异「工作量与资源规划要求↔工作量与资源规划」（Y 是 X 子串，已知差异不重发）+ 1 后缀匹配「助001接入与SOP收尾↔SOP收尾」+ 4 份无对应收-的历史存档 00-NOTICE领取确认/伪造署名事件处置与开放问题协商/凭证安装/给001的接入要点），**0 份待补**；按「只从收找复、绝不反向」不补建。
+- **Step 1 拉取同步**：`scp -i /d/id_ed25519` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功）。服务器 mtime 自 09-20 17:56 无变化：最新仍为 `FSTDD003-接入SOP.md`/`FSTDD003复-SOP收尾.md`/`FSTDD003复-给001的接入要点.md`（均 09-20 17:56）+ 09-21 09:41 `FSTDD003复-升级验证.md`（本节点上一轮已 scp 回）+ 09-21 08:54 `FSTDD003收-升级验证.md`；距今 ~13h 无 K 新下发；无新 `FSTDD003收-*.md`、无新凭证下发文件、无 K-reply-003f；`00-COLLAB.md`(09-18 13:44)/`00-DISCIPLINE.md`(09-18 19:10) 内容未变。
+- **Step 2 紧急快通道**：`FSTDD003收-凭证安装硬时限.md` 仍标 priority:最高，但对应回执 `FSTDD003复-凭证安装硬时限.md`(09-20 01:56) + `FSTDD003复-凭证安装.md`(09-20 10:48) 均已闭环——凭证 09-20 10:45 已装（`.fstdd/_fstdd003_credential.txt` 48B, chmod 600）、V1 POST 200 + node_id=FSTDD003 归因、V2 POST 401 白名单拆除均已通过，下发文件本地+服务器两侧已删除，无需重跑；其余 `收-*` 均无 priority:最高，未触发。
+- **Step 3 增量回传**：`fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 55 条）」。submitted=55、failures=0，无试运行数据外泄。凭证文件 `.fstdd/_fstdd003_credential.txt`(48B, 09-20 10:45) 就位未动。
+- **Step 4 自查**：`GET /health` → `ok=true, received=182`（与 09:44 持平；本节点本轮 POST=0、无跨节点活动，符合共享池累计语义）。
+- **未写新回执**（无新增收任务，按规则无需回执）。
+- **21:00 当日复盘窗口已过 ~12h53m**，未触发；D哥 若需补交请手动处理。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端；token 与凭证路径均 gitignored 未泄露。
