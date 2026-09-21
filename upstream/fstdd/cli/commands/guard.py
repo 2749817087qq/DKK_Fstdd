@@ -8,8 +8,16 @@ need to edit during spec/build phases).
 
 V3.0.5: Phase model collapsed to understand→spec→build→deliver. Legacy
 6-phase states (slice/verify) are normalized via LEGACY_PHASE_MAP.
+
+V3.0.6: Agent runtime directories (e.g. .workbuddy-ai/) are EXEMPT from the
+flow gate. They hold agent state (memory / tmp / automations), not project
+deliverables, so gating them produces false blocks with zero safety value.
+Extend per project via .fstdd/config.d/project.yaml:
+    guard:
+      exempt_paths: [.workbuddy-ai, .pytest_cache]
 """
 
+import os
 import sys
 import argparse
 from pathlib import Path
@@ -274,17 +282,29 @@ def _read_hook_input() -> tuple:
     解析失败 → (None, None)（fail-open，不误伤编辑）。
     """
     import json
+    import re
+    raw = ""
     try:
         raw = sys.stdin.read()
-        if not raw.strip():
-            return None, None
-        data = json.loads(raw)
-        tool_input = data.get("tool_input") or {}
-        file_path = tool_input.get("file_path", "") or ""
-        content = tool_input.get("content") or tool_input.get("new_string") or ""
-        return file_path, content
+        if raw.strip():
+            data = json.loads(raw)
+            tool_input = data.get("tool_input") or {}
+            file_path = tool_input.get("file_path", "") or ""
+            content = tool_input.get("content") or tool_input.get("new_string") or ""
+            return file_path, content
     except Exception:
-        return None, None
+        pass
+    # V3.0.6 fallback: stdin JSON unusable (truncated on large payloads, or a
+    # Windows path left un-escaped). Recover file_path by regex so path-aware
+    # behaviour (runtime-dir exemption, GATE-token hard block) still applies.
+    if raw:
+        m = re.search(r'"file_path"\s*:\s*"([^"]*)"', raw)
+        if m:
+            try:
+                return json.loads('"%s"' % m.group(1)), 
+            except Exception:
+                return m.group(1).replace("\\\\", "/"), 
+    return None, None
 
 
 def _is_gate_token_path(file_path: str) -> bool:
@@ -329,6 +349,55 @@ def _is_workflow_artifact(project_root: Path, change_dir: Path, file_path: str) 
             return True
     except Exception:
         return False
+    return False
+
+
+# ---- V3.0.6: Agent runtime directory exemption ----
+# Agent state dirs (memory/tmp/automations) are not project deliverables.
+# Gating them only produces false blocks; the two hard blocks below
+# (GATE token / confirmed-field tampering) still apply inside them.
+_AGENT_RUNTIME_DIRS = (".workbuddy-ai",)
+
+
+def _exempt_dir_names(project_root: Path) -> set:
+    """Built-in exempt dirs + project config guard.exempt_paths (merged)."""
+    names = {d.strip().strip("/\\") for d in _AGENT_RUNTIME_DIRS if d}
+    cfg = project_root / ".fstdd" / "config.d" / "project.yaml"
+    if cfg.exists():
+        try:
+            import yaml as _yaml
+            data = _yaml.safe_load(cfg.read_text(encoding="utf-8")) or {}
+            extra = (data.get("guard") or {}).get("exempt_paths") or []
+            for d in extra:
+                if d and str(d).strip():
+                    names.add(str(d).strip().strip("/\\"))
+        except Exception:
+            pass  # config unreadable -> fall back to built-ins
+    return {n for n in names if n}
+
+
+def _is_exempt_path(project_root: Path, file_path: str) -> bool:
+    """True if file_path lives under an agent-runtime dir (any ancestor match).
+
+    Only consulted in --hook-stdin (path-aware) mode. Relative paths are
+    resolved against project_root. Matching on ancestors (not just "inside
+    project_root") also frees user-level agent dirs such as
+    e.g. C:/Users/<u>/.workbuddy-ai/, which are never project deliverables.
+    """
+    if not file_path:
+        return False
+    p = Path(file_path)
+    if not p.is_absolute():
+        p = project_root / p
+    # normalize BEFORE matching: otherwise "x/.workbuddy-ai/../../tools/evil.py"
+    # would match on the string level and become a flow-gate bypass.
+    p = Path(os.path.normpath(str(p)))
+    names = _exempt_dir_names(project_root)
+    if not names:
+        return False
+    for parent in p.parents:
+        if parent.name in names:
+            return True
     return False
 
 
@@ -632,6 +701,14 @@ def cmd_guard_check(args: argparse.Namespace) -> int:
             _guard_report(args, "🚫 不得直接修改 .fstdd.yaml 确认字段；请走 'stdd gate approve' CLI 通道。")
             return 2
 
+    # V3.0.6: agent runtime dirs (.workbuddy-ai/ etc.) are not deliverables -> allow.
+    # Placed AFTER the two hard blocks above so GATE tokens and .fstdd.yaml
+    # confirmation-field tampering stay blocked even inside exempt dirs.
+    if hook_path and _is_exempt_path(project_root, hook_path):
+        if not getattr(args, "quiet", False):
+            print("  [STDD Guard] agent runtime dir - not a deliverable, allowed")
+        return 0
+
     # find active change
     active_dir, phase = _find_active_change(project_root)
 
@@ -767,6 +844,7 @@ def cmd_guard_status(args: argparse.Namespace) -> None:
     print("  STDD Guard Status (V2.9.4 智能门禁):")
     print(f"    enforce_stdd:  {enforce}")
     print(f"    allow_bypass:  {allow_bypass}")
+    print(f"    exempt dirs:   {sorted(_exempt_dir_names(project_root))}")
     print(f"    task_type:      {task_type}")
     print(f"    editable phases: {sorted(_EDITABLE_PHASES_BY_TYPE.get(task_type, _EDITABLE_PHASES))}")
     print(f"    changed files:  {assessment['file_count']}")
