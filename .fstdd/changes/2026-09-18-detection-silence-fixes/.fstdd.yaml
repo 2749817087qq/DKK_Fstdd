@@ -12,7 +12,13 @@ design_adjustments:
 mode: standard
 phases:
   build:
-    status: pending
+    confirmed_actor: ai
+    confirmed_at: '2026-09-21T00:53:51+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 2026-09-21 08:3x 指示『继续』，即确认 Gate 3；证据：全量回归 1 failed/725
+      passed（唯一失败为基线既有 test_e3_memory，与本次改动无关）；S4b 由 K 实现并实测通过（DFX-010 跳过计数可见、DFX-011
+      逐条告警且其余正常）；审计活表同步；提交 74ad408/6bd7eed/646fb0c 已推送
+    status: completed
   deliver:
     status: pending
   spec:

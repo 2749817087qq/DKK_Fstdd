@@ -19,8 +19,8 @@
 | DFX-007 | `fstdd validate` 基线损坏 → 「基线」警告 | ✅ | test_validate_voice.py（FSTDD002） |
 | DFX-008 | `_load_yaml` 损坏基线 → {} + stderr 警告 | ✅ | test_validate_voice.py（FSTDD002） |
 | DFX-009 | batch close `_confirm_gate` 抛错 → 警告且批次仍闭合 | ✅ | test_validate_voice.py（FSTDD002） |
-| DFX-010 | `fstdd fix` 不可读文件 → 结束报告跳过计数 ≥1 | ⏳ | S4b（FSTDD004 在途） |
-| DFX-011 | Gate 2 损坏 spec YAML → 逐条警告、其余正常 | ⏳ | S4b（FSTDD004 在途） |
+| DFX-010 | `fstdd fix` 不可读文件 → 结束报告跳过计数 ≥1 | ✅ | S4b（**K 实现**，commit `74ad408`）：实测报告含「⚠️ 跳过 1 个不可读文件」并点名 `bad.py` |
+| DFX-011 | Gate 2 损坏 spec YAML → 逐条警告、其余正常 | ✅ | S4b（**K 实现**，commit `74ad408`）：实测点名 `broken.yaml`（ParserError），**`good.yaml` 仍正常生成** |
 | COV-001 | change YAML 不可解析 → scan_error 项 | ✅ | test_status_voice.py（FSTDD003） |
 | COV-002 | proposal.md 不可读 → scan_error 项 | ✅ | test_status_voice.py（FSTDD003） |
 | COV-003 | full_scan 含 scan_errors，naive_count 不回归 | ✅ | test_status_voice.py（FSTDD003） |
@@ -86,8 +86,10 @@
 
 ## 六、遗留项
 
-1. **S4b**（DFX-010/011，FSTDD004）：到期 09-20 13:00，合并后本 change 收口。
+1. ~~**S4b**（DFX-010/011，FSTDD004）~~ → ✅ **已完成**（2026-09-21，**K 实现**，commit `74ad408`）。
+   原执行方 FSTDD004 已澄清该改动属主仓代码（不属节点自动化职责），故由 K 接手；
+   详见 `design-adjustments.md` A-01。
 2. **交叉评审**：FSTDD001（S2S3）、FSTDD006（S4a/S4b）改为事后审计，
    限期 09-20 21:00；有必须修复项则开 follow-up 补丁。
 3. **区外副本测试**：见第五节，需 D哥 拍板修法。
-4. Gate 3 待 S4b 合并后申请。
+4. ~~Gate 3 待 S4b 合并后申请~~ → ✅ **S4b 已合并，Gate 3 于 2026-09-21 申请**（见下方 Gate 3 记录）。
