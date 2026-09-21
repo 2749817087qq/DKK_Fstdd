@@ -785,3 +785,15 @@
 - **21:00 当日复盘窗口已过 ~18h24m**，未触发；D哥 若需补交请手动处理。
 - **本地 git**：待提交 `.fstdd/_notices_receipts.md`(追加 15:24 一行) + `.workbuddy-ai/memory/2026-09-21.md`(追加 15:24 段) + `.workbuddy-ai/memory/automations/06ec2c4f.../memory.md`(追加 15:24 段)；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/FSTDD003-weekly-report-2026-W38.md`、`docs/VERIFY_SPEC_ISSUES_2026-09-20_workbench.md`、`docs/FLOW_ISSUES_2026-09-21_workbench.md`、`270a0ea8 memory.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；token 与凭证路径均 gitignored 未泄露。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端；token 与凭证路径均 gitignored 未泄露。
+
+## 2026-09-21 16:32 (GMT+8) 执行 — 常规轮询（无新增收任务、无新增经验、received=184）
+
+- **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 15 份 `FSTDD003收-*`（inbox鉴权上线/凭证安装硬时限/凭证验证补充/助001接入与SOP收尾/升级验证/协作开发-S2S3/工作量与资源规划要求/接入授权/撤回令-伪造署名指令/澄清问询-凭证验证补充/状态盘点/经验回传要求/编写《per-node 接入 SOP》+ 跨平台验证/自动化率提升/通道演练）→ 本地 19 份 `FSTDD003复-*`（13 精确匹配 + 1 命名差异「工作量与资源规划要求↔工作量与资源规划」（Y 是 X 子串，已知差异不重发）+ 1 后缀匹配「助001接入与SOP收尾↔SOP收尾」+ 4 份无对应收-的历史存档 00-NOTICE领取确认/伪造署名事件处置与开放问题协商/凭证安装/给001的接入要点），**0 份待补**；按「只从收找复、绝不反向」不补建。
+- **Step 1 拉取同步**：`scp -i /d/id_ed25519` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功，2m02s 完成）。服务器 mtime 自 09-21 09:42 无变化：最新仍为 `FSTDD003复-升级验证.md`(09-21 09:42，本节点 09:42 轮次 scp 回) + `FSTDD003收-升级验证.md`(09-21 08:54)，距今 ~6h46m 无 K 新下发；无新 `FSTDD003收-*.md`、无新凭证下发文件、无 K-reply-003f；`00-COLLAB.md`(09-18 13:44)/`00-DISCIPLINE.md`(09-18 19:10) 内容未变。
+- **Step 2 紧急快通道**：`FSTDD003收-凭证安装硬时限.md` 仍标 priority:最高，但对应回执 `FSTDD003复-凭证安装硬时限.md`(09-20 01:56) + `FSTDD003复-凭证安装.md`(09-20 10:48) 均已闭环——凭证 09-20 10:45 已装（`.fstdd/_fstdd003_credential.txt` 48B, chmod 600）、V1 POST 200 + node_id=FSTDD003 归因、V2 POST 401 白名单拆除均已通过，下发文件本地+服务器两侧已删除，无需重跑；其余 `收-*` 均无 priority:最高，未触发。
+- **Step 3 增量回传（0 条）**：`fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 57 条）」。submitted=57、failures=0，无试运行数据外泄。`experiences/` 自 12:02 无新增。凭证文件 `.fstdd/_fstdd003_credential.txt`(48B, 09-20 10:45) 就位未动。
+- **Step 4 自查**：`GET /health` → `ok=true, received=184`（与 12:04/13:10/14:16/15:24 持平；本节点本轮 POST=0、无跨节点活动，符合共享池累计语义）。
+- **未写新回执**（无新增收任务，按规则无需回执）。
+- **21:00 当日复盘窗口已过 ~19h32m**，未触发；D哥 若需补交请手动处理。
+- **本地 git**：待提交 `.fstdd/_notices_receipts.md`(追加 16:32 一行) + `.workbuddy-ai/memory/2026-09-21.md`(追加 16:32 段) + `.workbuddy-ai/memory/automations/06ec2c4f.../memory.md`(追加 16:32 段)；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/FSTDD003-weekly-report-2026-W38.md`、`docs/VERIFY_SPEC_ISSUES_2026-09-20_workbench.md`、`docs/FLOW_ISSUES_2026-09-21_workbench.md`、`270a0ea8 memory.md`(另一自动化产物)、`1ac52506/`(未追踪)；`experiences/` gitignored；**未 push** 远端；token 与凭证路径均 gitignored 未泄露。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端；token 与凭证路径均 gitignored 未泄露。
