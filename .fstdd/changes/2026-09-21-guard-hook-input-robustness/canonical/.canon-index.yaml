@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-21-guard-hook-input-robustness: proposals/2026-09-21-guard-hook-input-robustness.yaml
+specs:
+  agent:
+    2026-09-21-guard-hook-input-robustness: specs/agent/2026-09-21-guard-hook-input-robustness.yaml
+  code:
+    2026-09-21-guard-hook-input-robustness: specs/code/2026-09-21-guard-hook-input-robustness.yaml
+version: '2.9'

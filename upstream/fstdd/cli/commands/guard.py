@@ -301,9 +301,13 @@ def _read_hook_input() -> tuple:
         m = re.search(r'"file_path"\s*:\s*"([^"]*)"', raw)
         if m:
             try:
-                return json.loads('"%s"' % m.group(1)), 
+                # 注意：必须返回 2 元组 (path, content)。历史上此处漏写第二个元素
+                # （`return x,` 尾逗号 → 1 元组）导致调用方解包 ValueError，
+                # 钩子以 exit 1 崩掉并 fail-open（每日约 74 次）。见 change
+                # 2026-09-21-guard-hook-input-robustness。
+                return json.loads('"%s"' % m.group(1)), ""
             except Exception:
-                return m.group(1).replace("\\\\", "/"), 
+                return m.group(1).replace("\\\\", "/"), ""
     return None, None
 
 

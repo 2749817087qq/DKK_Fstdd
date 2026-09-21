@@ -1,0 +1,34 @@
+# 2026-09-21-guard-hook-input-robustness.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-09-21-guard-hook-input-robustness"
+  title: "TODO: 变更标题"
+  created: "2026-09-21T03:15:21+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    TODO: 描述要解决的问题或需求背景（一段话）
+  evidence:
+    observed_at: "2026-01-01T00:00:00+00:00"   # 观测时刻（带时区，必填；不得用生成时刻冒充）
+    observed_base_git_sha: "TODO-观测时-HEAD"    # 观测时的 git HEAD（必填）
+    details: |
+      TODO: 证据细节（引用了什么实测数据、命令与输出摘要）
+
+what_changes:
+  - description: "TODO: 变更项 1"
+  - description: "TODO: 变更项 2"
+
+capabilities:
+  new:
+    - name: "TODO"
+      description: "TODO: 新增能力说明"
+  modified:
+    - name: "TODO"
+      description: "TODO: 修改能力说明"
+
+success_criteria:
+  - "TODO: 可验证的成功标准 1"
+  - "TODO: 可验证的成功标准 2"
