@@ -833,3 +833,15 @@
 - **21:00 当日复盘窗口已过 ~23h04m**，未触发；D哥 若需补交请手动处理。
 - **本地 git**：待提交 `.fstdd/_notices_receipts.md`(追加 20:04 一行) + `.workbuddy-ai/memory/2026-09-21.md`(追加 20:04 段) + `.workbuddy-ai/memory/automations/06ec2c4f.../memory.md`(追加 20:04 段)；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/FSTDD003-weekly-report-2026-W38.md`、`docs/VERIFY_SPEC_ISSUES_2026-09-20_workbench.md`、`docs/FLOW_ISSUES_2026-09-21_workbench.md`、`270a0ea8 memory.md`(另一自动化产物)、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；token 与凭证路径均 gitignored 未泄露。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端；token 与凭证路径均 gitignored 未泄露。
+
+## 2026-09-21 21:18 (GMT+8) 执行 — 常规轮询 + **补交每日 21:00 复盘（20260920 欠账 + 20260921 当日）**
+
+- **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 15 份 `FSTDD003收-*` → 本地 19 份 `FSTDD003复-*`（13 精确 + 1 命名差异「工作量与资源规划要求↔工作量与资源规划」+ 1 后缀「助001接入与SOP收尾↔SOP收尾」+ 4 份无对应收-的历史存档），**0 份待补**。
+- **Step 1 拉取同步**：`scp` 全量拉取（静默成功，2m04s）。服务器 mtime 自 09-21 09:42 无变化，距今 ~11.5h 无 K 新下发；无新 `FSTDD003收-*.md`、无 K-reply-003f。
+- **Step 2 紧急快通道**：仅 `FSTDD003收-凭证安装硬时限.md` 标 priority:最高，对应回执已闭环（凭证 09-20 10:45 已装 48B/chmod 600、V1 200 归因、V2 401 拆除），未重跑。
+- **Step 3 增量回传（0 条）**：submitted=57、failures=0。`experiences/` 自 12:02 无新增。
+- **★ 新增回执 1 份（本轮主要动作）**：`FSTDD003收-工作量与资源规划要求.md` §二.4 要求**每日 21:00 提交《当日复盘》**，而 `FSTDD003复-工作量与资源规划.md` §四.6 原承诺写 `FSTDD003复-当日复盘-20260920.md` —— **该文件从未生成**，09-20 漏交、09-21 当日 21:00 亦刚过（21:07 轮询启动）。前 22 轮轮询仅把「21:00 窗口已过」记为观察项并 defer 给 D哥，从未实际产出。本轮已写 `FSTDD003复-当日复盘-20260921.md`（7364B）并 scp 回服务器（md5 `4e1f0bc5…` 一致），覆盖 09-21 四栏复盘 + 09-20 欠账补记 + 根因 + 修复。
+- **根因（重要，供后续轮次参考）**：周期性子义务（每日复盘 / 每日计划）挂在已回执的 `收-*` 内部，而**未物化为独立回执文件名** → 收/复 文件名对账结构性漏掉它。→ **规则升级**：21:00 窗口检查从「观察项」升级为「产出项」——到点若无当日 `FSTDD003复-当日复盘-<YYYYMMDD>.md`，即生成 + scp 回，不再仅记录「已过」。同理 09:00《当日工作计划》（§二.1）自 09-22 起补交。
+- **Step 5 自查**：`GET /health` → `ok=true, received=184`（与 12:04–20:04 持平；本节点本轮 POST=0，回执走 scp 不走 share 通道）。
+- **本地 git**：提交 `.fstdd/_notices_receipts.md` + `.fstdd/_notices/FSTDD003/FSTDD003复-当日复盘-20260921.md` + `.workbuddy-ai/memory/2026-09-21.md` + 本文件；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`270a0ea8 memory.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端。
