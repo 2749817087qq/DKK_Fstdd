@@ -172,6 +172,43 @@ def engine_ready(eng) -> bool:
     return all((eng / s).is_dir() for s in ("data", "archive"))  # 只看代码 -> 联接没建时静默空
 ```
 
+### ⚠️ 但这个兜底**只在进程启动时生效**（实测踩过）
+
+`ARCHIVER = resolve_archiver()` 是**模块导入时求值一次**的常量。
+服务跑起来之后联接才被删 → 进程仍拿着旧根往下拼 → 目录不存在 →
+**静默返回空**（实测接口从 `total=2` 变 `0`，日志干净无报错）。
+
+| 场景 | 兜底是否生效 |
+|---|---|
+| 进程启动**前**就未就绪（如刚克隆没跑 setup） | ✅ 生效（退回真实数据根，功能正常） |
+| 进程启动**后**才未就绪（手工删联接 / `--remove`） | ❌ **不生效**，静默返回空 |
+
+**两条措施（按性价比）：**
+
+1. **给运行期状态一个重新探测的入口**（最省事、必做）：
+   ```python
+   def live_status() -> dict:          # 每次调用都重新探测，不是常量
+       eng = resolve_engine(); ready = engine_ready(eng)
+       return {"archiver": str(ARCHIVER), "self_contained": SELF_CONTAINED,
+               "engine_ready": ready,
+               "degraded": (ARCHIVER == eng) and not ready,
+               "warnings": health_warnings()}
+   ```
+   接到 `/api/health`，`degraded` 时把 `status` 也改成 `degraded`。
+
+2. **告警文案必须按「谁在什么时刻看到的」分叉** —— 两者后果相反，
+   混成一句会把排查方向带偏：
+
+   | 情形 | 事实 | 文案 |
+   |---|---|---|
+   | 导入时就未就绪 | 已退回真实数据根，**功能是好的** | 「已退回真实数据根，功能可用但不再是自包含的」 |
+   | 导入后联接才丢 | 本进程仍指着坏目录，**会返回空** | 「本进程仍指向该目录，读数据接口会返回空（不是没数据）——重建后立即恢复，无需重启」 |
+
+   判据：`ARCHIVER == resolve_engine()`。
+
+若确实需要运行期自愈：别在调用点散着改，把路径做成
+`archiver_root()` 这类**每次求值**的函数（常量式 `ARCHIVER / "data"` 天生不支持）。
+
 ## 落地清单
 
 1. `tools/setup_engine.py`：建/修/拆联接 + 硬链接，**幂等**，带 `--check` / `--remove`。
@@ -204,12 +241,37 @@ python -m pytest tests -q                # 契约测试全绿
 | 删联接报 `SAFE_DELETE_FAIL_CLOSED` | **已经删掉了目标里的真文件**，报错只是部分失败 |
 | 每次启动都「联接指向别处，将重建」 | `readlink` 返回 NT 前缀 `\\?\`，没剥 |
 | `git add` 卡很久 / 仓库突然几万文件 | 联接没进 `.gitignore`，git 递归扫进去了 |
-| 界面「没有数据」但服务不报错 | 解析器返回了不存在的路径（应退回真实数据根） |
+| 界面「没有数据」但服务不报错 | ① 解析器返回了不存在的路径（应退回真实数据根）；② **服务运行中联接才被删** —— 兜底只管启动那一刻，需靠 `/api/health` 的 `degraded` 才看得见 |
 | 建联接时中文路径变 `??` | 走了 shell（`mklink` / `New-Item`）；改用 ctypes |
 | 克隆后功能全空 | 联接不入库，**必须先跑 `setup_*.py`** |
+
+## 验证清单（含「坏掉」的分支，别只跑 happy path）
+
+```bash
+# A. 模拟刚克隆：拆掉全部联接 → 新进程兜底应生效 → 引导复原
+python tools/setup_engine.py --remove
+python -c "import sys;sys.path.insert(0,'.');from modules import _paths;print(_paths.describe()['self_contained'])"  # False
+#   接口仍应可用（走真实数据根），不得返回空
+python tools/setup_engine.py && python tools/setup_engine.py --check   # 全 [ok]
+
+# B. 运行期缺口：服务在跑，删一个联接 → health 必须变 degraded
+curl -s http://127.0.0.1:8733/api/health | python -c "import json,sys;d=json.load(sys.stdin);print(d['status'],d['engine']['degraded'])"
+#   正常 -> ok False
+# 删掉一个联接（只能用 os.rmdir）
+curl -s http://127.0.0.1:8733/api/health | python -c "import json,sys;d=json.load(sys.stdin);print(d['status'],d['engine']['degraded'])"
+#   -> degraded True      ← 不得是 ok False（那就又静默了）
+python tools/setup_engine.py     # 重建后不重启应恢复
+```
+
+**断言别写成「health 返回 200」** —— 缺口状态下它照样 200。
+必须断言 `degraded` 字段与 `status` 的联动。
 
 ## 元教训
 
 **症状相同的两个 bug 会互相顶罪。** 修好其中一个后，剩余症状会「变个形式」
 （例：从「图标是白纸」变成「图标对但双击不动」），极易被误判成「没修好」而回头重做。
 → **每次修复后，把剩余症状当成新问题独立复现一次。**
+
+**「配置兜底」必须问清作用域。** 启动时求值一次的常量，
+天然不具备运行期兜底能力，而它的失败方式恰恰是最安静的（返回空、不报错）。
+→ 提供运行期重新探测的入口，并让告警文案按「谁在什么时刻看到的」分叉。
