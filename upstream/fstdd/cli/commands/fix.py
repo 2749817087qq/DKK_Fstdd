@@ -53,6 +53,7 @@ def _fix_level2(dry_run: bool):
     """Level 2: Suggested fix — type annotations, exception handling patterns."""
     project_root = Path.cwd()
     suggestions = []
+    skipped_files = []  # S4b/DFX-010: 不可读文件不再静默，计入跳过计数
 
     # Scan Python files for common issues
     for py_file in project_root.rglob("*.py"):
@@ -60,7 +61,13 @@ def _fix_level2(dry_run: bool):
             continue
         try:
             content = py_file.read_text(encoding="utf-8")
-        except Exception:
+        except Exception as e:
+            # 记录而非静默跳过：结束报告必须能看到"有多少文件没被检查"
+            try:
+                rel = str(py_file.relative_to(project_root))
+            except ValueError:
+                rel = str(py_file)
+            skipped_files.append((rel, type(e).__name__))
             continue
 
         rel_path = py_file.relative_to(project_root)
@@ -86,8 +93,18 @@ def _fix_level2(dry_run: bool):
                 func_name = stripped.split("(")[0].replace("def ", "")
                 suggestions.append(f"  💡 {rel_path}:{i+1}: '{func_name}' has no type annotations")
 
+    # S4b/DFX-010: 跳过计数必须出现在结束报告中（不可读文件不能被静默吞掉）
+    if skipped_files:
+        print(f"  ⚠️  跳过 {len(skipped_files)} 个不可读文件（扫描未覆盖）：")
+        for rel, err in skipped_files[:5]:
+            print(f"      - {rel} ({err})")
+        if len(skipped_files) > 5:
+            print(f"      - ... 另有 {len(skipped_files) - 5} 个")
+
     if dry_run:
         print(f"  [DRY-RUN] Would check {len(list(project_root.rglob('*.py')))} files for Level 2 issues")
+        if skipped_files:
+            print(f"  [DRY-RUN] 其中 {len(skipped_files)} 个不可读，将被跳过")
         return
 
     if suggestions:

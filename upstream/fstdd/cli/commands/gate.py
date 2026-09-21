@@ -142,6 +142,7 @@ def _auto_generate_human_views(project_root: Path, change_dir: Path, gate_num: i
             specs_code_dir = canon_dir / "specs" / "code"
             if specs_code_dir.is_dir():
                 generated = 0
+                broken = []  # S4b/DFX-011: 损坏的 spec YAML 逐条告警，不静默
                 for yf in sorted(specs_code_dir.glob("*.yaml")):
                     # 跳过 new.py scaffold 的模板占位（capability 仍为 TODO）—
                     # 占位名含冒号，Windows 路径非法，且无真实需求内容
@@ -150,14 +151,31 @@ def _auto_generate_human_views(project_root: Path, change_dir: Path, gate_num: i
                         cap = (spec_data.get("meta", {}) or {}).get("capability", "") or ""
                         if "TODO" in cap:
                             continue
-                    except Exception:
+                    except Exception as e:
+                        broken.append((yf.name, f"{type(e).__name__}: {str(e)[:60]}"))
+                        continue  # 单个损坏不影响其余 spec
+                    try:
+                        _generate_spec(project_root, yf, output_dir=change_dir)
+                    except SystemExit:
+                        broken.append((yf.name, "生成中断 (SystemExit)"))
                         continue
-                    _generate_spec(project_root, yf, output_dir=change_dir)
+                    except Exception as e:
+                        broken.append((yf.name, f"{type(e).__name__}: {str(e)[:60]}"))
+                        continue
                     generated += 1
                 if generated:
                     print(f"    ✨ 自动生成 {generated} 个 spec.md Human View (YAML-first)")
-    except SystemExit:
-        pass  # YAML malformed — silent; user can run `stdd canon generate` manually
+                # DFX-011: 损坏/跳过的 spec 必须逐条可见，且其余 spec 照常生成
+                for name, reason in broken:
+                    print(f"    ⚠️  跳过损坏的 spec YAML: {name} — {reason}")
+                if broken:
+                    print(f"    ⚠️  共 {len(broken)} 个 spec YAML 未生成，其余 {generated} 个正常"
+                          f"（可手动运行 `stdd canon generate` 排查）")
+    except SystemExit as e:  # DFX-011: 不再静默
+        print(f"    ⚠️  spec Human View 生成中断（{e}）；可手动运行 `stdd canon generate`")
+    except Exception as e:
+        print(f"    ⚠️  spec Human View 生成失败（{type(e).__name__}: {str(e)[:80]}）；"
+              f"可手动运行 `stdd canon generate`")
 
 
 def _read_gates_config(project_root: Path) -> dict:

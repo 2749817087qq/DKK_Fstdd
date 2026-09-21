@@ -5,10 +5,10 @@ meta:
   observed_at: '2026-09-18T03:48:00+00:00'
   observed_base_git_sha: 3a4ad974beb042db473dbf00780382d8f530f1d8
   scanner: tools/audit_silent_except.py
-  total: 18
+  total: 17
   by_classification:
-    合理容错: 13
-    意外吞错: 5
+    合理容错: 14
+    意外吞错: 3
   note: 活表：置于 active change 下由本 change 维护；归档表不动（D6 决策）。S1/S2S3/S4a 共修复 11 个点（本表已移除），行号随代码变动刷新，零漂移校验以
     (file, stmt) 指纹为准（±5 行容差）
   voiced_by_change:
@@ -18,6 +18,8 @@ meta:
   - EA-022 upstream/fstdd/cli/commands/validate.py:106
   - EA-028 tools/check_timestamps.py:186
   - EA-029 tools/check_timestamps.py:209
+  - EA-005 upstream/fstdd/cli/commands/fix.py:64
+  - EA-006 upstream/fstdd/cli/commands/gate.py:154
   errata:
   - id: EA-010
     from: 意外吞错/p1
@@ -66,29 +68,16 @@ points:
   response: 放行
   detection_path: false
   justification: 读取 change task_type 决定 spec 目录：失败按默认 code 处理，信息读取容错
-- id: EA-005
-  file: upstream/fstdd/cli/commands/fix.py
-  line: 63
-  stmt: continue
-  handler: 'except Exception:'
-  classification: 意外吞错
-  severity: p2
-  response: 加警告
-  detection_path: false
-  justification: 批量重写遇坏文件跳过：重写覆盖静默缩水，应计数报告跳过了多少文件
-- id: EA-006
-  file: upstream/fstdd/cli/commands/gate.py
-  line: 153
-  stmt: continue
-  handler: 'except Exception:'
-  classification: 意外吞错
-  severity: p2
-  response: 加警告
-  detection_path: true
-  justification: Gate 2 自动生成 spec Human View 时单条 YAML 失败跳过：该能力 spec 静默缺失，gate 输出仍显示成功数
+# EA-005 / EA-006 已由本 change 的 S4b（DFX-010 / DFX-011）发声并移除：
+#   - fix.py  : 不可读文件不再静默 skip，改为记录 (rel, err) 并在结束报告打印
+#               「⚠️ 跳过 N 个不可读文件（扫描未覆盖）」+ 逐个点名（最多 5 个）
+#   - gate.py : Gate 2 单个 spec YAML 失败不再静默 continue，改为逐条打印
+#               「⚠️ 跳过损坏的 spec YAML: <name> — <reason>」并汇总
+#               「共 N 个未生成，其余 M 个正常」；单个损坏不影响其余 spec 生成。
+# 二者见 meta.voiced_by_change。
 - id: EA-010
   file: upstream/fstdd/cli/commands/guard.py
-  line: 330
+  line: 350
   stmt: return False
   handler: 'except Exception:'
   classification: 合理容错
@@ -208,3 +197,15 @@ points:
   response: 放行
   detection_path: false
   justification: version 文件 YAML 解析失败 → 继续其他探测路径
+- id: EA-030
+  file: upstream/fstdd/cli/commands/guard.py
+  line: 295
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: _read_hook_input 兜底路径：stdin JSON 不可解析（大 payload 截断或未转义的
+    Windows 路径）时吞掉解析异常，改由正则提取 file_path；仍失败则维持原 fail-open 语义
+    返回 (None, None)。V3.0.6 agent 运行时目录豁免的配套改动。
