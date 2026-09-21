@@ -4,7 +4,7 @@ schema: fstdd-distributed-task/v0.1
 title: FSTDD 安装/运行工程测试与经验回传
 status: archived          # pending | running | blocked | done | archived
 created: 2026-09-12
-updated: 2026-09-20
+updated: 2026-09-21
 node: WORKBUDDY-AI-WIN   # 执行节点标识（本实例）
 owner: D哥
 mode: fstdd              # 走 FSTDD 四阶段 + 三确认门
@@ -120,6 +120,40 @@ tags: [install, hardening, experience-upload, distributed]
       等于没打补丁，会给出**假的绿**）。
       建议写进 Phase 3 完成定义：「每个切片要么有 RED 记录，要么有 revert 重放记录」。
       详见 `experiences/FSTDD003-EXP-20260920-RED-1.md`。
+- [ ] **P32 待修（🔴 高 · 数据丢失）**：Windows 上 `Remove-Item -Recurse` / `shutil.rmtree()`
+      删**目录联接**会**递归删掉联接目标里的真实文件**（本轮实测删掉 1015 个）。
+      报错是 `SAFE_DELETE_FAIL_CLOSED`，**看起来只是「删不掉」，实际已部分删除**。
+      安全删法只有 `os.rmdir()` / `[IO.Directory]::Delete($p,$false)`。
+      建议：任何「删链接」代码路径上出现 `rmtree` / `-Recurse` 视为**阻断级**评审问题；
+      删除前必须先校验对象类型（reparse tag）。
+      详见 `experiences/FSTDD003-EXP-20260921-JUNCTION-1.md` 与
+      `docs/JUNCTION_SELF_CONTAIN_2026-09-21_workbench.md`。
+- [ ] **P33 待修（中）**：`os.readlink()` 对目录联接返回 **NT 前缀** `\\?\D:\...`，
+      与普通路径字符串比较**永远不等** → 一切「幂等/自愈」逻辑退化成「每次都重建」。
+      修法：剥 `\\?\` / `\??\` / `\\?\UNC\` + `normcase/normpath`。
+- [ ] **P34 待修（中）**：目录联接 / 硬链接**不能进 git** ——
+      ① 入库成坏文本，克隆即废；② 不挡则 `git add <dir>/` 递归扫进**2 万多个数据文件**。
+      修法：逐条 `.gitignore` + 用 `git add --dry-run` 复验实际入库清单。
+- [ ] **P35 待修（中）**：`is_junction()` 不能用 `islink()` / `is_dir()`（对目录联接与
+      符号链接**都为真**）。唯一判据 `os.lstat(p).st_reparse_tag == 0xA0000003`。
+- [ ] **P36 待修（中）**：用 `mklink` / `New-Item -ItemType Junction` 建联接要过一层 shell，
+      **中文路径易被按 GBK 解析成乱码**（与 bat 编码坑同源）。
+      修法：ctypes 直调 `CreateFileW` + `DeviceIoControl(FSCTL_SET_REPARSE_POINT)`，
+      全 Unicode 原生，**且免管理员**。
+- [ ] **P37 待修（🔴 高 · 静默）**：引擎/数据目录未就绪时若返回「那个不存在的路径」，
+      所有读数据接口会**静默返回空**（界面显示「没有数据」，像功能没做）。
+      修法：三级兜底 `显式覆盖 > 自包含目录（就绪时）> 真实数据根`；
+      就绪判据必须**同时**查「代码在」+「数据在」，少查一个都会把「没配好」伪装成「没数据」。
+      ⚠ 本项目**第三次**踩同类事故（前两次：`_paths.py` 非同级目录、`Path()` truthy）。
+- [ ] **P38 待修（低）**：守卫测试把**工具自动生成**的文件当违规
+      （`python -m venv` 生成的 `.venv\Scripts\activate.bat` 偏移 319 有非 ASCII 字节）。
+      后果：每台装了 venv 的机器都红一条 → **守卫被无视**（比没有守卫更糟）。
+      修法：`SKIP_DIRS` 补 `.venv/venv/.tox/site-packages`，并加断言锁住「跳过生效」。
+- [ ] **订正**：`EXP-20260920-LNK-1` 顶部结论已推翻，原文末尾追加
+      `## ⚠️ 事后订正（2026-09-21）`（保留原文，另加脚注，符合铁律 6）。
+      真实判据：`LinkFlags` bit0 置位 + `IDListSize` 为几百字节真实 PIDL；
+      那一轮「双击没反应」的真正根因是 **GBK bat + `chcp 65001`** 这个独立 bug。
+      元教训：**症状相同的两个 bug 会互相顶罪**，修复后要把剩余症状当**新问题**独立复现。
 
 ## 6. 第四轮（2026-09-17 · 真实业务变更实战）
 
@@ -426,3 +460,143 @@ app.js 打补丁），只跑该切片名下 TC，断言必须变红，跑完按�
 - [ ] P22 / P23 / P24 待修 —— 见顶层「5. 遗留项」。
 - [ ] `archiver-gui` 四批已全部交付（骨架+凭证 / 公众号+同步 / 文章+抓取 / 导出），
       功能面封闭；`.pager` 组件类仍缺（同 §12 遗留），等设计侧解冻。
+
+---
+
+## N. 第 N 轮（2026-09-20 · 工作台接入 / 本机 PG 连线）
+
+场景：把 `archiver-gui`（公众号归档器）迁到 `工作台/` 根目录并跑通；
+同时对「工作台连本机 PostgreSQL」走 FSTDD Phase 1（UNDERSTAND）写 proposal。
+完整报告见 `docs/VERIFY_SPEC_ISSUES_2026-09-20_workbench.md`。
+
+### 本轮新缺陷（P25–P31）
+
+- **P27（高，流程侧）**：迁移后端口被旧实例占用，新实例 bind 失败（`WinError 10048`）
+  但后台启动不回显；curl 打到旧进程，`health` 与所有数据端点**字节级相同** → 误判「运行成功」。
+  → `experiences/FSTDD003-EXP-20260920-VERIFY-1.md`
+- **P28（高，流程侧）**：成功标准写了「3 张表不存在」这类**环境否定型陈述**；
+  库正被并发写入，20 分钟后 `business` 表数 93 → **182**，那 3 张表**存在但 0 行**。
+  → `experiences/FSTDD003-EXP-20260920-SNAPSHOT-1.md`
+- **P25（中）**：`gate approve` 需 change 级 `.fstdd.yaml` 先存在，缺失时报通用异常。
+- **P26（中）**：Human View 只渲染 `## Why` / `## What Changes` / `## Success Criteria`，
+  自定义 section（如 `success_criteria_notes`）**静默不渲染且无 warning**；
+  `canon verify` 仍报 2/2 通过 → **写错的成功标准若只在自定义字段纠正，Gate 审查者看不到**。
+- **P29（中）**：Git Bash 会话 locale 为 GBK，SQL 中文被编成 GBK 发给 UTF-8 的 PG
+  → `invalid byte sequence for encoding "UTF8"`，一度误判成「库脏了」。
+  **GBK 根因链第三次咬人**（print emoji 崩进程 / Python 中文 `\b` 词边界 / 本次 SQL）。
+- **P30（中）**：非同级目录相对路径陷阱**第 3 次**出现（本次在 `tests/test_skeleton.py:18`）。
+- **P31（低）**：PowerShell `Add-Type` 被安全策略拦，回收站 API 不可用。
+
+### 有效做法（值得固化）
+
+- **迁移后验证铁律**：只验证**新目录独有的文件**（新增静态资源 / 改过的 title / 新增路由），
+  禁止用两端共有的数据端点作判据。
+- **纠正成功标准的正确姿势**（D哥 09-18 裁定）：**原文一字不改，另加
+  `success_criteria_notes` 脚注**（含 `measured_at` / `finding` / `root_cause` / `correction`）。
+- **环境判据不入成功标准**：改成相对/可复算判据；环境状态只在 `risk_areas` 里带快照时间戳记录。
+- **单一路径解析器**：`modules/_paths.py` + 环境变量覆盖，改完 grep 确认 0 残留；
+  **测试文件也要一起改**。
+
+### 顺带核实的事实（非问题）
+
+- `__MACOSX/`：18 个真实文件 + 22 个 `._*` 元数据，**无任何代码**。
+- 迁移包只过来 `migration/`，`路口理财工作台/`（server.py + index.html 1.25 MB）**没过来**
+  → 完整工作台组装**阻塞在代码复制**。
+- 工作台：`server.py` 纯标准库 / 8518 / `WB_*` 可覆盖；`index.html` 单文件零 CDN；
+  行情走 `BrowserBackend` 浏览器直连东财（不经 server），分析/净值/持仓/通知依赖 server
+  → **server 一挂就是「外壳在、数据全空」**。
+
+### 遗留项（本轮新增）
+
+- [ ] P25–P31 待修 —— 详见 `docs/VERIFY_SPEC_ISSUES_2026-09-20_workbench.md` 末尾清单。
+- [ ] 阻塞项：等 `路口理财工作台/` 从 Mac 复制到本机后，才能按
+      `工作台/docs/公众号页面接入方案.md` 完成「公众号视图接入 + 双端 8518/8733 打通」。
+
+---
+
+## 14. 第 14 轮（2026-09-21 · 工作台自包含 · 目录联接）
+
+**场景**：`D:\项目\工作台` 要做成自包含（D哥：`工作台要做成自包含模式，不要代码散了`）。
+约束（D哥 选项）：**只搬引擎代码、数据留原地**；**只搬工作台、别动别的项目**。
+
+**注意**：本轮**未走 FSTDD 四阶段**（是运行期工程改造，非规格变更）。
+记录的价值在于问题群本身，不在流程。
+
+### 方案
+
+```
+工作台\engine\{archiver,netutil,profile_ext_fetch,target_gap_v2}.py  ← 逐字节复制，一行未改
+工作台\engine\{data,archive,net_archive,exports}  ← NTFS 目录联接 → wechat-archiver\*
+工作台\公众号 (1).json                            ← 硬链接（target_gap_v2.ROOT 要读）
+工作台\.venv                                      ← 自带解释器
+```
+
+**为什么用联接而不是改代码**：四个模块的数据常量**全是**
+`Path(__file__).resolve().parent` 派生（`archiver.py:49` /
+`profile_ext_fetch.py:48` / `target_gap_v2.py:48-56`）。
+改代码 = 副本与上游**永久分叉**；挂联接 = **零修改**生效。
+
+### 本轮新缺陷（P32–P38）
+
+- **P32（🔴 高 · 真实数据丢失）**：`Remove-Item -Recurse` 删目录联接
+  **递归删掉了目标里 1015 个真实文件**；报错却是 `SAFE_DELETE_FAIL_CLOSED`
+  （看起来只是「删不掉」）。
+- **P33（中）**：`os.readlink()` 对联接返回 NT 前缀 `\\?\D:\...` →
+  与普通路径比较永远不等 → 幂等性归零（每次都「将重建」）。
+- **P34（中）**：联接/硬链接不能进 git（否则 `git add` 递归扫进 2 万多个数据文件）。
+- **P35（中）**：`is_junction` 判据必须用 reparse tag，`islink`/`is_dir` 都不可靠。
+- **P36（中）**：`mklink` / `New-Item -ItemType Junction` 过 shell → 中文路径 GBK 乱码；
+  改 ctypes 直调，**顺带免管理员**。
+- **P37（🔴 高 · 静默）**：引擎未就绪若返回空路径 → 读数据接口**静默返回空**。
+  本项目**第三次**踩同类事故。
+- **P38（低）**：守卫测试把 `venv` 自动生成的 `activate.bat` 当违规 →
+  守卫常红 → 被无视（比没有守卫更糟）。
+
+### 有效做法（值得固化）
+
+1. **「代码搬走 + 数据留原地」优先选联接而非改代码** —— 当数据路径由
+   `Path(__file__)` 派生时，改代码会让副本与上游永久分叉。
+2. **删除类操作先校验对象类型，再删**；把「拒绝删除」做成显式异常而非静默跳过。
+3. **凡「按路径判断是否已就绪」的逻辑，必须能区分「没配好」与「没数据」** ——
+   就绪判据要同时查「代码在」+「数据在」。
+4. **验证脚本要能自己发现配置缺失**，不能等报错才暴露。
+5. **建 NTFS 重解析点用 ctypes 直调**，不走 shell —— 中文路径 + 免管理员一次解决。
+6. **自愈判据不能是「存在即跳过」**（`.lnk` 的 `lnk_is_valid()` 同理：
+   判据是 `LinkFlags` bit0 + `IDListSize` 长度，不是文件存在）。
+
+### 顺带订正
+
+`FSTDD003-EXP-20260920-LNK-1.md` 顶部结论（「唯一逃路是手写 .lnk 二进制」、
+「去掉 IDList 就对了」）**已推翻**，原文末尾追加
+`## ⚠️ 事后订正（2026-09-21）`（保留原文，另加脚注）。
+真实判据是 `LinkFlags` bit0 置位 + `IDListSize` 为几百字节真实 PIDL。
+
+**元教训（值得单独记）**：**症状相同的两个 bug 会互相顶罪。**
+那一轮「双击没反应」= ①坏的 .lnk（图标就不对）+ ②GBK bat + `chcp 65001`（图标对了也不动）。
+先修好 ①，症状只变了形式（从「白纸图标」变成「图标对但不动」），
+被误判成「①没修好」，又回头折腾 .lnk 一整轮。
+→ **修复后要把剩余症状当成新问题独立复现一次。**
+
+### 验证证据
+
+```
+tools/setup_engine.py --check      → 4 联接 + 1 硬链接全 [ok]，连跑两次无 [new]
+tools/check_engine.py              → 所有数据常量 resolve() 落在真实数据根，全 OK
+ctypes 探针建/删联接               → 中文路径无损；删除后目标 4 文件完好
+8733/8518 用自带 .venv 重启         → /api/health 200
+POST /api/fetch/start force 重抓    → 成功 1 篇 · 失败 0 篇（17s）
+                                      失败那篇原因是内容级（视频类无图文正文），
+                                      证明引擎经联接加载成功、URL 解析成功
+产物落点                            → archive/中金点睛/2026-09-21_...；
+                                      索引 articles_local.jsonl 两路均 28568 行（同一份）
+测试                                → 183 → 207 passed（0 skipped）
+```
+
+### 遗留项（本轮新增）
+
+- [ ] P32–P38 待修 —— 见顶层「5. 遗留项」，详见
+      `docs/JUNCTION_SELF_CONTAIN_2026-09-21_workbench.md`。
+- [ ] 引擎副本与源会随时间漂移（`setup_engine.py` 每次比对 sha256 并告警，
+      `TC_SC_034` 也守着）。**不改上游**是 D哥 定的范围，漂移只告警不自动同步。
+- [ ] 工作台本地 git 已提交 `e7340d0`（17 文件 / +2919 −21），无 remote。
+
