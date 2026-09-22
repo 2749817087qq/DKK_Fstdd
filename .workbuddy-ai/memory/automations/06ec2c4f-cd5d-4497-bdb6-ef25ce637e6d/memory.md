@@ -1168,3 +1168,13 @@
 - **Step 5 自查**：`GET /health` → 空响应（连接 OK, exit=0）；本轮无经验 POST，received 不变符合语义。
 - **纪律**：仅读写本节点 FSTDD003/；未回显凭证片段（domain 为 K 给定任务对象保留；本地路径/出口 IP 以 `<PATH>/<IP>` 占位）；未 push 远端；未触他人目录/K-memory；6 份通知均 0 动作（未触 quanthub 端点，严守"只观测不利用"）。
 - **共享池连接异常（阻断经验回传，非本地故障）**：routine 增量回传发现 4 条新增经验（EXP-20260923-CI-1/DIFF-1/GATE-1/SCRIPT-1，合法非 trial），POST `http://43.134.236.80:8787/api/share-experience` 全部 `WinError 10060` 超时；TCP 探针 `:22` OPEN、`:8787` CLOSED（curl exit28/http_code=000）→ 共享池 web 服务本节点不可达（主机在线），属 K 侧基础设施异常；凭证文件存在、走带凭证模式已过鉴权前检查，非凭证问题；经验在 `experiences/` 完好、记 failures，下轮自动重试；不擅启 K 侧服务、不建无 收- 的 复-。
+
+## 2026-09-23 02:50 (GMT+8) 执行 — ★FSTDD 499 fix 闭环（用户「499 canceled…走FSTDD修复」）
+
+- **根因确认（非服务端故障）**：`499 canceled` = nginx Client Closed Request = 客户端提前断开；本守护前台 scp/ssh 弱网耗时 2–3min 超前台超时→被编排层自动转后台→网关记 499。两个 hex 是网关 request-id/trace-id。scp 实际 exit=0、文件落地。
+- **修复（FSTDD P1→P4，变更 `2026-09-23-poll-daemon-499-fix`）**：守护 prompt(06ec2c4f) 新增【499 修复铁律】——所有 scp/ssh 必须 `run_in_background=true` + `TaskOutput` 等待，禁止前台长阻塞；成败只以文件系统为准；第5步自查追加 `pull_mode: background+await`。新增 SOP `tools/fstdd003_daemon_499_sop.md`。变更产物 `.fstdd/changes/2026-09-23-poll-daemon-499-fix/`（proposal/design/test-plan/specs/.fstdd.yaml，status=completed）。
+- **演示轮（本轮，GREEN 证明）**：第1步 scp 拉取以 `run_in_background=true` 启动 + `TaskOutput` 等待，耗时 **3m22s**（历史曾触发 499 的耗时），exit=0、23 份 收- 落地、前台 turn 完好、无 499；第0步 ssh 列服务器 收- 同样后台+await（50s）。
+- **对账零回归**：服务器 23 收- ↔ 本地 31 复-，全匹配（15 精确 + phase1-launch 由 复-2026-09-22 覆盖 + 工作量与资源规划已知差异 + SOP收尾 后缀），**0 缺口**；无新 K 下发（末份仍 09-23 ~02:09 的 6 份 phase1 通知，早已闭环）。
+- **共享池仍异常**：`:8787` 仍 CLOSED（curl exit28/http_code=000）；本轮 `fstdd003_daily_share.py` 跑出 **5 条待回传**（历史 4 + 新增 `EXP-20260923-DAEMON-1`）全部 `WinError 10060`；经验 intact、记 failures、下轮重试。
+- **本地 git**：提交 `2be0960`（变更 8 文件 + SOP + share_log + 两份 memory + _phase1_runtime + 7 份 phase1 复- 收据）；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`docs/*.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；凭证路径 gitignored 未泄露。
+- **纪律**：仅读写本节点 FSTDD003/；未回显凭证片段（IP/密钥路径以 `<...>` 占位）；未触他人目录/K-memory；演示轮 pull_mode=background+await（本轮起每轮可审计）。
