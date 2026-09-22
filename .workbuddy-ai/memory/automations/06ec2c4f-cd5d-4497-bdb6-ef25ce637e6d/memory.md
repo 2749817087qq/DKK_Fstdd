@@ -1254,3 +1254,13 @@
 - 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
 - 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
 - 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
+## 2026-09-23 05:40 (GMT+8) 执行 — 常规轮询
+- 稳态：0 缺口（无新指令）；后台+await 持续生效（scp 2m22s 无 499、ssh 5s）；共享池 :8787 仍 down（health exit=28/timeout）。
+- 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
+- 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
+## 2026-09-23 05:41 (GMT+8) 执行 — 常规轮询
+- 稳态：0 缺口（无新指令）；后台+await 持续生效（scp 2m31s 无 499、ssh 5s）；共享池 :8787 仍 down（http_code=000/timeout）。
+- 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
+- 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
