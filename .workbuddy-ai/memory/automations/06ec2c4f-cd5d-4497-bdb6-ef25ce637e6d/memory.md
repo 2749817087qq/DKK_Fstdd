@@ -1144,3 +1144,16 @@
 - **E-24 状态**：`FSTDD003复-升级路径修复方案.md`(09-22 09:23 已 scp 回服务器) 方案阶段交付，等 K 转 D哥 备案后授权执行 W1-W7；本轮不触服务器侧 / 不推远端 / 不改 tokens.json。
 - **本地 git**：显式路径提交 `.fstdd/_notices_receipts.md` + `.fstdd/_notices/FSTDD003/FSTDD003收-phase1-launch.md` + `.fstdd/_notices/FSTDD003/FSTDD003复-phase1-2026-09-22.md` + `.fstdd/_notices/FSTDD003/FSTDD003复-当日复盘-20260922.md` + `.workbuddy-ai/memory/2026-09-22.md` + 本文件；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`1ac52506/`、`270a0ea8 memory.md`；`experiences/` gitignored；**未 push** 远端；token 与凭证路径均 gitignored 未泄露。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段（IP / SSH key 路径均以 `<...>` 占位）；未 push 远端；未触发紧急快通道（凭证硬时限已闭环）；Phase 1 D0 严格 0 动作（未触 quanthub 平台任何端点）。
+
+## 2026-09-22 22:57 (GMT+8) 执行 — 常规轮询（无新增收任务、无新增经验、received=190，18 轮持平）
+
+- **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 17 份 `FSTDD003收-*`（inbox鉴权上线/凭证安装硬时限/凭证验证补充/助001接入与SOP收尾/升级路径修复方案/升级验证/协作开发-S2S3/工作量与资源规划要求/接入授权/撤回令-伪造署名指令/澄清问询-凭证验证补充/状态盘点/经验回传要求/编写《per-node 接入 SOP》+ 跨平台验证/自动化率提升/通道演练/phase1-launch）↔ 本地 24 份 `FSTDD003复-*`（**15 精确匹配** + 1 命名差异「工作量与资源规划要求↔工作量与资源规划」（Y 是 X 子串，已知差异不重发）+ 1 后缀匹配「助001接入与SOP收尾↔SOP收尾」+ 1 命名差异「phase1-launch↔phase1-2026-09-22」（上轮已认定）+ 6 份无对应收-的历史存档 00-NOTICE领取确认/伪造署名事件处置与开放问题协商/凭证安装/给001的接入要点/当日复盘-20260921/当日计划-20260922），**0 份待补**；按「只从收找复、绝不反向」不补建。
+- **Step 1 拉取同步**：`scp -i /d/id_ed25519` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功，2m38s，exit=0）。服务器 mtime 自 09-22 21:54 无变化：最新仍为 `FSTDD003复-phase1-2026-09-22.md`(21:54) + `FSTDD003复-当日复盘-20260922.md`(21:54)，本节点 21:47 轮次 scp 回，距今 ~63min 无 K 新下发；无新 `FSTDD003收-*.md`、无新凭证下发文件、无 K-reply-003f（末条仍为 09-20 03:30 `K-reply-003e.md`）、无 E-24 授权/备案回执；`00-COLLAB.md`(09-18 13:44)/`00-DISCIPLINE.md`(09-18 19:10) 内容未变。
+- **Step 2 紧急快通道**：`FSTDD003收-凭证安装硬时限.md` 仍标 priority:最高但对应回执均已闭环（凭证 09-20 10:45 已装、V1 200 归因、V2 401 拆除、下发文件两侧已删除），未重跑；其余 `收-*` 无 priority:最高，未触发。
+- **Step 3 增量回传（0 条）**：`fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 59 条）」。submitted=59、failures=4（历史遗留）。`experiences/` 末份仍为 `FSTDD003-EXP-20260921-RELEASE-1.md`(00:19)，无新增。凭证文件 48B 就位未动。
+- **Step 4 回执写回**：无新增回执（无新增收任务）。
+- **Step 5 自查**：`GET /health` → `ok=true, received=190`（与 02:47/03:51/04:55/05:59/07:04/08:08/09:17/10:35/11:46/12:48/13:53/14:59/16:06/17:15/18:26/19:39/20:45/21:47 共 18 轮持平；本节点本轮 POST=0、回执走 scp；本节点累计 POST 59 条与 share_log 一致）。
+- **窗口状态**：09-22 09:00《当日工作计划》✅ 09:17 交付；09-22 21:00 当日复盘 ✅ 21:47 交付；09-22 21:30 Phase 1 D0 回执窗口：本节点 21:47 落地（K 21:07 下发，D0 无动作合规）；D1 起（09-23）执行阶段启动，本节点已备 sha256 排程 + 硬上限保护 + J1–J7 自检 + 429 停；C1–C7 卡点待 K 通过 notices 补齐（base URL / 账号 ID / 登录凭证 / 有效群 id / 短帖样例 / 动作权重表 / J8 互互动计数口径）。
+- **E-24 状态**：`FSTDD003复-升级路径修复方案.md`(09-22 09:23 已 scp 回服务器) 方案阶段交付，等 K 转 D哥 备案后授权执行 W1-W7；本轮不触服务器侧 / 不推远端 / 不改 tokens.json。
+- **本地 git**：显式路径提交 `.fstdd/_notices_receipts.md` + `.workbuddy-ai/memory/2026-09-22.md` + 本文件；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`1ac52506/`、`270a0ea8 memory.md`；`experiences/` gitignored；**未 push** 远端；token 与凭证路径均 gitignored 未泄露。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段（IP / SSH key 路径均以 `<...>` 占位）；未 push 远端；未触发紧急快通道（凭证硬时限已闭环）。
