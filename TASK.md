@@ -163,6 +163,43 @@ tags: [install, hardening, experience-upload, distributed]
       启动后才坏 = 本进程仍指着坏目录、会返回空）。
       ⚠ 验证时必须跑「坏掉」的分支，happy path 永远发现不了。
       详见 `experiences/FSTDD003-EXP-20260921-LIFECYCLE-1.md`。
+- [ ] **P40 待修（中）**：`experience add` 的 `--category` 是**闭集枚举**，15 个有效值
+      **全是过程/协作失败模式**，**没有「测试设计 / 工程实践」类** →
+      本次那条「测试绿着但被测分支根本没执行」只能塞进 `coverage_vacuum`
+      （语义勉强，不同构）。建议加 `test_design` / `engineering_practice`，
+      或允许自定义 category + 自由 tag。详见 `docs/FLOW_ISSUES_2026-09-21_workbench.md`。
+- [ ] **P41 待修（🔴 高 · 静默）**：`fstdd init` **不生成** `.fstdd/version.yaml`
+      （`grep init.py` 无命中；该文件只被 `upgrade.py` / `utils.py` 引用）→
+      Phase 1 Step 0 的版本自检在**全新项目上从来没生效过**。
+      更隐蔽的是 `version-check.md` 规定「落后时告警但不阻断」，
+      于是「文件根本不存在」与「版本轻微落后」被压成同一个「告警 + 继续跑」。
+      修法：`init` 补写 version.yaml，或把两种状态分成两种结论。
+- [ ] **P42 待修（🔴 高 · 静默）**：`config.d/quality.yaml` 的 `lint` / `coverage`
+      两道门**不可执行** —— `lint: "ruff check app/ tests/"` 指向**不存在的 `app/`**
+      （工作台是 `app.py` 单文件），且 `.venv` 未装 `ruff` / `pytest-cov`。
+      而 `coverage.enabled: true` 与 `test-report.md` 模板**要求填覆盖率百分比**的表
+      共同**诱导编数字**（把未知伪装成已知）。
+      修法：Gate 3 前**试跑一次** `quality.yaml` 的命令，不可执行就报错；
+      模板补「工具缺失时填 `N/A` + 写出缺失包名与失败命令」。
+      详见 `docs/FLOW_ISSUES_2026-09-21_workbench.md`。
+- [ ] **P43 待修（🔴 高）**：**lightweight 模式没落地到 CLI** ——
+      `validate.py:24` 的 `required_files` 硬编码为
+      `["proposal.md", "design.md", "test-plan.md", ".fstdd.yaml"]`，
+      而 `lite.yaml` 规定 lightweight 跳过 `design` / `test-plan`；
+      `grep -rln "lightweight\|skip_design"` 只命中 `new.py` / `batch.py` /
+      `bootcamp.py` / `__init__.py`，**`validate` / `phase` / `status` 都不读**。
+      → **该模式的 change 永远过不了 `validate`**，执行者只有两个都不对的选项：
+      ① 硬造两份空壳文档（`test-plan.md` 还会触发 `validate.py:96`
+      「TC 案例数少于 Spec Scenario 数」→ 又一条假失败）；
+      ② 明知会红而跳过校验器（**主动训练人忽略校验器**，代价更大）。
+      `status` 另有一处硬编码：显示「普通交互模式（默认）」，与
+      `.fstdd.yaml` 里的 `mode: lightweight` 不符。
+      修法：`validate` 读 `mode`；或删掉 `lite.yaml` 里的两个 skip 开关 ——
+      🔴 **不要让配置与校验器互相打架**。
+- [x] **（已闭合）引擎副本与源漂移** —— 见「15. 第 15 轮」。
+      原条目：「引擎副本与源会随时间漂移（`setup_engine.py` 每次比对 sha256 并告警，
+      `TC_SC_034` 也守着）。**不改上游**是 D哥 定的范围，漂移只告警不自动同步。」
+      → 2026-09-21 已按 D哥 裁定单开 change 落地（只告警 + 显式 `--sync-engine`）。
 
 ## 6. 第四轮（2026-09-17 · 真实业务变更实战）
 
@@ -661,6 +698,113 @@ POST /api/fetch/start force 重抓    → 成功 1 篇 · 失败 0 篇（17s）
 
 **复用要点**：**凡引入兜底，就要同时把幂等的配置修复动作放进启动链 ——
 否则兜底越完善，配置缺失越没有信号。**
+
+---
+
+## 15. 第 15 轮（2026-09-21 · 工作台 · 引擎副本漂移「只告警不自动同步上游」）
+
+**change**：`2026-09-20-engine-drift-warn-only`（工作区 `<project_root>/工作台`）
+**模式**：FSTDD V3.0.5 · **lightweight**（复杂度评分 2）—— 本轮是**首次**在
+lightweight 模式下完整走完 Phase 1 → Phase 3。
+
+### 变更内容（业务侧）
+
+`engine/*.py` 是 `wechat-archiver/*.py` 的**逐字节拷贝**（必须实拷贝：引擎代码要能
+独立分发，不能靠目录联接挂到另一个仓库）。拷贝必然随时间漂移，
+而旧实现在**默认运行**（`fix=True`，即双击 `start-all.bat` 走的启动链）下
+**静默覆盖**漂移副本。
+
+D哥 2026-09-20 裁定：「按你『只搬工作台、不动别的』的范围，**只告警不自动同步上游**。
+单开 change 处理。」
+
+落地为三态 + 四入口：
+
+| 状态 | 默认行为 |
+|---|---|
+| 缺失 | 仍从源拷（首次引导 / 克隆自举，无本地内容可丢） |
+| **漂移** | 🔴 **只告警，绝不覆盖** |
+| 一致 | 打一行 `[ok]`（旧实现一致时一行不打 →「空白」既可能是「全对」也可能是「没跑到」） |
+
+```bash
+setup_engine.py                # 建/修联接 + 补缺失；漂移只告警（rc=0）
+setup_engine.py --check        # 零写入；漂移 → rc=1（可接 CI 的哨兵）
+setup_engine.py --sync-engine  # 🔴 唯一会覆盖副本的路径（显式开关）
+setup_engine.py --remove       # 拆联接
+```
+
+⚠ **默认运行必须 rc=0** —— 否则 `launch.py::ensure_engine()` 会把「代码漂移」
+误报成「联接未就绪（会退回真实数据根）」，打出一句**语义错误**的提示。
+
+测试：自包含契约 29 → **37 条**（新增 `TC_SC_060~067`）；全量 286 → **294 passed**。
+`TC_SC_034` 保留为漂移哨兵，**只修文案**（旧文案「跑 setup_engine.py 同步」
+在新行为下会把人引向**无效操作**）。
+
+### 🔴 本轮最有价值的发现（已固化为 P40–P42）
+
+**测试绿着，但被测分支根本没执行。**
+
+`TC_SC_064` 断言「`--check` 漂移 → rc=1」。它**第一次就绿了**。
+真因：`rc=1` 是 `links_ok and files_ok and not drifted` 的**合取**，
+而 tmp 测试环境里没有 `engine/data` 联接 → `links_ok` 恒假 →
+函数在**第一个 `return 1`** 就返回，**漂移分支一行没跑到**。
+
+修法：隔离里把**与被测分支无关的判定维度**显式置空
+（`monkeypatch.setattr(se, "LINK_DIRS", ())` → `all(()) == True`），
+让合取只剩被测项。详见 `experiences/FSTDD003-EXP-20260921-DRIFT-1.md`。
+
+**变异自检（本轮做的）**：把漂移分支 `if sync:` → `if True:`（退回无条件覆盖）：
+
+```
+TC_SC_060/063/064/066/067  ❌ 红   ← 该红的红了
+TC_SC_061/062/TC_SC_034    ✅ 绿   ← 该绿的绿了（同等重要）
+```
+
+**「该绿的保持绿」与「该红的红了」同等重要** —— 只报「5 条变红」
+不足以证明咬对了位置。
+
+⚠ 变异自检自身也会**假绿**，本轮两个坑（都属「假阳性」族）：
+① 锚点里的 `\n` 经 shell heredoc 退化成**字面字符** → 变异体 `SyntaxError` →
+**全红** → 被误读成「守卫咬住了」；
+② `Path.read_text()/write_text()` 做 LF↔CRLF **换行翻译** → 变异变成
+「文件被重写」而非「一行被改」。
+对策：锚点不含 `\n`、不带尾部冒号 + `o.find()` 切片 + `compile()` 自检；
+变异走 `read_bytes()` / `write_bytes()`。
+
+### 本轮新缺陷（P40–P42，均为「门在但没关」族）
+
+| 编号 | 严重度 | 一句话 |
+|---|---|---|
+| **P40** | 中 | `experience add` 分类枚举**无「测试设计」类** → 只能塞进语义不匹配的 `coverage_vacuum` |
+| **P41** | 🔴 高 · 静默 | `fstdd init` **不生成** `.fstdd/version.yaml` → 版本自检在全新项目上**从来没生效过**，且被「告警不阻断」掩盖 |
+| **P42** | 🔴 高 · 静默 | `quality.yaml` 的 `lint`/`coverage` **不可执行**（指向不存在的 `app/`、工具未装），而 `enabled: true` + 模板要覆盖率数字 → **诱导编数字** |
+| **P43** | 🔴 高 | **lightweight 模式没落地到 CLI** —— `validate.py:24` 的 `required_files` 硬编码要 `design.md` + `test-plan.md`，而 `lite.yaml` 规定 lightweight 跳过这两份；`grep lightweight` 只命中 `new/batch/bootcamp/__init__`，`validate`/`phase`/`status` 都不读 → **该模式的 change 永远过不了 `validate`**；`status` 还硬编码显示「普通交互模式（默认）」 |
+
+共同形状：**声明 ≠ 事实**。配置写着 `enabled: true` / `lint: <命令>` /
+「检查 version.yaml」/ `skip_design: true`，但**没有任何机制验证它真的跑起来了** ——
+与「静默失效」同族，只不过坏的是**流程门**本身。
+P43 更进一层：**不只是门没关，是「门的说明书」和「门的实物」各说各话** ——
+配置说「跳过」、校验器说「必须有」，两个真源打架而无人发现
+（只有走到 lightweight 的 change 才会撞上）。
+详见 `docs/FLOW_ISSUES_2026-09-21_workbench.md`。
+
+### 确认正常的部分（避免把工具判死）
+
+`gate approve --gate 1` 正常且 YAML→`proposal.md` 自动生成（`source_hash` 落盘）；
+**中文证据经 Git Bash 传入 CLI 未乱码**（`confirmed_evidence` 原样落盘）；
+`experience add` 的**报错信息质量高**（直接列出全部有效值）；
+`.fstdd.yaml` 的 baseline 机制自动记录 `base_git_sha` / `node_id` / `clock_source`；
+Git Bash 调 CLI 经 `cygpath -m` **一次通过，未复现 P15**。
+
+### 遗留项（本轮新增）
+
+- [ ] **P40 / P41 / P42 / P43 待修** —— 见顶层「5. 遗留项」，详见
+      `docs/FLOW_ISSUES_2026-09-21_workbench.md`。
+- [x] **引擎副本漂移**（上一轮遗留）—— 本轮已闭合（只告警 + 显式 `--sync-engine`）。
+- [ ] 建议：DELIVER 后**不再手动 `--sync-engine`**，等上游下次真实改动时
+      走一次完整路径（告警 → 判断方向 → 显式同步 → 提交），把这条路径**跑通一次**。
+- [ ] `engine/` 目前**无漂移**（4 对 sha256 全同，独立 `sha256sum` 复核），
+      故本轮**未重新同步** `engine/*.py` —— 本次是**预防性**变更。
+
 
 
 
