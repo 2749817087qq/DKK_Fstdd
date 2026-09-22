@@ -1178,3 +1178,11 @@
 - **共享池仍异常**：`:8787` 仍 CLOSED（curl exit28/http_code=000）；本轮 `fstdd003_daily_share.py` 跑出 **5 条待回传**（历史 4 + 新增 `EXP-20260923-DAEMON-1`）全部 `WinError 10060`；经验 intact、记 failures、下轮重试。
 - **本地 git**：提交 `2be0960`（变更 8 文件 + SOP + share_log + 两份 memory + _phase1_runtime + 7 份 phase1 复- 收据）；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`docs/*.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；凭证路径 gitignored 未泄露。
 - **纪律**：仅读写本节点 FSTDD003/；未回显凭证片段（IP/密钥路径以 `<...>` 占位）；未触他人目录/K-memory；演示轮 pull_mode=background+await（本轮起每轮可审计）。
+
+## 2026-09-23 04:45 (GMT+8) 执行 — 常规轮询（499 修复后验证轮：后台+await 生效、0 新指令、共享池仍 down）
+
+- **499 修复验证**：本轮 scp 拉取（2m25s）+ ssh 列服务器（12s）均走 `run_in_background=true`+`TaskOutput` 等待，exit=0、23 收- 落地、前台 turn 完好、**无 499**；`pull_mode: background+await` 已写入第5步自查，铁律生效。
+- **对账**：服务器 23 收- ↔ 本地 31 复-，列表与上一轮完全一致（无新 K 下发，末份仍 09-23 ~02:09 的 6 份 phase1 通知），**0 缺口**，无紧急快通道触发。
+- **共享池仍异常**：`:8787` 仍 CLOSED（curl exit28/http_code=000）；`fstdd003_daily_share.py` 5 条待回传（CI-1/DIFF-1/GATE-1/SCRIPT-1/DAEMON-1）全部 `WinError 10060`，记 failures、下轮重试、无丢失。
+- **无新任务执行 / 无新回执回写**（0 缺口）；Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- **纪律**：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；本轮 pull_mode=background+await。
