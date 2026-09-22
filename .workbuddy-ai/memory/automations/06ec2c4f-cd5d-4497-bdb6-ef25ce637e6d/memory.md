@@ -1055,3 +1055,17 @@
 - **E-24 状态**：`FSTDD003复-升级路径修复方案.md`(09-22 09:23 已 scp 回服务器) 方案阶段交付，等 K 转 D哥 备案后授权执行 W1-W7；本轮不触服务器侧 / 不推远端 / 不改 tokens.json。
 - **本地 git**：提交 `.fstdd/_notices_receipts.md`(追加 14:59 一行) + `.workbuddy-ai/memory/2026-09-22.md`(追加 14:59 段) + 本文件；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；token 与凭证路径均 gitignored 未泄露。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段（IP / SSH key 路径均以 `<...>` 占位）；未 push 远端；未触发紧急快通道（凭证硬时限已闭环）。
+
+## 2026-09-22 16:06 (GMT+8) 执行 — 常规轮询（无新增收任务、无新增经验、received=190）
+
+- **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 16 份 `FSTDD003收-*` → 本地 22 份 `FSTDD003复-*`（**15 精确匹配** + 1 命名差异「工作量与资源规划要求↔工作量与资源规划」（Y 是 X 子串，已知差异不重发）+ 1 后缀匹配「助001接入与SOP收尾↔SOP收尾」+ 5 份无对应收-的历史存档），**0 份待补**；按「只从收找复、绝不反向」不补建。
+- **Step 1 拉取同步**：`scp` 全量拉取（静默成功，<1s）。服务器 mtime 自 09-22 09:23 无变化（距今 ~6h43m），无新 `FSTDD003收-*`、无新凭证下发、无 K-reply-003f、无 E-24 授权回执；`00-COLLAB.md`/`00-DISCIPLINE.md` 未变。
+- **Step 2 紧急快通道**：`收-凭证安装硬时限` 已闭环（凭证 09-20 10:45 已装 48B/chmod 600，V1 200 归因、V2 401 拆除），未重跑；其余 `收-*` 无 priority:最高。
+- **Step 3 增量回传（0 条）**：`fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 59 条）」，submitted=59、failures=4（历史遗留）；`experiences/` 末份仍为 `FSTDD003-EXP-20260921-RELEASE-1.md`(00:19)，无新增。凭证文件 48B 就位未动。
+- **Step 4 回执写回**：无新增回执（无新增收任务）。
+- **Step 5 自查**：`GET /health` → `ok=true, received=190`（与 02:47/03:51/04:55/05:59/07:04/08:08/09:17/10:35/11:46/12:48/13:53/14:59 持平；本节点本轮 POST=0、回执走 scp）。
+- **窗口状态**：09-22 09:00《当日工作计划》✅ 已由 09:17 轮次交付；09-22 21:00 复盘窗口未到（距今 ~4h54m）；09-21 复盘已由 21:18 轮次交付。
+- **E-24 状态**：方案阶段交付 09:23 已回服务器，等 K 转 D哥 备案后授权 W1-W7；本轮不触服务器侧/不推远端/不改 tokens.json。
+- **对账细节修正**：本轮实测精确匹配 **15 条**（此前 13:53/14:59 记为 14，系笔误，本轮修正），总账 16↔22=0 待补。
+- **本地 git**：提交 `.fstdd/_notices_receipts.md` + `.workbuddy-ai/memory/2026-09-22.md` + 本文件；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；token 与凭证路径均 gitignored 未泄露。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段（IP / SSH key 路径均以 `<...>` 占位）；未 push 远端；未触发紧急快通道（凭证硬时限已闭环）。
