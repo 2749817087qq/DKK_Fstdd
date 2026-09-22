@@ -4,7 +4,7 @@ schema: fstdd-distributed-task/v0.1
 title: FSTDD 安装/运行工程测试与经验回传
 status: archived          # pending | running | blocked | done | archived
 created: 2026-09-12
-updated: 2026-09-21
+updated: 2026-09-23
 node: WORKBUDDY-AI-WIN   # 执行节点标识（本实例）
 owner: D哥
 mode: fstdd              # 走 FSTDD 四阶段 + 三确认门
@@ -204,6 +204,30 @@ tags: [install, hardening, experience-upload, distributed]
       (b) `archive` 的「Specs 已合并到 specs/」是**无条件打印**的 ——
       本次实测 `find .fstdd/specs -type f` = **0 个文件**（lightweight 是 proposal_only），
       那句「已合并」没有任何对象（P20 同族）。
+- [ ] **P44 待修（🔴 高 · 静默）**：`stdd gate approve --dry-run` **不 dry** ——
+      `grep -n "dry_run" fstdd/cli/commands/gate.py` → **0 命中**。
+      `--dry-run` 是**父解析器**的全局开关，approve 分支从不消费它，
+      直接走到 `_auto_generate_human_views()` + `_confirm_gate()`（`gate.py:315-323`）
+      **无条件**写 `.fstdd.yaml`（`_confirm_gate` 见 `gate.py:71-116`）。
+      实测：dry-run 那一步就把 Gate 1 锁上并建立 baseline，
+      第二条真命令只回一句 `Gate 1 already confirmed at 2026-09-22T18:28:42+00:00`
+      —— 那是**正常幂等文案**，不写经验没人会怀疑。
+      🔴 危害集中在**它是安全机制本身**：V3.0.5 硬防线要求「AI 不得静默自跑 approve；
+      必须先把确认框展示给用户、等用户明确确认后再执行」，
+      而 `--dry-run` 正是执行者**为了不违规**才会用的预览手段 ——
+      用它反而把门打开，且审计链会记下一个**当时并不存在的用户确认**
+      （`confirmed_by: dialog` / `confirmed_actor: ai`，而那一刻用户还没确认）。
+      修法：approve 消费 `--dry-run`（只打印将写的字段与当前值、不写盘），
+      且 dry-run 输出**不得**再出现 `Gate N confirmed`；更稳的做法是在分发层设
+      `DRY_RUN` 上下文，凡写盘函数统一先查它、漏判时**抛异常**。
+      ⚠ 本节点**未逐个体检**其余子命令是否同样忽略 `--dry-run`。
+      详见 `experiences/FSTDD003-EXP-20260923-GATE-1.md`。
+- [ ] **P12 复现（第 2 次 · 2026-09-23 · 工作台）**：本次直接喂 **canonical YAML**
+      （`what_changes` 4 条 + `capabilities.new/modified` 各 1 条）给
+      `extract-proposal --format json`，返回 `capabilities: {new: [], modified: []}`（**丢空**）
+      且 `what_changes` **虚增为 6 条**（把 `### New/Modified Capabilities` 的 bullet 吞并进来）。
+      ⇒ **P12 未修，且不限于「`proposal.md` 生成物」** —— 直供 canonical 也照丢。
+      规避照旧：**Gate 内容一律读 YAML 原文，不信 `extract-proposal` 的摘要**。
 - [x] **（已闭合）引擎副本与源漂移** —— 见「15. 第 15 轮」。
       原条目：「引擎副本与源会随时间漂移（`setup_engine.py` 每次比对 sha256 并告警，
       `TC_SC_034` 也守着）。**不改上游**是 D哥 定的范围，漂移只告警不自动同步。」
@@ -812,6 +836,65 @@ Git Bash 调 CLI 经 `cygpath -m` **一次通过，未复现 P15**。
       走一次完整路径（告警 → 判断方向 → 显式同步 → 提交），把这条路径**跑通一次**。
 - [ ] `engine/` 目前**无漂移**（4 对 sha256 全同，独立 `sha256sum` 复核），
       故本轮**未重新同步** `engine/*.py` —— 本次是**预防性**变更。
+
+---
+
+## 16. 第 16 轮（2026-09-23 · 工作台 · 补抓向导 `2026-09-23-wizard-target-per-account` Phase 1→2）
+
+**场景**：把「补抓向导取到第一个合格凭证后**永久停在 ④ 拉列表**」这个卡点做成 FSTDD change。
+Phase 1（UNDERSTAND）在上一轮完成；本轮在用户确认后锁 Gate 1、做 Phase 2（SPEC）。
+
+**Phase 2 产出**（5 份文档 + 1 份索引）：
+
+| 产物 | 规模 | 要点 |
+|---|---|---|
+| `design.md` | 212 行 | 6 条技术决策，每条带备选方案与排除理由；含数据流图与状态机 |
+| `canonical/specs/code/wizard-list-progress.yaml` | 2 req / 6 scenario | 占 `SC-001~SC-006`（capability 按号列表进度记录） |
+| `canonical/specs/code/wizard-step-position.yaml` | 2 req / 10 scenario | 占 `SC-007~SC-016`（capability 补抓向导步骤定位） |
+| `canonical/specs/agent/<change>.yaml` | 4 个 CP | 含一条**源码级只读守卫**（`wizard_state()` 函数体内不得出现写入调用） |
+| `test-plan.md` | 310 行 | `TC-CP-111~126`（16 条）与 16 个 Scenario 一一映射 + 回归风险矩阵 |
+| `canonical/.canon-index.yaml` | 更新 | 本 change 有 2 个 capability ⇒ 2 个 spec 文件 |
+
+**本轮新增的规范约束（可复用）**：
+
+- **Scenario id 必须在本 change 内全局唯一**（模板注释原话「全局唯一，对应 TC-ID」）。
+  两个 capability 各自从 `SC-001` 起头 = 撞号，必须**全局连续编号**。
+- Gate 2 的 Human View 生成器按 `canonical/specs/code/*.yaml` **逐个 glob**，
+  以 `meta.capability` 决定落点 `specs/<capability>/spec.md` ——
+  **文件名不影响落点**；但 `capability` 含 `TODO` 的文件会被**静默跳过**（`gate.py:146-153`）。
+- `status` 的「Spec 文件: N 个」数的是 `changes/<change>/specs/**/*.md`（Human View），
+  **不是** canonical YAML ⇒ Gate 2 之前显示 `0 个` **是正常的，不是缺陷**。
+
+**🔴 本轮最有价值的发现（已固化为 P44）**：
+
+`stdd gate approve --dry-run` **不 dry**。本轮按常规姿势先跑 dry-run 预览、再跑真命令，
+结果 dry-run 那一步就把 Gate 1 锁上并建立了 baseline，真命令只回一句
+`Gate 1 already confirmed at 2026-09-22T18:28:42+00:00`。
+根因：`--dry-run` 是**父解析器**的全局开关，`gate.py` 里 `grep dry_run` **零命中**，
+approve 分支无条件走 `_auto_generate_human_views()` + `_confirm_gate()`。
+详见 `experiences/FSTDD003-EXP-20260923-GATE-1.md`。
+
+**方法侧收获（非 CLI 缺陷，但很贵）**：
+
+- 🔴 **同一条消息里的多个 `Edit` 会互相覆盖**（各自基于同一基线重算 → 最后写入者胜）。
+  本轮用 4 条 Edit 改 `test-plan.md` 的 SC 映射，实测**只有第 4 条生效**；
+  又因「某条的目标值撞上另一条尚未修改的旧值」产生**级联覆盖**，把 8 行改错。
+  ⇒ **同一文件的多处修改必须一次覆盖整块，或分多条消息逐条做**；改完必须
+  用**机器校验**（正则比对映射二元组）复验 —— 肉眼扫表格靠不住。
+- 审查脚本要写成**能咬人**的形式：第一版只查「SC 数 == TC 数」→ 全绿；
+  加严成「`(capability, SC)` 二元组 与 test-plan 的『对应 Spec』行**一一对应**」后，
+  立刻抓出 5 处错映射。⇒ **凡是「数量相等」的检查都不算检查。**
+
+### 遗留项（本轮新增）
+
+- [ ] **P44 待修** —— 见顶层「5. 遗留项」。
+- [ ] **P12 复现（第 2 次）** —— 直供 canonical YAML 也丢 `capabilities` 且 `what_changes` 虚增 4→6。
+- [ ] **（本 change 自身）** Gate 2 待 D哥 确认 → 之后 Phase 3 BUILD（16 条 TC）+ Phase 4 DELIVER。
+- [ ] **（本 change 自身的语义变更，Gate 2 需告知）** 修好之后向导语义变成
+      「**拉完所有号的列表才进第 ⑤ 步**」，既有 `TC_CP_061` 与 `TC_CP_062` 末例要按新模型改写。
+- [ ] **（同轮并行事项，非本 change）** 工作台「三刀前端挂载」已完成并提交（`c629b50`，
+      10 文件 +1807/−3，全量测试 305 passed）；下一步「逐页重写 `/accounts` + `/articles`」
+      按 D哥 裁定**等本 change 修完再开**。
 
 
 
