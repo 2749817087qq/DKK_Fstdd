@@ -1,0 +1,112 @@
+# 2026-09-23-poll-daemon-499-fix.yaml — Canonical Proposal (YAML-first, V3.0)
+# AI 起草、AI 修改、AI 消费。Human View 由 proposal.md 提供。
+
+meta:
+  change_id: "2026-09-23-poll-daemon-499-fix"
+  title: "消除轮询守护 499 取消错误：scp/ssh 前台调用改为后台+await 模式"
+  created: "2026-09-23T02:50:00"
+  status: approved
+  version: "3.0"
+
+why:
+  problem: |
+    FSTDD003 节点的每小时轮询守护（自动化 06ec2c4f）在第 0/1/4 步大量使用前台
+    `scp`/`ssh`：列服务器 `收-`、拉取 notices、回执 scp 回写。这些传输在弱网/大目录
+    时耗时 2–3 分钟，超过前台调用超时上限后被编排层自动转入后台，网关将"被放弃的
+    前台 HTTP 调用"记为 `499 canceled`（nginx: Client Closed Request）。
+
+    2026-09-17 轮次 scp 耗时 2m18s → 网关记录
+    `499 canceled (5410f1f68acf47c594f518be029c1fd4/07c1b217-0667-4acb-82fc-49a6c4302935)`；
+    两个十六进制串是网关 request-id / trace-id，不是服务端故障。scp 实际 exit=0、
+    文件已落地（已验证），但 499 噪声会掩盖真实失败、也违反"干净闭环"纪律。
+  motivation: |
+    499 是"客户端提前断开"而非服务端错误；根因是前台长阻塞被自动后台化。
+    修复点为调用模式：任何可能 >60s 的 scp/ssh 一律后台启动 + TaskOutput 等待，
+    前台 turn 不再被长传输阻塞，网关自然不再记 499。用户 2026-09-23 显式要求
+    "499 canceled ... 走FSTDD修复"，故以 FSTDD 四阶段流程固化此修复。
+
+what_changes:
+  - id: C1
+    description: |
+      修改守护自动化 prompt（06ec2c4f）：新增铁律"所有 scp/ssh 必须
+      run_in_background=true 启动并 TaskOutput 等待，禁止前台长阻塞"。
+      第 0/1/4 步的 scp/ssh 示例统一加注后台+await 约定。
+    type: modified
+  - id: C2
+    description: |
+      第 5 步自查新增 `pull_mode` 记录行：每轮显式标注本次拉取/回写为
+      background+await，使"是否仍走前台"可审计、可回溯。
+    type: modified
+  - id: C3
+    description: |
+      新增 `tools/fstdd003_daemon_499_sop.md`：后台+await 调用模式的可操作 SOP
+      （含 Git Bash 路径、超时上限、await 超时设置、失败判定以文件系统为准而非
+      网关状态码），供守护每轮参照。
+    type: new
+
+capabilities:
+  new:
+    - name: daemon-scp-background-await
+      description: |
+        守护内所有 scp/ssh 传输以后台任务启动并由 TaskOutput 等待完成，
+        前台 turn 不被长传输阻塞，从根上消除 499 canceled 噪声。
+  modified:
+    - name: daemon-self-check
+      description: |
+      第 5 步自查增加 pull_mode 审计字段，记录本轮传输是否走后台+await。
+
+constraints:
+  - 仅修改自动化 prompt（06ec2c4f）与新增 `tools/fstdd003_daemon_499_sop.md`；
+    不触碰其他节点目录、K-memory、`~/.workbuddy-ai/FSTDD/upstream/`。
+  - 失败判定仍以文件系统为准（scp exit 0 + 文件落地），不因 499 噪声误判为服务端故障。
+  - 不 push 任何 git remote（本仓库 remote 数=0）。
+  - git add 一律显式路径，禁用 git add -A。
+
+stakeholders:
+  - FSTDD003 节点（本节点，自动化 06ec2c4f）
+  - K（编排层归属，499 噪声的观察方）
+
+risk_areas:
+  - capability: daemon-scp-background-await
+    risk: |
+      后台任务若 await 超时设置过短，可能误判传输未完成而提前继续。
+    mitigation: |
+      TaskOutput await 超时设为 600000ms（10 分钟），远大于历史最长 scp（~3min）；
+      且继续前以文件系统校验（ls + md5）确认落地，不单凭 await 返回值。
+  - capability: daemon-scp-background-await
+    risk: |
+      后台+await 模式若实现为"fire-and-forget"（不 await），会丢失传输结果。
+    mitigation: |
+      SOP 强制"启动即记录 task_id，随后必须 TaskOutput 等待至完成再继续"；
+      第 5 步 pull_mode 审计可发现未 await 的遗漏。
+
+non_goals:
+  - 不改守护调度周期（HOURLY）与对账/自愈/紧急快通道逻辑。
+  - 不修改共享池 :8787 服务本身（其可达性属 K 侧基础设施，详见本轮异常记录）。
+  - 不改凭证落盘/回传链路。
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L2
+  reference_changes:
+    - "2026-09-19-notices-authenticity-gate：本节点既有 FSTDD 变更做法
+      （YAML-first 提案、RED->GREEN 留痕、文件域白名单、偏离显式记录）"
+    - "FSTDD003-EXP-20260923-DAEMON-1（本轮产出经验）：499 根因与后台+await 修复的
+      可复用结论，回传共享池"
+  anchor_implementations: []
+
+success_criteria:
+  - "GIVEN 守护执行拉取 WHEN scp 被调用 THEN 以 run_in_background=true 启动并由
+    TaskOutput 等待完成（前台 turn 不被长传输阻塞），本轮闭环无 499。"
+  - "演示轮：本次 pull 实际以 background+await 执行，scp exit=0、文件落地、
+    前台 turn 完好（无自动后台化 499）。"
+  - "负向对照：历史前台模式（2m18s）曾触发 499；新模式下同耗时传输不再产生 499。"
+  - "收/复 对账与回执闭环功能零回归（缺口仍能自愈、最长延迟 ≤60min）。"
+  - "第 5 步自查每轮记录 pull_mode: background+await，可审计。"
+  - "新增 SOP `tools/fstdd003_daemon_499_sop.md` 存在且被 prompt 引用。"

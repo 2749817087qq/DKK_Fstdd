@@ -1157,3 +1157,14 @@
 - **E-24 状态**：`FSTDD003复-升级路径修复方案.md`(09-22 09:23 已 scp 回服务器) 方案阶段交付，等 K 转 D哥 备案后授权执行 W1-W7；本轮不触服务器侧 / 不推远端 / 不改 tokens.json。
 - **本地 git**：显式路径提交 `.fstdd/_notices_receipts.md` + `.workbuddy-ai/memory/2026-09-22.md` + 本文件；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`1ac52506/`、`270a0ea8 memory.md`；`experiences/` gitignored；**未 push** 远端；token 与凭证路径均 gitignored 未泄露。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段（IP / SSH key 路径均以 `<...>` 占位）；未 push 远端；未触发紧急快通道（凭证硬时限已闭环）。
+
+## 2026-09-23 04:08 (GMT+8) 执行 — 常规轮询（捕获 6 份 phase1 新通知缺口，已全部闭环；本轮回执走 scp，received 不变）
+
+- **Step 0 对账（拉取前 + 拉取后）**：发现**对账缺口**——服务器 23 份 `收-`、本地 24 份 `复-`；本地拉取落后 ~4h（上轮 09-22 23:00）→ 服务器 09-23 00:32–02:09 新下发的 **6 份 phase1 通知均无回执**：phase1-baseURL已确定 / phase1-平台防护通告 / phase1-更正8080不可用 / phase1-节奏变更-2小时小闭环 / phase1-访问限制已撤除 / phase1-通告二-反爬检测与行为约束。phase1-launch 经核对已由 `复-phase1-2026-09-22.md`(reply_to) 覆盖，**非缺口**。
+- **Step 1 拉取**：全量 scp 拉取（2m18s, exit=0），6 份新通知落地本地，重跑对账确认缺口。
+- **Step 2 紧急快通道**：`FSTDD003收-phase1-更正8080不可用.md` = priority:最高 → 本轮第一个执行并回执（唯一可用入口 = https://quanthub.ccreits.cn，8080 弃用；其 403 预案被《访问限制已撤除》撤销）。
+- **Step 3 执行（6 份通知 = 信息类，无需凭证/经验回传）**：逐份确认 base URL / 防护 / 节奏变更(2h小闭环) / 访问限制撤除 / 反爬约束；C1(base URL)关闭；C2–C7 仍 PENDING（C3 凭证须走独立 `FSTDD003收-quanthub凭证.md` 下发，当前未到）→ 真实 quanthub 互动仍 blocked。附：`FSTDD003复-phase1-2026-09-23-04.md`（02–04 窗口回执，0 动作+卡点上报，节奏变更要求）；节点本地 `.fstdd/_phase1_runtime.md` 写入 base_url/节奏/约束/blocked 状态（不上推）。
+- **Step 4 回执写回**：scp 7 份 `复-`（6 通知 + 1 窗口回执）回服务器（exit=0）；服务器 `复-` 计数 24→31，7 份均存在，**缺口闭环**。
+- **Step 5 自查**：`GET /health` → 空响应（连接 OK, exit=0）；本轮无经验 POST，received 不变符合语义。
+- **纪律**：仅读写本节点 FSTDD003/；未回显凭证片段（domain 为 K 给定任务对象保留；本地路径/出口 IP 以 `<PATH>/<IP>` 占位）；未 push 远端；未触他人目录/K-memory；6 份通知均 0 动作（未触 quanthub 端点，严守"只观测不利用"）。
+- **共享池连接异常（阻断经验回传，非本地故障）**：routine 增量回传发现 4 条新增经验（EXP-20260923-CI-1/DIFF-1/GATE-1/SCRIPT-1，合法非 trial），POST `http://43.134.236.80:8787/api/share-experience` 全部 `WinError 10060` 超时；TCP 探针 `:22` OPEN、`:8787` CLOSED（curl exit28/http_code=000）→ 共享池 web 服务本节点不可达（主机在线），属 K 侧基础设施异常；凭证文件存在、走带凭证模式已过鉴权前检查，非凭证问题；经验在 `experiences/` 完好、记 failures，下轮自动重试；不擅启 K 侧服务、不建无 收- 的 复-。
