@@ -196,6 +196,14 @@ tags: [install, hardening, experience-upload, distributed]
       `.fstdd.yaml` 里的 `mode: lightweight` 不符。
       修法：`validate` 读 `mode`；或删掉 `lite.yaml` 里的两个 skip 开关 ——
       🔴 **不要让配置与校验器互相打架**。
+      **Phase 4 期间补到两条同族证据**：
+      (a) `lite.yaml` 的 `gate2: auto_pass` 与 `gates.yaml` 的
+      `phase2_spec.required: true` **对同一道门给出相反规定**，且无校验发现矛盾
+      → Gate 3 被 `Gate 2 (spec) is not yet confirmed` 拦下，
+      只能先手工 `--gate 2 --confirmed-by cli` 放行；
+      (b) `archive` 的「Specs 已合并到 specs/」是**无条件打印**的 ——
+      本次实测 `find .fstdd/specs -type f` = **0 个文件**（lightweight 是 proposal_only），
+      那句「已合并」没有任何对象（P20 同族）。
 - [x] **（已闭合）引擎副本与源漂移** —— 见「15. 第 15 轮」。
       原条目：「引擎副本与源会随时间漂移（`setup_engine.py` 每次比对 sha256 并告警，
       `TC_SC_034` 也守着）。**不改上游**是 D哥 定的范围，漂移只告警不自动同步。」

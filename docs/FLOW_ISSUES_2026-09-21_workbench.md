@@ -234,6 +234,48 @@ CLI 侧只有 `new.py` 会写 `mode`，**没有任何校验器/执行器读它**
 `status` 打印「执行模式: 普通交互模式（默认）」是**事实错误**
 （`.fstdd.yaml` 里是 `lightweight`）。用 `status` 判断该走哪条流程会直接走错。
 
+### 🔴 Phase 4 期间补到的两条新证据（同一 P43 家族）
+
+**(a) `lite.yaml` 与 `gates.yaml` 直接打架** —— 走到 Gate 3 才暴露：
+
+```bash
+$ fstdd gate approve <change> --gate 3 --confirmed-by dialog --evidence "…"
+  Gate 3 cannot be confirmed: Gate 2 (spec) is not yet confirmed
+```
+
+因为 `gates.yaml` 写着：
+
+```yaml
+gates:
+  phase2_spec:
+    required: true                     # ← 必须人工确认
+```
+
+而 `lite.yaml` 写着：
+
+```yaml
+lightweight:
+  spec:
+    gate2: "auto_pass"                 # ← 自动放行
+```
+
+→ 两个配置文件对**同一道门**给出相反规定，且**没有任何校验发现它们矛盾**。
+只能先手工 `--gate 2 --confirmed-by cli` 放行，再批 Gate 3。
+（本次已在 Gate 2 的 `--evidence` 里写明「这是模式配置自动放行，非人工确认」，
+不伪造用户确认。）
+
+**(b) `archive` 的「Specs 已合并到 specs/」是「无条件打印」的** ——
+
+```bash
+$ fstdd archive 2026-09-20-engine-drift-warn-only
+ 归档完成: archive/2026-09-20-engine-drift-warn-only
+ Specs 已合并到 specs/          # ← 本次根本没有 specs（lightweight 是 proposal_only）
+```
+
+实测：`find .fstdd/specs -type f` → **0 个文件**；`find .fstdd/canonical -type f` → **0 个**。
+即那句「已合并」**没有任何对象**。属 P20 同族（文案与实际不符，极易被误读成「已全部合并」）。
+建议：无 spec 时打印「本次无 specs，跳过合并」，而不是无条件报成功。
+
 ### 建议
 
 1. **【最高】`validate.py` 读模式**：从 `.fstdd.yaml` 的 `mode` 取
