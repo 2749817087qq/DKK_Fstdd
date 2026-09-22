@@ -966,3 +966,27 @@
 - **窗口状态**：09-22 09:00《当日工作计划》窗口未到（距今 ~52m，本轮观察项，产出项延后至窗口内轮询）；09-22 21:00 当日复盘窗口未到（距今 ~12h52m）；09-21 复盘已由 21:18 轮次交付闭环。
 - **本地 git**：待提交 `.fstdd/_notices_receipts.md`(追加 08:08 一行) + `.workbuddy-ai/memory/2026-09-22.md`(追加 08:08 段) + `.workbuddy-ai/memory/automations/06ec2c4f.../memory.md`(追加 08:08 段)；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`270a0ea8 memory.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；token 与凭证路径均 gitignored 未泄露。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；未 push 远端；未触发紧急快通道（凭证硬时限已闭环）。
+
+## 2026-09-22 09:17 (GMT+8) 执行 — **★本轮捕获新任务（对账自愈生效）+ 首次落地 09:00《当日工作计划》**
+
+- **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 **16 份 `FSTDD003收-*`**（原 15 份 + 09:11 新下发 `FSTDD003收-升级路径修复方案.md`）↔ 本地 **22 份 `FSTDD003复-*`**（14 精确匹配 + 1 命名差异「工作量与资源规划要求↔工作量与资源规划」（Y 是 X 子串，已知差异不重发）+ 1 后缀匹配「助001接入与SOP收尾↔SOP收尾」+ 6 份无对应收-的历史存档 00-NOTICE领取确认/伪造署名事件处置与开放问题协商/凭证安装/给001的接入要点/当日复盘-20260921/当日计划-20260922），**0 份待补**；按「只从收找复、绝不反向」不补建。
+- **Step 1 拉取同步**：`scp -i /d/id_ed25519` 全量拉取（静默成功，<1s）。服务器 mtime 自 09-21 21:18 起首次出现新任务：09:11 `FSTDD003收-升级路径修复方案.md`（2393B），距今 ~6min 拉到即处理——**对账自愈机制成功捕获上轮 08:08 时间窗外的下发**（这正是 Step 0 自愈设计的意义）。
+- **Step 2 紧急快通道**：`FSTDD003收-凭证安装硬时限.md` 仍标 priority:最高但已闭环（09-20 10:45 已装凭证、V1 200 归因、V2 401 拆除），未重跑；新到的 `收-升级路径修复方案` 未标 priority:最高，走常规通道（限期 09-26 21:00，宽松）。
+- **Step 3 任务执行（方案阶段，严格只读）**：处理 `FSTDD003收-升级路径修复方案.md`（E-24 / W1.1）：
+  - 采集本机实测证据：`git remote -v`（3 条 remote，含 server）、`git merge-base HEAD server/master = 91cc6ec = HEAD`（已对齐）、`git log --oneline`、`git tag -l`（1 条保命 tag `pre-upgrade-v3.0.5-23707d0c…`）、`ls tests/`（32 个 test_*.py）、`python bin/fstdd --version`（报 unrecognized arguments，确认 CLI 无版本打印入口）；
+  - **未执行 W1-W7 任何写操作**（K 明确：方案阶段只读，备案后才允许执行）；
+  - 迭代计划 §五 W1 文件本地未找到（`deliverables/iteration-plans/2026-09-22-iteration.md`），回执注明「按本节点实测独立交付」。
+- **Step 3 增量回传（0 条）**：`fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 59 条）」，submitted=59、failures=4（历史遗留）；`experiences/` 末份仍为 `FSTDD003-EXP-20260921-RELEASE-1.md`(00:19)，无新增。凭证文件 `.fstdd/_fstdd003_credential.txt`(48B, 09-20 10:45) 就位未动。
+- **★Step 4 回执写回（2 份新回执，均 scp 回服务器 md5 一致）**：
+  1. **`FSTDD003复-升级路径修复方案.md`**（15484B，md5 `a3fac26b354e113e212fab876f51afa6`）——E-24 交付四件：
+     - 三卡点根因（本机实测）：卡点 A 无 server remote / 卡点 B 分叉（09-21 分叉 5vs5 已 reset --hard 对齐）/ 卡点 C 缺 upstream tests（本节点 32 个 test 完整）；
+     - 最小修复步骤 1-7（前置只读检查 / 装远端 / 保命 tag / ff-only 三分支判定 / 分叉兜底 reset --hard / 失败回退 / 校验），Windows Git Bash 视角；
+     - **A/B/C 口径推 C**（install.sh 修 server 内置 + SOP 明示兜底 + `fstdd --version` 参数补齐），A/B 治标不治本；
+     - 风险标注 W1-W7 单独列出（R1-R8 只读 / W1-W4 低风险写 / W5/W6 破坏性写 / W7 K 侧发布仓库），明令禁 push/禁改 tokens.json/禁触服务器侧；
+     - **假阴性自检**：R1/R2/R4/R6/R7/R8 全部本机重跑；步骤 3 三分支已走过 already-up-to-date 与 diverged-needs-reset 两支；
+     - 红线遵守：本轮**零写操作**，全部只读。
+  2. **`FSTDD003复-当日计划-20260922.md`**（7167B，md5 `6c5e46849b309a5f259552c84fe6b70e`）——**首次落地 §二.1 每日 09:00《当日工作计划》**（接续 09-21 21:18 轮次「产出项纪律升级」）：四栏齐全（产能盘点：算力/时段/token 预算 130k / 任务清单：K1 E-24 备案中 + K2 002 阻塞 4 天 + S1 单测 + S2 skill + P1-P4 周期义务 + O1-O3 观察项 / 并行策略：子代理 S1 单测、主代理方案与复盘、外部模型分级 / 风险 R1-R6 + 支持需求）。
+- **Step 5 自查**：`GET /health` → `ok=true, received=190`（与 02:47/03:51/04:55/05:59/07:04/08:08 持平；本节点本轮 POST=0、回执走 scp，符合共享池累计语义；本节点累计 POST 59 条与 share_log 一致，无重复无遗漏）。
+- **规则升级双验证**：本轮同时验证了两条纪律——(1)「对账自愈捕获时间窗外下发」（K 于 09:11 下发，介于 08:08 与 09:17 之间，若只做「本轮新拉到」会漏 5h+，自愈设计让最长延迟 ≤60min 得以闭环）；(2)「09:00《当日工作计划》产出项纪律」首次落地（09-20 未出、09-21 未单独出计划，09-22 首轮即补齐，接续 09-21 21:18 轮次「周期性子义务必须物化为独立回执文件名」的修复）。
+- **本地 git**：提交 `.fstdd/_notices_receipts.md` + `.fstdd/_notices/FSTDD003/FSTDD003复-升级路径修复方案.md` + `.fstdd/_notices/FSTDD003/FSTDD003复-当日计划-20260922.md` + `.workbuddy-ai/memory/2026-09-22.md` + 本文件；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`270a0ea8 memory.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；token 与凭证路径均 gitignored 未泄露。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段（IP / SSH key 路径均以 `<...>` 占位）；未 push 远端；E-24 方案阶段严格只读，未执行 W1-W7 任何写操作（W1 git remote add / W2 git clone / W3 git tag / W4 git stash / **W5 git reset --hard server/master** / **W6 回退** / W7 K 侧发布仓库补丁——全部待 K 转 D哥 备案后授权）。
