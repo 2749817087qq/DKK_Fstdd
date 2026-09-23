@@ -5,8 +5,14 @@
 fstdd 自建接收端点（灰度期走 legacy-ip 白名单放行），
 并维护提交记录避免每日重复刷屏审核池。
 
-唯一的对外动作：POST http://43.134.236.80:8787/api/share-experience
+唯一的对外动作：POST https://quanthub.ccreits.cn/inbox/api/share-experience
 （fstdd 自有服务器，数据不外发第三方；与 GitHub push 无关）。
+
+投递地址变更（2026-09-23 K《FSTDD003收-inbox地址变更.md》，priority 最高）：
+- 旧 `http://43.134.236.80:8787/api/share-experience`（8787 公网入口 03:02 关闭，已不可达）；
+- 新 **`https://quanthub.ccreits.cn/inbox/api/share-experience`**（443 反代，HTTPS 复用已上线证书）；
+- 健康检查同步改为 `https://quanthub.ccreits.cn/inbox/health`；per-node token 鉴权不变；
+- 单一真源在 `tools/share_experience.py:inbox_url()`，本脚本不再单独硬编码端点。
 
 鉴权状态（2026-09-19 15:34 K 授权《FSTDD003收-接入授权.md》）：
 - 已授权**接入机制**：本地受控文件读凭证 → POST 携带 X-FSTDD-Token 头；

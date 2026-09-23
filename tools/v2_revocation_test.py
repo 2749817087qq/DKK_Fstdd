@@ -22,7 +22,8 @@ import urllib.request
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 TOKEN_PATH = REPO / ".fstdd" / "_fstdd003_token.txt"
-ENDPOINT = "http://43.134.236.80:8787"
+# 2026-09-23 K《FSTDD003收-inbox地址变更.md》：8787 公网入口关闭，改走 443 反代。
+ENDPOINT = "https://quanthub.ccreits.cn/inbox"
 HEALTH_URL = ENDPOINT + "/health"
 POST_URL = ENDPOINT + "/api/share-experience"
 TEST_EID = "FSTDD003-EXP-V2-REVOKE-TEST"

@@ -266,7 +266,10 @@ def inbox_url() -> str:
     数据不外发给第三方；提交进「待审核池」，由维护者审核后同步进仓库。
     可用 FSTDD_INBOX_URL 覆盖（自建实例）。
     """
-    return os.environ.get("FSTDD_INBOX_URL", "http://43.134.236.80:8787").rstrip("/")
+    # 2026-09-23 K《FSTDD003收-inbox地址变更.md》：8787 公网入口关闭，
+    # 改走 443 反代 https://quanthub.ccreits.cn/inbox/* -> 127.0.0.1:8787。
+    return os.environ.get(
+        "FSTDD_INBOX_URL", "https://quanthub.ccreits.cn/inbox").rstrip("/")
 
 
 # 批量提交参数（可用环境变量覆盖）

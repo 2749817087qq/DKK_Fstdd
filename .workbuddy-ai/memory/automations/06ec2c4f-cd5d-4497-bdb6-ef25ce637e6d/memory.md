@@ -392,6 +392,56 @@
 - 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
 - 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
 - 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
+## 2026-09-23 06:11 (GMT+8) 执行 — 常规轮询
+- 稳态：0 缺口（无新指令）；后台+await 持续生效（scp 2m23s 无 499、ssh 7s）；共享池 :8787 仍 down（health exit=28/timeout）。
+- 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
+- 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
+## 2026-09-23 06:17 (GMT+8) 执行 — 常规轮询
+- 稳态：0 缺口（无新指令）；后台+await 持续生效（scp 2m22s 无 499、ssh 5s）；共享池 :8787 仍 down（health exit=28/timeout）。
+- 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
+- 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
+## 2026-09-23 06:23 (GMT+8) 执行 — 常规轮询
+- 稳态：0 缺口（无新指令）；后台+await 持续生效（scp 2m23s 无 499、ssh 4s）；共享池 :8787 仍 down（health exit=28/timeout）。
+- 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
+- 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
+## 2026-09-23 06:29 (GMT+8) 执行 — 常规轮询
+- 稳态：0 缺口（无新指令）；后台+await 持续生效（scp 2m23s 无 499、ssh 4s）；共享池 :8787 仍 down（health exit=28/timeout）。
+- 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
+- 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
+## 2026-09-23 06:34 (GMT+8) 执行 — 常规轮询
+- 稳态：0 缺口（无新指令）；后台+await 持续生效（scp 2m21s 无 499、ssh 4s）；共享池 :8787 仍 down（health exit=28/timeout）。
+- 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
+- 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
+## 2026-09-23 06:40 (GMT+8) 执行 — 常规轮询
+- 稳态：0 缺口（无新指令）；后台+await 持续生效（scp 2m30s 无 499、ssh 5s）；共享池 :8787 仍 down（health exit=28/timeout）。
+- 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
+- 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
+## 2026-09-23 06:46 (GMT+8) 执行 — 常规轮询
+- 稳态：0 缺口（无新指令）；后台+await 持续生效（scp 2m32s 无 499、ssh 5s）；共享池 :8787 仍 down（health exit=28/timeout）。
+- 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
+- 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
+## 2026-09-23 06:52 (GMT+8) 执行 — 常规轮询
+- 稳态：0 缺口（无新指令）；后台+await 持续生效（scp 2m31s 无 499、ssh 4s）；共享池 :8787 仍 down（health exit=28/timeout）。
+- 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
+- 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
+## 2026-09-23 06:57 (GMT+8) 执行 — 常规轮询
+- 稳态：0 缺口（无新指令）；后台+await 持续生效（scp 2m31s 无 499、ssh 4s）；共享池 :8787 仍 down（health exit=28/timeout）。
+- 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
+- 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
+## 2026-09-23 08:20 (GMT+8) 执行 — 常规轮询
+- 稳态：0 缺口（无新指令）；后台+await 持续生效（scp 2m33s 无 499、ssh 4s）；共享池 :8787 仍 down（health exit=28/timeout）。
+- 对账：服务器 23 收- ↔ 本地 31 复-，列表与近数轮完全一致 → 无新 K 下发；未触发紧急快通道；无新任务执行、无新回执回写。Phase 1 真实互动仍卡 C3 凭证（K 未下发）。
+- 经验回传：5 条仍 `WinError 10060` 失败（:8787 CLOSED），记 failures、下轮自动重试、无丢失（SHARE_EXIT=0）。
+- 纪律：仅读写本节点 FSTDD003/；未回显凭证片段；未 push 远端；pull_mode=background+await。
 ## 2026-09-19 06:16 (GMT+8) 执行 — 常规轮询（无新增收任务、无新增经验）
 
 - **步骤1 拉取同步**: `scp` 全量拉取 `/home/ubuntu/fstdd-notices/FSTDD003/*` → 本地（静默成功）。服务器与本地清单完全对齐：7 份 `FSTDD003收-*`（状态盘点/经验回传要求/通道演练/协作开发-S2S3/inbox鉴权上线/自动化率提升/撤回令-伪造署名指令）**均已对应 `FSTDD003复-*` 回执**，无未执行项。`00-COLLAB.md` mtime=13:44 未变、`00-DISCIPLINE.md` mtime=19:10 未变。K-reply-003c/d、sliceS2S3.patch/tests、FSTDD003复-伪造署名事件处置与开放问题协商.md 均系已交付存档/信息性文件，非任务、无需回执。
@@ -1294,3 +1344,18 @@
 3. ✅ 把回执 `FSTDD003复-<主题>.md` 写回该 notices 目录 — 已 scp 落地。
 后续每小时自动化可直接执行完整流程（含 SSH 取件/回执），无需再等任何授权。
 
+
+## 2026-09-24 01:07 (GMT+8) 执行 — 常规轮询（0 缺口）+ 补齐 09-23 日汇总 / 提前交付 09-24 计划
+
+- **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 **24 份 `FSTDD003收-*`** ↔ 本地 **33 份 `FSTDD003复-*`**（22 精确 + 1 命名差异「工作量与资源规划要求↔工作量与资源规划」（Y 是 X 子串，已知差异不重发）+ 1 后缀「助001接入与SOP收尾↔SOP收尾」+ 1 命名差异「phase1-launch↔phase1-2026-09-22 / phase1-2026-09-23-04」+ 8 份无对应收-的历史存档 / 自产出项），**0 待补**；按「只从收找复、绝不反向」不补建。
+- **Step 1 拉取同步**：`scp` 全量拉取（后台+await，**2m42s，exit=0**，无 499）。服务器最新仍为 09-24 00:52 本节点自己写回的 2 份回执；K 侧自 09-23 09:10 `收-inbox地址变更` 起无新下发；无新凭证文件、无 K-reply-003f。
+- **Step 2 紧急快通道**：`收-inbox地址变更`（priority 最高）已于 09-24 00:55 闭环（base 改 `https://<DOMAIN>/inbox`、health 200、5 条积压经验投递成功），**未重跑**；其余 `收-*` 无 priority:最高。
+- **Step 3 增量回传（0 条）**：`fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 64 条）」；`experiences/` 无新增（末份仍为 09-23 那 5 条，00:52 已全部投递）。凭证文件 48B 就位未动。
+- **Step 4 回执写回（2 份，本轮主动产出）**：
+  - `FSTDD003复-phase1-2026-09-23.md`（5223B）——09-23 Phase 1 **日汇总补交**。J7 五字段齐（action_count=0 / limits_ok=true / issues 标注 C2–C7 + 守护中断）。**明确标注口径**：02–04 窗口实测 0；04–24 共 9 个窗口守护中断无观测，按「C3 凭证未下发 ⇒ 无可执行动作」规则**推定 0**，非观测值；**未观测窗口仍不补建回执**（沿用 00:58 复盘立场）。立场由「暂缓补建」改为「补交日汇总」的理由写入文内，并给出 K 可撤回路径。
+  - `FSTDD003复-当日计划-20260924.md`（8850B）——09:00《当日工作计划》**提前交付**（01:1x），针对 09-23 守护中断 16.5h 的复现风险做预防；四栏齐（产能盘点 4 核 / 任务清单 K1–K4 + S1–S5 / 并行策略 + 外部模型调度 / 风险 R1–R6）。
+  - scp 写回（后台+await，**10s，exit=0**），服务器 01:14 落地核验通过。
+- **Step 5 自查**：`GET https://<DOMAIN>/inbox/health` → `ok=true, received=199`（与 00:52 轮次持平；本轮 POST=0、回执走 scp，计数一致）；旧 `http://<IP>:8787/health` → curl exit=28 不可达（公网仍关闭，与 K 通报一致）。本轮末 `pull_mode: background+await`。
+- **窗口状态**：Phase 1 00–02 窗口尚未结束（回执 02:15 前，下轮产出）；09-24 09:00 计划 ✅ 已提前交付；21:00 复盘 / 21:30 日汇总待当日窗口内产出。Phase 1 真实互动仍卡 C3 凭证（K 未下发），quanthub 侧 0 动作。
+- **本地 git**：显式路径提交 `.fstdd/_notices_receipts.md` + 2 份新回执 + `收-`新文件 + `tools/*.py`（00:52 轮次 inbox 改址）+ `.fstdd/_fstdd003_share_log.json` + 两份 memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；凭证 gitignored 未泄露。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触其他节点条目与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段；域名/IP 以占位符；未 push 远端。
