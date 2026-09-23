@@ -5,6 +5,16 @@
 - 范围: 仅 WorkBuddy 内部文件 + 本机 git（本地 commit，不 push）+ fstdd 接收端点 8787；不碰 GitHub 远端。
 - **SSH 通道（2026-09-18 13:00 纠正）**: 私钥在 **D 盘根目录 `/d/id_ed25519`**（ed25519，指纹 `AAAAC3NzaC1lZDI1NTE5AAAAIIlbJTf3kzY2eEWDcG21BvtUfoM4y9xGEPOMA4P+J1r2`），用户 `ubuntu@43.134.236.80`，已实测连通。**此前「publickey 未授权」系误用 `.ssh/id_ed25519` 另一把密钥所致，并非真无权限。** 自动化后续步骤直接用此密钥，不要再写"待提供授权"。
 
+## 2026-09-24 05:57 (GMT+8) 执行 — 常规轮询（phase1 窗口 04-06 回执 + P1 政策升级；received=203）
+
+- **Step 0 对账（拉取前 + 后各一次）**：服务器 24 份 `FSTDD003收-*`（较 09-22 新增 phase1-* 系列 9 份 + inbox地址变更 + 升级路径修复方案）→ 本地 37 份 `FSTDD003复-*`。**唯一缺口 `FSTDD003收-phase1-launch.md`**：本地无 `复-phase1-launch` 精确/子串/去修饰匹配；但该总任务卡经逐日/逐窗口回执链（`复-phase1-2026-09-22/23/24-02/24-04` 均 reply_to 它）持续回执，实质非缺回执，本轮以新窗口回执 `复-phase1-2026-09-24-06.md` 延续闭环。其余 23 份均已回执（21 精确 + 助001接入与SOP收尾↔SOP收尾 后缀 + 工作量与资源规划要求↔工作量与资源规划 已知差异）。
+- **Step 1 拉取同步**：`scp -i /d/id_ed25519`（background+await，2m52s，无报错）→ 本地 24 份 `收-` 与服务器一致，无新增；无新凭证下发（`FSTDD003收-quanthub凭证.md` 仍不存在）；`00-COLLAB/00-DISCIPLINE` mtime 未变。
+- **Step 2 紧急快通道**：无 `priority:最高` 未闭环项（`凭证安装硬时限` 早已闭环 09-20；`phase1-launch` 为 `priority:高`）。
+- **Step 3 执行**：① 经验回传 `fstdd003_daily_share.py` → 「无新增需回传经验（已提交 64 条）」，无试运行数据外泄（端点已迁 `https://quanthub.ccreits.cn/inbox/api/share-experience`）；② **phase1 处理（重要）**：C1 base URL 已解决（`https://quanthub.ccreits.cn`，IP 限制撤除，我方出口 IP 列「已知来源」），但 **C3 quanthub 登录凭证仍未下发** → 写动作（点赞/评论/发帖/签到）全无执行条件，本窗口 `action_count=0`。**新增 P1 政策升级**：即便 C1 就绪，本节点（AI）不自主执行虚构人设自动社交互动（养号/刷量，与红线 8/9 及「不刷量」实质冲突），已写入回执上报 D哥 裁决；**绝不伪造 logs/action_count**。
+- **Step 4 回执写回**：`scp`（background+await，9s，exit=0）写回 `FSTDD003复-phase1-2026-09-24-06.md` 至服务器本节点目录。
+- **Step 5 自查**：`GET https://quanthub.ccreits.cn/inbox/health` → `ok=true, received=203`（本轮本节点 POST=0，+4 来自跨节点）。`pull_mode: background+await`。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人条目与 K memory/inbox；未回显任何凭证；未 push 远端；quanthub 侧 0 动作、日志零伪造。
+
 ## 2026-09-22 00:34 (GMT+8) 执行 — 常规轮询（无新增收任务、2 条经验回传、received=186）
 
 - **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 15 份 `FSTDD003收-*` → 本地 20 份 `FSTDD003复-*`（13 精确匹配 + 1 命名差异「工作量与资源规划要求↔工作量与资源规划」（Y 是 X 子串，已知差异不重发）+ 1 后缀匹配「助001接入与SOP收尾↔SOP收尾」+ 4 份无对应收-的历史存档 00-NOTICE领取确认/伪造署名事件处置与开放问题协商/凭证安装/给001的接入要点 + 1 份 21:18 轮次新写「当日复盘-20260921」），**0 份待补**；按「只从收找复、绝不反向」不补建。
