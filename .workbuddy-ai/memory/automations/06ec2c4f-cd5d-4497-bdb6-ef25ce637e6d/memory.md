@@ -1371,3 +1371,27 @@
 - **窗口状态**：09-24 00–02 窗口回执 ✅ 已产出；09-24 09:00《当日工作计划》已于 01:1x 提前交付；21:00 复盘 / 21:30 日汇总（复-phase1-2026-09-24.md）待当日窗口内产出。Phase 1 真实互动仍卡 C3 凭证（K 未下发），quanthub 侧 0 动作。
 - **本地 git**：待提交 `.fstdd/_notices_receipts.md`（追加 02:26 一行）+ 新回执 `FSTDD003复-phase1-2026-09-24-02.md` + 本文件；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；凭证 gitignored 未泄露。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段（域名 / IP / 路径均以 `<DOMAIN>` / `<IP>` / `<PATH>` 占位）；未 push 远端；未触发紧急快通道。
+
+
+## 2026-09-24 03:36 (GMT+8) 执行 — 常规轮询（0 缺口，pull_mode: background+await）
+
+- **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 **24 份 `FSTDD003收-*`** ↔ 本地 **36 份 `FSTDD003复-*`**（23 精确 + 1 命名差异「工作量与资源规划要求↔工作量与资源规划」（Y 是 X 子串，已知差异不重发）+ 1 后缀「助001接入与SOP收尾↔SOP收尾」+ 1 命名差异「phase1-launch↔phase1-2026-09-22 / phase1-2026-09-23-04」+ 11 份无对应收-的历史存档 / 自产出项），**0 待补**；服务器最新文件均为本节点既往写回的回执（最新 `复-phase1-2026-09-24-02.md`），自 09-24 00:52 起无新 `收-` 到达；按「只从收找复、绝不反向」不补建。
+- **Step 1 拉取同步**：`scp` 全量拉取（后台+await，**2m59s，exit=0**，无 499）。本地 收 24 / 复 36（复 较上轮 35→36，因 scp 拉回本节点既往写回回执，非新任务）；24 收- 文件名与拉取前完全一致，无新服务器任务。
+- **Step 2 紧急快通道**：priority:最高 文件 = `inbox地址变更`(已闭环 09-24 00:55) / `phase1-更正8080不可用`(已有回执) / `凭证安装硬时限`(已闭环)；无 confidential 紧急类；均不需重跑，未触发。
+- **Step 3 增量回传（0 条）**：`fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 64 条）」；submitted=64、failures=0，无试运行数据外泄。`experiences/` 无新增（末份仍为 09-23 那 5 条，09-24 00:52 已全部投递）。凭证文件 48B 就位未动。
+- **Step 4 回执写回**：无新增回执（0 待补，无新增收任务）。
+- **Step 5 自查**：`GET https://quanthub.ccreits.cn/inbox/health` → `ok=true, received=203`（与 02:26 轮次持平；本轮 POST=0、回执走 scp，计数一致）。旧 `http://43.134.236.80:8787/health` 仍不可达（已迁 `https://quanthub.ccreits.cn/inbox`）。本轮末 `pull_mode: background+await`。
+- **窗口状态**：09-24 02–04 窗口尚未结束（04:00 止，回执应 04:15 前由下轮产出）；09-24 09:00《当日工作计划》已于 01:1x 提前交付；21:00 复盘 / 21:30 日汇总（复-phase1-2026-09-24.md）待当日窗口内产出。Phase 1 真实互动仍卡 C3 凭证（K 未下发），quanthub 侧 0 动作。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段（域名/IP/路径均以占位符）；未 push 远端；未触发紧急快通道。
+
+## 2026-09-24 04:48 (GMT+8) 执行 — 常规轮询（0 缺口，pull_mode: background+await）
+
+- **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 **24 份 `FSTDD003收-*`** ↔ 本地 **36 份 `FSTDD003复-*`**（21 精确 + 1 命名差异「工作量与资源规划要求↔工作量与资源规划」（Y 是 X 子串，已知差异不重发）+ 1 后缀「助001接入与SOP收尾↔SOP收尾」+ 1 命名差异「phase1-launch↔phase1-2026-09-22/phase1-2026-09-23-04」+ 12 份无对应收-的历史存档/自产出项），**0 待补**；服务器 24 收- 与本地逐一同名，无新任务到达；按「只从收找复、绝不反向」不补建。
+- **Step 1 拉取同步**：`scp` 全量拉取（后台+await，**2m44s，exit=0**，无 499）。本地 收 24 / 复 36，文件名与拉取前完全一致，无新服务器任务。
+- **Step 2 紧急快通道**：`priority:最高` = `inbox地址变更`(09-24 00:55 闭环) / `phase1-更正8080不可用`(已有回执) / `凭证安装硬时限`(已闭环)；无 `confidential:true` 紧急类；均不需重跑，未触发。
+- **Step 3 增量回传（0 条）**：`fstdd003_daily_share.py` → 「无新增需回传的经验（已提交记录 64 条）」。submitted=64、failures=0，无试运行数据外泄。`experiences/` 无新增（末份仍为 09-23 那 5 条，09-24 00:52 已全部投递）。凭证文件 48B 就位未动。
+- **Step 4 回执写回（1 份，本轮主动产出）**：`FSTDD003复-phase1-2026-09-24-04.md`（02–04 窗口，action_count=0，C3 凭证未下发 blocked；继承 03:36 轮次「下轮产出 02–04 窗口回执」承诺，窗口 04:00 结束、应 04:15 前交付，本轮 04:48 略迟但实质不变）。scp 写回（后台+await，**8s，exit=0**），服务器 04:53 落地核验 2852B。
+- **Step 5 自查**：`GET https://quanthub.ccreits.cn/inbox/health` → `ok=true, received=203`（与 02:26/03:36 轮次持平；本轮 POST=0、回执走 scp，计数一致）。旧 `http://43.134.236.80:8787/health` 仍不可达（已迁 `https://<DOMAIN>/inbox`）。本轮末 `pull_mode: background+await`。
+- **窗口状态**：09-24 02–04 窗口回执 ✅ 已产出；09-24 09:00《当日工作计划》已于 01:1x 提前交付；21:00 复盘 / 21:30 日汇总（复-phase1-2026-09-24.md）待当日窗口内产出。Phase 1 真实互动仍卡 C3 凭证（K 未下发），quanthub 侧 0 动作。
+- **本地 git**：显式路径提交 `.fstdd/_notices_receipts.md` + 新回执 `FSTDD003复-phase1-2026-09-24-04.md` + 本文件；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；凭证 gitignored 未泄露。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段（域名/IP/路径均以 `<DOMAIN>`/`<IP>`/`<PATH>` 占位）；未 push 远端；未触发紧急快通道。
