@@ -317,6 +317,25 @@ tags: [install, hardening, experience-upload, distributed]
       修法：`verify` 改用 `_get_canonical_dir()` 并明确打印「回退项目级」；
       或把顺序改为 `合并 canon → canon verify → archive`。
       详见 `experiences/FSTDD003-EXP-20260924-DELIVER-1.md`。
+- [ ] **P52 待修（🔴 高 · 静默丢内容 + 与 P44 同族 · 2026-09-24 · 工作台）**：`stdd canon generate` 两处。
+      **① `--dry-run` 不 dry** —— 实测真写了 `proposal.md`（5392 B），且打印 `Generated …`
+      而非 `[dry-run] 将…`；与 **P44**（`gate approve --dry-run`）同型：`--dry-run` 定义在父 parser，
+      `cmd_canon_generate()` 里 `grep dry_run` **0 命中**。
+      ⚠ 对照：`stdd new --dry-run` **真的 dry** ⇒ 失效是**逐命令**的，不是全局的。
+      **② Human View 静默丢三节** —— `canon.py:317` 注释写 "from template or direct mapping"，
+      但整个函数是**硬编码拼字符串**（`no Jinja2 dependency`），只覆盖
+      title / Why.problem / what_changes / capabilities / success_criteria
+      ⇒ **`why.motivation` / `constraints` / `non_goals` 全丢**（实测丢 13 条），
+      而 `.fstdd/templates/human-view/proposal-brief.md`（这两节都写了）是**死代码**。
+      🔴 **丢的正是用户唯一的审阅面**（Gate 1 就是看 proposal.md）。
+      🔴 **为什么一直没被发现**：`canon verify` 的 `DC-FIELD` 验的是**反方向**
+      （「MD 里引用的字段在 YAML 里存在」），而坏的是「YAML 里有的 MD 里没有」
+      ⇒ **两个方向都通过，双轨一致性绿灯而内容已少一半**。
+      修法：① 所有会写盘的命令补读 `getattr(args,"dry_run",False)`（与 P44 **合并成一个全命令审计**）；
+      ② `canon generate` 改成真用模板（Jinja2 已是既有依赖），或至少补全三段映射；
+      ③ `canon verify` 增加**反向**检查 `DC-FIELD-REV`（YAML 非空字段须在 MD 有对应节）。
+      本次规避：把 constraints / non_goals **人工贴进 Gate 1 确认框**。
+      详见 `experiences/FSTDD003-EXP-20260924-CANON-1.md`。
 - [x] **（已闭合）引擎副本与源漂移** —— 见「15. 第 15 轮」。
       原条目：「引擎副本与源会随时间漂移（`setup_engine.py` 每次比对 sha256 并告警，
       `TC_SC_034` 也守着）。**不改上游**是 D哥 定的范围，漂移只告警不自动同步。」
@@ -1105,4 +1124,42 @@ approve 分支无条件走 `_auto_generate_human_views()` + `_confirm_gate()`。
       本轮 **Step 2.8 经验回传已跳过**（未执行任何外发）。若确定永久关闭，
       应设 `share.silent.enabled: false` 或环境变量 `FSTDD_NO_SHARE=1`。
 - [ ] **（工作台）本 change 的 git 提交 + 首个 tag 待 D哥 确认**（本仓库此前 0 个 tag）。
+
+## 19. 第 19 轮（2026-09-24 · 工作台 · 新 change `2026-09-24-native-wx-ui` Phase 1）
+
+接 D哥 指令「走 FSTDD Phase 1」。新 change = **公众号界面原生重写**（照三刀真实布局，
+拆掉挂载探针）。本轮只走到 Phase 1 起草 + 审查，**Gate 1 尚未确认**。
+
+### 本轮唯一的新缺陷：P52
+
+`stdd canon generate` 两处，且**丢的正是用户唯一的审阅面**（Gate 1 就是看 `proposal.md`）：
+
+| 处 | 事实 | 危害 |
+|---|---|---|
+| ① `--dry-run` 不 dry | 真写了 `proposal.md`（5392 B），打印 `Generated …` 而非 `[dry-run] 将…` | 想「先预览不落盘」的人会误以为没写 |
+| ② Human View 丢三节 | 硬编码直接映射只覆盖 5 个字段 ⇒ `why.motivation` / `constraints` / `non_goals` **全丢**（实测丢 13 条）；`templates/human-view/proposal-brief.md` 是**死代码** | 用户在 Gate 1 审不到 7 条约束 + 6 条非目标 |
+
+🔴 **最值钱的一条**：`canon verify` 的 `DC-FIELD` 验的是**反方向**
+（「MD 引用的字段在 YAML 里存在」），而坏的是「YAML 里有的 MD 里没有」
+⇒ **两个方向都绿灯，双轨一致性通过而内容已少一半**。
+与 `EXP-20260921-DRIFT-1` 同族：**「没报错」≠「没问题」**。
+
+### 本轮的方法侧收获（Phase 1 探索阶段）
+
+- **🔴 先查名字，再动代码。** D哥 说的「两屏手搓列表页」，在仓库里有**两份**实现：
+  `web/index.html` 的 `view-accounts`/`view-articles`（8733），和
+  `路口理财工作台/index.html` 的 `view-wxaccount`/`view-wxarticle`（8518）。
+  `git log -S "view-wxaccount" -- web/index.html` → **0 条**，证明这个名字**只在 8518 那份**，
+  而 `docs/三刀前端挂载.md:325` 在讲 8733 的上下文里用了它 ⇒ **文档串名了**。
+  ⇒ 若照着文档猜，会把「删 8518 的两屏」当成「删 8733 的两屏」，**方向完全反了**。
+  这类「名字对不上」只能靠 `git log -S` + 逐份 grep 证实，不能靠上下文推断。
+- **参照物当代码读，不要当界面看。** 三刀渲染层是压缩后的 Vue，
+  但 `grep -o '"[^"]*[一-龥][^"]*"'` 抽中文文案能**快速画出它的功能边界**
+  （实测抽出「云端清单 / 一键导入 / 新建分组 / 广场 / 已达单次同步上限 / 互动数据 /
+  抓取评论 / 付费文章 · 当前仅为免费试读 / 导入 JSON / Excel 文件」）
+  ⇒ 一眼看出「哪些功能我们**根本没有对应通道**」，直接写成 non_goals，避免做出死按钮。
+- **删除面要先证「没人引用」。** `grep -rn "sandao" app.py modules/*.py modules/*/*.py`
+  （排除 `modules/sandao/` 自身）→ **0 命中**，`modules/sandao/` 只靠 `manifest.json` 自动挂载
+  ⇒ 删除是干净的，可以在 proposal 里写成可验证的成功标准（`/sandao/` 与 `/api/_ipc*` 返回 404）。
+
 
