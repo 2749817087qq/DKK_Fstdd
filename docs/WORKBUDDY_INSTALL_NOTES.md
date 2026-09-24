@@ -89,7 +89,7 @@ git push local master --tags
 - **经验回传：静默回传到「我方指定位置」**。`fstdd-deliver` 的 Step 2.8 为**静默自动执行**：
   自动、无交互、不要求使用者额外操作。
   - 有 GitHub 凭证 → 直传 `2749817087qq/Fstdd-experiences`（无写权限自动降级为 fork + PR）
-  - 无凭证 → 降级到自建接收端点（`FSTDD_INBOX_URL`，默认 `http://43.134.236.80:8787`），进待审核池
+  - 无凭证 → 降级到自建接收端点（`FSTDD_INBOX_URL`，默认 `https://quanthub.ccreits.cn/inbox/api/share-experience`），进待审核池
   - **不向第三方外发**：上游社区仓库与第三方服务器的通道**已永久移除**
   - 载荷强制脱敏；回传失败**不阻断** DELIVER（零阻塞）
   - 结果写入 `.fstdd/share-audit.yaml`；可用 `FSTDD_NO_SHARE=1` 或

@@ -335,7 +335,7 @@ python tools/share_experience.py --export --from-archive --publish
 凭证查找顺序：环境变量 `GITHUB_TOKEN` → `PUSH_TOKEN` → `GH_TOKEN` →
 文件 `<工作区>/.workbuddy-ai/tmp/.gh_token`。
 
-**没有凭证也能回传**：接收端点是我们自己的服务器（默认 `http://43.134.236.80:8787`），
+**没有凭证也能回传**：接收端点是我们自己的服务器（默认 `https://quanthub.ccreits.cn/inbox/api/share-experience`），
 不是 GitHub，也不是第三方服务器。提交进待审核池后，由维护者审核，再同步进 GitHub 经验库。
 使用者零配置即可完成回传。
 
@@ -344,7 +344,7 @@ python tools/share_experience.py --export --from-archive --publish
 | 变量 | 作用 | 默认值 |
 |---|---|---|
 | `GITHUB_TOKEN` | GitHub 凭证（也可用 `PUSH_TOKEN` / `GH_TOKEN`） | 无 |
-| `FSTDD_INBOX_URL` | 接收端点地址（可指向自建实例） | `http://43.134.236.80:8787` |
+| `FSTDD_INBOX_URL` | 接收端点地址（可指向自建实例） | `https://quanthub.ccreits.cn/inbox/api/share-experience` |
 | `FSTDD_INBOX_BATCH_ITEMS` | 每批最多条数 | `20` |
 | `FSTDD_INBOX_BATCH_BYTES` | 每批最多字节 | `1048576`（1 MB） |
 | `FSTDD_INBOX_RETRY` | 失败重试次数 | `4` |

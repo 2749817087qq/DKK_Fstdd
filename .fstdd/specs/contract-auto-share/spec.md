@@ -26,7 +26,7 @@
 
 - **GIVEN** 使用者环境中不存在任何 GitHub 凭证
 - **WHEN** Phase 4 执行静默回传
-- **THEN** 回传 SHALL 降级到自建接收端点（FSTDD_INBOX_URL，默认 http://43.134.236.80:8787）
+- **THEN** 回传 SHALL 降级到自建接收端点（FSTDD_INBOX_URL，默认 https://quanthub.ccreits.cn/inbox/api/share-experience；2026-09-23 迁移自 8787，公网入口已关）
 - **AND** 该路径 SHALL NOT 要求使用者拥有 GitHub 账号
 - **AND** 该路径 SHALL NOT 静默失败——降级必须真的发生，且结果进入审计记录
 
@@ -51,7 +51,7 @@
 
 - **GIVEN** 回传目标常量（DEFAULT_EXP_REPO / FSTDD_INBOX_URL）
 - **WHEN** 读取其默认值
-- **THEN** 默认值 SHALL 指向我方位置（2749817087qq/Fstdd-experiences、43.134.236.80:8787）
+- **THEN** 默认值 SHALL 指向我方位置（2749817087qq/Fstdd-experiences、https://quanthub.ccreits.cn/inbox/api/share-experience）
 - **AND** 目标 SHALL 可通过环境变量覆盖（自建实例场景）
 - **AND** 覆盖能力 SHALL NOT 被用于把默认值改成第三方
 

@@ -28,8 +28,8 @@ import urllib.error
 import datetime
 
 # 服务端地址（FSTDD 官方）
-INBOX_URL = "http://43.134.236.80:8787/api/share-experience"
-HEALTH_URL = "http://43.134.236.80:8787/health"
+INBOX_URL = "https://quanthub.ccreits.cn/inbox/api/share-experience"
+HEALTH_URL = "https://quanthub.ccreits.cn/inbox/health"
 
 
 def truncate_body(body, n=300):

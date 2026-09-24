@@ -54,6 +54,14 @@ def cmd_structure_delta(args):
             rel = f.relative_to(change_dir)
             lines.append(f"- `{rel}` (Python)")
 
+    # 2026-09-25 审计修复（项⑧）：--dry-run 此前仍会写文件，违背 dry-run 语义。
+    # 现改为：dry-run 只打印预览、不落盘。
+    if getattr(args, "dry_run", False):
+        print("  [dry-run] 将生成:", delta_file)
+        print("\n".join(lines[:6]))
+        print(f"  ...（共 {len(lines)} 行，--dry-run 不写文件）")
+        return
+
     delta_file.write_text("\n".join(lines), encoding="utf-8")
     print(f"  Generated {delta_file}")
 
