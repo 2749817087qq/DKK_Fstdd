@@ -1477,3 +1477,15 @@
 - **Step 5 自查**：`GET https://quanthub.ccreits.cn/inbox/health` → `ok=true, received=207`（05:57 轮为 203，+4=本节点 3 新经验 + 跨节点 1，符合历史跨节点增量规律）。`pull_mode: background+await`。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与 K-memory/inbox；未回显任何凭证；未 push 远端；`experiences/` 与凭证路径 gitignored 未泄露。本地 git 显式路径提交 `FSTDD003复-seed口径申报.md` + `_fstdd003_share_log.json` + 本 memory（不 `git add -A`，不 push）。
 
+## 2026-09-24 14:22 (GMT+8) 执行 — 常规轮询（自愈 2 处缺口：任务卡驱动确认 + 12–14 窗口回执，pull_mode: background+await）
+
+- **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 **27 份 `FSTDD003收-*`**（较 13:13 轮 25 +2：`Phase1执行方式增补-任务卡驱动` + `phase1-窗口-2026-09-24-14`）↔ 本地 **42 份 `FSTDD003复-*`**（22 精确 + 1 命名差异「工作量与资源规划要求↔工作量与资源规划」（Y 是 X 子串，已知差异不重发）+ 1 后缀「助001接入与SOP收尾↔SOP收尾」+ 1 一收双复「phase1-launch↔phase1-2026-09-22 且 phase1-2026-09-23-04」+ **2 本轮新闭环** + 14 份无对应收-的历史存档/自产出项），**2 待补（均新下发、被时间窗错过，本轮经拉取+对账自愈）**：① `收-Phase1执行方式增补-任务卡驱动`（priority:最高）；② `收-phase1-窗口-2026-09-24-14`（12–14 窗口卡，回执名明确 `复-phase1-2026-09-24-14.md`）。按「只从收找复、绝不反向」不补建历史项。
+- **Step 1 拉取同步**：`scp` 全量拉取（后台+await，**2m59s，exit=0**，无 499 噪声）。本地 收 27 / 复 42；新两份 `收-` 已落地，无新凭证文件（`收-quanthub凭证.md` 仍不存在）；K-reply-003c/d/e 为信息性非任务。
+- **Step 2 紧急快通道**：`priority:最高` = `Phase1执行方式增补-任务卡驱动`（本轮新下发，立即回执确认接受，非动作任务）+ `inbox地址变更`(09-24 00:55 闭环)/`phase1-更正8080不可用`(已有回执)/`凭证安装硬时限`(已闭环)；无 `confidential:true` 紧急类。
+- **Step 3 执行 + 增量回传（1 条）**：① `收-Phase1执行方式增补-任务卡驱动`：确认接受任务卡驱动模型（节点本就不自判休息日/不开窗口，无改造量），回执 `复-Phase1执行方式增补-任务卡驱动.md`；② `收-phase1-窗口-2026-09-24-14`：产出 `复-phase1-2026-09-24-14.md`（12–14 窗口，action_count=0，C3 凭证未下发 blocked，14:22 产出距 14:00 约 22min，恒为 0 不影响实质）；③ `fstdd003_daily_share.py` → 新增 1 条 `FSTDD003-EXP-20260924-PHASE-1`（带凭证模式 POST [OK]），submitted 67→68、无试运行数据外泄。
+- **Step 4 回执写回（2 份）**：`scp`（后台+await，**11s，exit=0**）写回 `复-Phase1执行方式增补-任务卡驱动.md` + `复-phase1-2026-09-24-14.md`；SSH 复验两份均已在服务器本节点目录落地。
+- **Step 5 自查**：`GET https://quanthub.ccreits.cn/inbox/health` → `ok=true, received=208`（13:13 轮 207，+1 与本轮 1 条 POST 一致）。旧 `http://43.134.236.80:8787/health` 仍不可达（已迁 `https://quanthub.ccreits.cn/inbox`）。本轮末 `pull_mode: background+await`。
+- **窗口状态**：00–02/02–04/04–06/06–08/08–10/10–12/12–14 窗口回执 ✅ 已产出（12–14 为任务卡驱动模型首张窗口卡，K 明确发卡即做）；后续窗口待 K 逐窗口发卡后回执；09:00《当日工作计划》已于 01:1x 提前交付；21:00 复盘 / 21:30 日汇总（复-phase1-2026-09-24.md）待当日窗口内产出。Phase 1 真实互动仍卡 C3 凭证（K 未下发），quanthub 侧 0 动作。
+- **本地 git**：显式路径提交 2 份新回执 + `_fstdd003_share_log.json` + `_notices_receipts.md` + 本 memory；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；凭证 gitignored 未泄露。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段（域名实写 `quanthub.ccreits.cn`，IP/路径以 `<IP>`/`<PATH>` 占位）；未 push 远端；未触发越权。
+
