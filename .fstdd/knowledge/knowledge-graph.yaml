@@ -1,6 +1,6 @@
 edges: []
 graph_version: '1.0'
-last_merged: '2026-09-24T05:27:07+00:00'
+last_merged: '2026-09-24T13:19:24+00:00'
 nodes:
 - category: process_deviation
   cross_project_count: 1
@@ -695,6 +695,1246 @@ nodes:
   description: ''
   fix_template_refs: []
   id: KG-044
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-045
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-046
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: pipeline_break
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-047
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: pipeline_break
+  type: failure_pattern
+- category: tool_misuse
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-048
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tool_misuse
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-049
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-050
+  metrics:
+    last_seen: ''
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-051
+  metrics:
+    last_seen: ''
+    occurrence_count: 3
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: quality
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-052
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: quality
+  type: failure_pattern
+- category: quality
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-053
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: quality
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-054
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: process
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-055
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-056
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process
+  type: failure_pattern
+- category: quality
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-057
+  metrics:
+    last_seen: ''
+    occurrence_count: 3
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: quality
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-058
+  metrics:
+    last_seen: ''
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: process
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-059
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-060
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-061
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-062
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-063
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-064
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-065
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: runtime
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-066
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: runtime
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-067
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: 质量检查工具用「文本出现次数」代替「语义单位」做判定，导致规范产物被普遍误报 —— 误报累积后使用者会养成忽略红叉的习惯，真正的失败反而被漏掉
+  fix_template_refs:
+  - KG-068-FIX
+  id: KG-068
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: '实现检查时图省事，把「计数」当成了「判重」：TC-ID 的唯一性本该按「定义处」判定，
+
+    却统计了**全文出现次数** —— 而任何规范编写的 test-plan 都必然在
+
+    「案例定义表 / 执行矩阵 / 优先级清单」三处引用同一个 TC-ID。
+
+    同理，AND 数量的阈值本该按「每个 SC 的 THEN 子句」判定，却统计了**整个 spec 文件**。
+
+
+    更根本的问题：新增检查时**没有拿历史产物做回归**。若跑一遍已验收的产物，
+
+    会发现它们**全部**报错 —— 这本身就是「检查写错了」的最强信号。
+
+    '
+  severity: high
+  tags:
+  - tooling
+  - false-positive
+  - check-design
+  - meta-regression
+  title: 质量检查工具用「文本出现次数」代替「语义单位」做判定，导致规范产物被普遍误报 —— 误报累积后使用者会养成忽略红叉的习惯，真正的失败反而被漏掉
+  type: failure_pattern
+- category: test
+  cross_project_count: 1
+  description: 用「文本里是否出现某字符串」判定「行为是否违规」，而检测代码本身必须提及该字符串 —— 断言命中了检测规则自己
+  fix_template_refs:
+  - KG-069-FIX
+  id: KG-069
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: '把「文本出现」当成了「行为发生」。但两者并不等价：
+
+    · 注释里正当地说明「为什么不用 --force」会提及 `--force`
+
+    · 检测违规的代码（如 grep 模式）**必须**写出该模式字符串
+
+    于是断言被自己的检测规则满足，形同虚设 —— 且**测试仍然全绿**，不会有人发现。
+
+    '
+  severity: medium
+  tags:
+  - testing
+  - self-match
+  - assertion-validity
+  - mutation-testing
+  title: 用「文本里是否出现某字符串」判定「行为是否违规」，而检测代码本身必须提及该字符串 —— 断言命中了检测规则自己
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: 验证脚本为制造故障而修改生产环境，却把「恢复现场」写成正常路径的最后一步 —— 中途任何异常都会把环境留在故障态，比不验证更糟
+  fix_template_refs:
+  - KG-070-FIX
+  id: KG-070
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: '设计验证脚本时，注意力集中在「故障能否被制造出来、告警能否被观察到」，
+
+    而「恢复」被当作流程末尾的一个普通步骤。但恢复是**异常安全**问题：
+
+    脚本可能在任意一步被中断（网络断、命令失败、人工 Ctrl-C），
+
+    写在末尾的恢复语句根本执行不到。
+
+
+    还有一层更隐蔽的：恢复**依赖外部可达性**时，恢复本身可能失败。
+
+    例如「把镜像目标改成不可达地址，验证告警后改回来」——
+
+    改回来的验证若要真正生效，需要那个目标**当时可达**；若恰好不可达，
+
+    环境就永久留在故障态。
+
+    '
+  severity: high
+  tags:
+  - verification
+  - side-effect
+  - cleanup
+  - trap
+  - environment-isolation
+  - e2e
+  title: 验证脚本为制造故障而修改生产环境，却把「恢复现场」写成正常路径的最后一步 —— 中途任何异常都会把环境留在故障态，比不验证更糟
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: 用 GIT_CONFIG_KEY_n=remote.<name>.url 注入镜像目标 —— 看起来生效（config --get 返回注入值），实际
+    fetch 仍走第一个 URL，注入形同虚设
+  fix_template_refs:
+  - KG-071-FIX
+  id: KG-071
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: "`remote.<name>.url` 是 git 的**多值**键：第一个值用于 fetch，**全部**值用于 push。\n环境变量注入（`GIT_CONFIG_COUNT`\
+    \ / `GIT_CONFIG_KEY_n` / `GIT_CONFIG_VALUE_n`，\n等价于 `git -c key=value`）只是往这个列表**末尾追加**一项，而**不是替换**。\n\
+    \n于是产生一种极难察觉的失效：\n  · `git config --get remote.github.url` -> 返回**注入值**（看起来成功了）\n\
+    \  · `git remote -v` -> 注入值被标成**额外的 push URL**\n  · `git ls-remote github` ->\
+    \ 依旧走**第一个** URL（真实远端）\n\n「查询接口」与「实际行为」给出相反的答案，而人只会去查前者。\n"
+  severity: high
+  tags:
+  - git
+  - environment-injection
+  - false-positive
+  - verification
+  - e2e
+  title: 用 GIT_CONFIG_KEY_n=remote.<name>.url 注入镜像目标 —— 看起来生效（config --get 返回注入值），实际
+    fetc
+  type: failure_pattern
+- category: design
+  cross_project_count: 1
+  description: 误差上界公式写成 err = |offset| + rtt/2，使「err ≤ 容差 且 |offset| > 容差」永假 —— 三态判定里的「超限」态不可达，成为假三态
+  fix_template_refs:
+  - KG-072-FIX
+  id: KG-072
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: '实现者凭直觉把「误差上界」理解成「最坏情况总偏差」（含 offset 本身），
+
+    没有验证每个状态的**可达性**。由于 err ≥ |offset| 恒成立，
+
+    err ≤ tolerance 与 |offset| > tolerance 不可能同时满足 ——
+
+    「超限」分支是死代码，而 spec 里白纸黑字要求它存在并返回退出码 1。
+
+    这是「公式写错」与「状态机缺态」的复合缺陷，且单测若只测 happy path
+
+    与「不可测量」就永远发现不了。
+
+    '
+  severity: high
+  tags:
+  - design
+  - state-machine
+  - reachability
+  - measurement
+  - tdd
+  title: 误差上界公式写成 err = |offset| + rtt/2，使「err ≤ 容差 且 |offset| > 容差」永假 —— 三态判定里的「超限」态不可达，
+  type: failure_pattern
+- category: testing
+  cross_project_count: 1
+  description: 偏移测量用 time.monotonic() 当本地中点去减远端 date +%s（epoch），offset 输出 1.79e9 荒谬值
+    —— 注入式单测全部通过，真实环境一跑就露馅
+  fix_template_refs:
+  - KG-073-FIX
+  id: KG-073
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: '采样器设计成可注入（sampler 返回构造的 (rtt, offset)），单测全部用桩，
+
+    真值路径 _sample_node 里的时钟基准错误没有任何测试覆盖。
+
+    monotonic() 与 time() 原点不同（前者是系统启动后的秒数），
+
+    混算得到「远端 epoch − 本地 monotonic」= 约 1.7e9 的数。
+
+    错误被 round(…, 4) 正常格式化输出，没有任何环节报错 ——
+
+    荒唐值安静地躺在 JSON 里。
+
+    '
+  severity: high
+  tags:
+  - testing
+  - injection-limit
+  - clock
+  - e2e
+  - sanity-check
+  title: 偏移测量用 time.monotonic() 当本地中点去减远端 date +%s（epoch），offset 输出 1.79e9 荒谬值 ——
+    注入式单测全部
+  type: failure_pattern
+- category: code
+  cross_project_count: 1
+  description: naive→aware 改造时写成 _dt.now(_dt.timezone.utc) —— _dt 是 datetime 类、timezone
+    是模块属性 → 必抛 AttributeError，被外层 except Exception 吞掉 → 检测逻辑静默全哑
+  fix_template_refs:
+  - KG-074-FIX
+  id: KG-074
+  metrics:
+    last_seen: ''
+    occurrence_count: 3
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: '`from datetime import datetime as _dt` 之后，`_dt` 是**类**，
+
+    `timezone` 挂在**模块**上而不是类上。`_dt.timezone` 是 AttributeError。
+
+    三处（upgrade.py 僵尸检测无关的 upgraded_at 字段 / guard.py 僵尸 change
+
+    检测 / guard.py 卡壳检测）全部包在 `except Exception: pass`（或 continue）
+
+    里 —— 于是：
+
+    - 僵尸 change 检测永远返回 False（不拦截）
+
+    - 卡壳检测永远不加警告
+
+    - upgraded_at 字段缺失时 upgrade notes 写入静默跳过
+
+    没有任何报错、没有任何日志。「比崩溃更糟」的静默失效教科书案例。
+
+    更糟的是静态检测器（check_timestamps L2）只查「now() 是否带时区参数」
+
+    的形态，`_dt.timezone.utc` 形态上「正确」——检测器给了假安全感。
+
+    '
+  severity: high
+  tags:
+  - code
+  - datetime
+  - silent-failure
+  - exception-swallowing
+  - mutation-test
+  title: naive→aware 改造时写成 _dt.now(_dt.timezone.utc) —— _dt 是 datetime 类、timezone
+    是模块属性 →
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: 多副本/多源文件改了 N-1 份：宪法两份副本加了第 7 节，但 init.py 内嵌生成模板（单一真源）没加 —— 新生成项目与仓库产物逐字节分叉
+  fix_template_refs:
+  - KG-075-FIX
+  id: KG-075
+  metrics:
+    last_seen: ''
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: '「同一内容存在多份」时，改动者按「最明显的两份」下手，
+
+    漏掉**生成模板**这个真正的单一真源。模板与产物的逐字节一致性
+
+    有测试守（CAS-015），所以一跑全量回归就红 —— 但这已经是
+
+    「改完后」才发现，不是「改的时候」被提醒。
+
+    EXP-20260915-B2（模板双源只改一处）的同族复发：
+
+    上次是 templates/ 两处来源，这次是 constitution 两份副本 + init 模板三处。
+
+    '
+  severity: medium
+  tags:
+  - process
+  - single-source-of-truth
+  - multi-copy
+  - template
+  - regression-guard
+  title: 多副本/多源文件改了 N-1 份：宪法两份副本加了第 7 节，但 init.py 内嵌生成模板（单一真源）没加 —— 新生成项目与仓库产物逐字节分叉
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-076
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-077
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-078
+  metrics:
+    last_seen: ''
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-079
+  metrics:
+    last_seen: ''
+    occurrence_count: 3
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-080
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-081
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-082
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-083
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-084
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-085
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-086
+  metrics:
+    last_seen: ''
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: testing
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-087
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: testing
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-088
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-089
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: process
+  type: failure_pattern
+- category: security
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-090
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: security
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-091
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: operations
+  cross_project_count: 1
+  description: 同步/镜像类钩子失败时 exit 0 且不上报告警 —— push 报成功，失败静默腐烂，直到有人偶然查看日志才发现
+  fix_template_refs:
+  - KG-092-FIX
+  id: KG-092
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: '钩子作者把「不能让 push 失败」当成了最高优先级：真值源已更新，若钩子非零退出会诱导使用者 --force 重推。于是失败只 echo
+    一行日志就 exit 0。问题是**没有任何东西在消费那行日志** —— 全机无监控脚本、无 cron、无告警通道。实测中该钩子真实失败过一次（权限问题），整整三小时无人知晓，只因为人恰好在盯。
+
+    '
+  severity: high
+  tags:
+  - operations
+  - hook
+  - silent-failure
+  - monitoring
+  - reliability
+  title: 同步/镜像类钩子失败时 exit 0 且不上报告警 —— push 报成功，失败静默腐烂，直到有人偶然查看日志才发现
+  type: failure_pattern
+- category: database
+  cross_project_count: 1
+  description: SCHEMA 里声明了 FOREIGN KEY，但连接从未开启 PRAGMA foreign_keys —— 约束形同虚设，脏数据静默写入
+  fix_template_refs:
+  - KG-093-FIX
+  id: KG-093
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: "SQLite 的 foreign_keys 是**连接级** pragma，默认 OFF，必须在每个连接上显式开启。\n  PRAGMA\
+    \ foreign_keys=ON 被写在 SCHEMA 常量里（作为建表脚本的一部分执行），\n  而建立连接的函数只设了 busy_timeout，没有设\
+    \ foreign_keys。\n  结果：建表时的那次执行确实开了，但**之后所有业务连接都没开** —— 声明与运行时行为不一致。\n  实测：向不存在的父记录插入子行返回\
+    \ 201，生成孤儿数据。\n"
+  severity: high
+  tags:
+  - database
+  - sqlite
+  - pragma
+  - foreign-key
+  - contract-vs-code
+  title: SCHEMA 里声明了 FOREIGN KEY，但连接从未开启 PRAGMA foreign_keys —— 约束形同虚设，脏数据静默写入
+  type: failure_pattern
+- category: database
+  cross_project_count: 1
+  description: 多列 INSERT 的列与占位符错位一格，两个字段的值互换 —— 测试全绿，因为断言只覆盖了其中少数几个字段
+  fix_template_refs:
+  - KG-094-FIX
+  id: KG-094
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: "列清单第 6 位是 ssh_fingerprint、第 7 位是 status，而 VALUES 第 6 个写的是字面量 online。\n\
+    \  净效果：ssh_fingerprint 列被写入字面量（真实值永久丢失），\n  status 列吃到了指纹串。由于插入后紧跟 ON CONFLICT\
+    \ DO UPDATE SET status=online，\n  **第二次注册时 status 会被兜回正常值**，于是问题变成「只在首次注册时出现」——\
+    \ 更难发现。\n"
+  severity: critical
+  tags:
+  - database
+  - sql
+  - column-misalignment
+  - testing
+  - blind-spot
+  title: 多列 INSERT 的列与占位符错位一格，两个字段的值互换 —— 测试全绿，因为断言只覆盖了其中少数几个字段
+  type: failure_pattern
+- category: testing
+  cross_project_count: 1
+  description: defense in depth 的第二层防线天然不可观测 —— 上层校验拦住后，底层的开关开没开，变异测试也测不出来
+  fix_template_refs:
+  - KG-095-FIX
+  id: KG-095
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: "为修一个数据完整性问题同时加了两道防线：底层开启数据库外键约束，\n  上层加显式存在性校验。\n  做变异测试时注入「去掉底层开关」这个缺陷，测试**仍然全绿**\
+    \ —— \n  因为上层校验先拦住了非法输入，底层根本没机会触发。\n  于是变异测试报告「该缺陷存活」，但真实情况是「该缺陷不可观测」，两者含义完全不同。\n"
+  severity: medium
+  tags:
+  - testing
+  - mutation-testing
+  - defense-in-depth
+  - observability
+  title: defense in depth 的第二层防线天然不可观测 —— 上层校验拦住后，底层的开关开没开，变异测试也测不出来
+  type: failure_pattern
+- category: design
+  cross_project_count: 1
+  description: 收紧权限时一刀切禁止，摧毁了数据形态完全相同、无法区分的既有合法工作流
+  fix_template_refs:
+  - KG-096-FIX
+  id: KG-096
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: "要防止「任何节点都能删除公共讨论」，第一版方案是禁止 ack 所有带任务 ID 的留言。\n  结果既有测试立刻转红：任务失败后的 blocker\
+    \ 求助流程就是\n  「自己发求助 -> 自己 ack 表示已处理」，\n  其数据形态（task_id 非空 + 收件人为空）与公共讨论**逐字节相同**，无法区分。\n\
+    \  禁止它等于摧毁该工作流。\n"
+  severity: medium
+  tags:
+  - design
+  - permissions
+  - backward-compatibility
+  - spec-consistency
+  title: 收紧权限时一刀切禁止，摧毁了数据形态完全相同、无法区分的既有合法工作流
+  type: failure_pattern
+- category: security
+  cross_project_count: 1
+  description: 流程框架把运行期凭据写在要入库的目录里，导致令牌随过程产物被推到公开仓库
+  fix_template_refs:
+  - KG-097-FIX
+  id: KG-097
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: "流程框架规定会话状态写在 change 目录下（便于追溯），而该目录属于 .fstdd/ **是要进版本库的**。\n  会话文件里含明文租约令牌。本轮该令牌被推到了**公开**仓库。\n\
+    \  缓解事实：该任务已完成、令牌已失效，且服务只监听回环地址，实际不可被利用。\n  但**下一次执行会把一个仍在有效期内的令牌推上去**，在租约窗口内可被冒用。\n"
+  severity: high
+  tags:
+  - security
+  - credential-leak
+  - gitignore
+  - process-artifact
+  title: 流程框架把运行期凭据写在要入库的目录里，导致令牌随过程产物被推到公开仓库
+  type: failure_pattern
+- category: design
+  cross_project_count: 1
+  description: 巡检/检测逻辑豁免「当前对象」（active/current exemption），导致单对象场景下检测恒零命中 —— 最常见的失效形态恰恰是它唯一管不了的那个
+  fix_template_refs:
+  - KG-098-FIX
+  id: KG-098
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: '`_show_zombie_changes(project_root, current_name)` 里有一行
+
+    `if d.name == current_name: continue` —— 本意是「你正在看的这个
+
+    change 不用提醒你它僵尸」，但 `fstdd status` 无参时解析到的就是活跃
+
+    change，于是**单 change 项目里唯一可能的僵尸被永久豁免**。
+
+    用户看到「无僵尸警告」会误以为健康，实际是检测根本没扫它。
+
+
+    豁免类逻辑的通病：豁免条件在「多对象场景」下看起来合理
+
+    （当前对象确实最不可能僵尸），但在「单对象场景」退化成全量豁免。
+
+    而项目里单对象场景是常态。
+
+    '
+  severity: high
+  tags:
+  - detection-gap
+  - exemption
+  - zombie
+  - mutation-testing
+  title: 巡检/检测逻辑豁免「当前对象」（active/current exemption），导致单对象场景下检测恒零命中 —— 最常见的失效形态恰恰是它唯一管不了的那个
+  type: failure_pattern
+- category: design
+  cross_project_count: 1
+  description: 检测/告警函数写完从未被调用（零调用方死代码）——「长期零命中」不是系统健康，是检测根本没通电
+  fix_template_refs:
+  - KG-099-FIX
+  id: KG-099
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: '`guard.py _check_phase_integrity_guard`（滞后/卡壳检测，50 行）全仓
+
+    **零调用方**。Build 完成 >24h 未进 DELIVER、Spec 完成 >24h 未进 Build
+
+    两类告警写了没人见过 —— 不是没发生，是函数没人调。
+
+    更隐蔽的是：它内部的吞异常点在审计时看起来像「运行中的检测的
+
+    失效模式」，实际是「死代码里的失效模式」，优先级判断都会被误导。
+
+
+    零命中的检测逻辑有两类死因：①被吞异常杀死（EXP-20260917-B3）；
+
+    ②从未接线（本条）。B3 的「可疑资产」清单如果只查运行痕迹，
+
+    查不到② —— 死代码没有运行痕迹。
+
+    '
+  severity: high
+  tags:
+  - dead-code
+  - detection
+  - wiring
+  - zero-caller
+  title: 检测/告警函数写完从未被调用（零调用方死代码）——「长期零命中」不是系统健康，是检测根本没通电
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: 审计表/白名单用 (文件, 语句内容) 做定位指纹，遇同文件重复语句（pass×N）互相顶替 —— 零漂移校验把 A 处的记录错配到
+    B 处，漂移检测本身失真
+  fix_template_refs:
+  - KG-100-FIX
+  id: KG-100
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: 'guard.py 有 6 个 `except Exception: pass`，指纹 (file, stmt) 全是
+
+    ("guard.py", "pass")。字典存储时后写的覆盖先写的，审计表里
+
+    116 行的记录被拿去和 532 行的实况比对，报出「漂移 416 行」的
+
+    荒谬结论。
+
+
+    根因是把「定位」外包给了不唯一的属性。行号会漂、语句内容会重，
+
+    两者单独都不足以定位；组合 + 同指纹序数才稳定：
+
+    **(file, stmt, handler, 同指纹出现序数)**，行号只做 ±5 容差校验。
+
+    '
+  severity: medium
+  tags:
+  - fingerprint
+  - audit-table
+  - whitelist
+  - drift-check
+  title: 审计表/白名单用 (文件, 语句内容) 做定位指纹，遇同文件重复语句（pass×N）互相顶替 —— 零漂移校验把 A 处的记录错配到 B 处，漂移检测本身失真
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-101
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-102
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-103
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-104
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-105
   metrics:
     last_seen: ''
     occurrence_count: 1
