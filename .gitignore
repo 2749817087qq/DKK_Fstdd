@@ -7,7 +7,12 @@
 
 # 经验导出产物：由 tools/share_experience.py 生成，属运行产物不入库
 # （源是 .fstdd/experiences/，回传目标是独立仓库 Fstdd-experiences）
-experiences/
+#
+# ⚠️ 2026-09-24 修正：原写法 `experiences/` 是**非锚定模式**，会把任意层级的 experiences/
+# 一并忽略 —— 包括作为「源」的 .fstdd/experiences/（实测 61 份只跟踪到 12 份），
+# 导致知识图谱 merge 的输入无法入库。改为锚定写法：只忽略根级产物 + 上游备份快照内的同名目录。
+/experiences/
+upstream/.fstdd/backup/*/.stdd/experiences/
 
 # 经验回传审计记录：append-only，属本机运行态（含本机路径），不入库
 .fstdd/share-audit.yaml
