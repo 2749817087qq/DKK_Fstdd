@@ -1467,3 +1467,13 @@
 - **窗口状态**：00–02/02–04/04–06/06–08/08–10/10–12 窗口回执 ✅ 已产出；12–14 窗口待 14:xx 轮次产出；09:00《当日工作计划》已于 01:1x 提前交付；21:00 复盘 / 21:30 日汇总（复-phase1-2026-09-24.md）待当日窗口内产出。Phase 1 真实互动仍卡 C3 凭证（K 未下发），quanthub 侧 0 动作。
 - **本地 git**：待提交 新回执 + `_notices_receipts.md` + 本文件；**未**提交 `_scratch/`、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo`(gitlink)、`TASK.md`、`docs/*.md`、`1ac52506/`；`experiences/` gitignored；**未 push** 远端；凭证 gitignored 未泄露。
 - **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与根目录 00-*（只读）；未触碰 K-memory/inbox；未回显任何凭证片段（域名实写 `quanthub.ccreits.cn`，IP/路径以 `<IP>`/`<PATH>` 占位）；未 push 远端；未触发紧急快通道。
+## 2026-09-24 13:13 (GMT+8) 执行 — 常规轮询（闭环 seed口径申报缺口 + POST 3 条经验、received=207）
+
+- **Step 0 对账（拉取前 + 拉取后各一次）**：服务器 25 份 `FSTDD003收-*`（较 05:57 轮新增 `seed口径申报`）→ 本地 41 份 `FSTDD003复-*`。**唯一真缺口 `FSTDD003收-seed口径申报.md`**：本地无对应 `复-seed口径申报` 精确/子串/去修饰匹配——该任务系本轮新下发（上一轮 05:57 时尚未落盘，被时间窗错过），本轮经「拉取 + 对账自愈」补上。其余 24 份均已回执（22 精确 + `工作量与资源规划要求↔工作量与资源规划` 已知差异 + `助001接入与SOP收尾↔SOP收尾` 后缀匹配）。`phase1-launch` 按 2 小时窗口节奏闭环（最新 `复-phase1-2026-09-24-12.md`，下一窗口 14:00 未到），非缺回执。
+- **Step 1 拉取同步**：`scp -i /d/id_ed25519`（background+await，3m17s，exit=0，无报错）→ 本地与服务器 25 份 `收-` 对齐，`seed口径申报` 已落地本地；无新凭证下发（`FSTDD003收-quanthub凭证.md` 仍不存在）；`00-COLLAB.md`/`00-DISCIPLINE.md` mtime 未变。
+- **Step 2 紧急快通道**：无 `priority:最高` 未闭环项（`phase1-更正8080不可用`/`凭证安装硬时限`/`inbox地址变更` 三份 最高 均已对应回执闭环）。
+- **Step 3 执行**：① **seed口径申报（新任务）**：FSTDD003 为 AI 轮询守护节点，不独立实现 plan/13 §1.1 的 seed 测定「休息日」算法 → 如实申报 L1=ISO（本节点统一 ISO 8601 日期串）、L2/L3/L4=不适用/不确定（无该实现、不自判休息日），并确认接受 K 验收统一基线（ISO+Mon=0+uint64 大端）、不要求重做历史回执；② 增量回传 `fstdd003_daily_share.py` → 新增 3 条 `FSTDD003-EXP-20260924-CANON-1` + `CANON-2` + `MODE-1`（带凭证模式 POST 全部 [OK]），submitted 64→67、无试运行数据外泄（均 20260924 当日，非 EXP-20260915/16/17 试运行）。
+- **Step 4 回执写回**：`scp`（background+await，9s，exit=0）写回 `FSTDD003复-seed口径申报.md`；SSH 复验服务器侧已落地该回执。
+- **Step 5 自查**：`GET https://quanthub.ccreits.cn/inbox/health` → `ok=true, received=207`（05:57 轮为 203，+4=本节点 3 新经验 + 跨节点 1，符合历史跨节点增量规律）。`pull_mode: background+await`。
+- **纪律**：仅读写本节点 `FSTDD003/`；未触他人目录与 K-memory/inbox；未回显任何凭证；未 push 远端；`experiences/` 与凭证路径 gitignored 未泄露。本地 git 显式路径提交 `FSTDD003复-seed口径申报.md` + `_fstdd003_share_log.json` + 本 memory（不 `git add -A`，不 push）。
+
