@@ -285,6 +285,38 @@ tags: [install, hardening, experience-upload, distributed]
       ④ **脚本自带四项量纲校验**（命中处数 / 文件行数 / 静态检查条数 / 与备份 diff 行数），
       任一不符就**停下来**；⑤ 改前 `cp` 到**仓库外**备份（本次靠它 30 秒内无损还原）。
       详见 `experiences/FSTDD003-EXP-20260923-SCRIPT-1.md`。
+- [ ] **P49 待修（🔴 高 · 阻断型假阳性 · 2026-09-24 · 工作台）**：`verify_workbuddy_skills.py` 的默认输出目录
+      写死在 `Path.home()/".workbuddy"/"skills"`，而 WorkBuddy 运行期实际加载的是
+      **`~/.workbuddy-ai/skills`** ⇒ 校验器查的是**另一个 skills 根**（本机那里躺着
+      2026-09-17 的旧副本 `fstdd-deliver/SKILL.md`，8460 B）⇒ 报 **4 项 FAIL**。
+      🔴 **危害是阻断型的**：`fstdd-deliver` skill 的收尾硬性规程写着「第 2 步输出 FAIL 时，
+      **禁止继续任何 DELIVER 相关操作**」—— 照章执行就会**无理由卡死交付**。
+      实测：只把 `FSTDD_OUT` 指向真实目录，同一脚本 **6/6 PASS、exit 0**。
+      修法：① `OUT` 默认改为 `~/.workbuddy-ai/skills`；② 两个目录都在时**两个都查**
+      并把「本次实际校验了哪个目录」打进输出；③ 打印的修复命令改用 `sys.executable`
+      （现在硬编码 `C:\Python311\python.exe`，本机不存在）。
+      🔴 关键性质：**校验器必须自报它查的是哪里** —— 否则「6 个 skill 全通过」这句话本身不可信。
+      详见 `experiences/FSTDD003-EXP-20260924-DELIVER-1.md`。
+- [ ] **P50 待修（中 · 恒不可用 + 文档错误归因 · 2026-09-24 · 工作台）**：`stdd structure delta/merge`
+      拼 `<root>/changes/<name>`，**漏了 `.fstdd/`**；而同一 CLI 的 `archive` 走
+      `find_change_dir()` + `.fstdd/` 前缀 ⇒ **同一 CLI 内两套路径基准** ⇒ FSTDD 布局下**恒 `not found`**。
+      🔴 且这**不是顺序问题**：`fstdd-deliver` Step 2.5 把症状归因成「Step 1 把目录移走了，
+      按字面顺序执行必然报错」，实测**归档之前跑照样报** —— **错误的根因解释比没有解释更贵**，
+      它把排查者锁在一个永远不会成功的动作上（调顺序）。
+      更深一层：该命令扫的是 **change 目录里的代码文件**，而 FSTDD 的 change 目录**只有 md/yaml**
+      （本 change 非 md/yaml 文件数 = 0，真代码在 `modules/`、`tests/`）⇒ **修对路径也只产出空清单**。
+      修法：要么全改走 `find_change_dir()` 并把扫描源改成 `git diff --name-only <base_gate1>..HEAD`；
+      要么把 Step 2.5 标为**已知不可用**并移除。🔴 无论选哪条，**先修 skill 里那句错误归因**。
+      详见 `experiences/FSTDD003-EXP-20260924-DELIVER-1.md`。
+- [ ] **P51 待修（中 · 顺序自相矛盾 · 2026-09-24 · 工作台）**：`canon verify <change>` 归档后**必失败** ——
+      `canon.py` 里 `generate` 走 `_get_canonical_dir()`（有 change 级→项目级兜底），
+      而 `verify` 直接拼 change 级路径、找不到就 `Error:` + exit 1。
+      ⇒ 白皮书给的 DELIVER 顺序 `archive → 合并 specs → 合并 canon YAML → canon verify → structure merge`
+      里，**`canon verify` 在自己的顺序里必然失败**（它要的 change 级 canonical 刚被 archive 搬走）。
+      本次规避：只在**归档前**跑（2/2 通过），归档后那次失败仅记录。
+      修法：`verify` 改用 `_get_canonical_dir()` 并明确打印「回退项目级」；
+      或把顺序改为 `合并 canon → canon verify → archive`。
+      详见 `experiences/FSTDD003-EXP-20260924-DELIVER-1.md`。
 - [x] **（已闭合）引擎副本与源漂移** —— 见「15. 第 15 轮」。
       原条目：「引擎副本与源会随时间漂移（`setup_engine.py` 每次比对 sha256 并告警，
       `TC_SC_034` 也守着）。**不改上游**是 D哥 定的范围，漂移只告警不自动同步。」
@@ -1012,3 +1044,65 @@ approve 分支无条件走 `_auto_generate_human_views()` + `_confirm_gate()`。
       ④ agent **CP-3**（起服务 + 真实 HTTP 只读冒烟）未跑，需 D哥 侧环境。
 - [ ] **（skill 归档）** `electron-renderer-web-mount` 已归档到
       `skills-archive/FSTDD003-electron-renderer-web-mount/`。
+
+## 18. 第 18 轮（2026-09-24 · 工作台 · 同一 change 的 Phase 4 DELIVER 收口）
+
+承接第 17 轮。D哥 确认 Gate 3（`--confirmed-by dialog --evidence "确认"`，**不带** `--dry-run`）后进 DELIVER。
+本轮**交付本身顺利完成**，但 DELIVER 这条链上又挖出 **3 条新缺陷（P49~P51）**。
+
+### 交付结果（全部实测）
+
+| 步骤 | 命令 | 结果 |
+|---|---|---|
+| 版本自检 | 读 `.fstdd/version.yaml` | ⚠ 文件不存在（P-FLOW-1 已知：`init` 不生成）→ 只告警不阻断 |
+| 双轨验证 | `canon verify <change>`（**归档前**） | ✅ 2/2 通过（DC-HASH + DC-FIELD） |
+| 归档 + 合并 human view | `archive <change> --yes` | ✅ 合并出 2 个 capability spec 到 `.fstdd/specs/`，`status: archived`，目录移入 `.fstdd/archive/` |
+| 合并 canonical（项目级） | `cp` 5 个文件到 `.fstdd/canonical/` | ✅ proposals 1 + specs/agent 1 + specs/code 2 + `.canon-index.yaml` |
+| 项目索引 | `index update` | ✅ `project-index.yaml updated: 1 changes, 2 capabilities` |
+| 知识图谱 | `knowledge merge` | ⚠ 社区图谱不可达 → **本地降级、exit 0**（设计正确，不阻断） |
+| 代码结构摘要 | `structure delta` / `structure merge` | ⏭ **跳过**（工具在 FSTDD 布局下不可用 → P50） |
+| 加固复验 | `verify_workbuddy_skills.py`（带 `FSTDD_OUT`） | ✅ 6/6 PASS / exit 0（不带则**假 FAIL** → P49） |
+
+### 🔴 本轮最有价值的发现
+
+**三条都是「门在、但走不通」，而且各自有一种不同的坏法：**
+
+| 编号 | 坏法 | 一句话 |
+|---|---|---|
+| **P49** | **阻断型假阳性** | 校验器查错目录 → 假 FAIL → 而 skill 明写「FAIL 时禁止继续 DELIVER」⇒ **照章执行就卡死交付** |
+| **P50** | **恒不可用 + 文档错误归因** | 路径基准漏 `.fstdd/`（与同 CLI 的 `archive` 两套基准）；且 **skill 把症状归因成「归档顺序」** ⇒ 调顺序永远修不好 |
+| **P51** | **顺序自相矛盾** | `canon verify` 归档后必失败，而白皮书给的顺序里它就在归档**之后** |
+
+**固化出的三条判据：**
+
+1. **校验器必须自报「它查的是哪里」** —— 否则「N 项全通过」这句话本身不可信。
+   本机有两个 skills 根（`~/.workbuddy/skills` 与 `~/.workbuddy-ai/skills`），
+   **都长得像真的**（前者还有 `_stdd_source.json` 和上百个别的 skill），光看文件系统分不出哪个是活的 ——
+   唯一可靠依据是**运行期加载回执**（`Skill` 工具返回的路径）。
+2. 🔴 **错误的根因解释比没有解释更贵。** skill 把 `structure delta` 的 `not found` 解释成
+   「归档把目录移走了」，而实测**归档前跑同样报**。照错误解释行动（调顺序）永远不会成功；
+   按真因行动（修路径）又会发现**修好也没用**（它的扫描源本身已过时）。
+   ⇒ **文档里写根因时，必须带上「怎么证伪它」的实验**。
+3. **「工具说 X」不等于「X 成立」**：同一轮里，
+   `structure delta` 说 not found（真的坏了）、`verify` 说 FAIL（假的）、
+   `knowledge merge` 说社区不可用（真，但已正确降级）。
+   **三者输出形态相似、可信度完全不同** ⇒ 每条都要独立验证一次。
+
+### 顺带暴露：一个遗留僵尸 change
+
+`stdd status` 在归档后自动切到 **`2026-09-20-workbench-local-pg`**（09-20 Gate 1 之后停摆，
+只剩 `proposal.md` + canonical proposal，`current_phase: understand` 但 `understand.status: completed`），
+`stdd validate` 因此报 2 个错误（缺 `design.md` / `test-plan.md`）—— **与本次交付无关**。
+⇒ 说明 `stdd validate`（不带 change 名）验的是「当前 active change」，
+**归档一个 change 之后必须重新确认它验的是谁**，否则会把别人的错误当成自己的。
+
+### 遗留项（本轮新增）
+
+- [ ] **P49 / P50 / P51 待修** —— 见顶层「5. 遗留项」。
+- [ ] **（工作台）僵尸 change `2026-09-20-workbench-local-pg` 待处置**：
+      要么恢复推进，要么 `stdd abort` 归档到 `aborted/`，要么明确留着。**未擅自处理**。
+- [ ] **（工作台）`.fstdd/config.d/experience.yaml` 的静默回传开关未动**：
+      本轮 **Step 2.8 经验回传已跳过**（未执行任何外发）。若确定永久关闭，
+      应设 `share.silent.enabled: false` 或环境变量 `FSTDD_NO_SHARE=1`。
+- [ ] **（工作台）本 change 的 git 提交 + 首个 tag 待 D哥 确认**（本仓库此前 0 个 tag）。
+
