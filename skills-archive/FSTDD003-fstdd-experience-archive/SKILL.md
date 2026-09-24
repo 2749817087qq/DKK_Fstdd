@@ -1,8 +1,8 @@
 ---
 name: fstdd-experience-archive
-description: "把 FSTDD 使用过程中发现的问题 / 新建或修改的 skill 归档到 D:\\FSTDD003（分布式任务根，task_id=FSTDD003）。当用户说「FSTDD 的问题记得保存」「归档到 FSTDD003」「经验回传」「FSTDD 报错要记录」，或你在用 fstdd 跑 UNDERSTAND/SPEC/BUILD/DELIVER 时踩到坑（CLI 报错、生成物对不上、change 落错目录、Gate 状态异常）时使用。含 FSTDD 本机定位、EXP 条目格式、目录命名、索引与 TASK.md 更新规则，以及 P1–P23 已知缺陷速查（含 Phase 4 归档必查四项、变异测试盲区、假依赖掩盖真路径）。"
+description: "把 FSTDD 使用过程中发现的问题 / 新建或修改的 skill 归档到 D:\\FSTDD003（分布式任务根，task_id=FSTDD003）。当用户说「FSTDD 的问题记得保存」「归档到 FSTDD003」「经验回传」「FSTDD 报错要记录」，或你在用 fstdd 跑 UNDERSTAND/SPEC/BUILD/DELIVER 时踩到坑（CLI 报错、生成物对不上、change 落错目录、Gate 状态异常、ci/diff 输出与真值不符）时使用。含 FSTDD 本机定位、EXP 条目格式、目录命名、索引与 TASK.md 更新规则，以及 P1–P53 已知缺陷速查（含 Phase 4 归档必查四项、变异测试盲区、假依赖掩盖真路径、SKIP≠PASS、TC-ID 字面串口径、DELIVER 阶段「校验器查错 skills 根假 FAIL / structure 恒不可用 / canon verify 顺序自相矛盾」、`canon generate` 的 `--dry-run` 不 dry 与 Human View 静默丢 constraints/non_goals、以及 Phase 1 收口必查的「`complexity_score`/`mode`/`score_confidence` 三字段无 CLI 写入端 ⇒ thorough 静默降级 + 与 `long_range.mode` 同名碰撞」）。"
 agent_created: true
-version: 1.0.0
+version: 1.4.0
 license: unknown
 ---
 
@@ -158,7 +158,7 @@ python tools/share_experience.py --export             # 只导出不回传
 
 ---
 
-## 五、已知缺陷速查（P1–P23，别重复踩）
+## 五、已知缺陷速查（P1–P53，别重复踩）
 
 | 编号 | 问题 | 严重度 |
 |---|---|---|
@@ -182,6 +182,15 @@ python tools/share_experience.py --export             # 只导出不回传
 | **P20** | **`archive` 的「Specs 已合并到 specs/」只合并 Human View**（`<ws>/.fstdd/specs/<cap>/spec.md`），**项目级 canonical 双轨未同步** —— `canonical/specs/{code,agent}/`、`canonical/proposals/`、`.canon-index.yaml` 全都不动，必须手工补三步。文案诚实但极易被误读成「已全部合并」 | 中 |
 | **P21**（流程侧） | **两类形同虚设的断言**：① 裸 `in file` 关键词断言会命中**注释/文档**而非代码；② 服务层常量被 worker 显式覆盖后，只测路由层 ⇒ 该字段**不可观测**，注入变异也不变红。17 次变异注入才抓出 2 条假绿 | 高 |
 | **P22**（流程侧） | **两类「假东西掩盖真路径」**：① 逐用例手塞假依赖（`session=object()`）⇒ 被测代码「不注入时自建依赖」那段**覆盖率恒为 0**，真机第一次真跑每篇抛 `'NoneType' object has no attribute 'get'`；② 造的假数据被**被测代码自己的归一化函数**改写（`link_key` 冒号截断 + 丢非 ASCII ⇒ 5 篇去重成 1 篇） | 高 |
+| **P45** | **`ci check-failures` 三项检查恒 SKIP**（检查器与脚手架/模板约定漂移）：`(b)` 找 `proposal.md` 的 `- capability:` 行而模板产出 `### New Capabilities` 粗体符号；`(j)` 找 `coverage.json` 而无人产出它；`(l)` 找**项目级** `.fstdd/canonical/proposals/<change>.yaml` 而 canon 放 **change 级** ⇒ 建库→交付之间恒 SKIP（先有鸡还是先有蛋）。🔴 **SKIP 与 PASS 在汇总里同权** ⇒ 可长期报「0 错误」而三类失败模式从未被检查 | **高** |
+| **P46** | **`ci` 的 `(d)` 把「TC-ID 唯一性」实现成「字符串出现次数 == 1」**（`ci.py:311-325`）⇒ test-plan 里正常的交叉引用（矩阵 / 建议顺序）被报成重复，实测 19 个全判 FAIL。规避：**交叉引用一律用案例号**，TC-ID 只在 `**ID**` 行写一次 | 中 |
+| **P47** | **`stdd diff` 两条解析口径**：① TC 引用按**连字符**找，而 Python 标识符不能含连字符（测试函数名只能下划线）⇒ 覆盖率**假 0%**；② 案例标题正则 `[\d.]+` **不收字母** ⇒ `案例 A.1` 全部解析不到、直接退出。另「测试函数」列归属算法会被类 docstring 的分组注释带偏。⚠ 实测 `ci` 与 `diff` 口径**一致**（都做字面子串搜索）⇒ 一次格式错配让两条独立质量信号**同时失效** | 中 |
+| **P48** | **一次性批量改写脚本「说成功但把文件改坏」**：`re.sub` 回调返回 `m.group(0)+后续上下文`，而 `re.sub` **只替换 `m.group(0)`** ⇒ 内容重复插入（实测 ruff 21→741、行数 1443→1621、pytest 收集失败），脚本仍打印「已改写 19 处」。🔴 判别信号是**数量级**。规避：优先「按行 split→改行→join」；回调永不写 `m.group(0)+…`；捕获组先 `print(repr())` 核对；**脚本自带四项量纲校验**；改前 `cp` 到仓库外备份 | **高** |
+| **P49** | **`verify_workbuddy_skills.py` 默认查错 skills 根 ⇒ 假 FAIL ⇒ 阻断交付**：默认 `OUT = ~/.workbuddy/skills`，而运行期实际加载 **`~/.workbuddy-ai/skills`**（两个目录都存在且都像真的）。而 `fstdd-deliver` 明写「第 2 步 FAIL 时**禁止继续任何 DELIVER 相关操作**」⇒ 照章执行就**无理由卡死交付**。实测：只加 `FSTDD_OUT=<真实目录>` 即 **6/6 PASS / exit 0**。修法：默认值改对 + 两个目录都查 + **把「本次校验了哪个目录」打进输出**；打印的修复命令改 `sys.executable`（现硬编码 `C:\Python311\python.exe`，本机不存在） | **高** |
+| **P50** | **`stdd structure delta/merge` 路径基准漏 `.fstdd/` ⇒ FSTDD 布局下恒 `not found`**：它拼 `<root>/changes/<name>`，而同 CLI 的 `archive` 走 `find_change_dir()` + `.fstdd/` 前缀 ⇒ **一个 CLI 两套基准**。🔴 **不是顺序问题**：`fstdd-deliver` Step 2.5 把它归因成「Step 1 把目录移走了」，实测**归档前跑同样报**。更深一层：它扫的是 **change 目录里的代码文件**，而 FSTDD 的 change 目录只有 md/yaml（真代码在 `modules/`、`tests/`）⇒ **修对路径也只产出空清单** | 中 |
+| **P51** | **`canon verify <change>` 归档后必失败**：`canon.py` 里 `generate` 用 `_get_canonical_dir()`（change 级→项目级兜底），`verify` 直接拼 change 级路径、找不到就 `Error:` + exit 1 ⇒ 白皮书给的 `archive → 合并 canon → canon verify → structure merge` 里，**`canon verify` 在自己的顺序里不可执行**。规避：**只在归档前跑**（2/2 通过） | 中 |
+| **P52** | **`stdd canon generate` 两处，丢的正是用户唯一审阅面**：① **`--dry-run` 不 dry** —— 真写了 `proposal.md` 且打印 `Generated …`（不是 `[dry-run] 将…`）；与 **P44** 同型（`--dry-run` 是父 parser 全局开关、handler 不读）。⚠ 对照 `stdd new --dry-run` **真的 dry** ⇒ 失效是**逐命令**的。② **Human View 静默丢三节** —— `canon.py:317` 注释写 "from template or direct mapping"，但函数是**硬编码拼字符串**，只覆盖 title/Why.problem/what_changes/capabilities/success_criteria ⇒ **`why.motivation` / `constraints` / `non_goals` 全丢**（实测丢 13 条），而 `templates/human-view/proposal-brief.md` 是**死代码**。🔴 **为什么一直没被发现**：`canon verify` 的 `DC-FIELD` 验的是**反方向**（「MD 引用的字段在 YAML 里存在」）⇒ **两个方向都绿灯，内容已少一半** | **高** |
+| **P53** | **`complexity_score` / `mode` / `score_confidence` 三个字段没有任何 CLI 写入端**：`new.py:59-62` 硬编码 `mode: "standard"` + 两个 `None`（注释写 `# set by Phase 1 Step 3.5`，**从未实现**），全 CLI `grep "complexity_score"` 只有 `new.py:61`/`batch.py:567` **都在写 `None`**，`grep -n "mode" gate.py` → **0 命中**（schema 声明 `mode.writers: [new, gate]` ⇒ **声明的写入端不存在**）；`fstdd-understand/SKILL.md:104` 只说「写入 `.fstdd.yaml`」**不给命令** ⇒ 只走 CLI 的执行者**不可能合规**。实测 Phase 1 走完 + Gate 1 已锁，仍 `null / null / standard` ⇒ **12 分 → thorough 静默丢失**；而 `fstdd-build/SKILL.md:95/:180` 真读 `mode` 决定质量门强度 ⇒ **大型变更按标准档执行**，无报错、`validate` 照样「通过」（`required: false` 永远拦不到）。🔴 **最阴一层**：`status.py:29-30` 读**同名不同义**的 `long_range.mode`（交互模式）而非顶层 `mode`（复杂度档位）⇒ 没有 CLI 界面能读回它，排查时极易改**错的那个键**。规避：手工补写三键，**且先读代码确认 `phase.py`/`gate.py` 是 `safe_load→原地改→dump`**（手改键才不会被抹掉） | **高** |
 | **P24**（流程侧） | **「先写实现后补测试」的变更事后补救 = 切片级 revert 重放**：摘掉该切片引入的实现 → 只跑它的 TC → 必须变红 → 按字节还原。实测 36/36 变红，并抓出三类变异/E2E 都抓不到的洞：① 兜底分支让断言恒真（`X if cond else <整个文件>`）；② `in src` 关键词断言（改名即失效，P21 再现）；③ 切片↔TC 映射是事后追认的（实测 3 条归错）。⚠ 补丁坑：改名目标串**不能保留原串作为子串**，否则补丁等于没打、重放给出假的绿 | 高 |
 | **P23**（流程侧） | **真机 E2E 不可替代，且与变异测试互补**：变异只能改「被执行到的代码」，测不到「根本没执行」和「只在真数据下才触发」的两类洞（实测 95 单测 + 17 变异全绿仍漏 3 个 bug）。另：真数据才暴露的两类口径偏差 —— 抽样取前 N 把全量估成 63 GB（索引按时间倒序，前排全是带图大篇；改等距抽样 → 2.2 GB）、「失败 1,264 篇」不带原因（两份索引根本不写 `dir`） | 高 |
 
@@ -242,6 +251,105 @@ python tools/share_experience.py --export             # 只导出不回传
   ④ 聚合里凡是「失败/跳过」计数，**必须能拆出原因分类**并给出下一步动作；
   ⑤ E2E 失败**先怀疑样本再怀疑产品**（本轮「失败 1 篇」排查两轮才发现是选中的号本身有 1 篇无 `dir`）；
   ⑥ E2E 脚本要**自己先筛合格样本**（按 `estimate()` 逐号筛，37 个号里只有 3 个合格）。
+
+### P45–P48 速记（Phase 3 质量验证必查：`ci` / `diff` 的输出要对着真值看）
+
+- 🔴 **SKIP ≠ PASS。** 看到 SKIP 先问「是**真的不需要**，还是**工具看不见**？」
+  两种情形在 `test-report.md` 里必须分开写，SKIP 的项一律**手工补做**并写出结论。
+  别只看汇总的「0 错误」—— 要看 **SKIP 数 / 检查项总数**。
+  ```bash
+  "$VENV_PY" "$CLI" ci check-failures <change>     # 数一下 ⏭ 跳过 有几项
+  ```
+- 🔴 **TC-ID 在 test-plan 里只写一次**（`**ID**` 行），交叉引用一律用**案例号**（`案例 1.7`）。
+  否则 `(d)` 报「重复 TC-ID」假 FAIL（P46）。
+- 🔴 **测试源码里必须出现「连字符」TC-ID** —— 在每条用例 docstring 首行写
+  `"""TC-CP-111 / SC-001：…"""`。函数名只能带下划线，两者都要有（P47）。
+- 🔴 **案例标题用数字编号**（`#### 案例 1.1 — …`），不要 `A.1` —— 正则 `[\d.]+` 不收字母（P47）。
+- 🔴 **`stdd diff` 的「测试函数」列不可信**（归属会被类 docstring 的分组注释带偏），
+  **只信最后那行覆盖率**。
+- 🔴 **机械改写脚本自带四项量纲校验**：命中处数 / 文件行数 / 静态检查条数 / 与备份 diff 行数。
+  任一不符**停下来**，别继续往下走。改前 `cp` 到**仓库外**备份（P48）。
+- 🔴 **变异体必须 `compile()` 自检**：语法错的变异体会「全红」，被误读成「守卫咬住了」
+  （与 `EXP-20260921-DRIFT-1` 同族）。
+- 🔴 **负结论（「没写」「没调用」「返回 None」）必须带归因锚点**：
+  补一条「证明这次执行确实走到了那个分支」的断言（计数器非空 / 状态机字段齐全），
+  否则它在实现整体坏掉时也会绿。
+- 🔴 **测试口径**：本机单进程全量 `pytest tests/ -q` 可能极慢（实测 832s，且会长时间停在某个百分比）
+  —— 用**逐文件**跑（每个 `timeout 200`），失败也能立刻定位到文件。
+
+### P49–P53 速记（Phase 4 DELIVER + Phase 1 收口必查：**每条工具输出都要独立验一次**）
+
+- 🔴 **加固校验必须带 `FSTDD_OUT`**，否则报假 FAIL 会**无理由阻断交付**：
+  ```bash
+  FSTDD_OUT="C:/Users/Administrator/.workbuddy-ai/skills" "$VENV_PY" \
+      "C:/Users/Administrator/.workbuddy-ai/FSTDD/tools/verify_workbuddy_skills.py"
+  ```
+  本机有两个 skills 根（`~/.workbuddy/skills` 与 `~/.workbuddy-ai/skills`），**都长得像真的**。
+  **唯一可靠依据是运行期加载回执**（`Skill` 工具返回的路径就是活的），别靠文件系统猜（P49）。
+- 🔴 **`structure delta` / `structure merge` 在 FSTDD 布局下直接跳过** —— 恒 `not found`（P50）。
+  **别再按 skill 的字面顺序去调**：那不是顺序问题，归档前跑也报。
+  跳过时要在 `test-report.md` / 交付摘要里写明「工具在 FSTDD 布局下不可用」。
+- 🔴 **`canon verify <change>` 只在归档前跑一次**（归档后必 `Error: … not found`，exit 1）。
+  归档前的 `2/2 通过` 才是有效结论（P51）。
+- 🔴 **归档后立刻重新确认 `stdd status` / `stdd validate` 验的是谁**：
+  它们默认取「当前 active change」，归档一个之后会**自动切到下一个**（本机因此把一个
+  遗留僵尸 change 的 2 个错误误报成本次交付的问题）。
+  ⇒ 归档后要**显式核对 change 名**，别把别人的错误当成自己的。
+- 🔴 **`archive` 只合并 human view**（`specs/`），**项目级 `canonical/` 要手工补 4 步**：
+  `proposals/` · `specs/agent/` · `specs/code/` · `.canon-index.yaml`（P20 同族，本机已成惯例）。
+- 🔴 **静默回传（Step 2.8）默认开着**：`.fstdd/config.d/experience.yaml` 里
+  `share.silent.enabled` 缺省 `true`，`FSTDD_NO_SHARE` 也未设 ⇒ 不主动跳过就会**真的外发**。
+  本机惯例：**跳过**，并在摘要里明写「回传已跳过」；要永久关就设
+  `share.silent.enabled: false` 或环境变量 `FSTDD_NO_SHARE=1`。
+- 🔴 **提交用显式路径**（本仓库/工作台都可能与自动化/并行会话共写）：
+  先 `git add --dry-run <显式路径…>` 复验清单，再 `git add`。别 `git add -A`。
+- 🔴 **`experiences/` 在 `D:\FSTDD003` 是刻意 gitignore 的** —— EXP 正文只留本地，
+  入库的是 `TASK.md`（顶层 P 条目 + 新一轮 `## N.` 小节）+ `docs/`。
+  提交 `experiences/` 会被拒（`hint: Use -f`），**别 `-f` 硬加**。
+- 🔴 **`canon generate --dry-run` 不 dry** —— 它会真写 `proposal.md`（P52）。
+  想「先预览不落盘」时**别再指望 `--dry-run`**；真要预览就用 Python 读 YAML 自己核键。
+- 🔴 **`proposal.md` 会丢 `why.motivation` / `constraints` / `non_goals` 三节**（P52）。
+  而 Gate 1 用户就是看 `proposal.md` ⇒ **起草完必须把这三节人工贴进 Gate 1 确认框**，
+  否则用户审不到约束与非目标。
+  ```bash
+  # 起草完自检：YAML 里非空的顶层节，MD 里是否都有
+  "$VENV_PY" -c "
+import yaml,pathlib
+c=pathlib.Path('.fstdd/changes/<change>')
+d=yaml.safe_load((c/'canonical/proposals/<change>.yaml').read_text(encoding='utf-8'))
+md=(c/'proposal.md').read_text(encoding='utf-8')
+for k in ('why','constraints','non_goals'):
+    if d.get(k): print(k, '有' if k in md or 'Constraints' in md else '⚠ MD 里缺失')
+"
+  ```
+- 🔴 **别信「双轨一致性通过」** —— `canon verify` 的 `DC-FIELD` 只查**正向**
+  （MD 引用的字段在 YAML 里存在）。**YAML 有、MD 没有**这个方向它**查不出来**（P52）。
+- 🔴 **Phase 1 动代码前先查名字**：同一个「手搓列表页」在仓库里可能有**两份**
+  （本机就有 `web/index.html` 的 `view-accounts` 与 `路口理财工作台/index.html` 的
+  `view-wxaccount`）。用 `git log -S "<名字>" -- <文件>` 证伪文档里的名字归属 ——
+  本机实测文档**串名了**，照文档猜会把删除方向搞反。
+- 🔴 **Gate 1 过了 ≠ Phase 1 的产物落盘了。** 每次过门后，**把该阶段该写的字段逐个对照
+  schema 查一遍**，别只看门的状态。门只管它自己那几个字段
+  （`baseline` / `phases.*.status` / `confirmed_*`），**门旁边那条线可能没人接**。
+- 🔴 **`complexity_score` / `mode` / `score_confidence` 三个字段没有 CLI 写入端**（P53）。
+  `fstdd-understand` 的 Step 3.6 只说「写入 `.fstdd.yaml`」**不给命令**，而 CLI 里**没有**对应
+  命令 ⇒ **必须手工补写这三个顶层键**，否则每开一个 change 就静默降级一次：
+  ```yaml
+  complexity_score: 12          # 0-17，实测算多少写多少
+  mode: thorough                # 0-3 lightweight / 4-7 standard / 8+ thorough
+  score_confidence: preliminary
+  ```
+- 🔴 **手改状态文件前，先确认写盘语义**：`phase.py` / `gate.py` 都是
+  `yaml.safe_load` → **原地改** → `yaml.dump` ⇒ 手改键**会被保留**；
+  若哪天改成从模板重建 dict，手改会被下一次 CLI 调用**静默抹掉**。
+  验法：手改后跑一次 `stdd phase advance`，断言三个键仍在。
+- 🔴 **`stdd status` 里的「执行模式」读的是另一个同名键**：`status.py:29-30` 取的是
+  **`long_range.mode`**（`normal`/`full_auto`，**交互模式**），**不是**顶层 **`mode`**
+  （复杂度档位）。⇒ **没有任何 CLI 界面能读回 `mode`**，排查时极易去改**错的那个键**（P53）。
+  复核档位只能 `cat .fstdd.yaml` 或读 YAML。
+- 🔴 **schema 里的 `writers: [...]` 是「应该有人写」，不是「已经有人写」。**
+  验写入端要 `grep` 到**实际赋值语句**为止；`required: false` 的字段
+  **不会有任何校验器替你发现问题**（`stdd validate` 照样「验证通过」）。
 
 ### P15 速记（Windows 本机跑 fstdd CLI 必踩）
 - 隔离 Python 二进制 `C:/Users/Administrator/.workbuddy-ai/binaries/python/versions/3.13.12/python.exe` 缺 `yaml`；`pyyaml` 装在 venv `C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe`。

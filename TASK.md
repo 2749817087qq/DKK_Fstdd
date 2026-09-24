@@ -336,6 +336,34 @@ tags: [install, hardening, experience-upload, distributed]
       ③ `canon verify` 增加**反向**检查 `DC-FIELD-REV`（YAML 非空字段须在 MD 有对应节）。
       本次规避：把 constraints / non_goals **人工贴进 Gate 1 确认框**。
       详见 `experiences/FSTDD003-EXP-20260924-CANON-1.md`。
+- [ ] **P53 待修（🔴 高 · 字段无人负责 + 静默降级 · 2026-09-24 · 工作台）**：
+      `complexity_score` / `mode` / `score_confidence` **三个字段没有任何 CLI 写入端**。
+      `new.py:59-62` 硬编码 `mode: "standard"` + `complexity_score: None` + `score_confidence: None`，
+      注释却写着 `# V2.9: set by Phase 1 Step 3.5`（**一个从未实现的承诺**）；
+      全 CLI `grep "complexity_score"` 只有 `new.py:61` 与 `batch.py:567` 两处、**都在写 `None`**。
+      `mode` 更明确：`schema-verify.md` 声明 `writers: [new, gate]`，而
+      `grep -n "mode" gate.py` → **0 命中** ⇒ **声明的写入端不存在**。
+      `fstdd-understand/SKILL.md:104` 只说「模式确认后写入 `.fstdd.yaml`」，**不给命令、不给键位置**
+      ⇒ 只走 CLI 的执行者在这一步**不可能合规**，只能静默跳过或凭空宣称已写。
+      实测：Phase 1 走完 + Gate 1 已锁，`.fstdd.yaml` 仍是 `null / null / standard`
+      ⇒ **12 分 → thorough 的判定静默丢失**；而 `fstdd-build/SKILL.md:95/:180` 真的读 `mode`
+      决定质量门强度（lightweight 跳过切片规划 / standard-thorough 走 test-plan 的 TC 转换）
+      ⇒ **大型变更被按标准档执行，无报错、无告警**，`stdd validate` 也照样「验证通过」
+      （schema 里 `required: false` ⇒ 永远拦不到）。
+      🔴 **最阴的一层：`stdd status` 里有个同名不同义的键** —— `status.py:29-30` 读的是
+      **`long_range.mode`**（`normal`/`full_auto`，**交互模式**），而不是顶层 **`mode`**
+      （`lightweight`/`standard`/`thorough`，**复杂度档位**）。两个轴共用一个名字
+      ⇒ 没有任何 CLI 界面能把 `mode` 读回来，排查时极易去改**错的那个键**。
+      本次规避：**手工补写三个顶层键**（`12` / `thorough` / `preliminary`），
+      并先读代码确认 `phase.py` / `gate.py` 都是 `safe_load → 原地改 → dump`
+      ⇒ **手改键不会被后续命令抹掉**（这是敢动手的前提，务必单独验）。
+      修法：① 给写入端（`gate approve --gate 1 --mode … --complexity-score … --score-confidence …`，
+      正好对上 schema 声明的 `mode.writers: [new, gate]`）；② skill 正文**给可复制的命令**
+      （无命令时明写「手工编辑这三个顶层键」+ YAML 片段）；③ Gate 1 时 `complexity_score is None`
+      **必须警告或阻断**（当前没有任何检查会碰到它）；④ 杀掉同名碰撞
+      （`long_range.mode` → `interaction_mode`，或顶层 `mode` → `quality_mode`），
+      并让 `stdd status` **两行都打**；⑤ 删掉 `new.py:61` 那句误导注释。
+      详见 `experiences/FSTDD003-EXP-20260924-MODE-1.md`。
 - [x] **（已闭合）引擎副本与源漂移** —— 见「15. 第 15 轮」。
       原条目：「引擎副本与源会随时间漂移（`setup_engine.py` 每次比对 sha256 并告警，
       `TC_SC_034` 也守着）。**不改上游**是 D哥 定的范围，漂移只告警不自动同步。」
@@ -1161,5 +1189,70 @@ approve 分支无条件走 `_auto_generate_human_views()` + `_confirm_gate()`。
 - **删除面要先证「没人引用」。** `grep -rn "sandao" app.py modules/*.py modules/*/*.py`
   （排除 `modules/sandao/` 自身）→ **0 命中**，`modules/sandao/` 只靠 `manifest.json` 自动挂载
   ⇒ 删除是干净的，可以在 proposal 里写成可验证的成功标准（`/sandao/` 与 `/api/_ipc*` 返回 404）。
+
+## 20. 第 20 轮（2026-09-24 · 工作台 · Gate 1 落地后复核，挖出 P53）
+
+**触发**：D哥 确认 Gate 1 后，按惯例**复核落盘状态**（`ls` change 目录 + `cat .fstdd.yaml` + `stdd status`），
+而不是直接宣布 Phase 1 完成。**这一轮的价值全部来自「多看一眼状态文件」这个动作。**
+
+### 本轮新缺陷：P53 —— 三个字段没有任何 CLI 写入端
+
+| 字段 | schema 声明的写入端 | 实际写入端 | Gate 1 后的实测值 |
+|---|---|---|---|
+| `mode` | `[new, gate]` | 只有 `new`（硬编码 `standard`） | `standard`（应为 `thorough`） |
+| `complexity_score` | `[understand]` | **无** | `null`（应为 `12`） |
+| `score_confidence` | — | **无** | `null`（应为 `preliminary`） |
+
+三条证据链：
+
+1. `new.py:59-62` 硬编码 `mode: "standard"` / `complexity_score: None` / `score_confidence: None`，
+   注释写着 `# V2.9: set by Phase 1 Step 3.5` —— **一个从未被实现的承诺**。
+2. 全 CLI `grep -rn "complexity_score"` → 只有 `new.py:61` 与 `batch.py:567`，**都在写 `None`**；
+   `grep -n "mode" gate.py` → **0 命中** ⇒ schema 声明的 `mode.writers: [new, gate]` 里那个 `gate` **不存在**。
+3. `fstdd-understand/SKILL.md:104`：「模式确认后写入 `.fstdd.yaml`（`mode`, `task_type`,
+   `complexity_score`, `score_confidence: preliminary`）」—— **没有命令、没有键位置、没有示例**。
+
+### 为什么这条比前几条更值得记
+
+- **它是「静默降级」而不是「静默丢内容」。** P52 丢的是审阅面（人一眼能看出少了节），
+  而 P53 丢的是**质量门档位** —— `fstdd-build/SKILL.md:95/:180` 真的读 `mode`：
+  `lightweight` 跳过切片规划、`standard/thorough` 才走 test-plan 的 TC 转换。
+  ⇒ 12 分的变更被按 `standard` 执行，**全程无报错、无告警**，而且
+  `stdd validate` 照样「验证通过」（schema 里 `required: false`，永远拦不到）。
+- **「要求做某件事但不给手段」的指令，实际产出是沉默的违规。**
+  只调 CLI 的执行者在这一步**不可能合规** —— 只能静默跳过，或凭空宣称已写。
+  这与 P24 系列同源：**没走 RED 的变更事后无法补**，因为没有任何东西记录过「本该走 RED」。
+- 🔴 **同名不同义的键是排查陷阱。** `status.py:29-30` 读的是 **`long_range.mode`**
+  （`normal`/`full_auto`，**交互模式**），不是顶层 **`mode`**（复杂度档位）。
+  `stdd status` 因此**永远看不到**复杂度档位；排查者看到「执行模式：普通交互模式（默认）」
+  会以为是模式没设，然后去改**错的那个键**，问题照旧。
+
+### 本次处理
+
+1. 手工补写三个顶层键：`complexity_score: 12` / `mode: thorough` / `score_confidence: preliminary`。
+2. 🔴 **动手前先读代码确认手改是安全的**：`phase.py:70/:98/:178/:196` 与 `gate.py:38/:86/:113`
+   都是 `yaml.safe_load` → 原地改 → `yaml.dump`，**不是从模板重建 dict**
+   ⇒ 手加/手改的键会被保留。**这一步是敢动手的前提，不能省。**
+3. 复核：`stdd validate 2026-09-24-native-wx-ui` → **验证通过**。
+
+### 本轮方法侧收获（可复用）
+
+- **「Gate 过了」不等于「Phase 1 的产物落盘了」。** 门只管它自己那几个字段
+  （`baseline` / `phases.*.status` / `confirmed_*`），**门旁边那条线可能没人接**。
+  ⇒ **每次过门后，把该阶段该写的字段逐个对照 schema 查一遍**，而不是只看门的状态。
+- **schema 里 `writers: [...]` 是「应该有人写」，不是「已经有人写」。**
+  验写入端要 `grep` 到**实际赋值语句**为止；`required: false` 的字段
+  **不会有任何校验器替你发现问题**。
+- **手改状态文件前，先确认写盘语义是 `load→改→dump` 还是 `重建 dict`。**
+  前者手改安全，后者手改会被下一次 CLI 调用静默抹掉。
+- **同名键要当成红旗。** 发现两个不同语义的字段共用一个名字时，
+  先假设「读它的地方读错了」，再去找第二个键。
+
+### 本轮结论
+
+- P53 已记录并归档，本次 change 已按正确档位（`thorough`）落盘。
+- ⚠ **留给后续 change 的硬约束**：新 change 在 Phase 1 结束时
+  **必须手工补写这三个键**，直到 P53 修掉为止（否则每开一个 change 就静默降级一次）。
+
 
 
