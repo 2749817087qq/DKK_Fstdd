@@ -262,8 +262,12 @@ AND: <附加结果>      →   额外的 Assert
 3. 写入 `test-plan.md`
 4. 确认 Gate 2（`stdd gate approve <change> --gate 2 --confirmed-by dialog --evidence "用户确认原文"`）— Gate 自动从 spec YAML 生成各 `spec.md` Human View
    - **V3.0.5 硬防线：AI 不得静默自跑 approve；必须先把确认框展示给用户、等用户明确确认后，再带 `--confirmed-by dialog --evidence <用户确认原文>` 执行；不得伪造 evidence。**
-   - 若 Gate 2 自动生成未生效，手动执行 `stdd canon generate --all` 补齐
+   - 🔴 **若 Gate 2 自动生成未生效，禁止用 `stdd canon generate --all` 兜底**（P54 实测：它扫的是**项目级** `.fstdd/canonical/`，会把**已归档** change 复活到 `.fstdd/changes/<已归档名>/`，并用**旧快照**产出比归档更差的 Human View、抹掉手工补注；`--type spec` 是空操作，仍只写 `proposal.md`）。
+     正确做法：先查 `.fstdd.yaml` 的 `phases.spec` 与 `canonical/specs/code/*.yaml` 是否就位（YAML 里 `meta.capability` 含 `TODO` 的 scaffold 会被有意跳过），再用 `stdd status`（或 `stdd phase status`）核对。⚠ **本版本没有 `stdd gate status` 子命令**（`stdd gate` 只有 `approve` 与 `amend-audit`）；确需人工排查时**只用** `canon generate <change>`（不带 `--all`、不带 `--type`，且它只生成 `proposal.md`、不生成 spec）。详见 `D:\FSTDD003\experiences\FSTDD003-EXP-20260924-CANON-2.md`。
 5. 更新 `.fstdd.yaml`（phase: spec → completed, confirmed_at 时间戳）
+   - ✅ **第 4 步的 `gate approve --gate 2` 已经做完了这件事**：它写入 `phases.spec.status: completed` 与 `confirmed_at`/`confirmed_by`/`confirmed_evidence`。**正常流程下本步无需再做任何事**，只需核对。
+   - 🔴 **绝对不要用 `stdd phase advance` 去「更新 phase」**（P55 实测：它会把**已过门阶段**的 `status` 从 `completed` **静默降回** `in_progress` —— 门禁字段被无声撤销，而 `confirmed_*` 三字段原样保留 ⇒ 只 grep `confirmed` 查不出来；`guard.py:415` / `batch.py:539` / `archive.py:29` 都读这个字段）。`gate approve` **不写** `current_phase`，所以过门后 `current_phase` 会停在上一阶段 —— **这是已知现象，不是错误**。
+   - 🔴 **若确需 `current_phase` 正确，唯一正确的顺序是：先 `stdd phase advance <change> <phase>`，再 `stdd gate approve --gate N`**（反过来就丢状态）。若已经搞反了，手工把该阶段 `status` 改回 `completed`，并**同时**核对 `current_phase` 与 `phases.<x>.status` 两个字段都对。详见 `D:\FSTDD003\experiences\FSTDD003-EXP-20260924-PHASE-1.md`。
 6. **V2.9: 生成 Phase Context**：写入 `phase-context.md`，包含本 Phase 的关键决策、用户关注点、产出物清单
 
 ### Step 8: 【强制】执行模式选择（Gate 2 之后）

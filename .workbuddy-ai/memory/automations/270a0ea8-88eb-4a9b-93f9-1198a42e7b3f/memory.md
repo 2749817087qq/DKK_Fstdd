@@ -42,6 +42,13 @@
 - **git**：显式路径提交 memory 日志（2026-09-22.md）+ 本自动化记忆；未 push。
 - **偏离任务书**：未用 `git add -A`。
 
+### 2026-09-25 00:10 运行（收纳对象 2026-09-24）— 第 6 轮
+- **skill**：**刷新 1 个** `artifacts/skills/FSTDD003-fstdd-spec/SKILL.md`（源 20347B @ 09-24 13:25，副本 18345B @ 09-17 已 7 天未刷新；`diff -rq` 刷新后 IDENTICAL）/ 跳过 16 个（源 mtime 最新 09-23，09-24 无变更）。
+  - **附带检查**：`fstdd-experience-archive/SKILL.md` 源 mtime 09-24 12:27 但副本已 09-24 12:28 双向一致（36922B IDENTICAL），已被前轮或人工操作刷新过，本轮不重复刷。
+- **经验文档**：0 新增 —— 09-24 的 5 条 EXP（CANON-1 / CANON-2 / DELIVER-1 / MODE-1 / PHASE-1）均由「工作台」change `2026-09-24-native-wx-ui` 当日 09:37–13:24 落盘、README 索引已同步；均为 FSTDD 特有 CLI 缺陷（`stdd canon generate` 双轨漂移 / `phase advance` 静默降级 / MODE 三字段无 CLI 写入端 / DELIVER 门走不通），符合 EXP 判据，无未捕获坑点。本节点 09-24 其余事件（quanthub 凭证下发 / 写动作授权 / K 催办闭环）属本节点运营事务而非 FSTDD 工具缺陷，仅入当日记忆，不单开 EXP。
+- **git**：显式路径提交 3 个文件（skill 副本 + memory/2026-09-24.md + 本自动化记忆），未用 `git add -A`（会连带暂存 `_scratch/` 25MB 基线、`TASK.md` 当日无关修改、`.fstdd/_notices/` 守护轮次产物、`docs/*.md` 人手工报告）。remote 数=0 未 push。
+- **偏离任务书**：未用 `git add -A`（同前 5 轮）。
+
 ## 下次运行须知（固化判据）
 1. **skill 判据 = mtime 比较**，不是「目录存在即跳过」：
    `if [ -d "$DST" ] && [ "$SRC" -nt "$DST" ]; then cp -r "$SRC/." "$DST/"; fi` → 再 `diff -r` 校验。
