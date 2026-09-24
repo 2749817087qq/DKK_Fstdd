@@ -1,4 +1,708 @@
 edges: []
 graph_version: '1.0'
-last_merged: '2026-09-23T13:18:39+00:00'
-nodes: []
+last_merged: '2026-09-24T05:27:07+00:00'
+nodes:
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-001
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-002
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: pipeline_break
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-003
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: pipeline_break
+  type: failure_pattern
+- category: tool_misuse
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-004
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tool_misuse
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-005
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-006
+  metrics:
+    last_seen: ''
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-007
+  metrics:
+    last_seen: ''
+    occurrence_count: 3
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: quality
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-008
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: quality
+  type: failure_pattern
+- category: quality
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-009
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: quality
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-010
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: process
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-011
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-012
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process
+  type: failure_pattern
+- category: quality
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-013
+  metrics:
+    last_seen: ''
+    occurrence_count: 3
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: quality
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-014
+  metrics:
+    last_seen: ''
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: process
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-015
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-016
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-017
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-018
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-019
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-020
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-021
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: runtime
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-022
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: runtime
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-023
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-024
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-025
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-026
+  metrics:
+    last_seen: ''
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-027
+  metrics:
+    last_seen: ''
+    occurrence_count: 3
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-028
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-029
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-030
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-031
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-032
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-033
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-034
+  metrics:
+    last_seen: ''
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: testing
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-035
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: testing
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-036
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-037
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: process
+  type: failure_pattern
+- category: security
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-038
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: security
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-039
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: low
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-040
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-041
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-042
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-043
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern
+- category: process_deviation
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-044
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process_deviation
+  type: failure_pattern

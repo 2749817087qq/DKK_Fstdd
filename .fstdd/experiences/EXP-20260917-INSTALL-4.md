@@ -13,6 +13,7 @@ occurrences: 1
 title: install.sh 注释与 Python 默认值不一致，且未 export 导致装到错误目录
 exported_at: 2026-09-18
 sanitized: true
+lifecycle_state: deposited
 ---
 ## 现象
 

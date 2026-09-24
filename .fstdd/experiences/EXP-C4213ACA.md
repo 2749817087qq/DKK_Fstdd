@@ -14,6 +14,7 @@ source_change: 2026-09-15-skill-engineering-standards
 title: 6.1 统计口径争议（数据修正）
 exported_at: 2026-09-19
 sanitized: true
+lifecycle_state: deposited
 ---
 ### 6.1 统计口径争议（数据修正）
 

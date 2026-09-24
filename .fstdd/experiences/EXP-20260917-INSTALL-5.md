@@ -13,6 +13,7 @@ occurrences: 2
 title: 上轮 4 项 install.sh 修复均未合入上游 + for/shift 参数解析失效根因
 exported_at: 2026-09-18
 sanitized: true
+lifecycle_state: deposited
 ---
 ## 现象
 

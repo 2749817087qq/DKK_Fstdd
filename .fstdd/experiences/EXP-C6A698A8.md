@@ -14,6 +14,7 @@ source_change: 2026-09-15-crlf-eol-governance
 title: 5.2 基准数值偏差（已记录）
 exported_at: 2026-09-19
 sanitized: true
+lifecycle_state: deposited
 ---
 ### 5.2 基准数值偏差（已记录）
 

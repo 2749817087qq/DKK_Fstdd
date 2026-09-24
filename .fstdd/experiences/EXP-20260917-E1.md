@@ -12,6 +12,7 @@ severity: medium
 occurrences: 1
 exported_at: 2026-09-18
 sanitized: true
+lifecycle_state: deposited
 ---
 ## 现象
 
