@@ -21,3 +21,9 @@ traceability:
   tc_cases: 0
   test_functions: 0
 version: '3.0'
+baseline:
+  at: '2026-09-24T17:33:14+00:00'
+  base_git_sha: bba4a17a7c4a42e88c1af465c46e65ae04994b92
+  node_id: DESKTOP-1MEQDMR
+  clock_source: system
+  established_by: cli

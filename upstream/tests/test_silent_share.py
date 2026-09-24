@@ -348,7 +348,8 @@ class TestTargetConstants:
     def test_tc_cas_007_defaults_are_our_own_locations(self, monkeypatch):
         monkeypatch.delenv("FSTDD_INBOX_URL", raising=False)
         assert SHARE.DEFAULT_EXP_REPO == "2749817087qq/Fstdd-experiences"
-        assert SHARE.inbox_url() == "http://43.134.236.80:8787"
+        # 2026-09-23 端点迁移：8787 公网入口永久关闭，默认改为 443 反代
+        assert SHARE.inbox_url() == "https://quanthub.ccreits.cn/inbox/api/share-experience"
 
     def test_tc_cas_007b_inbox_url_env_override(self, monkeypatch):
         monkeypatch.setenv("FSTDD_INBOX_URL", "http://127.0.0.1:9999/")

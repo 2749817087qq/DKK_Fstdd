@@ -293,8 +293,14 @@ def inbox_url() -> str:
     思路对齐上游 STDD 的 _share_via_api，但服务器是我们自己的，
     数据不外发给第三方；提交进「待审核池」，由维护者审核后同步进仓库。
     可用 FSTDD_INBOX_URL 覆盖（自建实例）。
+
+    端点迁移（2026-09-23）：`http://43.134.236.80:8787` 的公网入口已永久关闭，
+    改为经 443 反代的 `https://quanthub.ccreits.cn/inbox/api/share-experience`。
+    切勿再直连 8787（公网不可达）。
     """
-    return os.environ.get("FSTDD_INBOX_URL", "http://43.134.236.80:8787").rstrip("/")
+    return os.environ.get(
+        "FSTDD_INBOX_URL", "https://quanthub.ccreits.cn/inbox/api/share-experience"
+    ).rstrip("/")
 
 
 # 批量提交参数（可用环境变量覆盖）

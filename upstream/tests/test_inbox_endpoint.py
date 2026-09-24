@@ -744,4 +744,5 @@ class TestCClient:
         assert SHARE.inbox_url() == "http://127.0.0.1:9999"
 
         monkeypatch.delenv("FSTDD_INBOX_URL", raising=False)
-        assert SHARE.inbox_url() == "http://43.134.236.80:8787"
+        # 2026-09-23 端点迁移：8787 公网入口永久关闭，默认改为 443 反代
+        assert SHARE.inbox_url() == "https://quanthub.ccreits.cn/inbox/api/share-experience"
