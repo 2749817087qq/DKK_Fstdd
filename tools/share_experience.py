@@ -525,7 +525,13 @@ def publish_via_inbox(out_dir: Path, url: str) -> tuple[bool, str]:
     if not files:
         return False, "没有可提交的经验文件"
 
-    endpoint = url.rstrip("/") + "/api/share-experience"
+    # 幂等拼接（2026-09-25 审计修复）：inbox_url() 的约定是返回**完整 endpoint**
+    # （含 /api/share-experience，见 upstream test_inbox_endpoint.py:748 的断言），
+    # 但历史实现按旧 8787 base 语义又拼了一次路径，导致 quanthub 端点双重拼接 → 404。
+    # 现兼容两种形态：base（如 https://host/inbox）或完整 endpoint 均可。
+    base = url.rstrip("/")
+    endpoint = (base if base.endswith("/api/share-experience")
+                else base + "/api/share-experience")
     chunks = _chunk_experiences(files, INBOX_BATCH_ITEMS, INBOX_BATCH_BYTES)
     print("      分批提交：%d 条 -> %d 批（每批 <= %d 条 / <= %d KB）"
           % (len(files), len(chunks), INBOX_BATCH_ITEMS, INBOX_BATCH_BYTES // 1024))
