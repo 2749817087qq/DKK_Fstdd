@@ -303,6 +303,26 @@ def inbox_url() -> str:
     ).rstrip("/")
 
 
+def inbox_token() -> str:
+    """回传凭证（2026-09-25 项②）：环境变量 > 约定文件。
+
+    服务端 fstdd-inbox-server 校验 `Authorization: Bearer <token>`（恒定时间比较）；
+    token 由服务端 tokens.json 按节点铸发（仅存 sha256），历史 P0 教训：
+    明文落盘到 0644 位置会导致全量吊销——本函数只读 env 与 0600 约定文件，
+    绝不打印、绝不写入任何日志或审计。
+    """
+    v = os.environ.get("FSTDD_INBOX_TOKEN", "").strip()
+    if v:
+        return v
+    cand = REPO_ROOT.parent / ".fstdd-inbox-token"
+    try:
+        if cand.exists():
+            return cand.read_text(encoding="utf-8").strip()
+    except OSError:  # noqa: BLE001
+        pass
+    return ""
+
+
 # 批量提交参数（可用环境变量覆盖）
 INBOX_BATCH_ITEMS = int(os.environ.get("FSTDD_INBOX_BATCH_ITEMS", "20"))
 INBOX_BATCH_BYTES = int(os.environ.get("FSTDD_INBOX_BATCH_BYTES", str(1024 * 1024)))
@@ -469,6 +489,12 @@ def _post_experiences(endpoint: str, body: bytes,
         req = urllib.request.Request(endpoint, data=body, method="POST")
         req.add_header("Content-Type", "application/json")
         req.add_header("User-Agent", "fstdd-share-experience")
+        # 2026-09-25 项②：服务端（fstdd-inbox-server）已启用节点级鉴权——
+        # 401=未知/未携带，403=已吊销。token 由服务端 tokens.json 按节点铸发
+        # （sha256 存档，明文只交付节点），本工具只负责携带、不铸造。
+        tok = inbox_token()
+        if tok:
+            req.add_header("Authorization", "Bearer " + tok)
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
                 return True, json.loads(r.read().decode("utf-8") or "{}"), retried

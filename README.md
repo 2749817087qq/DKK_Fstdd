@@ -388,3 +388,31 @@ python tools/share_experience.py --export
 | `wb-finance-skill`（WorkBuddy 内置） | 仅协作引用其取数规范，不含其内容 |
 
 > 对外分发前请务必阅读 [`NOTICE.md`](./NOTICE.md)，其中列明了每一项第三方权利的来源与处理依据。
+
+---
+
+## 11. 版本与文档（**文档导航**）
+
+### 版本历史
+**当前版本：`3.0.6`** ｜ 完整更新日志见 **[`CHANGELOG.md`](./CHANGELOG.md)**
+
+| 版本 | 日期 | 主题（一句话） | 值不值得升 |
+|---|---|---|---|
+| **3.0.6** | 2026-09-21 | **让"失败不再静默"** —— 11 项检测静默修复 + 审计哨兵 + 变异测试锚定 | ✅ 建议升（检测可信度提升） |
+| 1.1.0 | 2026-09-18 | 时间基线（UTC 统一 / 跨平台哈希 / 时钟巡检） | ✅ 跨平台协作者必升 |
+| 1.0.0 | 2026-09-15 | 首个版本（更名 FSTDD + 规范归并） | — |
+
+### 文档导航
+| 想了解 | 看哪 |
+|---|---|
+| **新功能 / 版本变更** | [`CHANGELOG.md`](./CHANGELOG.md) |
+| 安装与快速开始 | 本文 §4 / §5 |
+| 分布式协作（多机/多 agent） | [`docs/DISTRIBUTED_ACCESS.md`](./docs/DISTRIBUTED_ACCESS.md) |
+| WorkBuddy 安装注意事项 | [`docs/WORKBUDDY_INSTALL_NOTES.md`](./docs/WORKBUDDY_INSTALL_NOTES.md) |
+| skill 发布检查 | [`docs/SKILL_RELEASE_CHECKLIST.md`](./docs/SKILL_RELEASE_CHECKLIST.md) |
+| **协作规程（内部规矩）** | [`.fstdd/standards/`](./.fstdd/standards/) —— 升级同步 / 节点接入 / 编号取号 / 交付物入库 / **发布与文档** |
+| 节点交付的报告 | [`docs/`](./docs/)（协议差距评估 / macOS 兼容报告 / 日志治理） |
+| 面向 agent 的接入说明 | [`AGENTS.md`](./AGENTS.md) / [`FSTDD.md`](./FSTDD.md) |
+
+> **发布规矩**：见 [`.fstdd/standards/release-and-docs.md`](./.fstdd/standards/release-and-docs.md) ——
+> 每个版本必须同时更新 `CHANGELOG.md` + 发 GitHub Release，**缺一不得打 tag**。
