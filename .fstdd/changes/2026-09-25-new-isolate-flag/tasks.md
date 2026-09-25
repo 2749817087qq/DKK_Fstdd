@@ -159,26 +159,80 @@ Windows 原生 git **不认** ⇒ `GIT_CEILING_DIRECTORIES=/tmp` **静默失效*
 **失败模式检查（已核）**：branch 失败路径同样 `sys.exit(1)` 且不留骨架；
 `target_root` 在 branch 分支下**不被改写**，落点语义与 none 一致。
 
-## 5. 门禁随 worktree 生效（P1，裁定 ISO-1）
+## 5. 门禁随 worktree 生效（P1，裁定 ISO-1）✅ 已完成 — commit `e89c0ab`
 
-- [ ] 5.1 新增 `_propagate_guard_hooks(project_root, worktree_path) -> bool`：复制 `.claude/settings.local.json` / `.codebuddy/settings.local.json`（**文件级整份拷贝，不解析结构**）
-- [ ] 5.2 源文件均不存在时输出明确告警（不得静默通过），且不改变 exit code
-- [ ] 5.3 RED：TC-ISO-019（worktree 内存在同名文件且内容一致）
-- [ ] 5.4 RED：TC-ISO-020（无源文件 ⇒ stdout 含告警、exit 仍 0）
+- [x] 5.1 新增 `_propagate_guard_hooks(project_root, worktree_path) -> bool`：复制 `.claude/settings.local.json` / `.codebuddy/settings.local.json`（**文件级整份拷贝，不解析结构**）
+- [x] 5.2 源文件均不存在时输出明确告警（不得静默通过），且不改变 exit code
+- [x] 5.3 RED：TC-ISO-019（worktree 内存在同名文件且内容一致）
+- [x] 5.4 RED：TC-ISO-020（无源文件 ⇒ stdout 含告警、exit 仍 0）
+- [x] 5.5 GREEN ⇒ **54 passed / 0 failed / 41.40s**（isolate 29 + 既有 25）
 
-**失败模式检查**：这是「隔离不得变成绕过门禁的通道」的唯一保障，必须留证（见 Slice 8 的 agent_spec）。
+**缺口根因（本片实测，即 ISO-1 的实证）**：
+| 探针 | 结果 |
+|---|---|
+| `ls .claude/`（stdd-repo） | `settings.local.json` 存在，1088 B |
+| `ls .codebuddy/`（stdd-repo） | **不存在** |
+| `git ls-files .claude .codebuddy` | **空**（两者均未被跟踪） |
+| 未跟踪文件能否随 `git worktree add` 签出 | **不能** |
 
-## 6. 提示行 + init 配置写入（P1）
+⇒ 新 worktree 里**没有任何门禁**。若不做传播，`--isolate worktree` 就是一个
+**绕过 Guard 的官方通道** —— 比不提供隔离更危险。
 
-- [ ] 6.1 `cmd_new` 收尾输出一行隔离提示（当前形态 + 如需隔离的完整命令），**零交互**
-- [ ] 6.2 新增 `_post_init_isolation(project_root)`：读 `project.yaml` → `setdefault` 补 `isolation` 块（`default`/`worktree_root`/`branch_prefix`）→ 写回；**不覆盖任何既有取值**
-- [ ] 6.3 挂到 `cmd_init` 的 `_post_init_*` 序列之后
-- [ ] 6.4 RED：TC-ISO-011（提示行随形态变化）
-- [ ] 6.5 RED：TC-ISO-012（monkeypatch `input` 抛异常，全程不触发）
-- [ ] 6.6 RED：TC-ISO-013（init 后 `project.yaml` 含 `isolation` 三键）
-- [ ] 6.7 RED：TC-ISO-014（既有 `isolation.default: branch` 与用户键 `project.name` 均保留；连续 init 幂等）
+**设计取舍（本片记录）**：采用**文件级整份拷贝**，不解析 JSON 结构。
+理由：这两个文件是宿主（Claude Code / CodeBuddy）的私有格式，解析会让 FSTDD 与
+宿主版本耦合；整份拷贝语义最直白，宿主日后增删字段也自动跟随。
+单文件复制失败**不中断**（另一宿主可能仍可成功），逐个打印告警。
 
-**失败模式检查**：写回不得用 `yaml.dump` 整体重写丢掉用户注释/顺序——需评估「定向文本插入」与「safe_load+setdefault+dump」两种写法的取舍，并在片内记录选择理由。
+**端到端验证（真 CLI + 真 git + stdd-repo 的*真实* hook 配置）**：`tmp/e2e_guard_hook_probe.sh`
+1. 主仓放真实 `settings.local.json`（1088 B，未跟踪，`git status` 显示 `?? .claude/`）
+   ⇒ `new --isolate worktree` 后 worktree 内该文件存在、**逐字节一致**、含 guard 命令。
+2. 无 hook 项目 ⇒ 输出 `⚠️ 未发现门禁 hook 注册文件…该 worktree 内 Guard 门禁**不会生效**`，
+   **rc 仍为 0**，change 正常建成（降级而非失败）。
+
+**失败模式检查（已核）**：传播动作紧跟 worktree 创建之后，无中间失败窗口；
+告警文案明确写出「门禁不会生效」，非静默通过；exit code 不受影响。
+
+## 6. 提示行 + init 配置写入（P1）✅ 已完成 — commit `40075e9`
+
+- [x] 6.1 `cmd_new` 收尾输出一行隔离提示（当前形态 + 如需隔离的完整命令），**零交互**
+      —— 已于 Slice 1 前移落地（`_print_isolation_hint`），本片补测试锚定
+- [x] 6.2 新增 `_post_init_isolation(project_root)`：读 `project.yaml` → 补 `isolation` 块（`default`/`worktree_root`/`branch_prefix`）→ 写回；**不覆盖任何既有取值**
+- [x] 6.3 挂到 `cmd_init` 的 `_post_init_*` 序列（`_post_init_constitution` 之后、`_post_init_self_check` 之前，让自检能看到完整配置）
+- [x] 6.4 RED：TC-ISO-011（提示行随形态变化）
+- [x] 6.5 RED：TC-ISO-012（monkeypatch `input` 抛异常，全程不触发）
+- [x] 6.6 RED：TC-ISO-013（init 后 `project.yaml` 含 `isolation` 三键）
+- [x] 6.7 RED：TC-ISO-014（既有 `isolation.default: branch` 与用户键 `project.name` 均保留；连续 init 幂等）
+- [x] 6.8 GREEN ⇒ **61 passed / 0 failed / 41.23s**（isolate 36 + 既有 25）
+
+**写回策略取舍（本片核心决策，已记录）**：**采用 `safe_load + setdefault + yaml.dump`，
+放弃「定向文本插入」**。判据是实测事实：
+
+| 探针 | 结果 |
+|---|---|
+| `project.yaml` 是否被 git 跟踪 | **是** |
+| 是否有注释 / 非字母序键 | **无**（纯 `yaml.dump` 产物，键序 `isolation→paths→project→stdd_version`） |
+| 其他 config（guard/gates/lite） | 有注释 —— 但**本函数只碰 project.yaml** |
+
+⇒ 该文件不存在「丢失用户注释/顺序」的语义，定向插入需自行处理缩进、插入位置与幂等，
+复杂度高而收益为零。三道保护替代之：
+1. 顶层非映射 ⇒ 出声跳过；
+2. `isolation` 存在但非映射（`isolation: banana`）⇒ 出声跳过、**不覆盖**（TC-ISO-014b 锚定）；
+3. 三键齐备 ⇒ **完全不写文件**（幂等，且不动 mtime）。
+
+**单源约束**：默认值不在 init.py 重复定义，而是函数内
+`from .new import _DEFAULT_BRANCH_PREFIX, _DEFAULT_ISOLATE_MODE` —— 避免两处常量各自漂移。
+`worktree_root` 写**空串**表示「用内置默认」（项目根父目录下的 `<项目目录名>.worktrees`），
+写死路径会在项目移动/改名后失效。
+
+**端到端验证（真 CLI `stdd init`）**：`tmp/e2e_init_probe.sh`
+1. 首次 init ⇒ `[STDD] 隔离配置: 已补 3 个键`，`project.yaml` 出现
+   `isolation: {branch_prefix: fstdd/, default: none, worktree_root: ''}`，三键齐备。
+2. 再跑一次 init ⇒ `已就绪（未改动 project.yaml）`，文件**逐字节未变**（幂等）。
+3. 预置 `isolation.default: branch` + `project.name: keepme` 后再 init
+   ⇒ 两者**均保留**，缺失的 `branch_prefix` 被补齐。
+
+**失败模式检查（已核）**：不覆盖既有取值（TC-ISO-014/014b 双向锚定）；
+幂等（逐字节比对）；`stdd new` 零交互（TC-ISO-012 用 input 抛异常反证）。
 
 ## 7. 死代码移除 + CHANGELOG（P1）
 
