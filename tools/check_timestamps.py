@@ -126,15 +126,27 @@ def scan_sources(root: Path) -> dict:
 
     naive 判定用 tokenize 重建的「代码行」（跳过 docstring/字符串/注释）；
     豁免匹配用**原文行**（豁免 pattern 含字符串字面量，如 strftime('%m%d')）。
+
+    COV-004: 不可读源文件 → 记 scan_error 并跳过（不再静默 continue）。
+    修复前该文件会被无声跳过，扫描覆盖缩水却仍报「零 naive」。
     """
     violations: list[dict] = []
+    scan_errors: list[dict] = []
     exempted = 0
     total_fields = 0
     for py in sorted(root.rglob("*.py")):
         abs_str = str(py).replace("\\", "/")
         try:
             raw_lines = py.read_text(encoding="utf-8").splitlines()
-        except Exception:
+        except Exception as e:
+            # COV-004: 不可读源文件必须记 scan_error。
+            # 原先是裸 `continue`（EA-027 / P1）：文件被静默跳过，扫描覆盖缩水
+            # 却仍报「零 naive」—— L2 守卫的核心路径自己在说谎。
+            scan_errors.append({
+                "location": abs_str,
+                "category": "scan_error",
+                "reason": f"源文件不可读，已跳过: {type(e).__name__}: {e}",
+            })
             continue
         code = _code_lines(py)
         for i in sorted(code):
@@ -156,6 +168,7 @@ def scan_sources(root: Path) -> dict:
             })
     return {
         "violations": violations,
+        "scan_errors": scan_errors,
         "exempted": exempted,
         "total_fields_scanned": total_fields,
     }
@@ -263,12 +276,12 @@ def full_scan(repo: Path) -> dict:
     items: list[dict] = []
     items += scan_change_values(repo)
     items += scan_human_view_headers(repo)
-    src_root = repo / "upstream" / "fstdd"
-    if src_root.is_dir():
-        items += scan_sources(src_root)["violations"]
-    tools_root = repo / "tools"
-    if tools_root.is_dir():
-        items += scan_sources(tools_root)["violations"]
+    for scope_root in (repo / "upstream" / "fstdd", repo / "tools"):
+        if not scope_root.is_dir():
+            continue
+        src = scan_sources(scope_root)
+        items += src["violations"]
+        items += src["scan_errors"]        # COV-004: L2 不可读文件同样要记 scan_error
     # D5: scan_error 单列，不污染 naive_count / violations 语义
     scan_errors = [i for i in items if i.get("category") == "scan_error"]
     violations = [i for i in items if i.get("category") != "scan_error"]
@@ -307,14 +320,21 @@ def main() -> int:
                 print(f"      {v['snippet']}")
         else:
             print(f"✅ naive 计数为 0（共 {report['naive_count']} 违规）")
+        # COV-004: scan_error 必须出声 —— 「扫了但没扫全」不能和「扫了且干净」同色
+        if report.get("scan_errors"):
+            print(f"❌ {len(report['scan_errors'])} 个文件扫描失败（覆盖不全，结论不可信）：")
+            for e in report["scan_errors"]:
+                print(f"  [{e['category']}] {e['location']}")
+                print(f"      {e.get('reason', '')}")
         if stale:
             print(f"⚠️ 豁免清单 {len(stale)} 条无法定位（清单在说谎）：")
             for s in stale:
                 print(f"  · {s}")
         print("-" * 60)
-        print(f"结果：{report['naive_count']} 违规 / {len(stale)} 条失效豁免")
+        print(f"结果：{report['naive_count']} 违规 / {len(stale)} 条失效豁免"
+              f" / {len(report.get('scan_errors') or [])} 个扫描失败")
 
-    return 1 if (report["naive_count"] or stale) else 0
+    return 1 if (report["naive_count"] or stale or report.get("scan_errors")) else 0
 
 
 if __name__ == "__main__":

@@ -131,17 +131,29 @@ def test_aud_004_severity_and_response_consistency():
 
 def test_aud_005_detection_paths_flagged():
     table = yaml.safe_load(_audit_table_path().read_text(encoding="utf-8"))
-    all_files = {Path(p["file"]).name for p in table["points"]}
+    # 家族覆盖：文件必须位于扫描根内（扫描器不会忽略该家族）。
+    # 注意：随失败有声改造推进，某家族可能已全部修完、点从 points 移除
+    # （见 meta.voiced_by_change）。因此这里断言的是「扫描根覆盖该文件」，
+    # 而不是「points 里还有该家族的点」—— 后者会把「家族被彻底修干净」误判为红。
+    # 断言意图与下方 errata EA-027 一致：修 bug 不得让守卫失去对该家族的可见性。
+    mod = _load_audit_module()
+    for name in ("guard.py", "check_timestamps.py"):
+        assert _in_scanned_roots(name, mod), (
+            f"{name} 不在任何扫描根内 —— 扫描器对该家族视而不见"
+        )
+    assert any(_in_scanned_roots(n, mod) for n in ("baseline.py", "validate.py", "gate.py")), \
+        "基线与校验家族（baseline/validate/gate）不在任何扫描根内"
     flagged = [
         p for p in table["points"]
         if p["classification"] == "意外吞错" and p.get("detection_path")
     ]
-    # 三大检测家族必须在表内被覆盖（任意分类即可）：guard 守卫 / 时效扫描 / 基线与校验。
-    # 注意：随失败有声改造推进，某家族可能已无「意外吞错」点（点被修复或被勘误
-    # 重判为合理容错），因此断言只要求「扫描器没有对某家族视而不见」，
-    # 不要求代码继续保留 bug。
-    assert "guard.py" in all_files, "guard 守卫家族未进审计表（扫描器可能漏扫）"
-    assert "check_timestamps.py" in all_files, "时效扫描家族未进审计表（扫描器可能漏扫）"
-    assert any(f in all_files for f in ("baseline.py", "validate.py", "gate.py")), \
-        "基线与校验家族未进审计表（扫描器可能漏扫）"
     assert flagged, "检测路径吞错点清单为空"
+
+
+def _in_scanned_roots(name: str, mod) -> bool:
+    """家族文件是否位于扫描根（DEFAULT_ROOTS）内。"""
+    for root in mod.DEFAULT_ROOTS:
+        base = REPO / root
+        if base.is_dir() and any(base.rglob(name)):
+            return True
+    return False

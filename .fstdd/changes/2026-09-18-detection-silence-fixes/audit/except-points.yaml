@@ -5,12 +5,15 @@ meta:
   observed_at: '2026-09-18T03:48:00+00:00'
   observed_base_git_sha: 3a4ad974beb042db473dbf00780382d8f530f1d8
   scanner: tools/audit_silent_except.py
-  refreshed_at: '2026-09-25T10:45:00+08:00'
-  refreshed_reason: guard.py V3.0.6→V3.0.8 合并新增 3 处 except 兜底（return False ×2 + return [] ×1），行号随代码刷新，指纹集合零漂移
-  total: 20
+  refreshed_at: '2026-09-25T11:05:00+08:00'
+  refreshed_reason: 并发合并两次刷新 —— (a) guard.py V3.0.6→V3.0.8 合并新增 3 处 except
+    兜底（EA-031/032/033，return False ×2 + return [] ×1），EA-010 350→374 / EA-030 295→310 行号刷新；
+    (b) EA-027（L2 源层不可读文件静默跳过，P1）代码已修为 COV-004 记 scan_error，从 points
+    移除并进 voiced_by_change；EA-019 理由勘误 + severity p1→p2。两次刷新叠加后 20-1=19
+  total: 19
   by_classification:
-    合理容错: 17
-    意外吞错: 3
+    合理容错: 18
+    意外吞错: 1
   note: 活表：置于 active change 下由本 change 维护；归档表不动（D6 决策）。S1/S2S3/S4a 共修复 11 个点（本表已移除），行号随代码变动刷新，零漂移校验以
     (file, stmt) 指纹为准（±5 行容差）
   voiced_by_change:
@@ -22,6 +25,7 @@ meta:
   - EA-029 tools/check_timestamps.py:209
   - EA-005 upstream/fstdd/cli/commands/fix.py:64
   - EA-006 upstream/fstdd/cli/commands/gate.py:154
+  - EA-027 tools/check_timestamps.py:137
   errata:
   - id: EA-010
     from: 意外吞错/p1
@@ -29,6 +33,23 @@ meta:
     evidence: git show 699c583:upstream/fstdd/cli/commands/guard.py 第 315 行逐字核对 +
       函数 docstring + 调用点语义
     policy: 不回改归档表（D6）；新判仅落活表与 test-report
+  - id: EA-027
+    action: 移除（代码已修）
+    from: 意外吞错/p1/升级 change
+    to: 已修复 —— COV-004
+    evidence: tools/check_timestamps.py scan_sources 改为不可读文件记 scan_error
+      并跳过；full_scan 汇总 scan_errors；main 报出并以非零退出码失败。「扫了但没扫全」
+      不再与「扫了且干净」同色
+    policy: 活表移除该点，指纹集合随之收缩；TC-AUD-002 零漂移仍成立
+  - id: EA-019
+    action: 更正理由（分类与响应不变）
+    from: 理由称「僵尸 TypeError 被吞 → change 永不进僵尸列表」
+    to: 理由称「守卫激活状态展示（Claude 源）：配置解析失败静默落到 OpenCode/Codex
+      源，最终以「未检测到」呈现 —— 配置损坏被显示为未安装」
+    evidence: status.py:119-124 已将僵尸检测改为显式告警 + undetermined 清单，原理由描述的
+      bug 早已修复；line 150 实际内容是 _show_guard_status 的 JSON 解析兜底
+    policy: 保留 意外吞错/升级 change —— 静默 pass 仍是真静默失败（显示假阴性），
+      但 severity 由 p1 降为 p2（覆盖缺口→展示假阴性）
 points:
 - id: EA-026
   file: tools/check_skill_metadata.py
@@ -40,16 +61,6 @@ points:
   response: 放行
   detection_path: false
   justification: 无 yaml 库时跳过该校验：校验器显式降级并注释说明，可接受
-- id: EA-027
-  file: tools/check_timestamps.py
-  line: 137
-  stmt: continue
-  handler: 'except Exception:'
-  classification: 意外吞错
-  severity: p1
-  response: 升级 change
-  detection_path: true
-  justification: 逐文件扫描遇坏文件 continue → 该文件被静默跳过，扫描覆盖缩水却报「零 naive」。L2 守卫核心路径
 - id: EA-002
   file: upstream/fstdd/cli/commands/baseline.py
   line: 315
@@ -154,11 +165,14 @@ points:
   stmt: pass
   handler: 'except Exception:'
   classification: 意外吞错
-  severity: p1
+  severity: p2
   response: 升级 change
   detection_path: true
-  justification: 僵尸清单：naive last_mod 与 aware now 相减 TypeError 被吞 → 该 change 永不进僵尸列表。B3
-    实例
+  justification: 守卫激活状态展示（Claude 源）：配置解析失败静默 pass → 落到 OpenCode/Codex
+    源继续探测，最终以「未检测到」呈现。后果是 .claude/settings.local.json 损坏时
+    stdd status 把「已安装但配置损坏」显示成「未激活」，诱导重装 —— 真静默失败，但属
+    展示假阴性而非覆盖缺口，故 severity p2。注：本条原理由（僵尸 TypeError 被吞）已勘误，
+    见 errata EA-019。
 - id: EA-020
   file: upstream/fstdd/cli/commands/status.py
   line: 160

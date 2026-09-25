@@ -250,3 +250,104 @@ def _snapshot_hashes(root: Path) -> dict:
         if f.is_file() and not (set(f.parts) & skip_dirs):
             out[str(f.relative_to(root))] = hashlib.sha256(f.read_bytes()).hexdigest()
     return out
+
+
+# --------------------------------------------------------------------------- #
+# TC-COV-004 — L2 源层不可读文件必须记 scan_error（原 EA-027，P1）
+#
+# 修复前：`except Exception: continue` 静默跳过坏文件 → 扫描覆盖缩水却仍报
+# 「零 naive」。L2 守卫的核心路径自己在说谎。
+# 修复后：不可读文件进 scan_errors，且「扫了但没扫全」必须与「扫了且干净」不同色。
+# --------------------------------------------------------------------------- #
+
+def _make_unreadable_source(root: Path, name: str = "broken.py") -> Path:
+    """造一个 `.py`「文件」：实际是目录。
+
+    `root.rglob("*.py")` 会匹配到它，而 `Path.read_text()` 对目录抛
+    IsADirectoryError —— 跨平台可复现的「不可读源文件」。
+    """
+    d = root / name
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def test_cov_004_unreadable_source_recorded_as_scan_error(tmp_path):
+    """不可读 .py → 记 scan_error，不再静默 continue。"""
+    chk = load_checker()
+    (tmp_path / "ok.py").write_text(
+        "from datetime import datetime\ndef f():\n    return datetime.now()\n",
+        encoding="utf-8",
+    )
+    _make_unreadable_source(tmp_path)
+
+    report = chk.scan_sources(tmp_path)
+
+    assert report["violations"], "正常文件里的 naive 调用仍应被检出"
+    assert report["scan_errors"], "不可读源文件必须记 scan_error（EA-027 修复锚点）"
+    err = report["scan_errors"][0]
+    assert err["category"] == "scan_error"
+    assert "broken.py" in err["location"]
+    assert err["reason"], "scan_error 必须带原因，不能是空壳"
+    # Windows 读目录抛 PermissionError，POSIX 抛 IsADirectoryError —— 只要求
+    # 异常类型名可见，不绑定具体子类
+    assert "Error" in err["reason"], f"reason 缺异常类型: {err['reason']}"
+
+
+def test_cov_004_scan_error_does_not_shrink_to_zero(tmp_path):
+    """不可读文件不得让扫描「看起来更干净」。"""
+    chk = load_checker()
+    src = "from datetime import datetime\ndef f():\n    return datetime.now()\n"
+    # 基线：只有可读文件
+    (tmp_path / "a.py").write_text(src, encoding="utf-8")
+    clean = chk.scan_sources(tmp_path)
+    # 再造一个不可读的同名文件
+    _make_unreadable_source(tmp_path, "b.py")
+    degraded = chk.scan_sources(tmp_path)
+
+    # violations 不减（覆盖缩水不得体现为「更干净」）
+    assert len(degraded["violations"]) >= len(clean["violations"]), (
+        "新增不可读文件导致违规数下降 —— 扫描覆盖缩水被误报为更干净"
+    )
+    assert len(degraded["scan_errors"]) == 1
+    assert clean["scan_errors"] == []
+
+
+def test_cov_004_full_scan_surfaces_l2_scan_errors(tmp_path):
+    """full_scan 必须把 L2 scan_error 汇入顶层 scan_errors 键。"""
+    chk = load_checker()
+    repo = tmp_path / "repo"
+    (repo / "upstream" / "fstdd").mkdir(parents=True)
+    (repo / "tools").mkdir(parents=True)
+    (repo / "upstream" / "fstdd" / "ok.py").write_text(
+        "from datetime import datetime\ndef f():\n    return datetime.now()\n",
+        encoding="utf-8",
+    )
+    _make_unreadable_source(repo / "tools", "unreadable.py")
+
+    report = chk.full_scan(repo.resolve())
+
+    assert report["scan_errors"], "full_scan 未暴露 L2 扫描失败"
+    assert any("unreadable.py" in e["location"] for e in report["scan_errors"])
+    # scan_error 不得污染 naive_count
+    assert report["naive_count"] == len(report["violations"])
+
+
+def test_cov_004_scan_error_fails_exit_code(tmp_path):
+    """CLI 有扫描失败时必须非零退出 —— 「覆盖不全」不能返回 0。"""
+    repo = tmp_path / "repo"
+    (repo / "upstream" / "fstdd").mkdir(parents=True)
+    (repo / "tools").mkdir(parents=True)
+    _make_unreadable_source(repo / "tools", "unreadable.py")
+
+    import os
+
+    env = dict(os.environ, PYTHONIOENCODING="utf-8")
+    proc = subprocess.run(
+        [sys.executable, str(CHECKER), "--repo", str(repo), "--json"],
+        capture_output=True, text=True, encoding="utf-8", env=env, timeout=120,
+    )
+    assert proc.returncode != 0, (
+        f"扫描失败却返回 {proc.returncode} —— 守卫在覆盖不全时谎报干净"
+    )
+    body = json.loads(proc.stdout)
+    assert body["scan_errors"], "JSON 输出缺 scan_errors"
