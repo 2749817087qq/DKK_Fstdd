@@ -1,5 +1,47 @@
 # STDD 变更日志 / Changelog
 
+## V3.0.7 (2026-09-26) — change 隔离形态 / Change Isolation
+
+> 对应变更 `2026-09-25-new-isolate-flag`。注：**3.0.6 的变更未单独记录**，见 git 历史。
+
+### 新增
+- **`stdd new --isolate {none|worktree|branch}`** —— 为单个 change 建立隔离环境。
+  - `worktree`：在项目根**之外**（默认 `<项目父目录>/<项目名>.worktrees/<change>`）
+    创建独立工作树与分支，主工作区完全不受该 change 影响；骨架
+    （`.fstdd/changes/<change>/`、`canonical/`、模板）全部落在 worktree 内。
+  - `branch`：只切分支、不建工作树，工作区仍共享。
+  - `none`：**默认值**，行为与 3.0.6 **逐字一致**（零漂移）。
+  **帮助**：多个 change 并行时不再互相污染工作区；「隔离」也有了官方通道，
+  不必各自手工 `git worktree add`。
+
+### 安全
+- **门禁随 worktree 传播**：`git worktree add` 只签出**已跟踪**文件，而门禁注册文件
+  （`.claude/settings.local.json` / `.codebuddy/settings.local.json`）通常被 gitignore
+  ⇒ 新 worktree 里**没有任何门禁**，隔离会变成**绕过 Guard 的通道**（比不提供隔离更危险）。
+  现按**文件级整份拷贝**把注册文件带进 worktree；源文件缺失时**出声告警**
+  （写明该 worktree 内门禁不会生效），但 exit code 不变 —— 属可继续的降级。
+  **帮助**：隔离不再以牺牲门禁为代价。
+- **前置检查先于一切副作用**：非 git 仓 / 分支或路径冲突 / （branch 模式）工作区含未提交
+  改动，均在**创建任何 change 目录之前**拒绝；失败路径不执行任何删除，清理命令只打印。
+- **配置回落方向锁死**：`project.yaml` 读取失败或取值非法时一律回落 `none`，
+  绝不回落 `worktree` —— 否则一个坏 YAML 会让 `stdd new` 开始悄悄往仓库外建工作树。
+
+### 移除
+- **`--parallel` 死代码**（`_setup_parallel_worktrees` 及其调用点，共 34 行实现）。
+  它当时的语义是 **V2.8「Two-Instance Kickoff」**：为同一 change 建 `-explore` /
+  `-research` 两个 worktree，由两个 Agent 分别做需求探索与技术调研，Gate 1 前合并结果。
+  但该开关**从未在 CLI 注册**（实测 `error: unrecognized arguments: --parallel`），
+  于是实现与调用点成了永不生效的死开关。新形态 `--isolate worktree` 已覆盖
+  「一个 change 一个独立工作树」的核心诉求，故**直接移除而非修复**。
+  **帮助**：消除「参数看似存在、实则永不生效」的误导。
+
+### 配置
+- `stdd init` 在 `.fstdd/config.d/project.yaml` 补 `isolation` 块
+  （`default` / `worktree_root` / `branch_prefix`），**只补缺失键、不覆盖既有取值**；
+  三键齐备时完全不写文件（幂等，且不动 mtime）。
+
+---
+
 ## V3.0.5 (2026-08-17) — 6→4 Phase 合并落地 / Phase Merge (6→4)
 
 > V3.0 瘦身计划落地：SLICE + BUILD + VERIFY 三阶段合并为单一 BUILD。版本统一为 3.0.5。

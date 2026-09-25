@@ -120,8 +120,11 @@ points:
   detection_path: false
   justification: 多平台守卫安装探测：单平台异常 continue 试下一平台，设计即探测式
 - id: EA-015
+  # 2026-09-26: 322 → 385。new-isolate-flag Slice 6 在 _post_init_self_check 前
+  # 插入 _post_init_isolation（+63 行）导致其后行号漂移，超出 ±5 容差。
+  # 条目语义与 justification 未变，仅刷新行号。
   file: upstream/fstdd/cli/commands/init.py
-  line: 322
+  line: 385
   stmt: pass
   handler: 'except Exception:'
   classification: 合理容错

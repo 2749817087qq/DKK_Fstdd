@@ -35,13 +35,17 @@
 | 测试文件 | 用例数 | 类型 | 覆盖范围 |
 |----------|--------|------|----------|
 | `upstream/tests/commands/test_new.py` | 11 | 单元 | change 命名校验、日期前缀幂等、dry-run、脚手架落盘 |
-| `upstream/tests/commands/test_new_coverage.py` | 2 | 单元 | `new` 覆盖率补充 |
 | `upstream/tests/commands/test_init.py` | 3 | 单元 | init 目录创建与配置复制 |
 | `upstream/tests/commands/test_guard.py` | 51 | 单元+集成 | Guard 判定链（含 W5 新增 scope 12 例） |
 | `upstream/tests/commands/test_canon.py` | 9 | 单元 | canonical 双轨生成与校验 |
 | `upstream/tests/test_guard_silent_except.py`、`upstream/tests/test_except_audit.py` | 2 文件 | 哨兵 | 吞异常零漂移（配合 `tools/audit_silent_except.py --check`） |
 
 > 全仓 `upstream/tests` 现有 **789** 个 `test_` 函数，分布于 38 个 `commands/` 文件 + 根级文件。
+>
+> **BUILD 调整（2026-09-26，Slice 7）**：原 `upstream/tests/commands/test_new_coverage.py`
+> （2 例，`TC-PAR-001`，V2.8 `--parallel` 专属）已随该死代码一并**删除** ——
+> 被测功能不复存在，留着是误导；其 dry-run 覆盖由 `test_new.py::test_new_dry_run` 承担。
+> 故 TC-ISO-021 的既有回归例数由 16 降为 **14**（`test_new.py` 11 + `test_init.py` 3）。
 
 ## 二、详细测试案例
 
@@ -311,8 +315,8 @@
 | **对应 Spec** | `change-isolation/spec.md` → Scenario: SC-002 |
 | **优先级** | P0 |
 | **预置条件** | 改动后仓库 |
-| **输入** | 跑 `test_new.py` / `test_new_coverage.py` / `test_init.py` |
-| **预期结果** | 全绿（16 例），证明默认路径零漂移 |
+| **输入** | 跑 `test_new.py` / `test_init.py` |
+| **预期结果** | 全绿（14 例），证明默认路径零漂移 |
 | **当前状态** | ❌ 待跑 |
 
 #### 案例 9.2 — 吞异常零漂移哨兵通过
@@ -357,7 +361,7 @@
 
 | 风险区域 | v3.0.7 改动 | 已有回归保护 | 风险等级 |
 |----------|-------------|-------------|---------|
-| `stdd new` 默认行为 | 新增 `--isolate`（默认 None→config→none）；脚手架目标根改为变量 | `test_new.py`(11) / `test_new_coverage.py`(2) + TC-ISO-002/021 | 🟡 中（默认路径被改动，必须有零漂移断言） |
+| `stdd new` 默认行为 | 新增 `--isolate`（默认 None→config→none）；脚手架目标根改为变量 | `test_new.py`(11) + TC-ISO-002/021 | 🟡 中（默认路径被改动，必须有零漂移断言） |
 | `canon init` 签名 | 新增可选 `project_root`（向后兼容） | `test_canon.py`(9) + TC-ISO-001 | 🟢 低（不传时行为不变） |
 | `stdd init` 配置写入 | 新增 `_post_init_isolation` 写 project.yaml | `test_init.py`(3) + TC-ISO-014 | 🟡 中（写用户文件，幂等与非覆盖是硬要求） |
 | Guard 判定链 | **不改** | `test_guard.py`(51) + 哨兵 | 🟢 低 |

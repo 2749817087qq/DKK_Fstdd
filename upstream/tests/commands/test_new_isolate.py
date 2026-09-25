@@ -32,6 +32,10 @@ Slice 6（提示可见性 + init 配置写入）：
   TC-ISO-014  既有取值与用户键均保留；连续 init 幂等
   TC-ISO-014b isolation 结构不符 ⇒ 出声跳过、不覆盖用户数据
 
+Slice 7（死代码移除 + CHANGELOG）：
+  TC-ISO-017  `parallel` / `_setup_parallel_worktrees` 在 upstream/fstdd/ 零命中
+  TC-ISO-018  CHANGELOG 记录移除原因与 V2.8「Two-Instance Kickoff」原语义
+
 BUILD 分期守卫（Slice 1–3 期间存在，Slice 4 后删除）：
   未实现的隔离形态必须出声拒绝，而非静默按 none 执行。详见文件内说明。
 """
@@ -792,3 +796,49 @@ def test_iso_014b_non_mapping_isolation_is_not_overwritten(temp_project: Path):
     path = temp_project / ".fstdd" / "config.d" / "project.yaml"
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     assert data["isolation"] == "banana", "非映射值被覆盖 —— 用户数据丢失"
+
+
+# ---------------------------------------------------------------------------
+# Slice 7 — 死代码移除 + CHANGELOG
+# ---------------------------------------------------------------------------
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
+def test_iso_017_parallel_dead_code_removed():
+    """TC-ISO-017: `parallel` / `_setup_parallel_worktrees` 在 upstream/fstdd/ 零命中。
+
+    `--parallel` 从未在 CLI 注册（实测 `error: unrecognized arguments: --parallel`），
+    却留着调用点与 34 行实现 —— 正是本 change 要消灭的「死开关」形态：
+    argparse 表面接受、实则永不生效。留着它会持续误导后来者。
+    """
+    src = _repo_root() / "upstream" / "fstdd"
+    hits: list = []
+    for p in sorted(src.rglob("*.py")):
+        if "__pycache__" in p.parts:
+            continue
+        for i, line in enumerate(p.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            if "parallel" in line:
+                hits.append(f"{p.relative_to(_repo_root()).as_posix()}:{i}: {line.strip()}")
+
+    assert hits == [], "死代码残留:\n" + "\n".join(hits)
+
+
+def test_iso_018_changelog_records_removal():
+    """TC-ISO-018: CHANGELOG 记录移除原因与它当时的 V2.8「Two-Instance Kickoff」语义。
+
+    只写「删了 X」不够 —— 后人需要知道 X 原本承诺做什么、为何现在不需要，
+    否则同样的死开关会被重新加回来。
+    """
+    candidates = [
+        _repo_root() / "upstream" / "CHANGELOG.md",
+        _repo_root() / "CHANGELOG.md",
+    ]
+    text = "\n".join(
+        p.read_text(encoding="utf-8", errors="replace") for p in candidates if p.is_file()
+    )
+    assert text, "未找到任何 CHANGELOG.md"
+    assert "V3.0.7" in text, "CHANGELOG 缺 V3.0.7 条目"
+    assert "Two-Instance Kickoff" in text, "未记录 --parallel 当时的 V2.8 语义"
+    assert "parallel" in text.lower(), "未提及被移除的 --parallel"
