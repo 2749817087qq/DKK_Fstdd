@@ -1,8 +1,21 @@
 <!-- fstdd-inbox
 experience_id: EXP-009-20260924-SSH-KEYPERM
 author: anonymous
-received_at: 2026-09-24T08:16:22.230076+00:00
+received_at: 2026-09-25T13:10:01.034380+00:00
 remote_addr: 172.18.0.8
+node_id: FSTDD001
+-->
+
+---
+exported_at: 2026-09-25
+sanitized: true
+lifecycle_state: deposited
+---
+<!-- fstdd-inbox
+experience_id: EXP-009-20260924-SSH-KEYPERM
+author: anonymous
+received_at: 2026-09-24T08:16:22.230076+00:00
+remote_addr: <IP>
 node_id: FSTDD009
 -->
 

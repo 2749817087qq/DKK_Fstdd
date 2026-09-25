@@ -1,6 +1,6 @@
 edges: []
 graph_version: '1.0'
-last_merged: '2026-09-24T13:19:24+00:00'
+last_merged: '2026-09-25T13:20:01+00:00'
 nodes:
 - category: process_deviation
   cross_project_count: 1
@@ -1612,14 +1612,14 @@ nodes:
   title: tooling
   type: failure_pattern
 - category: operations
-  cross_project_count: 1
+  cross_project_count: 2
   description: 同步/镜像类钩子失败时 exit 0 且不上报告警 —— push 报成功，失败静默腐烂，直到有人偶然查看日志才发现
   fix_template_refs:
   - KG-092-FIX
   id: KG-092
   metrics:
     last_seen: ''
-    occurrence_count: 1
+    occurrence_count: 2
     severity_trend: stable
   projects:
   - stdd
@@ -1637,14 +1637,14 @@ nodes:
   title: 同步/镜像类钩子失败时 exit 0 且不上报告警 —— push 报成功，失败静默腐烂，直到有人偶然查看日志才发现
   type: failure_pattern
 - category: database
-  cross_project_count: 1
+  cross_project_count: 2
   description: SCHEMA 里声明了 FOREIGN KEY，但连接从未开启 PRAGMA foreign_keys —— 约束形同虚设，脏数据静默写入
   fix_template_refs:
   - KG-093-FIX
   id: KG-093
   metrics:
     last_seen: ''
-    occurrence_count: 1
+    occurrence_count: 2
     severity_trend: stable
   projects:
   - stdd
@@ -1662,14 +1662,14 @@ nodes:
   title: SCHEMA 里声明了 FOREIGN KEY，但连接从未开启 PRAGMA foreign_keys —— 约束形同虚设，脏数据静默写入
   type: failure_pattern
 - category: database
-  cross_project_count: 1
+  cross_project_count: 2
   description: 多列 INSERT 的列与占位符错位一格，两个字段的值互换 —— 测试全绿，因为断言只覆盖了其中少数几个字段
   fix_template_refs:
   - KG-094-FIX
   id: KG-094
   metrics:
     last_seen: ''
-    occurrence_count: 1
+    occurrence_count: 2
     severity_trend: stable
   projects:
   - stdd
@@ -1687,14 +1687,14 @@ nodes:
   title: 多列 INSERT 的列与占位符错位一格，两个字段的值互换 —— 测试全绿，因为断言只覆盖了其中少数几个字段
   type: failure_pattern
 - category: testing
-  cross_project_count: 1
+  cross_project_count: 2
   description: defense in depth 的第二层防线天然不可观测 —— 上层校验拦住后，底层的开关开没开，变异测试也测不出来
   fix_template_refs:
   - KG-095-FIX
   id: KG-095
   metrics:
     last_seen: ''
-    occurrence_count: 1
+    occurrence_count: 2
     severity_trend: stable
   projects:
   - stdd
@@ -1709,14 +1709,14 @@ nodes:
   title: defense in depth 的第二层防线天然不可观测 —— 上层校验拦住后，底层的开关开没开，变异测试也测不出来
   type: failure_pattern
 - category: design
-  cross_project_count: 1
+  cross_project_count: 2
   description: 收紧权限时一刀切禁止，摧毁了数据形态完全相同、无法区分的既有合法工作流
   fix_template_refs:
   - KG-096-FIX
   id: KG-096
   metrics:
     last_seen: ''
-    occurrence_count: 1
+    occurrence_count: 2
     severity_trend: stable
   projects:
   - stdd
@@ -1732,14 +1732,14 @@ nodes:
   title: 收紧权限时一刀切禁止，摧毁了数据形态完全相同、无法区分的既有合法工作流
   type: failure_pattern
 - category: security
-  cross_project_count: 1
+  cross_project_count: 2
   description: 流程框架把运行期凭据写在要入库的目录里，导致令牌随过程产物被推到公开仓库
   fix_template_refs:
   - KG-097-FIX
   id: KG-097
   metrics:
     last_seen: ''
-    occurrence_count: 1
+    occurrence_count: 2
     severity_trend: stable
   projects:
   - stdd
@@ -1945,4 +1945,212 @@ nodes:
   severity: medium
   tags: []
   title: process_deviation
+  type: failure_pattern
+- category: ''
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-106
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: ''
+  type: failure_pattern
+- category: runtime_pitfall
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-107
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: runtime_pitfall
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-108
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: test
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-109
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: test
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-110
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: process
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-111
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: design
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-112
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: design
+  type: failure_pattern
+- category: testing
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-113
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: testing
+  type: failure_pattern
+- category: code
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-114
+  metrics:
+    last_seen: ''
+    occurrence_count: 3
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: code
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-115
+  metrics:
+    last_seen: ''
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process
+  type: failure_pattern
+- category: design
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-116
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: design
+  type: failure_pattern
+- category: design
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-117
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: design
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-118
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
   type: failure_pattern
