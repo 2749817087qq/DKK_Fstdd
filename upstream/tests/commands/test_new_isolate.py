@@ -25,6 +25,13 @@ Slice 5（门禁随 worktree，裁定 ISO-1）：
   TC-ISO-019  hook 注册文件随 worktree 复制，内容逐字节一致
   TC-ISO-020  无 hook 注册 ⇒ 明确告警但 exit 仍 0（降级而非失败）
 
+Slice 6（提示可见性 + init 配置写入）：
+  TC-ISO-011  收尾提示行随形态变化（none 形态须给出隔离命令）
+  TC-ISO-012  全程零交互（input 一旦被调用即失败）
+  TC-ISO-013  init 后 project.yaml 含 isolation 三键
+  TC-ISO-014  既有取值与用户键均保留；连续 init 幂等
+  TC-ISO-014b isolation 结构不符 ⇒ 出声跳过、不覆盖用户数据
+
 BUILD 分期守卫（Slice 1–3 期间存在，Slice 4 后删除）：
   未实现的隔离形态必须出声拒绝，而非静默按 none 执行。详见文件内说明。
 """
@@ -682,3 +689,106 @@ def test_iso_020_missing_hooks_warns_but_succeeds(
     wt = _wt_root_for(project) / dir_name
     assert (wt / ".fstdd" / "changes" / dir_name / ".fstdd.yaml").exists(), \
         "告警不应阻断 change 创建（exit 必须为 0）"
+
+
+# ---------------------------------------------------------------------------
+# Slice 6 — 提示行可见性 + init 配置写入
+# ---------------------------------------------------------------------------
+
+def test_iso_011_hint_for_none_offers_isolation_command(
+    temp_project: Path, monkeypatch, capsys
+):
+    """TC-ISO-011: none 形态的收尾提示必须给出「如何隔离」的完整命令。"""
+    _setup_templates(temp_project)
+    monkeypatch.chdir(temp_project)
+
+    cmd_new(_new_args(name="hint-none"))
+
+    out = capsys.readouterr().out
+    assert "隔离形态: none" in out, f"未输出形态提示: {out!r}"
+    assert "--isolate worktree" in out, f"none 形态未给出隔离命令: {out!r}"
+
+
+@pytest.mark.skipif(not _GIT_OK, reason="git 不可用")
+def test_iso_011b_hint_reflects_worktree(temp_project: Path, monkeypatch, capsys):
+    """TC-ISO-011: 提示行随形态变化（worktree）。"""
+    _isolated_git_project(temp_project, monkeypatch)
+
+    cmd_new(_new_args(name="hint-wt", isolate="worktree"))
+
+    out = capsys.readouterr().out
+    assert "隔离形态: worktree" in out, f"提示未反映实际形态: {out!r}"
+    assert "隔离形态: none" not in out, "提示与生效形态不一致"
+
+
+@pytest.mark.skipif(not _GIT_OK, reason="git 不可用")
+def test_iso_011c_hint_reflects_branch(temp_project: Path, monkeypatch, capsys):
+    """TC-ISO-011: 提示行随形态变化（branch）。"""
+    _isolated_git_project(temp_project, monkeypatch)
+
+    cmd_new(_new_args(name="hint-br", isolate="branch"))
+
+    out = capsys.readouterr().out
+    assert "隔离形态: branch" in out, f"提示未反映实际形态: {out!r}"
+
+
+def test_iso_012_new_never_prompts(temp_project: Path, monkeypatch):
+    """TC-ISO-012: `stdd new` 全程零交互 —— input 一旦被调用即判失败。"""
+    _setup_templates(temp_project)
+    monkeypatch.chdir(temp_project)
+
+    def _boom(*args, **kwargs):
+        raise AssertionError("stdd new 不得有任何交互输入")
+
+    monkeypatch.setattr("builtins.input", _boom)
+
+    cmd_new(_new_args(name="no-prompt"))   # 不抛异常即通过
+
+
+def test_iso_013_post_init_writes_isolation_block(temp_project: Path):
+    """TC-ISO-013: init 后 project.yaml 含 isolation 三键（default/worktree_root/branch_prefix）。"""
+    from fstdd.cli.commands.init import _post_init_isolation
+
+    _write_project_config(temp_project, "project:\n  name: demo\n")
+    _post_init_isolation(temp_project)
+
+    path = temp_project / ".fstdd" / "config.d" / "project.yaml"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    block = data.get("isolation")
+    assert isinstance(block, dict), f"未写入 isolation 块: {data!r}"
+    for key in ("default", "worktree_root", "branch_prefix"):
+        assert key in block, f"缺键 {key}: {block!r}"
+    assert block["default"] == "none", "默认值必须是保守的 none"
+    assert block["branch_prefix"] == "fstdd/"
+
+
+def test_iso_014_post_init_preserves_existing_and_is_idempotent(temp_project: Path):
+    """TC-ISO-014: 既有 isolation 取值与用户键均保留；连续 init 幂等。"""
+    from fstdd.cli.commands.init import _post_init_isolation
+
+    _write_project_config(
+        temp_project, "isolation:\n  default: branch\nproject:\n  name: demo\n"
+    )
+    _post_init_isolation(temp_project)
+
+    path = temp_project / ".fstdd" / "config.d" / "project.yaml"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert data["isolation"]["default"] == "branch", "既有取值被覆盖（必须是 setdefault 语义）"
+    assert data["project"]["name"] == "demo", "用户键丢失"
+    assert data["isolation"]["branch_prefix"] == "fstdd/", "缺失键未被补齐"
+
+    first = path.read_text(encoding="utf-8")
+    _post_init_isolation(temp_project)
+    assert path.read_text(encoding="utf-8") == first, "连续 init 不幂等（文件被改写）"
+
+
+def test_iso_014b_non_mapping_isolation_is_not_overwritten(temp_project: Path):
+    """TC-ISO-014（补充）: isolation 存在但结构不符 ⇒ 出声跳过，**不覆盖用户数据**。"""
+    from fstdd.cli.commands.init import _post_init_isolation
+
+    _write_project_config(temp_project, "isolation: banana\nproject:\n  name: demo\n")
+    _post_init_isolation(temp_project)
+
+    path = temp_project / ".fstdd" / "config.d" / "project.yaml"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert data["isolation"] == "banana", "非映射值被覆盖 —— 用户数据丢失"

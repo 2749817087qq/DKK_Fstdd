@@ -174,6 +174,8 @@ def cmd_init(args: argparse.Namespace) -> None:
     _post_init_guard(project_root)
     _post_init_experiences(project_root, stdd_source)
     _post_init_constitution(project_root)
+    # V3.0.7: 隔离配置默认值 —— 放在 self_check 之前，让自检能看到完整配置。
+    _post_init_isolation(project_root)
     _post_init_self_check(project_root)
 
     print()
@@ -300,6 +302,67 @@ def _post_init_constitution(project_root: Path) -> None:
         "借鉴 Spec Kit 的分类：本项目自带的脚本目录。\n"
         "（FSTDD 的工具脚本位于仓库 tools/，此处供项目级脚本使用）\n",
         encoding="utf-8")
+
+
+def _post_init_isolation(project_root: Path) -> None:
+    """V3.0.7: 在 project.yaml 补 `isolation` 块（**只补缺失键，不覆盖既有取值**）。
+
+    **写回策略（本片记录取舍）**：采用 `safe_load + setdefault + yaml.dump`，
+    而非「定向文本插入」。依据是本项目的实测事实 —— `project.yaml` 是**代码生成的
+    机器文件**（无注释、键已按字母序、且被 git 跟踪），不存在「丢失用户注释/顺序」
+    的语义；定向插入需自行处理缩进、插入位置与幂等，复杂度高且在本场景收益为零。
+
+    三道保护，确保「不覆盖用户数据」：
+      1. 顶层不是映射 ⇒ 出声跳过；
+      2. `isolation` 存在但不是映射（如 `isolation: banana`）⇒ 出声跳过，**不覆盖**；
+      3. 三键齐备时**完全不写文件**（幂等，且不动 mtime）。
+    """
+    import yaml
+    # 单源引用 new.py 的默认值，避免两处常量各自漂移。
+    from .new import _DEFAULT_BRANCH_PREFIX, _DEFAULT_ISOLATE_MODE
+
+    cfg_path = project_root / ".fstdd" / "config.d" / "project.yaml"
+    if not cfg_path.exists():
+        return
+
+    try:
+        data = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
+        print(f"  [STDD] 隔离配置: project.yaml 不可解析，跳过（{type(exc).__name__}）")
+        return
+
+    if not isinstance(data, dict):
+        print("  [STDD] 隔离配置: project.yaml 顶层不是映射，跳过")
+        return
+
+    block = data.get("isolation")
+    if block is None:
+        block = {}
+        data["isolation"] = block
+    elif not isinstance(block, dict):
+        print(f"  [STDD] 隔离配置: isolation 不是映射（{type(block).__name__}），跳过以免覆盖")
+        return
+
+    # worktree_root 空串 = 用内置默认（项目根父目录下的 <项目目录名>.worktrees）。
+    # 写死具体路径会在项目被移动或改名后失效。
+    defaults = {
+        "default": _DEFAULT_ISOLATE_MODE,
+        "worktree_root": "",
+        "branch_prefix": _DEFAULT_BRANCH_PREFIX,
+    }
+    missing = [k for k in defaults if k not in block]
+    if not missing:
+        print("  [STDD] 隔离配置: 已就绪（未改动 project.yaml）")
+        return
+
+    for key in missing:
+        block[key] = defaults[key]
+
+    cfg_path.write_text(
+        yaml.dump(data, allow_unicode=True, default_flow_style=False),
+        encoding="utf-8",
+    )
+    print(f"  [STDD] 隔离配置: 已补 {len(missing)} 个键（isolation: {', '.join(missing)}）")
 
 
 def _post_init_self_check(project_root: Path) -> None:
