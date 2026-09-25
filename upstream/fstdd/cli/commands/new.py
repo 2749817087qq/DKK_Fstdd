@@ -2,6 +2,7 @@ import argparse
 import sys
 import re
 import shutil
+import subprocess
 from datetime import date
 from pathlib import Path
 
@@ -62,6 +63,116 @@ def _print_isolation_hint(mode: str, raw_name: str) -> None:
               f"stdd new {raw_name} --isolate worktree")
 
 
+_DEFAULT_BRANCH_PREFIX = "fstdd/"
+
+
+def _git_worktree_root(project_root: Path):
+    """返回项目根所在 git 工作树的顶层目录；非 git 仓 / git 不可用 ⇒ None。"""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, cwd=str(project_root),
+        )
+    except (OSError, ValueError):
+        return None
+    if result.returncode != 0:
+        return None
+    top = (result.stdout or "").strip()
+    return Path(top) if top else None
+
+
+def _branch_exists(project_root: Path, branch: str) -> bool:
+    """分支是否已存在。查 refs/heads/<branch> 以避免与同名 tag 混淆。"""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", f"refs/heads/{branch}"],
+            capture_output=True, text=True, cwd=str(project_root),
+        )
+    except (OSError, ValueError):
+        return False
+    return result.returncode == 0
+
+
+def _is_worktree_dirty(project_root: Path) -> bool:
+    """工作区是否有未提交改动（**含未跟踪文件**）。
+
+    测不准时返回 True（保守判脏 ⇒ 拒绝），绝不静默放行 —— ISO-3 裁定的取向
+    正是「宁可拒绝，也不制造『看起来隔离了』的假象」。
+    """
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True, text=True, cwd=str(project_root),
+        )
+    except (OSError, ValueError):
+        return True
+    if result.returncode != 0:
+        return True
+    return bool((result.stdout or "").strip())
+
+
+def _branch_name(project_root: Path, dir_name: str) -> str:
+    """隔离分支名：<branch_prefix><dir_name> —— 显式构造，不用 git 隐式派生。"""
+    prefix = _load_isolation_config(project_root).get("branch_prefix")
+    if not isinstance(prefix, str) or not prefix.strip():
+        prefix = _DEFAULT_BRANCH_PREFIX
+    return f"{prefix.strip()}{dir_name}"
+
+
+def _resolve_worktree_root(project_root: Path, dir_name: str) -> Path:
+    """worktree 路径：默认在项目根**之外**，可被 isolation.worktree_root 覆盖。
+
+    默认放仓外是刻意的：建在仓内会让 `git status` 变脏，撞上既有断言
+    「工作区除 .fstdd/changes/ 外应干净」（test_a6_d_repo_worktree_clean）。
+    """
+    configured = _load_isolation_config(project_root).get("worktree_root")
+    if isinstance(configured, str) and configured.strip():
+        base = Path(configured.strip())
+        if not base.is_absolute():
+            base = project_root / base
+        return base / dir_name
+    return project_root.parent / f"{project_root.name}.worktrees" / dir_name
+
+
+def _preflight_isolation(mode: str, project_root: Path, dir_name: str) -> None:
+    """隔离前置检查。任一失败即非 0 退出。
+
+    **必须早于任何 change 目录创建**：否则失败会留下半成品 change。
+    顺序：git 工作树 → 分支/路径冲突 → （branch 模式）脏树。
+    失败路径**不执行任何删除** —— 清理命令只打印，由用户自己执行。
+    """
+    if mode == "none":
+        return
+
+    if _git_worktree_root(project_root) is None:
+        print(f"  ❌ --isolate {mode} 需要当前目录位于 git 工作树内")
+        print("     当前目录不是 git 仓库（或 git 不可用）")
+        print("     如不需要隔离，请改用：--isolate none")
+        sys.exit(1)
+
+    if mode == "worktree":
+        branch = _branch_name(project_root, dir_name)
+        if _branch_exists(project_root, branch):
+            print(f"  ❌ 分支已存在：{branch}")
+            print(f"     请先处理后再试，例如：git branch -D {branch}")
+            sys.exit(1)
+        wt_path = _resolve_worktree_root(project_root, dir_name)
+        if wt_path.exists():
+            print(f"  ❌ worktree 目标路径已存在：{wt_path}")
+            print("     本工具不会删除既有路径。请自行确认后清理：")
+            print(f"       git worktree remove --force {wt_path}   # 若已注册为 worktree")
+            print(f"       rm -rf {wt_path}                        # 否则")
+            sys.exit(1)
+
+    elif mode == "branch":
+        if _is_worktree_dirty(project_root):
+            print("  ❌ 工作区有未提交改动（含未跟踪文件），拒绝切换分支")
+            print("     原因：git checkout -b 会把未提交改动带到新分支，")
+            print("           使本 change 的提交混入无关改动（ISO-3 裁定）")
+            print("     请二选一：先 commit / stash 这些改动，或改用 --isolate worktree")
+            sys.exit(1)
+
+
 def cmd_new(args: argparse.Namespace) -> None:
     from ..utils import get_logger
     logger = get_logger()
@@ -69,16 +180,6 @@ def cmd_new(args: argparse.Namespace) -> None:
     project_root = Path.cwd()
     change_name = args.name
     isolate_mode = _resolve_isolate_mode(args, project_root)
-
-    # ⚠️ BUILD 分期守卫（Slice 1 → Slice 3/4 之间临时存在）。
-    # worktree / branch 的落地逻辑尚未实现，此处**必须出声拒绝**：
-    # 接受参数后静默按 none 执行，正是 `--parallel` 死开关的翻版
-    # （表面可用、实则不可达），而本 change 的立意就是消灭这类假象。
-    # Slice 3/4 实现后删除本守卫。
-    if isolate_mode != "none":
-        print(f"  隔离形态 '{isolate_mode}' 尚未实现（本 change 仍在 BUILD 中）")
-        print(f"  请暂时使用 `--isolate none`，或等本 change 完成后重试")
-        sys.exit(1)
 
     if not re.match(r"^[a-zA-Z0-9][-a-zA-Z0-9_.]{1,49}\Z", change_name):
         print(f" 无效的 change 名称: {change_name}")
@@ -111,6 +212,18 @@ def cmd_new(args: argparse.Namespace) -> None:
         print(f"   状态版本: 3.0, 状态: active")
         print(" [DRY-RUN] 文件系统未发生变化")
         return
+
+    # V3.0.7: 隔离前置检查 —— 必须早于**任何** change 目录创建（SC-006/007/008）。
+    # 放在 (change_dir / "specs").mkdir() 之前，失败时才不会留下半成品 change。
+    _preflight_isolation(isolate_mode, project_root, dir_name)
+
+    # ⚠️ BUILD 分期守卫（Slice 2 → Slice 3/4 之间临时存在）：本处正是未来
+    # 「创建隔离环境」的确切位置。worktree / branch 的落地逻辑尚未实现，必须
+    # **出声拒绝** —— 接受参数后静默按 none 执行，正是 `--parallel` 死开关的翻版。
+    if isolate_mode != "none":
+        print(f"  隔离形态 '{isolate_mode}' 尚未实现（本 change 仍在 BUILD 中）")
+        print("  请暂时使用 `--isolate none`，或等本 change 完成后重试")
+        sys.exit(1)
 
     (change_dir / "specs").mkdir(parents=True)
 
