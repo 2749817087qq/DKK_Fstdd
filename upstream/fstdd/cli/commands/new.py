@@ -224,6 +224,47 @@ def _create_branch(project_root: Path, branch: str) -> bool:
     return True
 
 
+# 宿主门禁注册文件（相对项目根）。两份都是「未跟踪」的常见形态 ——
+# 正因如此才需要显式复制，见 _propagate_guard_hooks。
+_GUARD_HOOK_FILES = (
+    Path(".claude") / "settings.local.json",
+    Path(".codebuddy") / "settings.local.json",
+)
+
+
+def _propagate_guard_hooks(project_root: Path, worktree_path: Path) -> bool:
+    """把主仓的门禁 hook 注册文件整份复制进新 worktree。返回「是否至少复制了一个」。
+
+    **为什么必须做**：`git worktree add` 只签出**已跟踪**文件，而 hook 注册
+    （`.claude/settings.local.json` / `.codebuddy/settings.local.json`）通常被
+    gitignore —— 于是新 worktree 里**没有任何门禁**，隔离就成了绕过 Guard 的通道。
+    这正是裁定 ISO-1 要堵的口子。
+
+    **文件级整份拷贝，不解析结构**：这两个文件是宿主（Claude Code / CodeBuddy）
+    的私有格式，解析会让 FSTDD 与宿主版本耦合；整份拷贝语义最直白，宿主日后
+    增删字段也自动跟随。
+
+    源文件一个都不存在时返回 False（调用方据此输出告警），但**不改变 exit code**：
+    门禁缺失是可继续的降级，不是失败 —— 否则尚未接入 Guard 的项目里
+    `--isolate worktree` 会完全不可用。**但绝不能静默**。
+    """
+    copied = False
+    for rel in _GUARD_HOOK_FILES:
+        src = project_root / rel
+        if not src.is_file():
+            continue
+        dst = worktree_path / rel
+        try:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+        except OSError as exc:
+            # 单个文件复制失败不中断：另一个宿主可能仍可复制成功。
+            print(f"  ⚠️ 门禁 hook 复制失败 {rel}: {type(exc).__name__}: {exc}")
+            continue
+        copied = True
+    return copied
+
+
 def cmd_new(args: argparse.Namespace) -> None:
     from ..utils import get_logger
     logger = get_logger()
@@ -287,6 +328,13 @@ def cmd_new(args: argparse.Namespace) -> None:
         target_root = wt_path
         print(f"  🔀 隔离 worktree 已创建: {wt_path}")
         print(f"     分支: {branch}")
+        # 裁定 ISO-1：worktree 内必须保持门禁有效，否则隔离 = 绕过 Guard 的通道。
+        # 必须在 worktree 建好之后立刻做 —— 晚于此处的任何失败都会留下无门禁的 worktree。
+        if _propagate_guard_hooks(project_root, wt_path):
+            print("     ✅ 门禁 hook 已随行（.claude / .codebuddy）")
+        else:
+            print("     ⚠️ 未发现门禁 hook 注册文件（.claude/settings.local.json 等）")
+            print("        该 worktree 内 Guard 门禁**不会生效** —— 请确认这是预期行为")
     elif isolate_mode == "branch":
         branch = _branch_name(project_root, dir_name)
         if not _create_branch(project_root, branch):

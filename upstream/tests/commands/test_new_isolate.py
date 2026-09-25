@@ -21,6 +21,10 @@ Slice 3（worktree 创建 + 脚手架落点切换，**行为级真 git**）：
 Slice 4（branch 形态，**行为级真 git**）：
   TC-ISO-005  只切分支、不建 worktree；骨架落在主仓
 
+Slice 5（门禁随 worktree，裁定 ISO-1）：
+  TC-ISO-019  hook 注册文件随 worktree 复制，内容逐字节一致
+  TC-ISO-020  无 hook 注册 ⇒ 明确告警但 exit 仍 0（降级而非失败）
+
 BUILD 分期守卫（Slice 1–3 期间存在，Slice 4 后删除）：
   未实现的隔离形态必须出声拒绝，而非静默按 none 执行。详见文件内说明。
 """
@@ -613,3 +617,68 @@ def test_iso_005_branch_mode_switches_branch_only(
     assert (project / ".fstdd" / "changes" / dir_name / ".fstdd.yaml").exists(), \
         "branch 模式骨架应落在主仓"
     assert (project / ".fstdd" / "changes" / dir_name / "canonical").is_dir()
+
+
+# ---------------------------------------------------------------------------
+# Slice 5 — 门禁随 worktree 生效（裁定 ISO-1）
+# ---------------------------------------------------------------------------
+
+_HOOK_RELS = (".claude/settings.local.json", ".codebuddy/settings.local.json")
+
+
+@pytest.mark.skipif(not _GIT_OK, reason="git 不可用")
+@pytest.mark.parametrize("rel", _HOOK_RELS)
+def test_iso_019_guard_hooks_propagate_into_worktree(
+    temp_project: Path, monkeypatch, capsys, rel: str
+):
+    """TC-ISO-019: 门禁 hook 注册随 worktree 复制，且内容与主仓一致。
+
+    这是裁定 ISO-1 的锚点。缺口根因：`git worktree add` **只签出已跟踪文件**，
+    而 hook 注册（`.claude/settings.local.json` 等）通常被 gitignore
+    —— 于是新 worktree 里没有任何门禁，隔离就变成绕过 Guard 的通道。
+    """
+    project = _isolated_git_project(temp_project, monkeypatch)
+
+    # 前提自检：hook 文件必须**未被跟踪**，否则 git 会自行签出，
+    # 本用例就无法区分「实现生效」与「git 顺带带过来」。
+    tracked = _git(project, "ls-files", "--error-unmatch", rel).returncode == 0
+    assert not tracked, f"{rel} 已被 git 跟踪，本用例前提不成立"
+
+    payload = '{"hooks": {"PreToolUse": [{"command": "stdd guard check"}]}}'
+    hook_src = project / rel
+    hook_src.parent.mkdir(parents=True, exist_ok=True)
+    hook_src.write_text(payload, encoding="utf-8")
+
+    cmd_new(_new_args(name="iso-hook", isolate="worktree"))
+
+    dir_name = _expected_dir_name("iso-hook")
+    wt = _wt_root_for(project) / dir_name
+    copied = wt / rel
+
+    assert copied.is_file(), \
+        f"门禁 hook 未随 worktree 复制: {rel}\n输出: {capsys.readouterr().out}"
+    assert copied.read_text(encoding="utf-8") == payload, "复制内容与主仓不一致"
+
+
+@pytest.mark.skipif(not _GIT_OK, reason="git 不可用")
+def test_iso_020_missing_hooks_warns_but_succeeds(
+    temp_project: Path, monkeypatch, capsys
+):
+    """TC-ISO-020: 无任何 hook 注册 ⇒ 明确告警，但 exit 仍 0。
+
+    门禁缺失是**可继续的降级**，不是失败 —— 若在此处 exit 1，
+    在尚未接入 Guard 的项目里 `--isolate worktree` 将完全不可用。
+    但**绝不能静默通过**：用户必须知道该 worktree 内门禁未激活。
+    """
+    project = _isolated_git_project(temp_project, monkeypatch)
+
+    cmd_new(_new_args(name="iso-nohook", isolate="worktree"))
+
+    out = capsys.readouterr().out
+    assert "门禁" in out, f"未就门禁缺失出声: {out!r}"
+    assert "⚠️" in out, f"告警缺少显著标记: {out!r}"
+
+    dir_name = _expected_dir_name("iso-nohook")
+    wt = _wt_root_for(project) / dir_name
+    assert (wt / ".fstdd" / "changes" / dir_name / ".fstdd.yaml").exists(), \
+        "告警不应阻断 change 创建（exit 必须为 0）"
