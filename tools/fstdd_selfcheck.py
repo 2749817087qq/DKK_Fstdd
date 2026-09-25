@@ -75,7 +75,7 @@ def get_health():
 
 def make_probe_payload(node, probe_id):
     """构造探针 payload。probe_id 必须含 'SELFCHECK'。"""
-    ts_iso = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    ts_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     return {
         "experiences": [
             {
@@ -99,8 +99,8 @@ def make_probe_payload(node, probe_id):
 
 def run_selfcheck(token_file, node):
     """执行 C1-C4 自检，返回完整结果字典。"""
-    now_ts = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-    probe_id = node + "-SELFCHECK-" + datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    now_ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    probe_id = node + "-SELFCHECK-" + datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M%S")
 
     result = {
         "node": node,
@@ -146,8 +146,8 @@ def run_selfcheck(token_file, node):
     result["http_codes"]["health_before"] = code_h0
     try:
         result["received_before"] = json.loads(body_h0).get("received")
-    except Exception:
-        pass
+    except Exception as exc:
+        result.setdefault("issues", []).append("health_before 解析失败: %s" % exc)
 
     # C2: 带凭证 POST 探针，期望 200
     payload = make_probe_payload(node, probe_id)
@@ -166,8 +166,8 @@ def run_selfcheck(token_file, node):
         # 额外检查: 响应体中是否包含 node 标识
         if code_c2 == 200 and node in body_c2:
             c3_pass = True
-    except Exception:
-        pass
+    except Exception as exc:
+        result.setdefault("issues", []).append("C3 响应解析失败: %s" % exc)
     result["C3"] = c3_pass
     result["http_codes"]["C3"] = code_c2 if code_c2 else "error"
 
@@ -176,8 +176,8 @@ def run_selfcheck(token_file, node):
     result["http_codes"]["health_after"] = code_h1
     try:
         result["received_after"] = json.loads(body_h1).get("received")
-    except Exception:
-        pass
+    except Exception as exc:
+        result.setdefault("issues", []).append("health_after 解析失败: %s" % exc)
 
     # C4: 不带凭证 POST，200 (白名单) 或 401 (已拆) 均算通过
     code_c4, body_c4 = post_to_inbox(None, payload)

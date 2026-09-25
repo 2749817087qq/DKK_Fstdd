@@ -29,6 +29,15 @@ def http(url, method="GET", headers=None, body=None, timeout=15):
         return None, str(e)
 
 
+def parse_received(body, errors, tag):
+    """解析 received；失败时**记录**（不静默吞掉）。"""
+    try:
+        return json.loads(body).get("received")
+    except Exception as exc:  # 解析失败必须出声
+        errors.append("%s 解析失败: type=%s msg=%s" % (tag, type(exc).__name__, exc))
+        return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--token", default="")
@@ -37,12 +46,9 @@ def main():
     ep = a.endpoint.rstrip("/")
     results, ok = [], True
 
+    errors = []
     st, body = http(f"{ep}/health")
-    recv = None
-    try:
-        recv = json.loads(body).get("received")
-    except Exception:
-        pass
+    recv = parse_received(body, errors, "health_before")
     good = st == 200 and recv is not None
     ok = ok and good
     results.append(("S1 端点可达", f"HTTP {st} received={recv}", good))
@@ -69,15 +75,11 @@ def main():
         s.close()
         results.append(("S4 旧地址已关闭", "仍可连通（异常！）", False))
         ok = False
-    except Exception:
-        results.append(("S4 旧地址已关闭", "不可达（符合预期）", True))
+    except Exception as exc:  # 预期分支：旧地址已关闭；显式记录类型以便排查
+        results.append(("S4 旧地址已关闭", "不可达（%s，符合预期）" % type(exc).__name__, True))
 
     st5, body5 = http(f"{ep}/health")
-    recv5 = None
-    try:
-        recv5 = json.loads(body5).get("received")
-    except Exception:
-        pass
+    recv5 = parse_received(body5, errors, "health_after")
     good5 = (recv5 == recv)
     ok = ok and good5
     results.append(("S5 未污染计数", f"{recv} → {recv5}", good5))
@@ -87,6 +89,10 @@ def main():
     for name, detail, g in results:
         mark = "OK " if g else ("-- " if g is None else "FAIL")
         print("  [" + mark + "] " + name.ljust(24) + detail)
+    if errors:
+        print("  解析告警（已出声，未静默）:")
+        for e in errors:
+            print("    - " + e)
     print("")
     print("结论: " + ("PASS" if ok else "FAIL"))
     return 0 if ok else 1
