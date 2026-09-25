@@ -201,6 +201,29 @@ def _create_worktree(project_root: Path, path: Path, branch: str) -> bool:
     return True
 
 
+def _create_branch(project_root: Path, branch: str) -> bool:
+    """`git checkout -b <branch>`。成功 ⇒ True。
+
+    **不建 worktree** —— branch 形态共享同一工作区，隔离性来自分支而非目录，
+    所以 change 骨架仍落在主仓（`target_root` 保持 `project_root`）。
+    前置检查已保证工作区干净（ISO-3 裁定），因此 checkout 不会把无关改动带过来。
+    """
+    try:
+        result = subprocess.run(
+            ["git", "checkout", "-b", branch],
+            capture_output=True, text=True, cwd=str(project_root),
+        )
+    except (OSError, ValueError) as exc:
+        print(f"  ❌ git 调用失败: {type(exc).__name__}: {exc}")
+        return False
+    if result.returncode != 0:
+        print(f"  ❌ git checkout -b 失败（exit={result.returncode}）")
+        for line in (result.stderr or "").strip().splitlines():
+            print(f"     {line}")
+        return False
+    return True
+
+
 def cmd_new(args: argparse.Namespace) -> None:
     from ..utils import get_logger
     logger = get_logger()
@@ -252,14 +275,7 @@ def cmd_new(args: argparse.Namespace) -> None:
     # V3.0.7: 隔离前置检查 —— 必须早于**任何** change 目录创建（SC-006/007/008）。
     _preflight_isolation(isolate_mode, project_root, dir_name)
 
-    # ⚠️ BUILD 分期守卫（Slice 3 → Slice 4 之间临时存在）：branch 形态尚未实现。
-    # 接受参数后静默按 none 执行，正是 `--parallel` 死开关的翻版。
-    if isolate_mode == "branch":
-        print("  隔离形态 'branch' 尚未实现（本 change 仍在 BUILD 中）")
-        print("  请暂时使用 `--isolate none` 或 `--isolate worktree`，或等本 change 完成后重试")
-        sys.exit(1)
-
-    # V3.0.7: 创建隔离环境 —— **顺序锁：先隔离、后脚手架**（SC-001/009/010）。
+    # V3.0.7: 创建隔离环境 —— **顺序锁：先隔离、后脚手架**（SC-001/005/009/010）。
     # 反过来会先把骨架铺在主仓、再发现隔离未生效（或需要搬移半成品）。
     target_root = project_root
     if isolate_mode == "worktree":
@@ -271,6 +287,13 @@ def cmd_new(args: argparse.Namespace) -> None:
         target_root = wt_path
         print(f"  🔀 隔离 worktree 已创建: {wt_path}")
         print(f"     分支: {branch}")
+    elif isolate_mode == "branch":
+        branch = _branch_name(project_root, dir_name)
+        if not _create_branch(project_root, branch):
+            print("  ❌ 隔离分支创建失败 —— 未创建任何 change 骨架")
+            sys.exit(1)
+        # 落点**不变**：branch 形态共享工作区，骨架仍建在主仓（target_root 保持）。
+        print(f"  🔀 隔离分支已创建: {branch}")
 
     change_dir = target_root / ".fstdd" / "changes" / dir_name
     (change_dir / "specs").mkdir(parents=True)

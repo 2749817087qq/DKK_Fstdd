@@ -18,8 +18,11 @@ Slice 3（worktree 创建 + 脚手架落点切换，**行为级真 git**）：
   TC-ISO-009  worktree 在项目根之外；主仓 status 干净
   TC-ISO-010  isolation.worktree_root 端到端生效
 
-另含 **BUILD 分期守卫** 用例（无 spec TC-ID）：尚未实现的形态必须出声拒绝，
-而非静默按 none 执行。
+Slice 4（branch 形态，**行为级真 git**）：
+  TC-ISO-005  只切分支、不建 worktree；骨架落在主仓
+
+BUILD 分期守卫（Slice 1–3 期间存在，Slice 4 后删除）：
+  未实现的隔离形态必须出声拒绝，而非静默按 none 执行。详见文件内说明。
 """
 import argparse
 import subprocess as _sp
@@ -236,31 +239,15 @@ def test_iso_016e_new_survives_bad_config(temp_project: Path, monkeypatch, capsy
 
 
 # ---------------------------------------------------------------------------
-# BUILD 分期守卫（无 spec TC-ID；Slice 4 实现 branch 后连同守卫一起删除）
+# BUILD 分期守卫已随 Slice 4 删除
 # ---------------------------------------------------------------------------
-
-@pytest.mark.skipif(not _GIT_OK, reason="需要 git")
-def test_unimplemented_mode_fails_loud(temp_project: Path, monkeypatch, capsys):
-    """尚未实现的隔离形态必须**出声拒绝**，且不得留下 change 目录。
-
-    当前只剩 `branch`（Slice 4 实现；`worktree` 已于 Slice 3 落地）。
-    若此处改成静默按 none 执行，本 change 就复制了它要消灭的缺陷
-    （`--parallel`：argparse 表面接受、实则永不生效）。
-
-    注意：本用例必须在**真 git 仓且干净**下运行 —— Slice 2 的前置检查位于守卫
-    之前，否则被测对象会变成前置检查（非 git 仓 / 脏树）而非守卫本身。
-    """
-    _setup_templates(temp_project)
-    _init_git_repo(temp_project)
-    monkeypatch.chdir(temp_project)
-
-    with pytest.raises(SystemExit) as exc:
-        cmd_new(_new_args(name="iso-unimplemented", isolate="branch"))
-
-    assert exc.value.code == 1
-    out = capsys.readouterr().out
-    assert "尚未实现" in out, f"未出声拒绝: {out!r}"
-    assert _change_dirs(temp_project) == [], "拒绝路径不得留下 change 目录"
+# Slice 1–3 期间存在一条 `test_unimplemented_mode_fails_loud`，断言
+# `--isolate worktree|branch` 在实现落地前必须**出声拒绝**（exit 1 且无残留）。
+# 它存在的意义是防止「参数已注册、实则永不生效」——正是本 change 要消灭的
+# `--parallel` 死开关缺陷。`worktree`（Slice 3）与 `branch`（Slice 4）均已实现，
+# 故守卫及其用例一并移除。
+# ⚠️ 后续若再新增隔离形态（如 `container`），**必须重新加回等价守卫**，
+#    而不是让它静默按 none 执行。
 
 
 # ===========================================================================
@@ -592,3 +579,37 @@ def test_iso_010_configured_worktree_root_is_honored_e2e(
     assert (base / dir_name).is_dir(), \
         f"worktree 未落在配置路径\n输出: {capsys.readouterr().out}"
     assert (base / dir_name / ".fstdd" / "changes" / dir_name / ".fstdd.yaml").exists()
+
+
+# ---------------------------------------------------------------------------
+# Slice 4 — branch 形态（行为级，真 git）
+# ---------------------------------------------------------------------------
+
+@pytest.mark.skipif(not _GIT_OK, reason="git 不可用")
+def test_iso_005_branch_mode_switches_branch_only(
+    temp_project: Path, monkeypatch, capsys
+):
+    """TC-ISO-005: branch 形态只切分支，**不建 worktree**；骨架落在主仓。
+
+    与 worktree 形态的关键区别：落点仍是主仓（工作区共享），
+    隔离性来自「分支」而非「目录」。因此 target_root 不变。
+    """
+    project = _isolated_git_project(temp_project, monkeypatch)
+    before = _git(project, "branch", "--show-current").stdout.strip()
+
+    cmd_new(_new_args(name="iso-five", isolate="branch"))
+
+    dir_name = _expected_dir_name("iso-five")
+    out = capsys.readouterr().out
+
+    current = _git(project, "branch", "--show-current").stdout.strip()
+    assert current == f"fstdd/{dir_name}", f"分支未切换: {current!r}\n输出: {out}"
+    assert current != before, "分支必须真的换掉，而不是停在原分支上"
+
+    assert len(_worktree_lines(project)) == 1, \
+        f"branch 形态不得创建 worktree\n输出: {out}"
+
+    # 骨架落在主仓（branch 模式共享工作区）
+    assert (project / ".fstdd" / "changes" / dir_name / ".fstdd.yaml").exists(), \
+        "branch 模式骨架应落在主仓"
+    assert (project / ".fstdd" / "changes" / dir_name / "canonical").is_dir()
