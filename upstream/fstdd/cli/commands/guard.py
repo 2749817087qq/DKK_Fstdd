@@ -863,6 +863,24 @@ def cmd_guard_check(args: argparse.Namespace) -> int:
                           f"(phase: {phase}) — YAML-first 流程产出物放行 ✅")
                 return 0
 
+            # V3.0.7: phase-gate path scope. A read-only ACTIVE_CHANGE freezes
+            # only the paths it declared in canonical/proposals/*.yaml scope.paths;
+            # out-of-scope files are warn-only. No declaration -> legacy global
+            # freeze (fail-closed). Placed AFTER the YAML-first artifact allowance
+            # and the editable-phase allowance, so those behaviours stay unchanged.
+            scope_patterns = _load_change_scope(active_dir)
+            scope_in = False
+            if scope_patterns:
+                scope_in = _is_in_change_scope(project_root, hook_path, scope_patterns)
+                if not scope_in:
+                    _guard_report(
+                        args,
+                        f"[STDD Guard] Warning: Phase '{phase}' blocks edits, but "
+                        f"{hook_path} is out of scope for {active_dir.name} "
+                        f"(scope.paths declared) - allowing.",
+                    )
+                    return 0
+
             # V2.9.4: task_type-aware editable phases
             editable = _EDITABLE_PHASES_BY_TYPE.get(task_type, _EDITABLE_PHASES)
             if phase in editable:
@@ -927,6 +945,9 @@ def cmd_guard_check(args: argparse.Namespace) -> int:
         reason = f"当前 Phase '{phase}' 不允许编辑。只有 Phase 3 (BUILD)/Phase 4 (DELIVER) 允许。"
     else:
         reason = assessment["reason"]
+    # V3.0.7: 作用域内被拦时点明原因，避免报成「相位不允许」让人以为推进相位即可。
+    if scope_in and scope_patterns:
+        reason += f"（该文件在 change 作用域 scope.paths 内，请扩展作用域或推进相位）"
 
     if platform == "claude-code":
         import sys as _sys
@@ -1244,3 +1265,68 @@ def cmd_guard(args: argparse.Namespace) -> None:
     else:
         print(f"  Unknown guard action: {action}")
         sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# V3.0.7: phase-gate path scope (change-declared scope.paths)
+# 两个纯函数刻意放在文件末尾，使既有 except 点的行号零漂移（审计表免刷新）。
+# ---------------------------------------------------------------------------
+
+def _load_change_scope(change_dir: Path):
+    """Read declared scope.paths from the change canonical proposal.
+
+    Returns the path-pattern list, or None when no scope is declared
+    (no scope block, empty paths, no proposal, or unreadable YAML) so callers
+    fall back to the legacy global freeze - fail-closed on every failure path.
+    """
+    proposals_dir = change_dir / "canonical" / "proposals"
+    if not proposals_dir.is_dir():
+        return None
+    import yaml as _yaml
+
+    for proposal in sorted(proposals_dir.glob("*.yaml")):
+        if not proposal.is_file():
+            continue
+        try:
+            data = _yaml.safe_load(proposal.read_text(encoding="utf-8")) or {}
+            scope = data.get("scope")
+            paths = scope.get("paths") if isinstance(scope, dict) else None
+            if isinstance(paths, list):
+                cleaned = [str(p) for p in paths if isinstance(p, str) and p.strip()]
+                return cleaned or None
+        except (OSError, UnicodeDecodeError, _yaml.YAMLError):
+            continue
+    return None
+
+
+def _is_in_change_scope(project_root: Path, file_path: str, scope_patterns: list) -> bool:
+    """Return True if file_path falls inside the declared change scope.
+
+    Normalized (normpath + relative_to) BEFORE matching, so ".." traversal can
+    never bypass the gate at the string level. Directory patterns end with "/"
+    and match their descendants; other patterns use fnmatch globbing.
+    """
+    if not file_path or not scope_patterns:
+        return False
+    import fnmatch
+    import os as _os
+
+    p = Path(_os.path.normpath(file_path))
+    if not p.is_absolute():
+        p = project_root / p
+    try:
+        rel = p.resolve(strict=False).relative_to(project_root.resolve())
+    except (ValueError, OSError):
+        return False
+    rel_s = rel.as_posix()
+    for raw in scope_patterns:
+        pattern = str(raw).strip()
+        if not pattern:
+            continue
+        if pattern.endswith("/"):
+            base = pattern.rstrip("/")
+            if rel_s == base or rel_s.startswith(base + "/"):
+                return True
+        elif fnmatch.fnmatch(rel_s, pattern):
+            return True
+    return False

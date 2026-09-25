@@ -507,3 +507,160 @@ class TestGuardDisable:
         for sub in (".claude", ".codebuddy"):
             cmds = self._hook_commands(tmp_path / sub / "settings.local.json")
             assert not any("guard check" in (c or "") for c in cmds), f"{sub} 残留 guard hook"
+
+
+class TestGuardChangeScope:
+    """V3.0.7: 相位门按 change 声明作用域判定（scope.paths）— 范围外 warn-only。
+
+    对应 test-plan.md TC-SCOPE-001..012 / spec.md SC-001..SC-010。
+    """
+
+    def _make_args(self, **kw):
+        ns = argparse.Namespace(command="guard", action="check", platform="cli",
+                                strict=False, quiet=False, dry_run=False, verbose=0)
+        for k, v in kw.items():
+            setattr(ns, k, v)
+        return ns
+
+    def _stdin_json(self, monkeypatch, tool_name, file_path, content=""):
+        payload = json.dumps({"tool_name": tool_name,
+                              "tool_input": {"file_path": file_path, "content": content}})
+        monkeypatch.setattr("sys.stdin", io.StringIO(payload))
+
+    def _make_change(self, tmp_path, phase="understand", scope=None, cid="2026-09-25-scope-x"):
+        """造一个 active change；scope 非 None 时在 canonical proposal 里声明作用域。
+
+        phases 必须是 dict 且已完成相位带 confirmed_at：_check_phase_integrity 会
+        先校验这两点，否则在相位门之前就被拦下（测不出作用域行为）。
+        """
+        change_dir = tmp_path / ".fstdd" / "changes" / cid
+        canon = change_dir / "canonical" / "proposals"
+        canon.mkdir(parents=True)
+        proposal = {"meta": {"change_id": cid}, "why": {"problem": "t"}}
+        if scope is not None:
+            proposal["scope"] = {"paths": scope}
+        (canon / (cid + ".yaml")).write_text(
+            yaml.dump(proposal, allow_unicode=True), encoding="utf-8")
+        order = ["understand", "spec", "build", "deliver"]
+        phases = {}
+        if phase in order:
+            idx = order.index(phase)
+            for earlier in order[:idx]:
+                phases[earlier] = {
+                    "status": "completed",
+                    "confirmed_at": "2026-09-25T00:00:00+00:00",
+                    "confirmed_by": "dialog",
+                }
+            phases[phase] = {"status": "in_progress"}
+            for later in order[idx + 1:]:
+                phases[later] = {"status": "pending"}
+        (change_dir / ".fstdd.yaml").write_text(yaml.dump({
+            "status": "active", "current_phase": phase, "task_type": "code",
+            "phases": phases,
+        }), encoding="utf-8")
+        return change_dir
+
+    # ---- TC-SCOPE-001 / 002: _load_change_scope -------------------------
+
+    def test_tc_scope_001_loads_declared_paths(self, tmp_path):
+        from fstdd.cli.commands.guard import _load_change_scope
+        d = self._make_change(tmp_path, scope=["a.py", "d/"])
+        assert _load_change_scope(d) == ["a.py", "d/"]
+
+    def test_tc_scope_002_returns_none_when_not_declared(self, tmp_path):
+        """无 scope 块 / paths 为空 / 无 proposal ⇒ 一律 None（fail-closed）。"""
+        from fstdd.cli.commands.guard import _load_change_scope
+        c3 = tmp_path / "c3"
+        (c3 / ".fstdd" / "changes" / "2026-09-25-noprop").mkdir(parents=True)
+        (c3 / ".fstdd" / "changes" / "2026-09-25-noprop" / ".fstdd.yaml").write_text(
+            yaml.dump({"status": "active", "current_phase": "understand"}),
+            encoding="utf-8")
+        cases = [
+            self._make_change(tmp_path / "c1", scope=None, cid="2026-09-25-a"),
+            self._make_change(tmp_path / "c2", scope=[], cid="2026-09-25-b"),
+            c3 / ".fstdd" / "changes" / "2026-09-25-noprop",
+        ]
+        for d in cases:
+            assert _load_change_scope(d) is None, d
+
+    # ---- TC-SCOPE-003..005 / 010: 命中判定 ------------------------------
+
+    def test_tc_scope_003_exact_file_in_scope(self, tmp_path):
+        from fstdd.cli.commands.guard import _is_in_change_scope
+        assert _is_in_change_scope(tmp_path, str(tmp_path / "src" / "app.py"),
+                                   ["src/app.py"]) is True
+
+    def test_tc_scope_004_directory_pattern_matches_descendants(self, tmp_path):
+        from fstdd.cli.commands.guard import _is_in_change_scope
+        assert _is_in_change_scope(tmp_path, str(tmp_path / "src" / "deep" / "mod.py"),
+                                   ["src/"]) is True
+
+    def test_tc_scope_005_out_of_scope_is_false(self, tmp_path):
+        from fstdd.cli.commands.guard import _is_in_change_scope
+        assert _is_in_change_scope(tmp_path, str(tmp_path / "tools" / "evil.py"),
+                                   ["src/"]) is False
+
+    def test_tc_scope_010_dotdot_normalized_before_matching(self, tmp_path):
+        """.. 穿越按归一化后的真实位置判定，不做字符串级匹配。"""
+        from fstdd.cli.commands.guard import _is_in_change_scope
+        escaped = str(tmp_path / "src" / ".." / "tools" / "evil.py")
+        assert _is_in_change_scope(tmp_path, escaped, ["src/"]) is False
+
+    # ---- TC-SCOPE-006..009 / 011 / 012: cmd_guard_check 判定序 ----------
+
+    def test_tc_scope_006_in_scope_blocks_in_readonly(self, tmp_path, monkeypatch, capsys):
+        """范围内文件在只读相位仍被拦，并提示扩展 scope.paths。"""
+        from fstdd.cli.commands.guard import cmd_guard_check
+        self._make_change(tmp_path, phase="understand", scope=["src/"])
+        (tmp_path / "src").mkdir()
+        self._stdin_json(monkeypatch, "Write", str(tmp_path / "src" / "app.py"), "x=1\n")
+        monkeypatch.chdir(tmp_path)
+        assert cmd_guard_check(self._make_args(hook_stdin=True)) == 2
+        assert "scope.paths" in capsys.readouterr().out
+
+    def test_tc_scope_007_out_of_scope_warns_and_allows(self, tmp_path, monkeypatch, capsys):
+        from fstdd.cli.commands.guard import cmd_guard_check
+        self._make_change(tmp_path, phase="understand", scope=["src/"])
+        (tmp_path / "docs").mkdir()
+        self._stdin_json(monkeypatch, "Write", str(tmp_path / "docs" / "x.md"), "# x\n")
+        monkeypatch.chdir(tmp_path)
+        assert cmd_guard_check(self._make_args(hook_stdin=True)) == 0
+        assert "out of scope" in capsys.readouterr().out
+
+    def test_tc_scope_008_no_scope_declared_keeps_global_block(self, tmp_path, monkeypatch):
+        """未声明 scope ⇒ 维持既有全局拦截（fail-closed，行为零漂移）。"""
+        from fstdd.cli.commands.guard import cmd_guard_check
+        self._make_change(tmp_path, phase="understand", scope=None)
+        (tmp_path / "docs").mkdir()
+        self._stdin_json(monkeypatch, "Write", str(tmp_path / "docs" / "x.md"), "# x\n")
+        monkeypatch.chdir(tmp_path)
+        assert cmd_guard_check(self._make_args(hook_stdin=True, quiet=True)) == 2
+
+    def test_tc_scope_009_gate_token_still_blocked(self, tmp_path, monkeypatch, capsys):
+        """硬阻断优先于作用域收窄：GATE token 在任何相位/范围下都拦。"""
+        from fstdd.cli.commands.guard import cmd_guard_check
+        self._make_change(tmp_path, phase="understand", scope=["src/"])
+        (tmp_path / "src").mkdir()
+        self._stdin_json(monkeypatch, "Write",
+                         str(tmp_path / "src" / "GATE1_APPROVED"), "1\n")
+        monkeypatch.chdir(tmp_path)
+        assert cmd_guard_check(self._make_args(hook_stdin=True)) == 2
+        assert "人工创建" in capsys.readouterr().out
+
+    def test_tc_scope_011_yaml_first_artifact_still_allowed(self, tmp_path, monkeypatch):
+        """判定序 3（YAML-first 流程产出物）不受作用域收窄影响。"""
+        from fstdd.cli.commands.guard import cmd_guard_check
+        cd = self._make_change(tmp_path, phase="spec", scope=["src/"])
+        self._stdin_json(monkeypatch, "Write",
+                         str(cd / "canonical" / "proposals" / "x.yaml"), "meta: {}\n")
+        monkeypatch.chdir(tmp_path)
+        assert cmd_guard_check(self._make_args(hook_stdin=True, quiet=True)) == 0
+
+    def test_tc_scope_012_editable_phase_ignores_scope(self, tmp_path, monkeypatch):
+        """可编辑相位不受作用域影响（SC-009）。"""
+        from fstdd.cli.commands.guard import cmd_guard_check
+        self._make_change(tmp_path, phase="build", scope=["src/"])
+        (tmp_path / "docs").mkdir()
+        self._stdin_json(monkeypatch, "Edit", str(tmp_path / "docs" / "x.md"))
+        monkeypatch.chdir(tmp_path)
+        assert cmd_guard_check(self._make_args(hook_stdin=True, quiet=True)) == 0

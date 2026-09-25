@@ -249,8 +249,11 @@ points:
     方向安全），V3.0.8 exclude_dirs 边界匹配的兜底容错
 - id: EA-033
   file: upstream/fstdd/cli/commands/guard.py
-  line: 1172
+  line: 1193
   stmt: return False
+  refreshed_at: '2026-09-25T10:20:00+00:00'
+  refreshed_reason: 2026-09-25 V3.0.7 guard-phase-path-scope —— cmd_guard_check 内新增
+    作用域分支（约 19 行）使本点由 1172 下移至 1193；语句/处理器指纹未变，仅行号刷新
   handler: 'except Exception:'
   classification: 合理容错
   severity: null
