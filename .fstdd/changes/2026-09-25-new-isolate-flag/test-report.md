@@ -14,7 +14,7 @@
 - **结论**：🟢 **通过**。9 项 REQ / 20 个 SC 全部落地，TC-ISO-001..023 全绿。
 - **关键成果**：`--isolate {none|worktree|branch}` 三形态可用；**`none` 路径零漂移**（与改动前逐字一致）；
   隔离 worktree 内**门禁有效**（裁定 ISO-1）；`--parallel` 死代码清除。
-- **回归**：new/canon/init 相关套件 **66 passed / 0 failed**；全量套件结论见 §6。
+- **回归**：相关套件 **66 passed / 0 failed**；全量套件 **838 passed / 0 failed**（基线 802，差值 +36 与预期一致）。
 - **端到端**：4 个真 CLI + 真 git 探针全部通过，含 **agent_spec 23/23**（两处 ACTIVE_CHANGE 跨 worktree 零干扰）。
 - **阻塞项**：无。
 - **下一步**：Gate 3 确认 → DELIVER。
@@ -158,10 +158,18 @@ test_except_audit.py                  ⇒  5 passed
 |---|---|
 | 命令 | `python -m pytest tests -p no:cacheprovider -q` |
 | 基线（`4eec636`） | 802 passed / 0 failed / 2614.06s |
-| 本次（`d329491`） | ⏳ 见下方「全量套件结果」 |
-| 预期差值 | +38（新增 isolate 用例）− 2（删除 `test_new_coverage.py`）= **+36** |
+| **本次（`d329491`）** | **838 passed / 0 failed / 1069.38s (0:17:49)** |
+| 差值 | **+36** = +38（新增 isolate 用例）− 2（删除 `test_new_coverage.py`） ✅ **与预期完全一致** |
 
-**全量套件结果**：_（等待后台任务完成后填入）_
+```
+838 passed in 1069.38s (0:17:49)
+```
+
+**结论：0 failed，差值可逐项对账，无回归。**
+
+> 耗时低于基线（1069s vs 2614s）是**机器负载差异**所致（基线那轮有外部 python 进程
+> PID 24520 持续占用），与用例数无关。用例数差值是确定性的，已逐项核对。
+> `test_guard.py` 单独复跑 **51 passed / 5.13s**，确认 Guard 判定链未受影响（TC-ISO-023）。
 
 ---
 
@@ -203,7 +211,7 @@ test_except_audit.py                  ⇒  5 passed
 - [x] `stdd validate` ⇒ 0 error
 - [x] `canon verify` ⇒ 2/2 通过
 - [x] 吞异常哨兵 ⇒ 0 条提示
-- [ ] 全量套件 0 failed（§6.4 待填）
+- [x] 全量套件 0 failed（**838 passed / 0 failed**，差值 +36 与预期一致）
 - [ ] Gate 3 确认
 
 ---
