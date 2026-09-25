@@ -1,6 +1,7 @@
 """TC-PASSK-001~002: pass@k verification tests (V2.8)."""
 
 import pytest
+import sys
 from pathlib import Path
 
 
