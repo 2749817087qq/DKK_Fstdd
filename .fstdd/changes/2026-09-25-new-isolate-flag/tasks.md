@@ -275,16 +275,31 @@ Windows 原生 git **不认** ⇒ `GIT_CEILING_DIRECTORIES=/tmp` **静默失效*
 **失败模式检查（已核）**：`upstream/fstdd/` 下 `parallel` 零命中（TC-ISO-017 锚定）；
 CHANGELOG 条目可被 TC-ISO-018 检索（`V3.0.7` + `Two-Instance Kickoff` 双重锚定）。
 
-## 8. 质量验证与交付证据（P0）
+## 8. 质量验证与交付证据（P0）⏳ 进行中
 
-- [ ] 8.1 TC-ISO-021：`test_new.py` / `test_new_coverage.py` / `test_init.py` 全绿（16 例）
-- [ ] 8.2 TC-ISO-022：`tools/audit_silent_except.py --check` + `test_guard_silent_except.py` 通过
-- [ ] 8.3 TC-ISO-023：`test_guard.py` 51 例全绿（确认未触碰判定链）
-- [ ] 8.4 **agent_spec 端到端**：沙箱仓 + 双 worktree 互不干扰（真 CLI + 真 git，单独执行并留证）
-- [ ] 8.5 `stdd validate 2026-09-25-new-isolate-flag` ⇒ 0 error
-- [ ] 8.6 全量套件回归：`upstream/tests` 0 failed（基线 **802 passed / 0 failed / 2614.06s @ `4eec636`**）
-- [ ] 8.7 写 `test-report.md`（含 per-slice 证据链 + 失败模式检查结论）
+- [x] 8.1 TC-ISO-021：`test_new.py`(11) + `test_init.py`(3) 全绿（**14 例**）
+      —— `test_new_coverage.py`(2) 已随死代码删除，见 Slice 7
+- [x] 8.2 TC-ISO-022：`tools/audit_silent_except.py --check` ⇒ **通过（0 条提示）**；
+      `test_except_audit.py` ⇒ **5 passed**
+- [ ] 8.3 TC-ISO-023：`test_guard.py` 51 例全绿（见 8.6 全量日志）
+- [x] 8.4 **agent_spec 端到端**：沙箱仓 + 双 worktree ⇒ **23/23 通过**（真 CLI + 真 git + 真 Guard）
+- [x] 8.5 `stdd validate 2026-09-25-new-isolate-flag` ⇒ **0 error**（1 warning 为既有约定代价，W5 同款）；
+      `canon verify` ⇒ **2/2 通过**
+- [ ] 8.6 全量套件回归（基线 802 passed / 0 failed / 2614.06s @ `4eec636`；预期 +36）
+- [x] 8.7 `test-report.md` 已写（含 per-slice 证据链 + 失败模式检查 11 项 + 端到端证据）
 - [ ] 8.8 待 Gate 3 确认
+
+**关键证据（详见 `test-report.md`）**：
+| 项 | 结果 |
+|---|---|
+| 相关套件（isolate/new/canon/init/except_audit） | **66 passed / 0 failed / 51.19s** |
+| agent_spec 端到端 | **23/23**（alpha 只读相位冻结 scope 内、scope 外 warn-only；beta build 相位同路径 exit 0） |
+| `stdd validate` | **0 error** |
+| 吞异常哨兵 | **0 条提示** |
+| `canon verify` | **2/2** |
+
+**agent_spec 的核心命题已证成**：两处 ACTIVE_CHANGE 各自只冻结自己 scope 内的路径，
+**跨 worktree 零干扰** —— 这是主工作区单实例模型下做不到的，也是单测无法证明的部分。
 
 ---
 
