@@ -49,9 +49,17 @@
 - **git**：显式路径提交 3 个文件（skill 副本 + memory/2026-09-24.md + 本自动化记忆），未用 `git add -A`（会连带暂存 `_scratch/` 25MB 基线、`TASK.md` 当日无关修改、`.fstdd/_notices/` 守护轮次产物、`docs/*.md` 人手工报告）。remote 数=0 未 push。
 - **偏离任务书**：未用 `git add -A`（同前 5 轮）。
 
+### 2026-09-26 00:10 运行（收纳对象 2026-09-25）— 第 7 轮
+- **skill**：0 新增 / 0 刷新。源目录 09-25 无文件 mtime 变更（最新 09-24 13:25）。22 副本按 mtime 判据全 skip。
+  - **新坑（已固化）**：`windows-junction-selfcontained` 被 `[ "$SRC" -nt "$DST" ]` 标记 REFRESH，实为**目录级 mtime 假阳性**（源目录 09-21 10:18 vs 副本 09-21 09:10，`diff -rq` exit=0 字节一致、SKILL.md 同为 14750B@09-21 09:32）⇒ 目录 mtime ≠ 内容 mtime（新建/删除子项、touch 都会改目录 mtime），**必须 `diff -rq` 兜底**后才动手拷。
+- **经验文档**：0 新增。09-25 唯一 EXP `FSTDD003-EXP-20260925-CI-1.md`（11441B，20:52）已由「工作台」change 当日自建并登记 README 索引（说明行 + 表行，`grep -c 20260925` = 2）。当日其余 8 段轮询守护 + 3 类节点事件（K 下发交付物已入仓通告 / K 催办升级规程回执 / 对账命名差异白名单化）+ automation memory null 字节覆写，均为本节点运营事务或非 FSTDD 工具缺陷 ⇒ 仅入当日日志，不单开 EXP。
+- **git**：显式路径提交 7 文件（`.gitignore` + `MEMORY.md` + `2026-09-23.md` + `2026-09-25.md` + 3 automation memory）。remote 数=0 未 push。`.gitignore` 新增忽略凭证文件 `.fstdd/_fstdd003_quanthub.json`（安全改进，已入库）。未提交 `_scratch/`(25M)、内嵌 git repo、`TASK.md`、`docs/*.md`、`.fstdd/_notices/**`。
+- **偏离任务书**：未用 `git add -A`（同前 6 轮）。
+
 ## 下次运行须知（固化判据）
-1. **skill 判据 = mtime 比较**，不是「目录存在即跳过」：
-   `if [ -d "$DST" ] && [ "$SRC" -nt "$DST" ]; then cp -r "$SRC/." "$DST/"; fi` → 再 `diff -r` 校验。
+1. **skill 判据 = mtime 比较 + `diff -rq` 兜底**，不是「目录存在即跳过」：
+   `if [ -d "$DST" ] && [ "$SRC" -nt "$DST" ]; then` **`diff -rq "$SRC" "$DST"` 有实际差异才** `cp -r "$SRC/." "$DST/"; fi`
+   ⚠ 目录级 ` -nt ` 是**假阳性高发源**（第 7 轮实测）：目录 mtime 会被子项增删/touch 改动，与内容新旧无关。
    `cp -r "$SRC/." "$DST/"`（点号）才不会嵌一层同名子目录。单副本，不双写 `artifacts/skills/`。
 2. **skill 扫描范围**：`C:\Users\Administrator\.workbuddy-ai\skills\`（17 个目录）+ `C:\Users\Administrator\.workbuddy-ai\FSTDD\{skills,.fstdd\skills}`。
    实测 D 盘无其它 `.workbuddy-ai/skills`。**避免 `find D:` 全盘扫**（一次跑 4 分钟+，用 Glob 或定向 find）。

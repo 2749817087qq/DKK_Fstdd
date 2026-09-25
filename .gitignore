@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 .fstdd/_fstdd003_token.txt
 .fstdd/_fstdd003_credential.txt
+.fstdd/_fstdd003_quanthub.json
