@@ -10,6 +10,8 @@ from datetime import datetime
 import yaml
 import requests
 
+from .experience import _coerce_numeric_fields
+
 
 def _read_community_config(project_root: Path) -> dict:
     from ..utils import read_config
@@ -83,6 +85,7 @@ def cmd_curate_deduplicate(args: argparse.Namespace, project_root: Path) -> None
     for tar_file in sorted(inbox.glob("*.tar.gz")):
         with tarfile.open(tar_file, "r:gz") as tar:
             for member in tar.getmembers():
+                # FSD-004-EXEMPT: tar 包内成员命名（registry 约定），非本地库枚举。
                 if member.name.startswith("EXP-") and member.name.endswith(".md"):
                     eid = Path(member.name).stem
                     if eid in all_exps:
@@ -92,7 +95,7 @@ def cmd_curate_deduplicate(args: argparse.Namespace, project_root: Path) -> None
                         content = fobj.read().decode("utf-8")
                         parts = content.split("---", 2)
                         if len(parts) >= 3:
-                            data = yaml.safe_load(parts[1]) or {}
+                            data = _coerce_numeric_fields(yaml.safe_load(parts[1]) or {})
                             all_exps[eid] = (data, parts[2].strip())
 
     eids = list(all_exps.keys())
@@ -168,6 +171,7 @@ def cmd_curate_review(args: argparse.Namespace, project_root: Path) -> None:
     for tar_file in sorted(inbox.glob("*.tar.gz")):
         with tarfile.open(tar_file, "r:gz") as tar:
             for member in tar.getmembers():
+                # FSD-004-EXEMPT: tar 包内成员命名（registry 约定），非本地库枚举。
                 if member.name.startswith("EXP-") and member.name.endswith(".md"):
                     eid = Path(member.name).stem
                     if eid in all_exps:
@@ -177,7 +181,7 @@ def cmd_curate_review(args: argparse.Namespace, project_root: Path) -> None:
                         content = fobj.read().decode("utf-8")
                         parts = content.split("---", 2)
                         if len(parts) >= 3:
-                            data = yaml.safe_load(parts[1]) or {}
+                            data = _coerce_numeric_fields(yaml.safe_load(parts[1]) or {})
                             all_exps[eid] = (data, parts[2].strip())
 
     approved = []
@@ -270,13 +274,14 @@ def cmd_curate_pack(args: argparse.Namespace, project_root: Path) -> None:
         for tar_file in sorted(inbox.glob("*.tar.gz")):
             with tarfile.open(tar_file, "r:gz") as tar:
                 for member in tar.getmembers():
+                    # FSD-004-EXEMPT: tar 包内成员命名（registry 约定），非本地库枚举。
                     if member.name.startswith("EXP-") and member.name.endswith(".md"):
                         fobj = tar.extractfile(member)
                         if fobj:
                             content = fobj.read().decode("utf-8")
                             parts = content.split("---", 2)
                             if len(parts) >= 3:
-                                data = yaml.safe_load(parts[1]) or {}
+                                data = _coerce_numeric_fields(yaml.safe_load(parts[1]) or {})
                                 if data.get("curated"):
                                     curated.append((Path(member.name).stem, data, parts[2].strip()))
 

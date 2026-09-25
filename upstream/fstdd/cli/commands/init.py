@@ -324,6 +324,6 @@ def _post_init_self_check(project_root: Path) -> None:
     print(f"    Guard: {'✅ 已激活（.claude 或 .codebuddy）' if guard_active else '⚠️ 未安装（手动执行: fstdd guard init）'}")
     # Check experiences
     exp_dir = project_root / ".fstdd" / "experiences"
-    exp_count = len(list(exp_dir.glob("EXP-*.md"))) if exp_dir.exists() else 0
+    exp_count = len([p for p in exp_dir.glob("*.md") if not p.name.startswith(".")]) if exp_dir.exists() else 0
     print(f"    经验库: {'✅ ' + str(exp_count) + ' 条' if exp_count > 0 else '⚠️ 空（手动拉取: stdd experience pull）'}")
     print(f"    Agent验证: ✅ agent_tests/ 已创建")

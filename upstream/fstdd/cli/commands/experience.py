@@ -223,17 +223,52 @@ def _index_lock(exp_dir: Path, timeout: float = 20.0):
                 pass
 
 
+def _index_is_stale(exp_dir: Path, index_path: Path) -> bool:
+    """索引是否落后于经验库（FSD-025）。
+
+    任一条件成立即判过期：
+
+    1. 索引不存在或不可解析；
+    2. 库内条目数与索引 ``total`` 不一致 —— 覆盖外部**新增与删除**；
+    3. 存在比索引更新的经验文件 —— 覆盖「增删相互抵消但内容已变」。
+
+    历史缺陷：原实现仅在索引**不存在**时才重建，任何绕过 CLI 的库变更
+    （手工落盘、迁移脚本、外部同步）都不会反映。实测库内 15 条而
+    ``stats`` 长期报 12 条。
+    """
+    if not index_path.exists():
+        return True
+    try:
+        idx_mtime = index_path.stat().st_mtime
+        with open(index_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+    except (OSError, yaml.YAMLError):
+        return True
+
+    files = _iter_experience_files(exp_dir)
+    if len(files) != data.get("total", -1):
+        return True
+
+    for p in files:
+        try:
+            if p.stat().st_mtime > idx_mtime + 1e-6:
+                return True
+        except OSError:
+            continue
+    return False
+
+
 def _load_index(exp_dir: Path, _locked: bool = False) -> dict:
     index_path = _get_index_path(exp_dir)
-    if not index_path.exists():
-        if _locked:
-            index = _rebuild_index(exp_dir)
-            _save_index(exp_dir, index)
-            return index
-        with _index_lock(exp_dir):
-            return _load_index(exp_dir, _locked=True)
-    with open(index_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {"last_id": 0, "total": 0}
+    if not _index_is_stale(exp_dir, index_path):
+        with open(index_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {"last_id": 0, "total": 0}
+    if _locked:
+        index = _rebuild_index(exp_dir)
+        _save_index(exp_dir, index)
+        return index
+    with _index_lock(exp_dir):
+        return _load_index(exp_dir, _locked=True)
 
 
 def _save_index(exp_dir: Path, index: dict) -> None:
@@ -265,7 +300,11 @@ def _rebuild_index(exp_dir: Path) -> dict:
     if not exp_dir.exists():
         return index
 
-    for exp_file in sorted(exp_dir.glob("EXP-*.md")):
+    # 向后兼容（2026-09-17）：同时认 EXP-*.md 和带 experience_id frontmatter 的任意 .md
+    # 背景：从旧 STDD 迁移的经验文件名是语义化的（如 scheduler_daily_queue_not_dropped.md），
+    # 不带 EXP- 前缀 → 原 glob("EXP-*.md") 全部忽略 → list/stats 显示 0。
+    # 修复：扫所有 .md，优先用 frontmatter 的 experience_id，没有则用文件名 stem。
+    for exp_file in _iter_experience_files(exp_dir):
         data = _load_experience(exp_file)
         if data is None:
             continue
@@ -277,7 +316,15 @@ def _rebuild_index(exp_dir: Path) -> dict:
         ids = []
         for v in index.get("by_category", {}).values():
             ids.extend(v)
-        index["last_id"] = max(int(x.split("-")[-1]) for x in ids) if ids else 0
+        # 向后兼容（2026-09-17）：迁移的经验 ID 可能是空串或语义名（非 EXP-<数字>）
+        # → int() 会炸。容错：只对纯数字后缀取 max，非数字的跳过。
+        numeric_ids = []
+        for x in ids:
+            try:
+                numeric_ids.append(int(x.split("-")[-1]))
+            except (ValueError, IndexError):
+                continue
+        index["last_id"] = max(numeric_ids) if numeric_ids else 0
     return index
 
 
@@ -300,6 +347,60 @@ def _next_id(index: dict) -> str:
     return f"EXP-{year}-{next_num:04d}"
 
 
+def _iter_experience_files(exp_dir) -> list:
+    """枚举经验库中的经验文件 —— 全模块唯一入口（FSD-004）。
+
+    约定（2026-09-17 起）：库内接受任意 ``*.md``，标识优先取 frontmatter 的
+    ``experience_id``，缺失时退回文件名 stem。
+
+    历史缺陷：原实现散布 10 处 ``glob("EXP-*.md")`` 假设，而 STDD→fSTDD 迁移
+    来的文件名是语义化的（``scheduler_daily_queue_not_dropped.md``）→
+    ``search`` 静默返回空数组 + ``exit=0``（错误结果不可察觉）。
+
+    排除项：隐藏文件（``.`` 开头，如 ``.experience-index.yaml`` 不解但防御性保留）。
+    """
+    d = Path(exp_dir)
+    if not d.exists():
+        return []
+    return sorted(p for p in d.glob("*.md") if not p.name.startswith("."))
+
+
+# 数值型 frontmatter 字段：迁移数据里可能被写成带引号的字符串（'0.8'）。
+_INT_KEYS = (
+    "occurrences",
+    "adoption_count",
+    "community_votes_useful",
+    "community_votes_unuseful",
+)
+_FLOAT_KEYS = ("confidence", "provenance_weight")
+_NUMERIC_KEYS = _INT_KEYS + _FLOAT_KEYS
+
+
+def _coerce_numeric_fields(data: dict) -> dict:
+    """归一化数值字段 —— 读取入口统一收口（FSD-023）。
+
+    背景：迁移脚本把 ``confidence: 0.8`` 写成了 ``confidence: '0.8'``（字符串）。
+    原 ``glob("EXP-*.md")`` 漏读这批文件，所以该缺陷从未暴露；修复 glob 后
+    ``search`` 立即抛 ``TypeError: can't multiply sequence by non-int``。
+
+    策略：在读取入口统一转换，而非在下游 20+ 处算术里各写容错（必然漏）。
+    无法转换时删除该键，让下游 ``.get(key, default)`` 的默认值生效。
+    """
+    for key in _NUMERIC_KEYS:
+        if key not in data:
+            continue
+        raw = data[key]
+        if isinstance(raw, bool) or isinstance(raw, (int, float)):
+            continue
+        try:
+            num = float(str(raw).strip())
+        except (ValueError, TypeError):
+            data.pop(key, None)
+            continue
+        data[key] = int(num) if key in _INT_KEYS else num
+    return data
+
+
 def _load_experience(filepath: Path) -> Optional[dict]:
     if not filepath.exists():
         return None
@@ -307,7 +408,7 @@ def _load_experience(filepath: Path) -> Optional[dict]:
     parts = content.split("---", 2)
     if len(parts) < 3:
         return None
-    return yaml.safe_load(parts[1]) or {}
+    return _coerce_numeric_fields(yaml.safe_load(parts[1]) or {})
 
 
 def _sanitize(text: str) -> str:
@@ -340,7 +441,7 @@ def _cmd_list(args: argparse.Namespace, exp_dir: Path) -> None:
     index = _load_index(exp_dir)
     show_all = getattr(args, "all", False)
     experiences = []
-    for exp_file in sorted(exp_dir.glob("EXP-*.md")):
+    for exp_file in _iter_experience_files(exp_dir):
         data = _load_experience(exp_file)
         if data is None:
             continue
@@ -410,7 +511,7 @@ def _cmd_add(args: argparse.Namespace, exp_dir: Path) -> None:
             "community_votes_useful": 0,
             "community_votes_unuseful": 0,
             "adoption_count": 0,
-            "project_type": getattr(args, "project_type", None) or _detect_project_type(Path.cwd() / "changes"),
+            "project_type": getattr(args, "project_type", None) or _detect_project_type(Path.cwd() / ".fstdd" / "changes"),
             # V2.7: provenance tracking
             "provenance": getattr(args, "provenance", None) or "ai-inferred",
             "provenance_weight": _provenance_weight(args),
@@ -478,7 +579,7 @@ def _cmd_export(args: argparse.Namespace, exp_dir: Path) -> None:
         print("  Warning: exporting without sanitization — review before sharing")
 
     experiences = []
-    for exp_file in sorted(exp_dir.glob("EXP-*.md")):
+    for exp_file in _iter_experience_files(exp_dir):
         data = _load_experience(exp_file)
         if data is None:
             continue
@@ -616,7 +717,7 @@ def _cmd_pull(args: argparse.Namespace, exp_dir: Path) -> None:
         sys.exit(1)
 
     existing_ids = set()
-    for f in exp_dir.glob("EXP-*.md"):
+    for f in _iter_experience_files(exp_dir):
         existing_ids.add(f.stem)
 
     with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
@@ -626,6 +727,9 @@ def _cmd_pull(args: argparse.Namespace, exp_dir: Path) -> None:
     try:
         with tarfile.open(tmp_path, "r:gz") as tar:
             members = tar.getmembers()
+            # FSD-004-EXEMPT: 这里过滤的是 tar 包内成员名。pack 由 registry 产出、
+            # 遵循 EXP-*.md 命名约定，与「本地库允许语义名」是两回事，故保留前缀判断。
+            # 本地库枚举一律走 _iter_experience_files（见 L315）。
             exp_members = [m for m in members if m.name.startswith("EXP-") and m.name.endswith(".md")]
             index_member = None
             for m in members:
@@ -675,7 +779,7 @@ def _cmd_pull(args: argparse.Namespace, exp_dir: Path) -> None:
                                         if Path(rm.name).stem == eid:
                                             rf = tar.extractfile(rm)
                                             if rf:
-                                                remote_data = yaml.safe_load(rf.read().decode("utf-8").split("---", 2)[1]) or {}
+                                                remote_data = _coerce_numeric_fields(yaml.safe_load(rf.read().decode("utf-8").split("---", 2)[1]) or {})
                                                 for vk in ("community_votes_useful", "community_votes_unuseful", "adoption_count"):
                                                     if vk in remote_data:
                                                         local_data[vk] = remote_data[vk]
@@ -858,7 +962,7 @@ def _cmd_extract(args, exp_dir):
     config = read_config(project_root)
     proj_lang = config.get("project", {}).get("language", "python")
     today = datetime.now().strftime("%Y-%m-%d")
-    existing = sorted(exp_dir_path.glob("EXP-*.md"))
+    existing = _iter_experience_files(exp_dir_path)
     next_num = len(existing) + 1
     count = 0
     for p in filtered:
@@ -955,7 +1059,7 @@ def _cmd_review(args, exp_dir):
         print("  Experience library is empty. Run 'stdd experience extract' first.")
         return
     drafts = []
-    for f in sorted(exp_dir_path.glob("EXP-*.md")):
+    for f in _iter_experience_files(exp_dir_path):
         fm = _load_experience(f)
         if fm and fm.get("lifecycle_state") == "discovered":
             drafts.append((f, fm))
@@ -1084,7 +1188,7 @@ def _cmd_search(args, exp_dir):
             print(f"  No results for '{keyword}'")
 
     exp_dir_path = Path(exp_dir)
-    if not exp_dir_path.exists() or not list(exp_dir_path.glob("EXP-*.md")):
+    if not _iter_experience_files(exp_dir_path):
         # 库为空时不得往 stdout 打人类可读文案，否则 --format json 无法解析
         print("  Experience library is empty.", file=sys.stderr)
         _empty()
@@ -1094,7 +1198,7 @@ def _cmd_search(args, exp_dir):
     sev_filter = getattr(args, "severity", None)
     fmt = getattr(args, "format", "table")
     results = []
-    for filepath in sorted(exp_dir_path.glob("EXP-*.md")):
+    for filepath in _iter_experience_files(exp_dir_path):
         fm = _load_experience(filepath)
         if not fm:
             continue

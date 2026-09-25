@@ -5,9 +5,11 @@ meta:
   observed_at: '2026-09-18T03:48:00+00:00'
   observed_base_git_sha: 3a4ad974beb042db473dbf00780382d8f530f1d8
   scanner: tools/audit_silent_except.py
-  total: 17
+  refreshed_at: '2026-09-25T10:45:00+08:00'
+  refreshed_reason: guard.py V3.0.6→V3.0.8 合并新增 3 处 except 兜底（return False ×2 + return [] ×1），行号随代码刷新，指纹集合零漂移
+  total: 20
   by_classification:
-    合理容错: 14
+    合理容错: 17
     意外吞错: 3
   note: 活表：置于 active change 下由本 change 维护；归档表不动（D6 决策）。S1/S2S3/S4a 共修复 11 个点（本表已移除），行号随代码变动刷新，零漂移校验以
     (file, stmt) 指纹为准（±5 行容差）
@@ -77,7 +79,7 @@ points:
 # 二者见 meta.voiced_by_change。
 - id: EA-010
   file: upstream/fstdd/cli/commands/guard.py
-  line: 350
+  line: 374
   stmt: return False
   handler: 'except Exception:'
   classification: 合理容错
@@ -199,7 +201,7 @@ points:
   justification: version 文件 YAML 解析失败 → 继续其他探测路径
 - id: EA-030
   file: upstream/fstdd/cli/commands/guard.py
-  line: 295
+  line: 310
   stmt: pass
   handler: 'except Exception:'
   classification: 合理容错
@@ -209,3 +211,37 @@ points:
   justification: _read_hook_input 兜底路径：stdin JSON 不可解析（大 payload 截断或未转义的
     Windows 路径）时吞掉解析异常，改由正则提取 file_path；仍失败则维持原 fail-open 语义
     返回 (None, None)。V3.0.6 agent 运行时目录豁免的配套改动。
+- id: EA-031
+  file: upstream/fstdd/cli/commands/guard.py
+  line: 447
+  stmt: return []
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: _load_excluded_dirs 加载配置失败返回空列表，exclude_dirs 无兜底等价于「不排除任何目录」，
+    语义安全（fail-open 到最严格模式），V3.0.8 新加的智能模式配置读取配套改动
+- id: EA-032
+  file: upstream/fstdd/cli/commands/guard.py
+  line: 466
+  stmt: return False
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: _is_under_excluded 路径判定异常 return False ⇒ 未命中排除区，Guard 继续后续检查（fail-closed
+    方向安全），V3.0.8 exclude_dirs 边界匹配的兜底容错
+- id: EA-033
+  file: upstream/fstdd/cli/commands/guard.py
+  line: 1172
+  stmt: return False
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: _disable_guard_hook_in 解析 settings 失败返回 False ⇒ 视作未命中不修改，
+    dry-run 与非 dry-run 语义一致（fail-closed 不写盘），对齐 V3.0.8 guard --disable-hook
+    的预览/实际执行二分语义

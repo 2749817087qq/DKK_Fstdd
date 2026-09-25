@@ -29,9 +29,9 @@ def cmd_structure_delta(args):
     """Generate code-structure-delta.md for a change."""
     project_root = Path.cwd()
     change_name = args.target
-    change_dir = project_root / "changes" / change_name
+    change_dir = project_root / ".fstdd" / "changes" / change_name
     if not change_dir.exists():
-        print(f"  changes/{change_name}/ not found")
+        print(f"  .fstdd/changes/{change_name}/ not found")
         sys.exit(1)
 
     delta_file = change_dir / "code-structure-delta.md"
@@ -71,7 +71,7 @@ def cmd_structure_merge(args):
     project_root = Path.cwd()
     _ensure_structure_dir(project_root)
     change_name = args.target
-    delta_file = project_root / "changes" / change_name / "code-structure-delta.md"
+    delta_file = project_root / ".fstdd" / "changes" / change_name / "code-structure-delta.md"
 
     if not delta_file.exists():
         print(f"  Delta not found for {change_name}. Run 'stdd structure delta {change_name}' first.")

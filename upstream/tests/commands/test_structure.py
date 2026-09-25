@@ -9,7 +9,7 @@ class TestStructureDelta:
 
     def test_delta_creates_file(self, tmp_path, monkeypatch):
         """structure delta generates code-structure-delta.md."""
-        change_dir = tmp_path / "changes" / "test-change"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test-change"
         change_dir.mkdir(parents=True)
         (change_dir / "app.py").write_text("print('hello')", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
@@ -42,7 +42,7 @@ class TestStructureMerge:
 
     def test_merge_creates_index(self, tmp_path, monkeypatch):
         """merge creates .fstdd/code-structure/index.md."""
-        change_dir = tmp_path / "changes" / "test-change"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test-change"
         change_dir.mkdir(parents=True)
         (change_dir / "app.py").write_text("print('hello')", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
@@ -79,7 +79,7 @@ class TestStructureShow:
 
     def test_show_after_merge(self, tmp_path, monkeypatch, capsys):
         """show after merge displays modules."""
-        change_dir = tmp_path / "changes" / "test-change"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test-change"
         change_dir.mkdir(parents=True)
         (change_dir / "app.py").write_text("print('hello')", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
@@ -110,7 +110,7 @@ class TestStructureGraph:
 
     def test_graph_with_index(self, tmp_path, monkeypatch, capsys):
         """graph after merge displays structure."""
-        change_dir = tmp_path / "changes" / "test-change"
+        change_dir = tmp_path / ".fstdd" / "changes" / "test-change"
         change_dir.mkdir(parents=True)
         (change_dir / "app.py").write_text("print('hello')", encoding="utf-8")
         monkeypatch.chdir(tmp_path)

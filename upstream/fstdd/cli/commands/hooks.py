@@ -13,7 +13,7 @@ import yaml
 
 def main():
     project_root = Path.cwd()
-    changes_dir = project_root / "changes"
+    changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         return
     for change_dir in sorted(changes_dir.iterdir()):
@@ -42,7 +42,10 @@ from ..timeutil import utc_now_iso
 
 def main():
     project_root = Path.cwd()
-    for change_dir in sorted((project_root / "changes").iterdir()):
+    changes_dir = project_root / ".fstdd" / "changes"
+    if not changes_dir.exists():
+        return
+    for change_dir in sorted(changes_dir.iterdir()):
         stdd_yaml = change_dir / ".fstdd.yaml"
         if stdd_yaml.exists():
             state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
@@ -61,7 +64,7 @@ import yaml
 def main():
     project_root = Path.cwd()
     exp_dir = project_root / ".fstdd" / "experiences"
-    exp_count = len(list(exp_dir.glob("EXP-*.md"))) if exp_dir.exists() else 0
+    exp_count = len([p for p in exp_dir.glob("*.md") if not p.name.startswith(".")]) if exp_dir.exists() else 0
     if exp_count > 0:
         print(f"[STDD] Experience library: {exp_count} entries")
         print(f"[STDD] Tip: run 'stdd experience curate' to extract new patterns")

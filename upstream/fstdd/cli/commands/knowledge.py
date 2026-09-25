@@ -15,6 +15,8 @@ from typing import Optional
 import yaml
 import requests
 
+from .experience import _coerce_numeric_fields, _iter_experience_files
+
 
 VALID_NODE_TYPES = {"failure_pattern", "design_decision", "fix_template", "language_idiom"}
 VALID_EDGE_TYPES = {"causes", "prevented_by", "refines", "appears_in"}
@@ -77,12 +79,12 @@ def _load_experiences(exp_dir: Path) -> list[dict]:
     experiences = []
     if not exp_dir.exists():
         return experiences
-    for exp_file in sorted(exp_dir.glob("EXP-*.md")):
+    for exp_file in _iter_experience_files(exp_dir):
         content = exp_file.read_text(encoding="utf-8")
         parts = content.split("---", 2)
         if len(parts) < 3:
             continue
-        data = yaml.safe_load(parts[1]) or {}
+        data = _coerce_numeric_fields(yaml.safe_load(parts[1]) or {})
         state = data.get("lifecycle_state", "discovered")
         if state in ("deposited", "shared", "merged"):
             data["_file"] = str(exp_file)
@@ -414,7 +416,7 @@ def cmd_knowledge_fix(args: argparse.Namespace) -> None:
         content = exp_file.read_text(encoding="utf-8")
         parts = content.split("---", 2)
         if len(parts) >= 3:
-            exp_data = yaml.safe_load(parts[1]) or {}
+            exp_data = _coerce_numeric_fields(yaml.safe_load(parts[1]) or {})
             exp_pattern = exp_data.get("pattern", "")
 
     # Search nodes for matching pattern

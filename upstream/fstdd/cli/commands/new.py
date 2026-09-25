@@ -32,17 +32,17 @@ def cmd_new(args: argparse.Namespace) -> None:
     change_dir = project_root / ".fstdd" / "changes" / dir_name
 
     if change_dir.exists():
-        print(f" Change 目录已存在: changes/{dir_name}")
+        print(f" Change 目录已存在: .fstdd/changes/{dir_name}")
         sys.exit(1)
 
     dry_run = getattr(args, "dry_run", False)
     if dry_run:
         print(" [DRY-RUN] 将执行以下操作:")
-        print(f"   创建 change 目录: changes/{dir_name}")
-        print(f"   创建 specs 子目录: changes/{dir_name}/specs")
+        print(f"   创建 change 目录: .fstdd/changes/{dir_name}")
+        print(f"   创建 specs 子目录: .fstdd/changes/{dir_name}/specs")
         print(f"   复制模板: design.md, test-plan.md")
         print(f"   Scaffold Canonical YAML: canonical/proposals/, specs/code/ (YAML-first)")
-        print(f"   创建状态文件: changes/{dir_name}/.fstdd.yaml")
+        print(f"   创建状态文件: .fstdd/changes/{dir_name}/.fstdd.yaml")
         print(f"   状态版本: 3.0, 状态: active")
         print(" [DRY-RUN] 文件系统未发生变化")
         return
@@ -100,8 +100,8 @@ def cmd_new(args: argparse.Namespace) -> None:
         print(f"   change 目录已建，但 canonical/ 可能缺失 —— 请手动执行：")
         print(f"   stdd canon init --change {dir_name}")
 
-    logger.info("Change 创建完成: changes/%s", dir_name)
-    print(f" Change 创建完成: changes/{dir_name}")
+    logger.info("Change 创建完成: .fstdd/changes/%s", dir_name)
+    print(f" Change 创建完成: .fstdd/changes/{dir_name}")
     print(f"   模板已就绪: design.md, test-plan.md")
     print(f"   Canonical YAML: canonical/proposals/{dir_name}.yaml + specs/code/ (YAML-first)")
     print(f"   proposal.md 将在 Gate 1 自动生成")
@@ -156,4 +156,4 @@ def _setup_parallel_worktrees(project_root: Path, change_name: str):
     print(f"  启动双 Agent (在两个终端中分别执行):")
     print(f"    Terminal 1 (Explorer):  cd {base}/{change_name}-explore  && claude")
     print(f"    Terminal 2 (Researcher): cd {base}/{change_name}-research && claude")
-    print(f"  Gate 1 前合并双 Agent 结果到 changes/{change_name}/")
+    print(f"  Gate 1 前合并双 Agent 结果到 .fstdd/changes/{change_name}/")
