@@ -1,20 +1,34 @@
-"""TC-ISO-* — change-isolation 切片 1：隔离形态解析 + 配置回落 + 零漂移。
+"""TC-ISO-* — change-isolation 测试。
 
-覆盖：
+Slice 1（隔离形态解析 + 配置回落 + 零漂移）：
   TC-ISO-003  --help 暴露 --isolate 与三取值
   TC-ISO-002  无 --isolate 且无配置 ⇒ 零漂移（**不得调用任何 git 命令**）
   TC-ISO-015  配置 isolation.default 被消费；显式参数覆盖配置
   TC-ISO-016  配置缺失 / YAML 坏 / 取值非法 ⇒ 一律回落 none，且 new 不抛异常
 
-另含一条 **BUILD 分期守卫** 用例（无 spec TC-ID）：Slice 1 阶段
-worktree/branch 尚未实现，必须出声拒绝而非静默按 none 执行。
+Slice 2（失败前置与 git 前置检查）：
+  TC-ISO-006  非 git 仓 ⇒ 非 0 退出，且不留 change 目录
+  TC-ISO-007  脏工作区 + branch ⇒ 非 0 退出
+  TC-ISO-008  分支/路径已存在 ⇒ 非 0 退出，不删既有路径
+
+Slice 3（worktree 创建 + 脚手架落点切换，**行为级真 git**）：
+  TC-ISO-001  骨架落在 worktree 内；主仓不含该 dir
+  TC-ISO-001b 模板源取主仓（裁定 ISO-4）
+  TC-ISO-004  分支名由规则构造，无路径派生后缀
+  TC-ISO-009  worktree 在项目根之外；主仓 status 干净
+  TC-ISO-010  isolation.worktree_root 端到端生效
+
+另含 **BUILD 分期守卫** 用例（无 spec TC-ID）：尚未实现的形态必须出声拒绝，
+而非静默按 none 执行。
 """
 import argparse
 import subprocess as _sp
 import sys
+from datetime import date
 from pathlib import Path
 
 import pytest
+import yaml
 
 from fstdd.cli.commands.new import (
     _load_isolation_config,
@@ -222,14 +236,14 @@ def test_iso_016e_new_survives_bad_config(temp_project: Path, monkeypatch, capsy
 
 
 # ---------------------------------------------------------------------------
-# BUILD 分期守卫（无 spec TC-ID；Slice 3/4 实现后连同守卫一起删除）
+# BUILD 分期守卫（无 spec TC-ID；Slice 4 实现 branch 后连同守卫一起删除）
 # ---------------------------------------------------------------------------
 
 @pytest.mark.skipif(not _GIT_OK, reason="需要 git")
-@pytest.mark.parametrize("mode", ["worktree", "branch"])
-def test_stage1_unimplemented_mode_fails_loud(temp_project: Path, monkeypatch, capsys, mode):
-    """未实现的隔离形态必须**出声拒绝**，且不得留下 change 目录。
+def test_unimplemented_mode_fails_loud(temp_project: Path, monkeypatch, capsys):
+    """尚未实现的隔离形态必须**出声拒绝**，且不得留下 change 目录。
 
+    当前只剩 `branch`（Slice 4 实现；`worktree` 已于 Slice 3 落地）。
     若此处改成静默按 none 执行，本 change 就复制了它要消灭的缺陷
     （`--parallel`：argparse 表面接受、实则永不生效）。
 
@@ -241,7 +255,7 @@ def test_stage1_unimplemented_mode_fails_loud(temp_project: Path, monkeypatch, c
     monkeypatch.chdir(temp_project)
 
     with pytest.raises(SystemExit) as exc:
-        cmd_new(_new_args(name="iso-unimplemented", isolate=mode))
+        cmd_new(_new_args(name="iso-unimplemented", isolate="branch"))
 
     assert exc.value.code == 1
     out = capsys.readouterr().out
@@ -451,3 +465,130 @@ def test_branch_name_default_and_configured_prefix(temp_project: Path):
     assert _branch_name(temp_project, "2026-09-26-x") == "fstdd/2026-09-26-x"
     _write_project_config(temp_project, 'isolation:\n  branch_prefix: "team/"\n')
     assert _branch_name(temp_project, "2026-09-26-x") == "team/2026-09-26-x"
+
+
+# ---------------------------------------------------------------------------
+# Slice 3 — worktree 创建 + 脚手架落点切换（行为级，真 git）
+# ---------------------------------------------------------------------------
+
+def _expected_dir_name(short: str) -> str:
+    return f"{date.today().isoformat()}-{short}"
+
+
+def _wt_root_for(project: Path) -> Path:
+    return project.parent / f"{project.name}.worktrees"
+
+
+def _isolated_git_project(temp_project: Path, monkeypatch) -> Path:
+    """沙箱 git 仓：模板先落盘再 commit（使 worktree 内自带模板），并 chdir。
+
+    顺序刻意如此 —— `git worktree add` 只签出**已跟踪**文件，
+    先 commit 才能保证 worktree 里 `.fstdd/templates/` 随行。
+    """
+    _setup_templates(temp_project)
+    _init_git_repo(temp_project)
+    _no_git_ancestor(monkeypatch, temp_project)
+    monkeypatch.chdir(temp_project)
+    return temp_project
+
+
+def _worktree_lines(project: Path) -> list:
+    out = _git(project, "worktree", "list").stdout
+    return [ln for ln in out.splitlines() if ln.strip()]
+
+
+@pytest.mark.skipif(not _GIT_OK, reason="git 不可用")
+def test_iso_001_skeleton_lands_in_worktree(temp_project: Path, monkeypatch, capsys):
+    """TC-ISO-001: worktree 真建出来，骨架落在 worktree 内，主仓不含该 dir。"""
+    project = _isolated_git_project(temp_project, monkeypatch)
+    cmd_new(_new_args(name="iso-one", isolate="worktree"))
+
+    dir_name = _expected_dir_name("iso-one")
+    wt = _wt_root_for(project) / dir_name
+    change_in_wt = wt / ".fstdd" / "changes" / dir_name
+
+    assert wt.is_dir(), f"worktree 未建出: {wt}\n输出: {capsys.readouterr().out}"
+    assert (change_in_wt / ".fstdd.yaml").exists(), "状态文件未落在 worktree 内"
+    assert (change_in_wt / "specs").is_dir(), "specs 子目录未落在 worktree 内"
+    assert (change_in_wt / "canonical" / "proposals" / f"{dir_name}.yaml").exists(), \
+        "canonical 骨架未落在 worktree 内"
+    assert (change_in_wt / "design.md").exists(), "模板 design.md 未复制到 worktree 内"
+
+    assert not (project / ".fstdd" / "changes" / dir_name).exists(), \
+        "主仓不得出现该 change 目录（隔离失效）"
+    assert len(_worktree_lines(project)) == 2, "git worktree list 应出现第 2 条"
+
+
+@pytest.mark.skipif(not _GIT_OK, reason="git 不可用")
+def test_iso_001b_template_source_is_main_repo(temp_project: Path, monkeypatch, capsys):
+    """TC-ISO-001（补充，裁定 ISO-4）: 模板源取**主仓**，不是 target_root。
+
+    worktree 是 HEAD 的签出，**未提交**文件不会随行。若模板源取 target_root，
+    主仓里未提交的模板会被静默跳过（`if tmpl.exists()`），产出缺
+    design.md / test-plan.md 的半成品骨架 —— 属静默失败类缺陷。
+    """
+    project = _isolated_git_project(temp_project, monkeypatch)
+    # init 之后才写 ⇒ 该内容未被提交 ⇒ 不会出现在新 worktree 的 templates 里
+    marker = "# design-v2-UNCOMMITTED"
+    (project / ".fstdd" / "templates" / "design.md").write_text(marker, encoding="utf-8")
+
+    cmd_new(_new_args(name="iso-late", isolate="worktree"))
+
+    dir_name = _expected_dir_name("iso-late")
+    wt = _wt_root_for(project) / dir_name
+    copied = (wt / ".fstdd" / "changes" / dir_name / "design.md")
+    assert copied.exists(), f"未提交模板被静默跳过\n输出: {capsys.readouterr().out}"
+    assert copied.read_text(encoding="utf-8") == marker, \
+        "模板源不是主仓 —— 取到了 worktree 内的旧版本"
+
+
+@pytest.mark.skipif(not _GIT_OK, reason="git 不可用")
+def test_iso_004_branch_name_is_rule_derived(temp_project: Path, monkeypatch, capsys):
+    """TC-ISO-004: 分支名精确等于 <branch_prefix><dir_name>，无路径派生后缀。"""
+    project = _isolated_git_project(temp_project, monkeypatch)
+    cmd_new(_new_args(name="iso-four", isolate="worktree"))
+
+    dir_name = _expected_dir_name("iso-four")
+    wt = _wt_root_for(project) / dir_name
+
+    branch = _git(wt, "branch", "--show-current").stdout.strip()
+    assert branch == f"fstdd/{dir_name}", f"分支名不符: {branch!r}\n输出: {capsys.readouterr().out}"
+    for suffix in ("-explore", "-research"):
+        assert suffix not in branch, f"分支名残留路径派生后缀 {suffix}: {branch!r}"
+
+
+@pytest.mark.skipif(not _GIT_OK, reason="git 不可用")
+def test_iso_009_worktree_outside_project_and_main_repo_clean(
+    temp_project: Path, monkeypatch, capsys
+):
+    """TC-ISO-009: 默认 worktree 根 = 项目根**父目录**下；主仓 status 保持干净。"""
+    project = _isolated_git_project(temp_project, monkeypatch)
+    cmd_new(_new_args(name="iso-nine", isolate="worktree"))
+
+    dir_name = _expected_dir_name("iso-nine")
+    wt = _wt_root_for(project) / dir_name
+
+    assert wt.parent == project.parent / f"{project.name}.worktrees"
+    assert project not in wt.parents, "worktree 不得落在项目内"
+    assert _git(project, "status", "--porcelain").stdout.strip() == "", \
+        f"主仓被污染\n输出: {capsys.readouterr().out}"
+
+
+@pytest.mark.skipif(not _GIT_OK, reason="git 不可用")
+def test_iso_010_configured_worktree_root_is_honored_e2e(
+    temp_project: Path, monkeypatch, capsys
+):
+    """TC-ISO-010: isolation.worktree_root 端到端生效（绝对路径）。"""
+    project = _isolated_git_project(temp_project, monkeypatch)
+    base = temp_project.parent / "custom-wt"
+    _write_project_config(
+        project,
+        yaml.safe_dump({"isolation": {"worktree_root": str(base)}}, allow_unicode=True),
+    )
+
+    cmd_new(_new_args(name="iso-ten", isolate="worktree"))
+
+    dir_name = _expected_dir_name("iso-ten")
+    assert (base / dir_name).is_dir(), \
+        f"worktree 未落在配置路径\n输出: {capsys.readouterr().out}"
+    assert (base / dir_name / ".fstdd" / "changes" / dir_name / ".fstdd.yaml").exists()

@@ -110,7 +110,10 @@ expected_outcomes:
 
 def cmd_canon_init(args):
     """Initialize canonical/ directory structure with YAML templates."""
-    project_root = Path.cwd()
+    # V3.0.7: 支持调用方显式指定项目根 —— `stdd new --isolate worktree` 会把
+    # worktree 路径传进来，使 canonical 骨架与 change 骨架落在同一处。
+    # 不传时回落 `Path.cwd()`，与改动前**逐字一致**（既有调用方零漂移）。
+    project_root = getattr(args, "project_root", None) or Path.cwd()
     use_project_level = getattr(args, "project_level", False)
 
     if use_project_level:

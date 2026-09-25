@@ -173,6 +173,34 @@ def _preflight_isolation(mode: str, project_root: Path, dir_name: str) -> None:
             sys.exit(1)
 
 
+def _create_worktree(project_root: Path, path: Path, branch: str) -> bool:
+    """`git worktree add -b <branch> <path> HEAD`。成功 ⇒ True。
+
+    三处刻意写死，都是为了避免「隐式派生」带来的不确定性：
+      * `-b <branch>` 显式给分支名 —— 不用 git 的路径派生（那会产生
+        `<dir>-explore` 之类的名字，见 TC-ISO-004）
+      * `HEAD` 显式给起点 —— 不受远端默认分支 / `worktree.guessRemote` 影响
+      * 实测 `git worktree add` 会**自行创建多级父目录**，无需预建 `mkdir -p`
+
+    失败时**不做任何清理**：只回报 False，由调用方决定。这与前置检查
+    「不删既有路径」的取向一致 —— 本工具不猜用户想不想删。
+    """
+    try:
+        result = subprocess.run(
+            ["git", "worktree", "add", "-b", branch, str(path), "HEAD"],
+            capture_output=True, text=True, cwd=str(project_root),
+        )
+    except (OSError, ValueError) as exc:
+        print(f"  ❌ git 调用失败: {type(exc).__name__}: {exc}")
+        return False
+    if result.returncode != 0:
+        print(f"  ❌ git worktree add 失败（exit={result.returncode}）")
+        for line in (result.stderr or "").strip().splitlines():
+            print(f"     {line}")
+        return False
+    return True
+
+
 def cmd_new(args: argparse.Namespace) -> None:
     from ..utils import get_logger
     logger = get_logger()
@@ -195,16 +223,24 @@ def cmd_new(args: argparse.Namespace) -> None:
         dir_name = change_name
     else:
         dir_name = f"{today}-{change_name}"
-    change_dir = project_root / ".fstdd" / "changes" / dir_name
+    # 主仓口径的落点 —— 仅用于「防重复建 change」。真正的落点在隔离环境确定后由
+    # target_root 决定（worktree 模式下落在 worktree 内，见下方隔离创建段）。
+    main_change_dir = project_root / ".fstdd" / "changes" / dir_name
 
-    if change_dir.exists():
+    if main_change_dir.exists():
         print(f" Change 目录已存在: .fstdd/changes/{dir_name}")
         sys.exit(1)
 
     dry_run = getattr(args, "dry_run", False)
     if dry_run:
         print(" [DRY-RUN] 将执行以下操作:")
-        print(f"   创建 change 目录: .fstdd/changes/{dir_name}")
+        if isolate_mode == "worktree":
+            wt_preview = _resolve_worktree_root(project_root, dir_name)
+            print(f"   创建隔离 worktree: {wt_preview}")
+            print(f"     分支: {_branch_name(project_root, dir_name)}")
+            print(f"   创建 change 目录: {wt_preview}/.fstdd/changes/{dir_name}")
+        else:
+            print(f"   创建 change 目录: .fstdd/changes/{dir_name}")
         print(f"   创建 specs 子目录: .fstdd/changes/{dir_name}/specs")
         print(f"   复制模板: design.md, test-plan.md")
         print(f"   Scaffold Canonical YAML: canonical/proposals/, specs/code/ (YAML-first)")
@@ -214,20 +250,36 @@ def cmd_new(args: argparse.Namespace) -> None:
         return
 
     # V3.0.7: 隔离前置检查 —— 必须早于**任何** change 目录创建（SC-006/007/008）。
-    # 放在 (change_dir / "specs").mkdir() 之前，失败时才不会留下半成品 change。
     _preflight_isolation(isolate_mode, project_root, dir_name)
 
-    # ⚠️ BUILD 分期守卫（Slice 2 → Slice 3/4 之间临时存在）：本处正是未来
-    # 「创建隔离环境」的确切位置。worktree / branch 的落地逻辑尚未实现，必须
-    # **出声拒绝** —— 接受参数后静默按 none 执行，正是 `--parallel` 死开关的翻版。
-    if isolate_mode != "none":
-        print(f"  隔离形态 '{isolate_mode}' 尚未实现（本 change 仍在 BUILD 中）")
-        print("  请暂时使用 `--isolate none`，或等本 change 完成后重试")
+    # ⚠️ BUILD 分期守卫（Slice 3 → Slice 4 之间临时存在）：branch 形态尚未实现。
+    # 接受参数后静默按 none 执行，正是 `--parallel` 死开关的翻版。
+    if isolate_mode == "branch":
+        print("  隔离形态 'branch' 尚未实现（本 change 仍在 BUILD 中）")
+        print("  请暂时使用 `--isolate none` 或 `--isolate worktree`，或等本 change 完成后重试")
         sys.exit(1)
 
+    # V3.0.7: 创建隔离环境 —— **顺序锁：先隔离、后脚手架**（SC-001/009/010）。
+    # 反过来会先把骨架铺在主仓、再发现隔离未生效（或需要搬移半成品）。
+    target_root = project_root
+    if isolate_mode == "worktree":
+        wt_path = _resolve_worktree_root(project_root, dir_name)
+        branch = _branch_name(project_root, dir_name)
+        if not _create_worktree(project_root, wt_path, branch):
+            print("  ❌ 隔离 worktree 创建失败 —— 未创建任何 change 骨架")
+            sys.exit(1)
+        target_root = wt_path
+        print(f"  🔀 隔离 worktree 已创建: {wt_path}")
+        print(f"     分支: {branch}")
+
+    change_dir = target_root / ".fstdd" / "changes" / dir_name
     (change_dir / "specs").mkdir(parents=True)
 
     # V3.0.5 (YAML-first): proposal.md 不再复制 — Gate 1 时从 canonical YAML 自动生成。
+    # 裁定 ISO-4：模板源**始终取主仓**（project_root），不是 target_root。
+    # 理由：模板是**项目级**资源，worktree 只是 change 的落点。且 worktree 是 HEAD 的
+    # 签出，主仓里**未提交**的模板不会随行 —— 若源改取 target_root，这类模板会被
+    # `if tmpl.exists()` 静默跳过，产出缺 design.md / test-plan.md 的半成品骨架。
     templates_dir = project_root / ".fstdd" / "templates"
     for tmpl_name in ["design", "test-plan"]:
         tmpl = templates_dir / f"{tmpl_name}.md"
@@ -266,6 +318,10 @@ def cmd_new(args: argparse.Namespace) -> None:
             subcommand="init",
             change=dir_name,
             project_level=False,
+            # 隔离落点：canonical 骨架必须建在 target_root（worktree 模式下 = worktree）。
+            # canon 侧以 `getattr(args, "project_root", None) or Path.cwd()` 读取；
+            # 此处不传会回落 cwd（= 主仓），导致「worktree 建了、骨架却留主仓」的割裂。
+            project_root=target_root,
         ))
     except SystemExit as exc:
         canon_ok = False
@@ -287,7 +343,7 @@ def cmd_new(args: argparse.Namespace) -> None:
 
     # 终态校验：不看 canon_init 是否抛异常，直接验端状态 —— canonical 产物是否真的在盘上。
     # 异常被上面吃掉、或 canon_init 正常退出但漏写文件，都会在这里暴露。
-    canon_root = project_root / ".fstdd" / "changes" / dir_name / "canonical"
+    canon_root = target_root / ".fstdd" / "changes" / dir_name / "canonical"
     if canon_ok and not canon_root.exists():
         canon_ok = False
         print(f" ⚠️ 终态校验失败: canonical/ 目录不存在于 .fstdd/changes/{dir_name}/")
