@@ -275,7 +275,7 @@ Windows 原生 git **不认** ⇒ `GIT_CEILING_DIRECTORIES=/tmp` **静默失效*
 **失败模式检查（已核）**：`upstream/fstdd/` 下 `parallel` 零命中（TC-ISO-017 锚定）；
 CHANGELOG 条目可被 TC-ISO-018 检索（`V3.0.7` + `Two-Instance Kickoff` 双重锚定）。
 
-## 8. 质量验证与交付证据（P0）✅ 已完成 — commit `待填`
+## 8. 质量验证与交付证据（P0）✅ 已完成 — commit `641a996`
 
 - [x] 8.1 TC-ISO-021：`test_new.py`(11) + `test_init.py`(3) 全绿（**14 例**）
       —— `test_new_coverage.py`(2) 已随死代码删除，见 Slice 7
