@@ -128,6 +128,12 @@ def main() -> None:
     p_new.add_argument("--task-type", dest="task_type", default="code",
                        choices=["code", "documentation", "configuration", "data-migration", "dependency-upgrade"],
                        help="任务类型 (默认: code)")
+    # V3.0.7: 隔离形态（2026-09-25-new-isolate-flag）。
+    # default=None 而非 "none"：让「未显式指定」与「显式指定 none」可区分 ——
+    # 前者要读 project.yaml 的 isolation.default，后者必须无视配置。
+    p_new.add_argument("--isolate", dest="isolate", default=None,
+                       choices=["none", "worktree", "branch"],
+                       help="隔离形态: none=与主工作区共享(默认) / worktree=独立工作树 / branch=独立分支")
 
     # validate
     p_validate = subparsers.add_parser("validate", help="验证 change 结构", parents=[parent])

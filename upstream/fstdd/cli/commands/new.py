@@ -8,12 +8,77 @@ from pathlib import Path
 import yaml
 
 
+# ---------------------------------------------------------------------------
+# change-isolation（2026-09-25-new-isolate-flag）
+# 隔离形态：none = 与主工作区共享（默认）/ worktree = 独立工作树 / branch = 独立分支
+# ---------------------------------------------------------------------------
+
+_ISOLATE_MODES = ("none", "worktree", "branch")
+_DEFAULT_ISOLATE_MODE = "none"
+
+
+def _load_isolation_config(project_root: Path) -> dict:
+    """读取 .fstdd/config.d/project.yaml 的 `isolation` 块。
+
+    **不抛异常**：文件缺失 / YAML 不可解析 / 结构不符，一律返回 {}，
+    由调用方回落到保守默认值 `none`（见 _resolve_isolate_mode）。
+    """
+    cfg_path = project_root / ".fstdd" / "config.d" / "project.yaml"
+    if not cfg_path.exists():
+        return {}
+    try:
+        data = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+    except (OSError, UnicodeDecodeError, yaml.YAMLError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    block = data.get("isolation")
+    return block if isinstance(block, dict) else {}
+
+
+def _resolve_isolate_mode(args: argparse.Namespace, project_root: Path) -> str:
+    """解析隔离形态：显式参数 > 项目配置 > `none`。
+
+    回落方向是**锁死的**：配置不可读 / 取值非法时回落到 `none`，**绝不**回落到
+    `worktree` —— 否则一个坏 YAML 会让 `stdd new` 开始悄悄往用户仓库外建 worktree。
+    """
+    explicit = getattr(args, "isolate", None)
+    if explicit in _ISOLATE_MODES:
+        return explicit
+    configured = _load_isolation_config(project_root).get("default")
+    if isinstance(configured, str) and configured.strip() in _ISOLATE_MODES:
+        return configured.strip()
+    return _DEFAULT_ISOLATE_MODE
+
+
+def _print_isolation_hint(mode: str, raw_name: str) -> None:
+    """打印**一行**隔离提示（当前形态 + 如需隔离的完整命令）。零交互、不阻塞。"""
+    if mode == "worktree":
+        print("  💡 隔离形态: worktree（独立工作树，主工作区不受本 change 影响）")
+    elif mode == "branch":
+        print("  💡 隔离形态: branch（独立分支，工作区仍共享）")
+    else:
+        print(f"  💡 隔离形态: none（与主工作区共享）｜如需隔离："
+              f"stdd new {raw_name} --isolate worktree")
+
+
 def cmd_new(args: argparse.Namespace) -> None:
     from ..utils import get_logger
     logger = get_logger()
 
     project_root = Path.cwd()
     change_name = args.name
+    isolate_mode = _resolve_isolate_mode(args, project_root)
+
+    # ⚠️ BUILD 分期守卫（Slice 1 → Slice 3/4 之间临时存在）。
+    # worktree / branch 的落地逻辑尚未实现，此处**必须出声拒绝**：
+    # 接受参数后静默按 none 执行，正是 `--parallel` 死开关的翻版
+    # （表面可用、实则不可达），而本 change 的立意就是消灭这类假象。
+    # Slice 3/4 实现后删除本守卫。
+    if isolate_mode != "none":
+        print(f"  隔离形态 '{isolate_mode}' 尚未实现（本 change 仍在 BUILD 中）")
+        print(f"  请暂时使用 `--isolate none`，或等本 change 完成后重试")
+        sys.exit(1)
 
     if not re.match(r"^[a-zA-Z0-9][-a-zA-Z0-9_.]{1,49}\Z", change_name):
         print(f" 无效的 change 名称: {change_name}")
@@ -119,6 +184,10 @@ def cmd_new(args: argparse.Namespace) -> None:
     # V2.8: Two-Instance Kickoff
     if getattr(args, "parallel", False):
         _setup_parallel_worktrees(project_root, dir_name)
+
+    # V3.0.7: 隔离可见性 —— 一行提示，零交互（SC-011 / SC-012）。
+    # 注意：本处只在**实际建出骨架之后**打印，因此提示中的形态必定是已生效的形态。
+    _print_isolation_hint(isolate_mode, args.name)
 
     print()
     print("  下一步:")

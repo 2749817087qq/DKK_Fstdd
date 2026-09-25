@@ -1,0 +1,42 @@
+baseline:
+  at: '2026-09-25T16:01:34+00:00'
+  base_git_sha: 64b833c46a174bc4d9fe7ed02874b6ab0eb58680
+  clock_source: system
+  established_by: cli
+  node_id: DESKTOP-1MEQDMR
+change_id: 2026-09-25-new-isolate-flag
+complexity_score: null
+current_phase: build
+design_adjustments:
+  count: 0
+last_modified: '2026-09-25T17:50:51+00:00'
+mode: standard
+phases:
+  build:
+    status: in_progress
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-25T17:50:43+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 2026-09-26 01:48 对话全权授权：「你现在就是 fstdd skill 的总工，我全权授权你处理这些事情，有技术分歧你把决定与理由发出来就行了，我看了觉得有问题会给你说」。据此由总工确认
+      Gate 2：SPEC 产物齐备（design.md 含 10 决策 + 裁定 ISO-1/2/3、canonical spec 9 REQ/20 SC、specs
+      双视图、test-plan 23 TC）；canon verify 2/2 通过；stdd validate 0 error；全量套件基线 802 passed
+      / 0 failed / 2614.06s。
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-25T16:48:11+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 2026-09-26 00:0x 对话确认：Gate 1 通过（change 2026-09-25-new-isolate-flag，让「一
+      change 一隔离环境」可选且可见）
+    status: completed
+score_confidence: null
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'
