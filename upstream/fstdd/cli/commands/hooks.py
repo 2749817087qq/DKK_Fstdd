@@ -11,24 +11,35 @@ HOOK_SCRIPTS = {
 from pathlib import Path
 import yaml
 
+def _find_active_change_dir(changes_dir):
+    \"\"\"与 phase.py 同语义：最近修改的 change 视为活跃。
+
+    按字母序取第一个会命中**早已停更**的 change（多 change 并存时），
+    与 phase.py / guard 的「活跃」定义不一致 ⇒ 显示与判定分歧。
+    \"\"\"
+    candidates = sorted(
+        (d for d in changes_dir.iterdir()
+         if d.is_dir() and d.name != "_batch" and (d / ".fstdd.yaml").exists()),
+        key=lambda d: d.stat().st_mtime, reverse=True,
+    )
+    return candidates[0] if candidates else None
+
 def main():
     project_root = Path.cwd()
     changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         return
-    for change_dir in sorted(changes_dir.iterdir()):
-        if not change_dir.is_dir():
-            continue
-        stdd_yaml = change_dir / ".fstdd.yaml"
-        if stdd_yaml.exists():
-            state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
-            phase = state.get("active_phase", "?")
-            name = state.get("change_name", change_dir.name)
-            print(f"[STDD] Active change: {name} (Phase {phase})")
-            pc = state.get("phase_context_file", "")
-            if pc:
-                print(f"[STDD] Phase context: {pc}")
-            break
+    change_dir = _find_active_change_dir(changes_dir)
+    if change_dir is None:
+        return
+    stdd_yaml = change_dir / ".fstdd.yaml"
+    state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
+    phase = state.get("active_phase", "?")
+    name = state.get("change_name", change_dir.name)
+    print(f"[STDD] Active change: {name} (Phase {phase})")
+    pc = state.get("phase_context_file", "")
+    if pc:
+        print(f"[STDD] Phase context: {pc}")
 
 if __name__ == "__main__":
     main()
@@ -45,26 +56,37 @@ import yaml
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
+def _find_active_change_dir(changes_dir):
+    \"\"\"与 phase.py 同语义：最近修改的 change 视为活跃。
+
+    ⚠️ 按字母序取第一个会命中**早已停更**的 change：本 hook 是**写操作**，
+    写错 change 等于给那个 change 虚假刷新 last_modified，
+    干扰依赖 last_modified 的僵尸检测。
+    \"\"\"
+    candidates = sorted(
+        (d for d in changes_dir.iterdir()
+         if d.is_dir() and d.name != "_batch" and (d / ".fstdd.yaml").exists()),
+        key=lambda d: d.stat().st_mtime, reverse=True,
+    )
+    return candidates[0] if candidates else None
+
 def main():
     project_root = Path.cwd()
     changes_dir = project_root / ".fstdd" / "changes"
     if not changes_dir.exists():
         return
-    for change_dir in sorted(changes_dir.iterdir()):
-        if not change_dir.is_dir():
-            continue
-        stdd_yaml = change_dir / ".fstdd.yaml"
-        if not stdd_yaml.exists():
-            continue
-        state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
-        state["last_modified"] = _utc_now_iso()
-        # 与 phase.py / new.py 同口径落盘 —— 只改内存不写盘等于什么都没存
-        stdd_yaml.write_text(
-            yaml.dump(state, allow_unicode=True, default_flow_style=False),
-            encoding="utf-8",
-        )
-        print(f"[STDD] State saved: Phase {state.get('active_phase', '?')}")
-        break
+    change_dir = _find_active_change_dir(changes_dir)
+    if change_dir is None:
+        return
+    stdd_yaml = change_dir / ".fstdd.yaml"
+    state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
+    state["last_modified"] = _utc_now_iso()
+    # 与 phase.py / new.py 同口径落盘 —— 只改内存不写盘等于什么都没存
+    stdd_yaml.write_text(
+        yaml.dump(state, allow_unicode=True, default_flow_style=False),
+        encoding="utf-8",
+    )
+    print(f"[STDD] State saved: {change_dir.name} (Phase {state.get('active_phase', '?')})")
 
 if __name__ == "__main__":
     main()

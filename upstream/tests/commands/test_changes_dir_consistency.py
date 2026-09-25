@@ -209,6 +209,74 @@ def test_pre_compact_hook_actually_persists_last_modified() -> None:
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_pre_compact_hook_targets_most_recent_not_alphabetical() -> None:
+    """PreCompact 必须选「最近修改」的 change，且排除 `_batch`。
+
+    历史缺陷：hook 用 `sorted(changes_dir.iterdir())` 取第一个。
+    多 change 并存时会命中**早已停更**的那个 —— 而 PreCompact 是**写操作**，
+    写错目标等于给它**虚假刷新 last_modified**，干扰依赖该字段的僵尸检测
+    （K 侧以 last_modified 判定 change 是否活跃）。
+
+    phase.py 的活跃 change finder 用 `st_mtime` 降序且排除 `_batch`，
+    hook 必须与之一致 —— 两个「活跃」定义不同源就是漂移隐患。
+    """
+    import os as _os
+    from fstdd.cli.commands.hooks import HOOK_SCRIPTS
+
+    tmp = _make_tmp_dir()
+    try:
+        changes = tmp / ".fstdd" / "changes"
+        changes.mkdir(parents=True)
+
+        old = changes / "2026-01-01-dormant"      # 字母序更前，但已停更
+        active = changes / "2026-09-01-active"     # 字母序更后，但最近修改
+        for d, phase in ((old, "deliver"), (active, "build")):
+            d.mkdir()
+            (d / ".fstdd.yaml").write_text(
+                f"change_name: {d.name}\nactive_phase: {phase}\n",
+                encoding="utf-8",
+            )
+
+        batch = changes / "_batch"
+        batch.mkdir()
+        (batch / ".fstdd.yaml").write_text("active_phase: build\n", encoding="utf-8")
+
+        # 强制 mtime：batch 最新 > active > old。
+        # 若 hook 按字母序，会命中 _batch（"_" 排最前）；
+        # 若不排除 _batch 但按 mtime，会命中 _batch。两者都必须避开。
+        base = 1_700_000_000.0
+        _os.utime(old, (base, base))
+        _os.utime(active, (base + 100, base + 100))
+        _os.utime(batch, (base + 200, base + 200))
+
+        script = tmp / "pre_compact.py"
+        script.write_text(HOOK_SCRIPTS["pre-compact"], encoding="utf-8")
+
+        proc = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=tmp, capture_output=True, text=True,
+        )
+        assert proc.returncode == 0, f"PreCompact 退出非零：stderr={proc.stderr!r}"
+
+        def has_ts(d: Path) -> bool:
+            st = yaml.safe_load((d / ".fstdd.yaml").read_text(encoding="utf-8")) or {}
+            return "last_modified" in st
+
+        assert has_ts(active), (
+            "PreCompact 没有写给**最近修改**的 change —— 选错了活跃 change"
+        )
+        assert not has_ts(old), (
+            "PreCompact 写给**早已停更**的 change（按字母序取第一个）"
+            " —— 等于给它虚假刷新 last_modified，干扰僵尸检测"
+        )
+        assert not has_ts(batch), (
+            "PreCompact 写入了 `_batch` —— 批次目录不是 change，"
+            "与 phase.py finder 的排除规则不一致"
+        )
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 # --------------------------------------------------------------------------
 # 4. 配置层：config.d/project.yaml 的 paths.* 不得与真源矛盾
 # --------------------------------------------------------------------------
