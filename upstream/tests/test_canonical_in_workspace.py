@@ -128,6 +128,12 @@ class TestBDocs:
 # C. 归档完整性（只读检查）
 # ---------------------------------------------------------------------------
 
+OUTSIDE_SKIP = pytest.mark.skipif(
+    not OUTSIDE.exists(),
+    reason="区外副本 OUTSIDE 不存在（环境依赖，非代码缺陷）",
+)
+
+@OUTSIDE_SKIP
 class TestCArchive:
     """TC-CIW-008 / TC-CIW-009。"""
 

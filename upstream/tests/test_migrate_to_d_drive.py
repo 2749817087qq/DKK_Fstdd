@@ -21,6 +21,13 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.skipif(
+    not sys.platform.startswith("win"),
+    reason="D 盘迁移校验仅适用 Windows（依赖 D:/tools/FSTDD 与 ~/.workbuddy-ai/Fstdd）",
+)
+
+import pytest
+
 TESTS_DIR = Path(__file__).resolve().parent
 UPSTREAM = TESTS_DIR.parent
 REPO = UPSTREAM.parent            # 运行时的仓库（可能是 C 盘归档或 D 盘新家）
