@@ -23,7 +23,12 @@ def cmd_new(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     today = date.today().isoformat()
-    dir_name = f"{today}-{change_name}"
+    # 幂等：名字已以 YYYY-MM-DD- 开头时不再 prepend，避免产生双日期脚手架
+    # （`stdd new 2026-09-25-fix-x` → `2026-09-25-2026-09-25-fix-x`，确定性缺陷）
+    if re.match(r"^\d{4}-\d{2}-\d{2}-", change_name):
+        dir_name = change_name
+    else:
+        dir_name = f"{today}-{change_name}"
     change_dir = project_root / ".fstdd" / "changes" / dir_name
 
     if change_dir.exists():
@@ -73,6 +78,9 @@ def cmd_new(args: argparse.Namespace) -> None:
         yaml.dump(state, f, allow_unicode=True, default_flow_style=False)
 
     # V3.0.5 (YAML-first): scaffold Canonical YAML 模板（AI 只写 YAML，MD 由 Gate 自动生成）
+    # 失败不阻断 change 创建，但**必须出声** —— 静默 pass 会让 change 目录建好而
+    # canonical 缺失，且用户看到「Change 创建完成」误以为一切就绪。
+    canon_ok = True
     try:
         from .canon import cmd_canon_init
         import argparse as _argparse
@@ -81,8 +89,16 @@ def cmd_new(args: argparse.Namespace) -> None:
             change=dir_name,
             project_level=False,
         ))
-    except SystemExit:
-        pass  # canonical scaffold 失败不阻断 change 创建
+    except SystemExit as exc:
+        canon_ok = False
+        print(f" ⚠️ Canonical YAML scaffold 失败（exit={exc.code}）")
+        print(f"   change 目录已建，但 canonical/ 可能缺失 —— 请手动执行：")
+        print(f"   stdd canon init --change {dir_name}")
+    except Exception as exc:  # 非 SystemExit 的异常同样要出声，不能静默
+        canon_ok = False
+        print(f" ⚠️ Canonical YAML scaffold 异常: {type(exc).__name__}: {exc}")
+        print(f"   change 目录已建，但 canonical/ 可能缺失 —— 请手动执行：")
+        print(f"   stdd canon init --change {dir_name}")
 
     logger.info("Change 创建完成: changes/%s", dir_name)
     print(f" Change 创建完成: changes/{dir_name}")
@@ -90,6 +106,15 @@ def cmd_new(args: argparse.Namespace) -> None:
     print(f"   Canonical YAML: canonical/proposals/{dir_name}.yaml + specs/code/ (YAML-first)")
     print(f"   proposal.md 将在 Gate 1 自动生成")
     print(f"   状态文件: .fstdd.yaml")
+
+    # 终态校验：不看 canon_init 是否抛异常，直接验端状态 —— canonical 产物是否真的在盘上。
+    # 异常被上面吃掉、或 canon_init 正常退出但漏写文件，都会在这里暴露。
+    canon_root = project_root / ".fstdd" / "changes" / dir_name / "canonical"
+    if canon_ok and not canon_root.exists():
+        canon_ok = False
+        print(f" ⚠️ 终态校验失败: canonical/ 目录不存在于 changes/{dir_name}/")
+        print(f"   change 可用，但缺 YAML-first 骨架 —— 请手动执行：stdd canon init --change {dir_name}")
+    print(f"   Canonical 终态: {'✅ 就绪' if canon_ok else '❌ 缺失（见上方告警）'}")
 
     # V2.8: Two-Instance Kickoff
     if getattr(args, "parallel", False):
