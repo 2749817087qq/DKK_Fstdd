@@ -80,20 +80,55 @@ help 输出绕过 capsys 捕获（实测 `out` 为空），且该替换会**残�
 **失败模式检查（已核）**：非 git 仓走**显式拒绝**而非静默降级 `none`；
 失败路径**不含任何删除动作**，清理命令仅打印不执行。
 
-## 3. worktree 创建 + 脚手架落点切换（P0）
+## 3. worktree 创建 + 脚手架落点切换（P0）✅ 已完成 — commit `30756ea`
 
-- [ ] 3.1 新增 `_resolve_worktree_root(project_root, cfg) -> Path`（默认 `<project_parent>/<project_name>.worktrees`，可被 `isolation.worktree_root` 覆盖）
-- [ ] 3.2 新增 `_branch_name(cfg, dir_name) -> str`（`<branch_prefix><dir_name>`，**显式**构造，不走 git 隐式派生）
-- [ ] 3.3 新增 `_create_worktree(project_root, path, branch) -> bool`：`git worktree add -b <branch> <path> HEAD`
-- [ ] 3.4 把 `cmd_new` 的脚手架目标根改为变量 `target_root`（worktree 模式 = worktree 路径；否则 = `project_root`）
-- [ ] 3.5 `cmd_canon_init` 改读 `getattr(args, "project_root", None) or Path.cwd()`；`new.py` 调用时传入 `target_root`
-- [ ] 3.6 RED：TC-ISO-001（骨架落在 worktree 内、主仓 `.fstdd/changes/` 不含该 dir）
-- [ ] 3.7 RED：TC-ISO-004（分支名精确等于规则值，无 `-explore`/`-research` 后缀）
-- [ ] 3.8 RED：TC-ISO-009（worktree 在项目根之外、主仓 `git status --porcelain` 为空）
-- [ ] 3.9 RED：TC-ISO-010（`isolation.worktree_root` 生效）
-- [ ] 3.10 GREEN + 跑 `test_canon.py` 确认 `canon init` 向后兼容
+- [x] 3.1 新增 `_resolve_worktree_root(project_root, cfg) -> Path`（默认 `<project_parent>/<project_name>.worktrees`，可被 `isolation.worktree_root` 覆盖）— Slice 2 已落地
+- [x] 3.2 新增 `_branch_name(cfg, dir_name) -> str`（`<branch_prefix><dir_name>`，**显式**构造，不走 git 隐式派生）— Slice 2 已落地
+- [x] 3.3 新增 `_create_worktree(project_root, path, branch) -> bool`：`git worktree add -b <branch> <path> HEAD`
+- [x] 3.4 把 `cmd_new` 的脚手架目标根改为变量 `target_root`（worktree 模式 = worktree 路径；否则 = `project_root`）
+- [x] 3.5 `cmd_canon_init` 改读 `getattr(args, "project_root", None) or Path.cwd()`；`new.py` 调用时传入 `target_root`
+- [x] 3.6 RED：TC-ISO-001（骨架落在 worktree 内、主仓 `.fstdd/changes/` 不含该 dir）
+- [x] 3.7 RED：TC-ISO-004（分支名精确等于规则值，无 `-explore`/`-research` 后缀）
+- [x] 3.8 RED：TC-ISO-009（worktree 在项目根之外、主仓 `git status --porcelain` 为空）
+- [x] 3.9 RED：TC-ISO-010（`isolation.worktree_root` 生效）
+- [x] 3.10 GREEN + 跑 `test_canon.py` 确认 `canon init` 向后兼容
+- [x] 3.11 GREEN ⇒ **51 passed / 0 failed / 76.64s**（isolate 27 + 既有 new/canon/init 24）
 
-**失败模式检查**：顺序必须「先 worktree 后脚手架」；`canon init` 不传 `project_root` 时行为必须与改动前逐字一致。
+**片内裁定 ISO-4（总工裁定）：模板源始终取主仓，不取 `target_root`。**
+理由：模板是**项目级**资源，worktree 只是 change 的落点；且 worktree 是 HEAD 的签出，
+主仓里**未提交**的模板不会随行 —— 若源改取 `target_root`，这类模板会被
+`if tmpl.exists()` **静默跳过**，产出缺 `design.md` / `test-plan.md` 的半成品骨架。
+落地方式即「`templates_dir` 一行不动」，零漂移；并由 TC-ISO-001b 锚定（断言复制到的
+`design.md` 内容 = 主仓未提交版本，可区分两种实现）。
+
+**实测（决定实现方式的三条事实）**：
+| 探针 | 结论 |
+|---|---|
+| `git worktree add -b <b> <多级/父目录/不存在> HEAD` | **自动创建多级父目录**（rc=0），无需 `mkdir -p` |
+| worktree 内 `.fstdd/templates/` | **随行**（因该目录已被 git 跟踪，18 个文件） |
+| 建完 worktree 后主仓 `git status --porcelain` | **空**（worktree 在仓外，不污染主仓） |
+
+**端到端验证（真 CLI + 真 git，独立于 pytest）**：`tmp/e2e_worktree_probe.sh`
+1. `stdd new e2e-a --isolate worktree` ⇒ rc=0；worktree 建出、分支 `fstdd/2026-09-26-e2e-a`、
+   `.fstdd.yaml` / `specs/` / `canonical/` / `design.md` / `test-plan.md` 全部落在 worktree 内；
+   主仓 `.fstdd/changes/` **不含**该 dir、主仓 status 全程为空。
+2. 双 worktree（e2e-a / e2e-b）互不干扰：B 内看不到 A 的 change，主仓仍为空。
+3. 同名重复 ⇒ 由**分支名冲突**兜住（rc=1，输出 `git branch -D` 建议）。
+   注意此处**不是**「change 目录已存在」拦下的 —— 隔离后主仓看不到该目录，
+   重复创建的防线自然落在分支名上，符合预期语义。
+4. 非 git 仓 ⇒ 走前置检查出声拒绝（`需要当前目录位于 git 工作树内`），rc=1，无残留。
+
+**⚠️ 探针脚本自身的坑（已修，与产品无关）**：Git Bash 的 `/tmp` 是 MSYS 虚拟路径，
+Windows 原生 git **不认** ⇒ `GIT_CEILING_DIRECTORIES=/tmp` **静默失效**，沙箱被误判为
+「在 `C:\Users\Administrator` 仓内」（该目录本身是 git 仓），首跑因此出现 1 处假绿
+（`git -C /tmp/...` 报 `fatal: cannot change to`，`wc -l` 得 0 被当成通过）。
+修法：ceiling 用 `cygpath -w -l` 转 Windows 路径；`git -C` 改用 `( cd <dir> && git ... )`。
+
+**失败模式检查（已核）**：
+- 顺序「先 worktree 后脚手架」已由 `target_root` 在 `(change_dir/"specs").mkdir()` **之前**
+  赋值保证；worktree 创建失败即 `sys.exit(1)`，不留任何骨架。
+- `canon init` 不传 `project_root` 时回落 `Path.cwd()`，`test_canon.py` 全绿 ⇒ 向后兼容成立。
+- 分期守卫收窄为仅 `branch`（Slice 4 实现后删除），`worktree` 不再被拦。
 
 ## 4. branch 形态（P1）
 
