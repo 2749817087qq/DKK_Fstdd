@@ -234,14 +234,46 @@ Windows 原生 git **不认** ⇒ `GIT_CEILING_DIRECTORIES=/tmp` **静默失效*
 **失败模式检查（已核）**：不覆盖既有取值（TC-ISO-014/014b 双向锚定）；
 幂等（逐字节比对）；`stdd new` 零交互（TC-ISO-012 用 input 抛异常反证）。
 
-## 7. 死代码移除 + CHANGELOG（P1）
+## 7. 死代码移除 + CHANGELOG（P1）✅ 已完成 — commit `85383bd`
 
-- [ ] 7.1 删除 `new.py:120-121` 的 `getattr(args, "parallel", False)` 调用点
-- [ ] 7.2 删除 `_setup_parallel_worktrees`（`new.py:128-159`）
-- [ ] 7.3 CHANGELOG 记录移除原因与它当时的 V2.8「双 Agent Kickoff」语义
-- [ ] 7.4 RED：TC-ISO-017（`parallel` / `_setup_parallel_worktrees` 在 `upstream/fstdd/` 零命中）
-- [ ] 7.5 RED：TC-ISO-018（CHANGELOG 含条目）
-- [ ] 7.6 刷新吞异常哨兵（删除函数会使其后行号前移，可能超 ±5 容差）
+- [x] 7.1 删除 `new.py` 的 `getattr(args, "parallel", False)` 调用点
+- [x] 7.2 删除 `_setup_parallel_worktrees`（34 行实现）
+- [x] 7.3 CHANGELOG 记录移除原因与它当时的 V2.8「Two-Instance Kickoff」语义
+- [x] 7.4 RED：TC-ISO-017（`parallel` / `_setup_parallel_worktrees` 在 `upstream/fstdd/` 零命中）
+- [x] 7.5 RED：TC-ISO-018（CHANGELOG 含条目）
+- [x] 7.6 刷新吞异常哨兵
+- [x] 7.7 GREEN ⇒ **66 passed / 0 failed / 51.19s**；哨兵 **通过（0 条提示）**
+
+**⚠️ 连带删除（计划外，本片发现）**：`upstream/tests/commands/test_new_coverage.py`
+整个文件（2 例，`TC-PAR-001`）测的**正是被删的死代码** —— 它直接构造
+`Namespace(name=..., dry_run=False, parallel=True)` 调用 `cmd_new`，断言输出含
+`Two-Instance Kickoff` / `Explorer` / `Researcher`。被测功能已不存在 ⇒ 删除，
+否则会留下「测试绿、功能无」的假象。
+其中 dry-run 那例的覆盖已由 `test_new.py::test_new_dry_run` 承担（已核实）。
+⇒ 已同步 `test-plan.md`：测试文件清单去掉该行、TC-ISO-021 既有回归例数 16 → **14**。
+
+**哨兵状态（本片实测，与预判不同）**：
+| 探针 | 结果 |
+|---|---|
+| `new.py` 的吞异常点 | **零命中**（`_load_isolation_config` 用的是具名异常元组，不匹配 `_SWALLOW`） |
+| ⇒ 删除 new.py 死代码是否影响哨兵 | **否**（删除段在文件末尾，前面行号不动） |
+| 但 `audit_silent_except.py --check` 当时**已红** | 2 条提示：`init.py:385` 未覆盖 + `init.py:322` 失效 |
+| 根因 | **Slice 6** 在 `_post_init_self_check` 前插入 63 行 ⇒ 其内吞异常点 322 → 385，超 ±5 容差 |
+
+⇒ 刷新审计表 `.fstdd/changes/2026-09-18-detection-silence-fixes/audit/except-points.yaml`
+的 `EA-015` 行号（322 → 385，附漂移原因注释；条目语义与 justification 未变）。
+刷新后哨兵 0 条提示，`test_except_audit.py` 5 passed。
+**教训**：行号锚定型哨兵的容差必须在**任何插入/删除代码的切片结束时**主动复核，
+不能等到「预期会影响的切片」才查 —— 本次触发者是 Slice 6 的插入，而非 Slice 7 的删除。
+
+**CHANGELOG 落点**：写入 `upstream/CHANGELOG.md`（**框架级**），而非根 `CHANGELOG.md`
+（项目级、`[未发布] — 迭代 02` 段）。`--isolate` 是 STDD 框架能力，归 upstream。
+新增 `## V3.0.7 (2026-09-26)` 段，含「新增 / 安全 / 移除 / 配置」四类，
+其中「移除」段**完整复述 V2.8 Two-Instance Kickoff 的原语义**（为何存在、为何现在不需要），
+以防后人把同一个死开关重新加回来。
+
+**失败模式检查（已核）**：`upstream/fstdd/` 下 `parallel` 零命中（TC-ISO-017 锚定）；
+CHANGELOG 条目可被 TC-ISO-018 检索（`V3.0.7` + `Two-Instance Kickoff` 双重锚定）。
 
 ## 8. 质量验证与交付证据（P0）
 
