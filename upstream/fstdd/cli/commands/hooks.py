@@ -36,9 +36,14 @@ if __name__ == "__main__":
     "pre-compact": """#!/usr/bin/env python3
 \"\"\"STDD PreCompact Hook — save critical state before compaction.\"\"\"
 from pathlib import Path
+from datetime import datetime, timezone
 import yaml
-from datetime import datetime
-from ..timeutil import utc_now_iso
+
+# 本脚本被注册为**独立脚本**执行（python .fstdd/hooks/pre-compact.py），
+# 此时已脱离包 ⇒ `from ..timeutil import ...` 必然 ImportError。
+# 时间戳就地生成，口径与 fstdd/cli/timeutil.utc_now_iso 一致（SC-010：必须带时区）。
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 def main():
     project_root = Path.cwd()
@@ -46,12 +51,20 @@ def main():
     if not changes_dir.exists():
         return
     for change_dir in sorted(changes_dir.iterdir()):
+        if not change_dir.is_dir():
+            continue
         stdd_yaml = change_dir / ".fstdd.yaml"
-        if stdd_yaml.exists():
-            state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
-            state["last_modified"] = utc_now_iso()
-            print(f"[STDD] State saved: Phase {state.get('active_phase', '?')}")
-            break
+        if not stdd_yaml.exists():
+            continue
+        state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
+        state["last_modified"] = _utc_now_iso()
+        # 与 phase.py / new.py 同口径落盘 —— 只改内存不写盘等于什么都没存
+        stdd_yaml.write_text(
+            yaml.dump(state, allow_unicode=True, default_flow_style=False),
+            encoding="utf-8",
+        )
+        print(f"[STDD] State saved: Phase {state.get('active_phase', '?')}")
+        break
 
 if __name__ == "__main__":
     main()

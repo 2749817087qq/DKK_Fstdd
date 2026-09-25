@@ -154,6 +154,61 @@ def test_pre_compact_hook_reads_fstdd_changes() -> None:
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_pre_compact_hook_actually_persists_last_modified() -> None:
+    """PreCompact 必须真的把 last_modified 写回盘上。
+
+    历史缺陷（两处叠加）：
+      1. hook 用 `from ..timeutil import utc_now_iso` 相对导入 —— 但 hook 被注册为
+         独立脚本执行（python .fstdd/hooks/pre-compact.py），已脱离包，
+         相对导入必然 ImportError ⇒ **每次触发都崩**，hook 100% 无效。
+      2. 即便导入正常，原实现只把 last_modified 写进内存 dict 就打印
+         "State saved"，**从不写回 .fstdd.yaml** ⇒ 输出一句假话，
+         僵尸检测（依赖 last_modified）收不到任何信号。
+    """
+    from fstdd.cli.commands.hooks import HOOK_SCRIPTS
+
+    tmp = _make_tmp_dir()
+    try:
+        change = tmp / ".fstdd" / "changes" / "2026-01-01-demo"
+        change.mkdir(parents=True)
+        stdd_yaml = change / ".fstdd.yaml"
+        stdd_yaml.write_text(
+            "change_name: demo\nactive_phase: build\n", encoding="utf-8"
+        )
+
+        script = tmp / "pre_compact.py"
+        script.write_text(HOOK_SCRIPTS["pre-compact"], encoding="utf-8")
+
+        proc = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=tmp,
+            capture_output=True,
+            text=True,
+        )
+
+        assert proc.returncode == 0, (
+            f"PreCompact hook 退出非零（独立脚本必须能跑起来）："
+            f"stderr={proc.stderr!r}"
+        )
+
+        state = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8")) or {}
+        assert "last_modified" in state, (
+            "PreCompact 打印了 'State saved' 但 .fstdd.yaml 里根本没有 last_modified"
+            " —— 只改内存不写盘，等于什么都没存。"
+        )
+
+        ts = str(state["last_modified"])
+        assert re.search(r"([+-]\d{2}:\d{2}|Z)$", ts.strip()), (
+            f"last_modified={ts!r} 未带时区后缀，违反 SC-010（禁止 naive 时间戳）"
+        )
+
+        # 原有字段不得被写盘操作弄丢
+        assert state.get("change_name") == "demo"
+        assert state.get("active_phase") == "build"
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 # --------------------------------------------------------------------------
 # 4. 配置层：config.d/project.yaml 的 paths.* 不得与真源矛盾
 # --------------------------------------------------------------------------

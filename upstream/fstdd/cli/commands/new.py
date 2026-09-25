@@ -112,7 +112,7 @@ def cmd_new(args: argparse.Namespace) -> None:
     canon_root = project_root / ".fstdd" / "changes" / dir_name / "canonical"
     if canon_ok and not canon_root.exists():
         canon_ok = False
-        print(f" ⚠️ 终态校验失败: canonical/ 目录不存在于 changes/{dir_name}/")
+        print(f" ⚠️ 终态校验失败: canonical/ 目录不存在于 .fstdd/changes/{dir_name}/")
         print(f"   change 可用，但缺 YAML-first 骨架 —— 请手动执行：stdd canon init --change {dir_name}")
     print(f"   Canonical 终态: {'✅ 就绪' if canon_ok else '❌ 缺失（见上方告警）'}")
 
