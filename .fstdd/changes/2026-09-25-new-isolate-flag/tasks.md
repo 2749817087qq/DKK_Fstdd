@@ -21,30 +21,64 @@
 
 ---
 
-## 1. 隔离形态解析 + 配置回落（P0）
+## 1. 隔离形态解析 + 配置回落（P0）✅ 已完成 — commit `e883547`
 
-- [ ] 1.1 在 `cli/__init__.py` 的 `p_new` 注册 `--isolate`（`choices=["none","worktree","branch"]`，`default=None`）
-- [ ] 1.2 新增 `_resolve_isolate_mode(args, project_root) -> str`：显式参数优先 → 读 `project.yaml` 的 `isolation.default` → 缺失/不可解析/非法一律回落 `none`（fail-safe 方向锁）
-- [ ] 1.3 新增 `_load_isolation_config(project_root) -> dict`，只读不写，异常吞掉并回落默认
-- [ ] 1.4 RED：写 TC-ISO-003（`--help` 暴露三取值）
-- [ ] 1.5 RED：写 TC-ISO-002（无 `--isolate` + 无配置 ⇒ 零漂移：无 worktree、无新分支、主仓建骨架）
-- [ ] 1.6 RED：写 TC-ISO-015（`isolation.default: worktree` 被消费）
-- [ ] 1.7 RED：写 TC-ISO-016（配置缺失 / YAML 坏 / 取值非法 ⇒ 均回落 none 且 exit 0）
-- [ ] 1.8 GREEN + 跑 `test_new.py` / `test_new_coverage.py` 确认无回归
+- [x] 1.1 在 `cli/__init__.py` 的 `p_new` 注册 `--isolate`（`choices=["none","worktree","branch"]`，`default=None`）
+- [x] 1.2 新增 `_resolve_isolate_mode(args, project_root) -> str`：显式参数优先 → 读 `project.yaml` 的 `isolation.default` → 缺失/不可解析/非法一律回落 `none`（fail-safe 方向锁）
+- [x] 1.3 新增 `_load_isolation_config(project_root) -> dict`，只读不写，异常吞掉并回落默认
+- [x] 1.4 RED：写 TC-ISO-003（`--help` 暴露三取值）
+- [x] 1.5 RED：写 TC-ISO-002（无 `--isolate` + 无配置 ⇒ 零漂移：**不得调用 git**、**不得写配置**）
+- [x] 1.6 RED：写 TC-ISO-015（`isolation.default: worktree` 被消费；显式参数压过配置）
+- [x] 1.7 RED：写 TC-ISO-016（配置缺失 / YAML 坏 / 取值非法 / 结构不符 ⇒ 均回落 none）
+- [x] 1.8 GREEN + 跑 `test_new.py` / `test_new_coverage.py` / `test_init.py` 确认无回归 ⇒ **28 passed**（12 新 + 16 既有）
+- [x] 1.9 **BUILD 分期守卫**：`worktree`/`branch` 尚未实现 ⇒ 出声拒绝 `exit 1`，且不留 change 目录（Slice 3/4 实现后删除）
 
-**失败模式检查**：配置读取失败时**不得**回落到 `worktree`（那会让一个坏 YAML 让 `stdd new` 开始悄悄建 worktree）。
+**片内实测发现（记录）**：`utils.fix_windows_encoding()` 会用
+`io.TextIOWrapper(sys.stdout.buffer, ...)` **替换 `sys.stdout`** ⇒ 进程内调用 `main()` 时
+help 输出绕过 capsys 捕获（实测 `out` 为空），且该替换会**残留影响后续用例**。
+故 TC-ISO-003 改为**子进程调真 CLI**（同时也是更强的端到端证据）。
 
-## 2. 失败前置与 git 前置检查（P0）
+**RED 证据形态**：新 API 切片的 RED 表现为 collection error
+（`ImportError: cannot import name '_load_isolation_config'`）。行为级 RED 自 Slice 2 起才有意义。
 
-- [ ] 2.1 新增 `_git_worktree_root(project_root) -> Path | None`（`git rev-parse --show-toplevel`）
-- [ ] 2.2 新增 `_branch_exists(project_root, branch) -> bool`（`git rev-parse --verify`）
-- [ ] 2.3 新增 `_is_worktree_dirty(project_root) -> bool`（`git status --porcelain`，**含未跟踪文件**）
-- [ ] 2.4 把三类前置检查串成 `_preflight_isolation(...)`，**任一失败即非 0 退出**，且保证此时尚未创建 change 目录
-- [ ] 2.5 RED：TC-ISO-006（非 git 仓 ⇒ 非 0 退出 **且 `.fstdd/changes/<dir>` 不存在**）
-- [ ] 2.6 RED：TC-ISO-007（脏工作区 + branch ⇒ 非 0 退出、提示 worktree、**分支未变**）
-- [ ] 2.7 RED：TC-ISO-008（分支已存在 / 目标路径已存在 ⇒ 非 0 退出、输出清理命令、**不删既有路径**）
+**计划调整**：原属 Slice 6 的「收尾提示行」（6.1）已**前移到本片**（`_print_isolation_hint`），
+以免出现「参数已注册但无人使用」的中间态；Slice 6 只剩 init 配置写入。
 
-**失败模式检查**：不得把「非 git 仓」静默降级为 `none`；不得在失败路径上执行 `rm` / `worktree remove --force`。
+**失败模式检查**：配置读取失败回落方向已验证为 `none`（TC-ISO-016b/d 专门断言**不是** `worktree`）。
+
+## 2. 失败前置与 git 前置检查（P0）✅ 已完成 — commit `5e8953f`
+
+- [x] 2.1 新增 `_git_worktree_root(project_root) -> Path | None`（`git rev-parse --show-toplevel`）
+- [x] 2.2 新增 `_branch_exists(project_root, branch) -> bool`（`git rev-parse --verify`）
+- [x] 2.3 新增 `_is_worktree_dirty(project_root) -> bool`（`git status --porcelain`，**含未跟踪文件**）
+- [x] 2.4 把三类前置检查串成 `_preflight_isolation(...)`，**任一失败即非 0 退出**，且保证此时尚未创建 change 目录
+- [x] 2.5 RED：TC-ISO-006（非 git 仓 ⇒ 非 0 退出 **且 `.fstdd/changes/<dir>` 不存在**）
+- [x] 2.6 RED：TC-ISO-007（脏工作区 + branch ⇒ 非 0 退出、提示 worktree、**分支未变**）
+- [x] 2.7 RED：TC-ISO-008（分支已存在 / 目标路径已存在 ⇒ 非 0 退出、输出清理命令、**不删既有路径**）
+- [x] 2.8 GREEN ⇒ **38 passed in 106.80s**（22 新 + 16 既有）
+
+**RED 证据形态（本片首次出现行为级 RED）**：实现落地前 `10 failed, 12 passed`，
+其中 TC-ISO-006 为**行为级**失败 —— 断言「未说明真实原因」时抓到的是 Slice 1 的分期守卫文案
+`隔离形态 'worktree' 尚未实现（本 change 仍在 BUILD 中）`，证明用例确实打在真实执行路径上。
+
+**片内实测发现（重要环境根因，已回写用户级记忆）**：
+本机 `C:\Users\Administrator` **本身就是一个 git 仓**，而 pytest 的系统临时目录位于其内
+⇒ `temp_project` 被判为「在祖先仓内」，导致 4 例误报（**含 1 例假绿**：前置检查未生效却判通过）。
+实测三组对照：
+
+| `GIT_CEILING_DIRECTORIES` | `git rev-parse --show-toplevel` 结果 |
+|---|---|
+| 不设 | `rc=0` → `C:/Users/Administrator` ❌ |
+| 设为 `<tmp_path>.parent` | `rc=128 fatal: not a git repository` ✅ |
+| 设为**搜索起点自身** | `rc=0` **无效** ❌ |
+
+⇒ 对策：新增 `_no_git_ancestor(monkeypatch, project)`，ceiling 必须设在**父级或更高**；
+`_init_git_repo` 改为 `add -A` 后再 commit，产出**干净起点**的仓（否则 seed 前的工作区即脏）。
+另：`@pytest.mark.skipif(not _GIT_OK, ...)` 在**模块加载时**求值 ⇒ git 工具函数必须上移到模块前部，
+否则 NameError。
+
+**失败模式检查（已核）**：非 git 仓走**显式拒绝**而非静默降级 `none`；
+失败路径**不含任何删除动作**，清理命令仅打印不执行。
 
 ## 3. worktree 创建 + 脚手架落点切换（P0）
 
