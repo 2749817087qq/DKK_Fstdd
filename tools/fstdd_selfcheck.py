@@ -15,8 +15,16 @@ Python 3 标准库，跨平台 Win/Linux/macOS。
 示例:
     python fstdd_selfcheck.py --token-file /path/to/token --node FSTDD002
     python fstdd_selfcheck.py --token-file C:/path/to/token.txt --node FSTDD006
+    python fstdd_selfcheck.py --token-file /path/to/token --node FSTDD006 --dry-run
 
 输出: JSON 到 stdout, 退出码 0=全通过, 1=任一失败。
+
+⚠️ 数据写入警告:
+    默认模式下 C2 会**真实 POST 一条 `*-SELFCHECK-*` 经验条目并持久化入库**，
+    服务端 `received` 计数 +1，且留下一条持久条目（非真实经验）。
+    因此本脚本**不是幂等的**：每次运行都会污染收件计数。
+    若只想验证「凭证可用 + 端点可达」而不写数据，请加 `--dry-run`
+    （此时 C1/C4 仍真跑，C2/C3 跳过并标 `skipped(dry-run)`）。
 """
 
 import argparse
@@ -48,6 +56,27 @@ def load_token(path):
 def post_to_inbox(token, payload):
     """POST 到 share-experience 接口，返回 (http_code, body)。"""
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    hdrs = {"Content-Type": "application/json"}
+    if token:
+        hdrs["X-FSTDD-Token"] = token
+    req = urllib.request.Request(INBOX_URL, data=body, headers=hdrs, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.status, resp.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf-8", errors="replace")
+    except Exception as e:
+        return None, "EXCEPTION: %s: %s" % (type(e).__name__, e)
+
+
+def post_invalid_body(token):
+    """用非法 body 打一次请求，只验鉴权、**不写任何数据**。
+
+    返回 (http_code, body)：
+      401  = 凭证无效/缺失（鉴权未通过）
+      400/422 = 凭证有效（鉴权已过，body 校验失败）—— 期望结果
+    """
+    body = json.dumps({}, ensure_ascii=False).encode("utf-8")
     hdrs = {"Content-Type": "application/json"}
     if token:
         hdrs["X-FSTDD-Token"] = token
@@ -97,8 +126,11 @@ def make_probe_payload(node, probe_id):
     }
 
 
-def run_selfcheck(token_file, node):
-    """执行 C1-C4 自检，返回完整结果字典。"""
+def run_selfcheck(token_file, node, dry_run=False):
+    """执行 C1-C4 自检，返回完整结果字典。
+
+    dry_run=True 时跳过真实 POST（C2/C3 标 skipped(dry-run)），不写任何数据。
+    """
     now_ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     probe_id = node + "-SELFCHECK-" + datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M%S")
 
@@ -150,26 +182,36 @@ def run_selfcheck(token_file, node):
         result.setdefault("issues", []).append("health_before 解析失败: %s" % exc)
 
     # C2: 带凭证 POST 探针，期望 200
-    payload = make_probe_payload(node, probe_id)
-    code_c2, body_c2 = post_to_inbox(tok, payload)
-    result["http_codes"]["C2"] = code_c2
-    result["C2"] = (code_c2 == 200)
+    if dry_run:
+        # --dry-run: 不写任何数据。C2/C3 跳过，但仍验证「凭证能通过鉴权」
+        # —— 用非法 body 打一次请求，401=凭证无效，400/422=凭证有效（body 校验失败）。
+        code_c2, body_c2 = post_invalid_body(tok)
+        result["http_codes"]["C2"] = "skipped(dry-run,auth=%s)" % code_c2
+        result["C2"] = code_c2 in (400, 422)
+        result["http_codes"]["C3"] = "skipped(dry-run)"
+        result["C3"] = code_c2 in (400, 422)
+    else:
+        payload = make_probe_payload(node, probe_id)
+        code_c2, body_c2 = post_to_inbox(tok, payload)
+        result["http_codes"]["C2"] = code_c2
+        result["C2"] = (code_c2 == 200)
 
     # C3: 响应/服务端是否归因到 --node 指定 id
     # 判据: 响应码 200 且响应体 ids 包含 probe_id（以 node 为前缀）
-    c3_pass = False
-    try:
-        resp = json.loads(body_c2)
-        ids = resp.get("ids", [])
-        if code_c2 == 200 and probe_id in ids:
-            c3_pass = True
-        # 额外检查: 响应体中是否包含 node 标识
-        if code_c2 == 200 and node in body_c2:
-            c3_pass = True
-    except Exception as exc:
-        result.setdefault("issues", []).append("C3 响应解析失败: %s" % exc)
-    result["C3"] = c3_pass
-    result["http_codes"]["C3"] = code_c2 if code_c2 else "error"
+    if not dry_run:
+        c3_pass = False
+        try:
+            resp = json.loads(body_c2)
+            ids = resp.get("ids", [])
+            if code_c2 == 200 and probe_id in ids:
+                c3_pass = True
+            # 额外检查: 响应体中是否包含 node 标识
+            if code_c2 == 200 and node in body_c2:
+                c3_pass = True
+        except Exception as exc:
+            result.setdefault("issues", []).append("C3 响应解析失败: %s" % exc)
+        result["C3"] = c3_pass
+        result["http_codes"]["C3"] = code_c2 if code_c2 else "error"
 
     # 读取 health after V1
     code_h1, body_h1 = get_health()
@@ -180,9 +222,17 @@ def run_selfcheck(token_file, node):
         result.setdefault("issues", []).append("health_after 解析失败: %s" % exc)
 
     # C4: 不带凭证 POST，200 (白名单) 或 401 (已拆) 均算通过
-    code_c4, body_c4 = post_to_inbox(None, payload)
+    if dry_run:
+        # --dry-run: 用非法 body 探，401=未拆（正确），200=白名单放行了未鉴权写入（须告警）
+        code_c4, body_c4 = post_invalid_body(None)
+        result["C4"] = (code_c4 == 401)
+        if code_c4 == 200:
+            result.setdefault("issues", []).append(
+                "C4 危险: 未鉴权 POST 返回 200，端点存在白名单放行，未鉴权即可写数据")
+    else:
+        code_c4, body_c4 = post_to_inbox(None, payload)
+        result["C4"] = (code_c4 in (200, 401))
     result["http_codes"]["C4"] = code_c4
-    result["C4"] = (code_c4 in (200, 401))
 
     # 综合判定
     all_pass = all(result.get(k) for k in ("C1", "C2", "C3", "C4"))
@@ -206,9 +256,14 @@ def main():
         default="FSTDD002",
         help="节点 ID（默认 FSTDD002）",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="只验凭证与端点，不 POST 探针（不写数据、received 不增长）",
+    )
     args = parser.parse_args()
 
-    result = run_selfcheck(args.token_file, args.node)
+    result = run_selfcheck(args.token_file, args.node, dry_run=args.dry_run)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
     # 退出码: 全通过=0, 任一失败=1
