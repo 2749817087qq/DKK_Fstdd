@@ -130,10 +130,34 @@ Windows 原生 git **不认** ⇒ `GIT_CEILING_DIRECTORIES=/tmp` **静默失效*
 - `canon init` 不传 `project_root` 时回落 `Path.cwd()`，`test_canon.py` 全绿 ⇒ 向后兼容成立。
 - 分期守卫收窄为仅 `branch`（Slice 4 实现后删除），`worktree` 不再被拦。
 
-## 4. branch 形态（P1）
+## 4. branch 形态（P1）✅ 已完成 — commit `30e9f70`
 
-- [ ] 4.1 新增 `_create_branch(project_root, branch)`：`git checkout -b <branch>`（**不**建 worktree）
-- [ ] 4.2 RED：TC-ISO-005（`git branch --show-current` == 规则分支名；`git worktree list` 仍 1 条）
+- [x] 4.1 新增 `_create_branch(project_root, branch)`：`git checkout -b <branch>`（**不**建 worktree）
+- [x] 4.2 RED：TC-ISO-005（`git branch --show-current` == 规则分支名；`git worktree list` 仍 1 条）
+- [x] 4.3 GREEN ⇒ **51 passed / 0 failed / 56.69s**（isolate 26 + 既有 new/canon/init 25）
+- [x] 4.4 **删除 BUILD 分期守卫**及其用例（worktree / branch 均已实现）
+
+**关键语义差异（worktree vs branch）**：
+| | worktree | branch |
+|---|---|---|
+| `target_root` | = worktree 路径 | = `project_root`（**不变**） |
+| 骨架落点 | worktree 内 | 主仓 |
+| 隔离来源 | 目录 | 分支 |
+| 同名重复被谁拦 | **分支名冲突**（主仓看不到 change 目录） | **change 目录已存在**（主仓可见） |
+
+**端到端验证（真 CLI + 真 git）**：`tmp/e2e_branch_probe.sh`
+1. 脏树 + branch ⇒ 出声拒绝（引用 ISO-3 裁定原文），rc=1，**分支未变**、无残留目录。
+2. 干净后 ⇒ rc=0，分支切到 `fstdd/2026-09-26-e2e-br`，**worktree 条数仍为 1**，
+   骨架与 canonical 均落在主仓，主仓未出现 `proj.worktrees/` 目录。
+3. 同名重复 ⇒ 被「Change 目录已存在」拦下（rc=1），分支保持不动。
+
+**分期守卫移除说明**：Slice 1–3 期间 `test_unimplemented_mode_fails_loud` 断言
+`worktree|branch` 在实现前必须出声拒绝（防「参数已注册、实则永不生效」）。
+两种形态现已全部落地，守卫及其用例一并删除，并在测试文件内留注释：
+**后续若新增隔离形态（如 `container`），必须重新加回等价守卫。**
+
+**失败模式检查（已核）**：branch 失败路径同样 `sys.exit(1)` 且不留骨架；
+`target_root` 在 branch 分支下**不被改写**，落点语义与 none 一致。
 
 ## 5. 门禁随 worktree 生效（P1，裁定 ISO-1）
 
