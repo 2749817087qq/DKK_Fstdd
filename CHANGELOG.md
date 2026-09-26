@@ -40,7 +40,7 @@
   **不向第三方外发**，可用 `FSTDD_NO_SHARE=1` 或 `share.silent.enabled: false` 关闭。
   **帮助**：用户从 README 读到的行为描述与**真实行为一致** —— 不再误以为"经验不会被回传"
   （这是**安全章节里的失实陈述**，比措辞不一致严重得多）。
-- **change 目录解析增归档回退**：`stdd archive` 之后，`validate` / `status` / `canon verify` /
+- **change 目录解析增归档回退**：`fstdd archive` 之后，`validate` / `status` / `canon verify` /
   `structure merge` 四条命令**必然 exit 1** —— 它们只查 `.fstdd/changes/`，**没有 `.fstdd/archive/` 回退**，
   而 DELIVER 把归档排在这些步骤之前 ⇒ **DELIVER 自身不可用**，只能靠「还原 → 执行 → 再归档」人肉往返绕开。
   根因是**四个各自独立、都硬编码 `changes/`** 的解析器（`finder.py` / `canon.py`（**纯路径拼接、
@@ -53,10 +53,10 @@
   验证：新增 TC-FAF-001~013（与 SC-001~013 一一对应）；全量套件 **850 passed / 0 failed**。
 
 ### 新增
-- **`stdd new --isolate <none|worktree|branch>`（change 隔离形态）**：`worktree` 让 change 活在
+- **`fstdd new --isolate <none|worktree|branch>`（change 隔离形态）**：`worktree` 让 change 活在
   独立 git worktree（默认建在仓外 `<项目>.worktrees/`）；`branch` 切独立分支、共享工作区；
   `none` 为默认，行为与旧版**逐字一致**。配套：worktree 形态会把主仓的门禁 hook 注册文件
-  复制进去（保持 Guard 有效）；`stdd new` 增加提示行；`stdd init` 往
+  复制进去（保持 Guard 有效）；`fstdd new` 增加提示行；`fstdd init` 往
   `.fstdd/config.d/project.yaml` 补 `isolation` 配置块。
   **帮助**：**一个 change 停只读相位不再冻结整个工作区** —— 只冻结它自己 `scope.paths`
   声明的路径，范围外的文件仅告警放行；两处 change 可以真正并行而不互相干扰
@@ -68,7 +68,7 @@
   **帮助**：此前只躺在协作目录、不进版本、新节点看不到的交付物，**现在可检索、可复用**。
 
 ### 移除
-- **`stdd new --parallel` 死代码**：该开关**从未在 argparse 注册**（基线 `git grep -- "--parallel"` 零命中），
+- **`fstdd new --parallel` 死代码**：该开关**从未在 argparse 注册**（基线 `git grep -- "--parallel"` 零命中），
   仅靠 `getattr(args, "parallel", False)` 读一个永不存在的属性 ⇒ 恒不执行；
   其 `_setup_parallel_worktrees()`（V2.8 Two-Instance Kickoff）随之移除。
   **帮助**：清掉「看起来有、实际永不生效」的死开关；隔离需求由新的 `--isolate` 承担。
