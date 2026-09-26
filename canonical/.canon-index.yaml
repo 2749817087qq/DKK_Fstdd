@@ -1,0 +1,10 @@
+designs: {}
+proposals:
+  2026-09-15-crlf-eol-governance: proposals/2026-09-15-crlf-eol-governance.yaml
+  2026-09-25-new-isolate-flag: proposals/2026-09-25-new-isolate-flag.yaml
+specs:
+  agent:
+    2026-09-25-new-isolate-flag: specs/agent/2026-09-25-new-isolate-flag.yaml
+  code:
+    2026-09-25-new-isolate-flag: specs/code/2026-09-25-new-isolate-flag.yaml
+version: '2.9'

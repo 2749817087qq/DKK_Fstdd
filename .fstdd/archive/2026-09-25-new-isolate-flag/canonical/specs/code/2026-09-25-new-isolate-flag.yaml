@@ -1,0 +1,129 @@
+# spec.yaml — 行为规格（Canonical YAML）
+# 能力：change-isolation ｜ change：2026-09-25-new-isolate-flag
+# 约定：YAML 是机器源；Human View（specs/**/spec.md）由 `stdd canon generate` 派生。
+
+meta:
+  capability: "change-isolation"
+  change_id: "2026-09-25-new-isolate-flag"
+  created: "2026-09-25T12:38:52+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    description: "`stdd new` SHALL 提供显式隔离形态选择，默认 none 保持零行为漂移"
+    scenarios:
+      - id: "SC-001"
+        given: "当前目录位于 git 工作树内"
+        when: "执行 `stdd new x --isolate worktree`"
+        then: "SHALL 建出独立 worktree 与显式命名分支，且 change 骨架（.fstdd/changes/<dir>/）落在 worktree 内而非主工作区"
+      - id: "SC-002"
+        given: "project.yaml 无 isolation 块"
+        when: "执行 `stdd new x`（不带 --isolate）"
+        then: "SHALL 在主工作区建骨架，且不创建任何 worktree 或分支（与改动前行为逐字一致）"
+      - id: "SC-003"
+        given: "任意目录"
+        when: "执行 `stdd new --help`"
+        then: "SHALL 列出 --isolate 及取值 none/worktree/branch"
+
+  - id: "REQ-002"
+    description: "隔离所用的分支 SHALL 显式命名，不得产生隐式同名分支"
+    scenarios:
+      - id: "SC-004"
+        given: "位于 git 工作树内且分支 fstdd/<dir> 不存在"
+        when: "执行 `stdd new x --isolate worktree`"
+        then: "SHALL 以 `git worktree add -b <branch_prefix><change_dir_name>` 建分支，分支名不含路径后缀（非 -explore/-research 之类派生名）"
+      - id: "SC-005"
+        given: "位于 git 工作树内且工作区干净"
+        when: "执行 `stdd new x --isolate branch`"
+        then: "SHALL 用 `git checkout -b <branch_prefix><change_dir_name>` 切到新分支，且不创建 worktree"
+
+  - id: "REQ-003"
+    description: "隔离形态选择 SHALL 不静默降级，失败时不留半成品"
+    scenarios:
+      - id: "SC-006"
+        given: "当前目录不在 git 工作树内"
+        when: "执行 `stdd new x --isolate worktree`（或 branch）"
+        then: "SHALL 以非 0 退出并说明原因，且 SHALL NOT 创建 change 目录（不静默降级为 none）"
+      - id: "SC-007"
+        given: "位于 git 工作树内但工作区存在未提交改动（含未跟踪文件）"
+        when: "执行 `stdd new x --isolate branch`"
+        then: "SHALL 以非 0 退出并提示改用 --isolate worktree，SHALL NOT 切换分支"
+      - id: "SC-008"
+        given: "目标分支名已存在，或 worktree 目标路径已存在"
+        when: "执行 `stdd new x --isolate worktree`"
+        then: "SHALL 在创建前检出冲突并以非 0 退出，输出可直接执行的清理命令，SHALL NOT 自行删除已存在的路径"
+
+  - id: "REQ-004"
+    description: "worktree 存放位置 SHALL 不污染被隔离的仓库"
+    scenarios:
+      - id: "SC-009"
+        given: "project.yaml 未配置 isolation.worktree_root"
+        when: "执行 `stdd new x --isolate worktree`"
+        then: "SHALL 把 worktree 建在项目根**之外**（`<project_parent>/<project_name>.worktrees/<change_dir_name>`），使主工作区 `git status` 不因该 worktree 变脏"
+      - id: "SC-010"
+        given: "project.yaml 配置了 isolation.worktree_root"
+        when: "执行 `stdd new x --isolate worktree`"
+        then: "SHALL 使用该配置值作为 worktree 父目录"
+
+  - id: "REQ-005"
+    description: "隔离状态 SHALL 可见，且提示不得阻塞"
+    scenarios:
+      - id: "SC-011"
+        given: "任意隔离形态（含 none）"
+        when: "`stdd new` 正常结束"
+        then: "SHALL 输出一行隔离提示（当前形态 + 如需隔离的完整命令）"
+      - id: "SC-012"
+        given: "任意隔离形态"
+        when: "`stdd new` 全程执行"
+        then: "SHALL NOT 调用 input() 等待输入（零交互）"
+
+  - id: "REQ-006"
+    description: "`stdd init` SHALL 写入隔离策略配置，且对既有配置幂等无害"
+    scenarios:
+      - id: "SC-013"
+        given: "项目尚无 isolation 配置"
+        when: "执行 `stdd init`"
+        then: "SHALL 在 .fstdd/config.d/project.yaml 写入 isolation 块（default/worktree_root/branch_prefix）"
+      - id: "SC-014"
+        given: "project.yaml 已含 isolation 块或用户自定义键"
+        when: "再次执行 `stdd init`"
+        then: "SHALL 保留既有取值不变（只补缺失键，幂等）"
+
+  - id: "REQ-007"
+    description: "`new` SHALL 消费配置默认值，且任何读取失败都回退 none"
+    scenarios:
+      - id: "SC-015"
+        given: "project.yaml 配置 isolation.default: worktree"
+        when: "执行 `stdd new x`（不带 --isolate）"
+        then: "SHALL 按 worktree 形态创建"
+      - id: "SC-016"
+        given: "project.yaml 缺失、YAML 不可解析、或 isolation.default 取值非法"
+        when: "执行 `stdd new x`（不带 --isolate）"
+        then: "SHALL 回退为 none 并正常建骨架，SHALL NOT 报错退出"
+
+  - id: "REQ-008"
+    description: "不可达的 --parallel 死代码 SHALL 被移除并留痕"
+    scenarios:
+      - id: "SC-017"
+        given: "改动后的代码库"
+        when: "检索 `parallel` 与 `_setup_parallel_worktrees`"
+        then: "SHALL 无任何命中（函数与调用点均已移除）"
+      - id: "SC-018"
+        given: "改动后的仓库"
+        when: "查看 CHANGELOG"
+        then: "SHALL 记录 --parallel 死代码的移除说明"
+
+  # ⚠️ SPEC 阶段新增（非 Gate 1 proposal 原文）：SC-001 要求「两处各自只冻结自己作用域」，
+  #    而新 worktree 默认不含 .claude/.codebuddy 的 hook 注册 ⇒ Guard 不生效、门禁静默消失。
+  #    故本项是 SC-001 的**必要条件**，请 Gate 2 一并确认。
+  - id: "REQ-009"
+    description: "隔离 SHALL NOT 使流程门禁静默失效"
+    scenarios:
+      - id: "SC-019"
+        given: "主工作区存在 Guard hook 注册文件（.claude/settings.local.json 或 .codebuddy/settings.local.json）"
+        when: "以 --isolate worktree 建出 worktree"
+        then: "SHALL 把该 hook 注册一并复制进 worktree，使 worktree 内 guard check 可被触发"
+      - id: "SC-020"
+        given: "主工作区不存在任何 Guard hook 注册文件"
+        when: "以 --isolate worktree 建出 worktree"
+        then: "SHALL 明确输出告警说明该 worktree 内门禁未激活，SHALL NOT 静默通过"

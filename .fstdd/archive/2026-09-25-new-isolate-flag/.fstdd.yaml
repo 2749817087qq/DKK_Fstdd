@@ -72,7 +72,7 @@ phases:
       change 一隔离环境」可选且可见）
     status: completed
 score_confidence: null
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 0
