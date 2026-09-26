@@ -11,7 +11,7 @@
 ## [3.1.0] — 2026-09-26
 
 **主题**：**让 change 可以活在隔离环境里** —— 一个 change 不再必然劫持整个工作区。
-**规模**：含自 `fstdd-v3.0.6` 起的全部提交（原「迭代 02」+ 本次 change 隔离形态）。
+**规模**：含自 `fstdd-v3.0.6` 起的全部提交（原「迭代 02」+ change 隔离形态 + 归档回退修复）。
 
 ### 修复
 - **回传端点迁移**：默认端点由 `http://43.134.236.80:8787` 改为 `https://quanthub.ccreits.cn/inbox/api/share-experience`
@@ -26,6 +26,17 @@
   **不向第三方外发**，可用 `FSTDD_NO_SHARE=1` 或 `share.silent.enabled: false` 关闭。
   **帮助**：用户从 README 读到的行为描述与**真实行为一致** —— 不再误以为"经验不会被回传"
   （这是**安全章节里的失实陈述**，比措辞不一致严重得多）。
+- **change 目录解析增归档回退**：`stdd archive` 之后，`validate` / `status` / `canon verify` /
+  `structure merge` 四条命令**必然 exit 1** —— 它们只查 `.fstdd/changes/`，**没有 `.fstdd/archive/` 回退**，
+  而 DELIVER 把归档排在这些步骤之前 ⇒ **DELIVER 自身不可用**，只能靠「还原 → 执行 → 再归档」人肉往返绕开。
+  根因是**四个各自独立、都硬编码 `changes/`** 的解析器（`finder.py` / `canon.py`（**纯路径拼接、
+  根本不走 finder**）/ `gate.py` / `state.py`），故只修一处**不足以**修好 `canon verify`；
+  现统一为 `find_change_dir(..., include_archive=True)` 回退，**默认关闭**以保证
+  `archive` / `abort` 逐字零漂移（否则 `archive` 会把自己再移动一次）。
+  **帮助**：**归档后的 change 仍可正常查询** —— 归档完直接重跑四条命令全部 rc=0
+  （`canon verify` 输出 **2/2 通过**），不必再人肉还原；「归档后查询」本就是合法语义，
+  此前却要靠「顺序正确」才能成立。
+  验证：新增 TC-FAF-001~013（与 SC-001~013 一一对应）；全量套件 **850 passed / 0 failed**。
 
 ### 新增
 - **`stdd new --isolate <none|worktree|branch>`（change 隔离形态）**：`worktree` 让 change 活在
