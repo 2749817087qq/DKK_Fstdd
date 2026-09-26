@@ -1,4 +1,4 @@
-# change 隔离形态（`stdd new --isolate`）
+# change 隔离形态（`fstdd new --isolate`）
 
 > 适用版本：FSTDD 3.1.0+
 > 面向：**使用者**（想知道"这个开关能帮我解决什么、什么时候该用哪种"）
@@ -23,7 +23,7 @@ FSTDD 的 change 默认**活在主工作区**。这带来三个真实麻烦：
 ## 二、三种形态
 
 ```bash
-stdd new <短名> --isolate <none|worktree|branch>
+fstdd new <短名> --isolate <none|worktree|branch>
 ```
 
 | 形态 | 落点 | 隔离强度 | 适用 |
@@ -38,14 +38,14 @@ stdd new <短名> --isolate <none|worktree|branch>
 
 ```bash
 # 独立 worktree（推荐）
-stdd new fix-guard-scope --isolate worktree
+fstdd new fix-guard-scope --isolate worktree
 cd ../stdd-repo.worktrees/2026-09-26-fix-guard-scope     # 进去干活
 
 # 独立分支（共享工作区）
-stdd new fix-guard-scope --isolate branch
+fstdd new fix-guard-scope --isolate branch
 
 # 先看会做什么（不落盘）
-stdd new fix-guard-scope --isolate worktree --dry-run
+fstdd new fix-guard-scope --isolate worktree --dry-run
 ```
 
 ---
@@ -64,7 +64,7 @@ stdd new fix-guard-scope --isolate worktree --dry-run
 
 ## 四、配置
 
-`stdd init` 会往 `.fstdd/config.d/project.yaml` 补一个 `isolation` 块（**只补缺失键，不覆盖你已写的值**）：
+`fstdd init` 会往 `.fstdd/config.d/project.yaml` 补一个 `isolation` 块（**只补缺失键，不覆盖你已写的值**）：
 
 ```yaml
 isolation:

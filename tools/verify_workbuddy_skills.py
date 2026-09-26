@@ -5,7 +5,7 @@
 退出码：0 = 全部通过；1 = 存在 FAIL 项（此时禁止继续 DELIVER 相关操作）。
 
 用法：
-    "C:\\Python311\\python.exe" "C:/Users/Administrator/.workbuddy-ai/Fstdd/tools/verify_workbuddy_skills.py"
+    "C:\\Python311\\python.exe" "D:/tools/FSTDD/stdd-repo/tools/verify_workbuddy_skills.py"
 """
 from pathlib import Path
 import os

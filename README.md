@@ -5,7 +5,10 @@
 [![Upstream](https://img.shields.io/badge/upstream-leonai42%2Fstdd%20v3.0.5-lightgrey.svg)](https://github.com/leonai42/stdd)
 
 > 上游 [leonai42/stdd](https://github.com/leonai42/stdd) V3.0.5（MIT）的衍生作品。
-> 本仓库只放**我们自己的改动层**——不复制上游那 900 多个文件，也不包含任何无许可的第三方原文。
+> 本仓库**完整 vendor 了上游代码**（`upstream/`，704 个文件，含上游 `LICENSE` 原文）——
+> 克隆本仓库即可用，**无需另行获取上游源码**；本仓库只在其上叠加 WorkBuddy 适配层与金融扩展。
+> vendor 时做了命名空间适配：上游 STDD → FSTDD（目录 / 包 / CLI 入口 / 文档文件名），
+> 正文中「上游 STDD」的署名**原样保留**；本仓库不含任何无许可的第三方原文。
 > 完整版权与来源说明见 [`NOTICE.md`](./NOTICE.md)。
 
 ---
@@ -91,7 +94,7 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
   python -c "import yaml, jinja2; print('依赖 OK')"
   ```
 
-- 已获取上游 STDD 源码
+- 已克隆本仓库（上游源码已 vendor 在 `upstream/` 下，**无需**单独获取）
 
 ### 安装
 
@@ -175,9 +178,9 @@ Skill 安装后需**重启 WorkBuddy 或执行 `/reload`** 才会出现在可用
 需要并行、或 change 会长时间停在只读相位时，改用隔离形态：
 
 ```bash
-stdd new fix-guard-scope --isolate worktree    # 独立 worktree（推荐，真隔离）
-stdd new fix-guard-scope --isolate branch      # 独立分支（共享工作区，弱隔离）
-stdd new fix-guard-scope                       # 默认 none，行为与旧版逐字一致
+fstdd new fix-guard-scope --isolate worktree    # 独立 worktree（推荐，真隔离）
+fstdd new fix-guard-scope --isolate branch      # 独立分支（共享工作区，弱隔离）
+fstdd new fix-guard-scope                       # 默认 none，行为与旧版逐字一致
 ```
 
 **帮助**：两处 change 各自只冻结自己 `scope.paths` 声明的路径，**互不干扰** —— 不再需要人肉错峰。

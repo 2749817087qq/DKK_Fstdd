@@ -19,6 +19,18 @@
 **义务履行**：上游 MIT 许可全文已随本仓库保留于 [`UPSTREAM-LICENSE.txt`](./UPSTREAM-LICENSE.txt)，
 原版权声明与许可声明未被移除或改动。
 
+**vendor 说明**：本仓库 `upstream/` 目录是上游 V3.0.5 代码的 **vendor 副本（704 个文件）**，
+随本仓库一并分发 —— 克隆本仓库即可使用，**无需另行获取上游源码**。
+为适配 WorkBuddy 的命名空间，vendor 时对**路径与文件名**做了命名替换 ——
+目录 `.stdd/` → `.fstdd/`、包 `stdd/` → `fstdd/`、入口 `bin/stdd` → `bin/fstdd`、文档 `STDD*.md` → `FSTDD*.md`（均为上游 STDD → FSTDD）；
+文件**正文中的「上游 STDD」等署名性表述保持原样**，未作改写 —— 依 MIT 要求，署名须忠于事实
+（判据见 [`tools/verify_rename.py`](./tools/verify_rename.py) 的 `ALLOWED_OLD_MENTIONS`）。
+
+未随 vendor 纳入的上游内容：`website/`（独立部署的站点）与 `.stdd/archive/`（历史变更归档）。
+另需说明：`upstream/tools/` 与 `upstream/WORKBUDDY_INSTALL_NOTES.md` 为 **2026-09-14 首次安装时的
+本地脚手架留档**，非上游内容，与仓库根的现役版本（[`tools/`](./tools/)、
+[`docs/WORKBUDDY_INSTALL_NOTES.md`](./docs/WORKBUDDY_INSTALL_NOTES.md)）并存。
+
 **本仓库对上游的改动**（详见 [`docs/WORKBUDDY_INSTALL_NOTES.md`](./docs/WORKBUDDY_INSTALL_NOTES.md)）：
 
 1. skill 安装格式适配：上游 WorkBuddy 安装器输出 `~/.workbuddy/skills/*.md`（单文件），
@@ -29,7 +41,8 @@
 4. 安全策略：默认禁用「经验自动上传社区」步骤（该步骤会向外部仓库外发项目数据），
    并加入哨兵标记与校验机制，防止升级时被静默抹除。
 
-上述改动文件均位于 [`tools/`](./tools/) 与 [`docs/`](./docs/)，**不在上游仓库中**。
+上述改动**以上游代码（`upstream/`）为基准叠加**，改动文件均位于 [`tools/`](./tools/) 与
+[`docs/`](./docs/)，**不在上游仓库中**（上游 vendor 副本见 `upstream/`）。
 
 ---
 

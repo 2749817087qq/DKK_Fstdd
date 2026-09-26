@@ -26,7 +26,10 @@
 
 ## 三、发布检查清单（**逐项打勾才可 tag**）
 
-- [ ] 全量测试 **0 failed**（`python -m pytest tests/ -q`）
+- [ ] 全量测试 **0 failed**（`python -m pytest upstream/tests -q`，851 用例；注意测试在 `upstream/tests/`，仓库根**没有** `tests/`）
+- [ ] **四个自检脚本全绿**：`tools/verify_rename.py`（8/8）、`tools/verify_eol.py`（7/7）、
+      `tools/verify_skill_standards.py`（7/7）、`tools/verify_workbuddy_skills.py`
+      —— 此前清单只覆盖 pytest，导致「改名残留 56 处」「EOL 混合态」长期无人发现
 - [ ] `stdd_version` 已提升
 - [ ] `stdd_version` 与**仓库根 `CHANGELOG.md` 的版本段**一致（存在 `[<stdd_version>]` 段；由 `TC-ISO-018` 自动锚定）
 - [ ] `CHANGELOG.md` 已更新（含"帮助"列）

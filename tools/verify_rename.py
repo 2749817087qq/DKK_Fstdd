@@ -40,7 +40,9 @@ CLI = REPO / "upstream" / "bin" / "fstdd"
 # 其内容与 experiences/ 同源 —— 同样会合法地提到旧名（那是史实），同样不该被判为残留。
 # 实测：拉回测试数据后本检查报「残留 20 处」，全部来自 inbox/raw/ 里的历史经验文档。
 EXCLUDE_DIRS = {"upstream", ".git", ".fstdd", ".stdd", "__pycache__",
-                "backups", ".claude", "experiences", "inbox"}
+                "backups", ".claude", "experiences", "inbox",
+                # agent 运行时目录（gitignored，内含临时脚本，非交付物）
+                ".workbuddy-ai"}
 
 # 预期保留旧名的文件（工具自身，不是被改的产物）
 EXCLUDE_FILES = {
