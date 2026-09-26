@@ -13,7 +13,13 @@ last_modified: '2026-09-26T04:05:02+00:00'
 mode: standard
 phases:
   build:
-    status: in_progress
+    confirmed_actor: ai
+    confirmed_at: '2026-09-26T05:47:41+00:00'
+    confirmed_by: cli
+    confirmed_evidence: K-main（FSTDD skill 总工）裁定：BUILD 完成 —— 实现 9 处收口 + TC-FAF-001~013
+      全绿；假阴性自检 9 failed/12 passed（新增能力 9 例敏感、4 例零漂移守卫保持绿）；全量套件 850 passed/1 skipped/0
+      failed（21m46s）；哨兵 audit_silent_except.py --check 0 条提示。进入 DELIVER。
+    status: completed
   deliver:
     status: pending
   spec:
@@ -31,7 +37,7 @@ phases:
       / base=f3b2713），进入 SPEC 阶段。
     status: completed
 score_confidence: null
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 0

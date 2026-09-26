@@ -64,7 +64,7 @@
 | **预置条件** | GIVEN：临时根下建 `.fstdd/archive/2026-01-01-archived-only/` 且含 `.fstdd.yaml`；**不建** `.fstdd/changes/` 下任何同名目录 |
 | **输入** | WHEN：`find_change_dir("archived-only", root)`（**不传** `include_archive`） |
 | **预期结果** | THEN：返回 `None` —— 默认仍是「只查在办」；AND：`.fstdd/archive/` 未被创建/修改（`st_mtime` 不变） |
-| **当前状态** | ❌ 测试缺（修复前 `find_change_dir` 无此参数，该语义无法表达） |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-001` |
 
 #### 案例 1.2 — 显式开启后归档件可被解析
 
@@ -76,7 +76,7 @@
 | **预置条件** | GIVEN：`.fstdd/archive/2026-01-01-archived-only/` 存在且含 `.fstdd.yaml`；`changes/` 下无该件 |
 | **输入** | WHEN：`find_change_dir("archived-only", root, include_archive=True)` |
 | **预期结果** | THEN：返回 `.fstdd/archive/2026-01-01-archived-only`；AND：`(result / ".fstdd.yaml").exists()` 为真；AND：返回值 `is_relative_to(root)` |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-002` |
 
 #### 案例 1.3 — changes/ 与 archive/ 同名时在办优先
 
@@ -88,7 +88,7 @@
 | **预置条件** | GIVEN：`.fstdd/changes/2026-01-01-dup/` 与 `.fstdd/archive/2026-01-01-dup/` **同时**存在，各自含 `.fstdd.yaml` |
 | **输入** | WHEN：`find_change_dir("dup", root, include_archive=True)` |
 | **预期结果** | THEN：返回 `.fstdd/changes/2026-01-01-dup`；AND：`".fstdd/archive" not in str(result)`（不得误取归档副本） |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-003` |
 
 #### 案例 1.4 — 后缀匹配在归档区同样生效
 
@@ -100,7 +100,7 @@
 | **预置条件** | GIVEN：`.fstdd/archive/2026-01-01-archived-feature/` 含 `.fstdd.yaml`；`changes/` 下无 |
 | **输入** | WHEN：`find_change_dir("archived-feature", root, include_archive=True)`（短名，省略日期前缀） |
 | **预期结果** | THEN：命中 `archive/2026-01-01-archived-feature`；AND：与 `changes/` 分支使用同一后缀匹配规则（`d.name.endswith(name)`） |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-004` |
 
 #### 案例 1.5 — 不指定名字时恒只查在办
 
@@ -112,7 +112,7 @@
 | **预置条件** | GIVEN：`changes/` 与 `archive/` 下都有含 `.fstdd.yaml` 的 change，且**强制 `archive/` 内那个 `st_mtime` 更新** |
 | **输入** | WHEN：`find_change_dir(None, root, include_archive=True)` |
 | **预期结果** | THEN：只返回 `changes/` 下最近修改的那个；AND：`".fstdd/archive" not in str(result)` —— `include_archive` **不影响** `name=None` 分支 |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-005` |
 
 #### 案例 1.6 — 无 archive/ 目录时不抛异常
 
@@ -124,7 +124,7 @@
 | **预置条件** | GIVEN：临时根下只有 `.fstdd/changes/`，**完全没有** `.fstdd/archive/` |
 | **输入** | WHEN：`find_change_dir("whatever", root, include_archive=True)` |
 | **预期结果** | THEN：正常返回或返回 `None`，**不得抛 `FileNotFoundError` / `StopIteration`**；AND：`.fstdd/archive/` **不被创建**（查询不产生副作用） |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-006` |
 
 ### 功能 2：归档后四条命令仍可用（REQ-002）
 
@@ -142,7 +142,7 @@
 | **预置条件** | GIVEN：change 已归档至 `.fstdd/archive/<name>/`，`changes/` 下已无该目录 |
 | **输入** | WHEN：`stdd validate <name>` |
 | **预期结果** | THEN：`returncode == 0`；AND：stdout 不含「找不到 change」；AND：校验项正常输出（修复前 rc=1） |
-| **当前状态** | ❌ 测试缺（**修复前必红** —— 实测 rc=1） |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-007` |
 
 #### 案例 2.2 — status 归档后可用
 
@@ -154,7 +154,7 @@
 | **预置条件** | GIVEN：change 已归档，`.fstdd.yaml` 内 `status: archived` |
 | **输入** | WHEN：`stdd status <name>` |
 | **预期结果** | THEN：`returncode == 0`；AND：stdout 含该 change 名与归档态信息（修复前 rc=1） |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-008` |
 
 #### 案例 2.3 — canon verify 归档后可用
 
@@ -166,7 +166,7 @@
 | **预置条件** | GIVEN：change 已归档，其 `canonical/proposals/<name>.yaml` 完整（源哈希与字段引用均一致） |
 | **输入** | WHEN：`stdd canon verify <name>` |
 | **预期结果** | THEN：`returncode == 0`；AND：stdout 出现通过项（修复前 rc=1「canonical/proposals/... not found」）—— **本 case 是「只改 finder 不够」的直接证据**：`_get_canon_dir` 不走 finder |
-| **当前状态** | ❌ 测试缺（**修复前必红**） |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-009` |
 
 #### 案例 2.4 — structure merge 归档后读到 delta
 
@@ -178,7 +178,7 @@
 | **预置条件** | GIVEN：change 已归档，其 `code-structure-delta.md` 存在 |
 | **输入** | WHEN：`stdd structure merge <name>` |
 | **预期结果** | THEN：`returncode == 0`；AND：stdout **不含**「Delta not found」；AND：delta 被复制进 `code-structure/deltas/<name>.md`（修复前 rc=1） |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-010` |
 
 ### 功能 3：归档相关既有行为零漂移（REQ-003）
 
@@ -195,7 +195,7 @@
 | **预置条件** | GIVEN：change 已归档至 `archive/<name>/`，`changes/` 下已无该目录；记录 `archive/<name>/` 的 `st_mtime` 与 inode |
 | **输入** | WHEN：**再次**执行 `stdd archive <name>` |
 | **预期结果** | THEN：`returncode != 0` 且报「找不到 change」；AND：`archive/<name>/` **原地未动**（`st_mtime` 与 inode 均未变，目录未丢失）—— 证明 `archive.py:16` 仍用默认 `include_archive=False` |
-| **当前状态** | ❌ 测试缺（**核心反例**） |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-011` |
 
 #### 案例 3.2 — rollback 既有 archive 恢复逻辑不回归
 
@@ -207,7 +207,7 @@
 | **预置条件** | GIVEN：change 已归档至 `archive/<name>/`（含 `.fstdd.yaml`） |
 | **输入** | WHEN：`stdd rollback <name>` |
 | **预期结果** | THEN：`returncode == 0`；AND：目录已回到 `.fstdd/changes/<name>/`；AND：`archive/<name>/` 不再存在 —— **本 change 不改 `rollback.py`**，其独立 archive 搜索（`archive/` + `archive/aborted/`）须逐字保留 |
-| **当前状态** | ⚠️ 部分已覆盖（`test_rollback.py` 5 例）→ 需补「归档后恢复」这一路径 |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-012`（既有 test_rollback.py 5 例 + 本次补「归档后恢复」路径） |
 
 #### 案例 3.3 — 未归档 change 正常归档（既有行为）
 
@@ -219,7 +219,7 @@
 | **预置条件** | GIVEN：change 位于 `.fstdd/changes/<name>/`，未归档 |
 | **输入** | WHEN：`stdd archive <name>` |
 | **预期结果** | THEN：`returncode == 0`；AND：目录出现在 `.fstdd/archive/<name>/`；AND：`changes/<name>/` 不再存在；AND：`.fstdd.yaml` 内 `status == "archived"` |
-| **当前状态** | ✅ 已覆盖（`test_archive.py` 4 例）→ 作为回归基线保留 |
+| **当前状态** | ✅ 已覆盖 → `TC-FAF-013`（既有 test_archive.py 4 例，作为回归基线） |
 
 ## 三、测试执行矩阵
 

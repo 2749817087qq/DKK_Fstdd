@@ -118,3 +118,28 @@ name 为空:
 | 哨兵 `audit_silent_except.py` 行号漂移（本 change 会**插入**代码到多个含吞异常点的文件） | 每片收尾跑 `audit_silent_except.py --check`（见 skill §8.1） |
 | 双视图 spec 使 scenario 计数翻倍 ⇒ `validate` 报 TC < Scenario | 精简视图 `specs/code/spec.md` **不用** `#### Scenario:` 标题（用 `- **SC-xxx**`） |
 | `find_change_dir` 成为热点被后续 change 继续加分支 | 本次即把它收敛为**唯一**解析入口；`canon` 已回归 |
+
+## 实现期补充（BUILD，2026-09-26）
+
+Decision 2 的「`canon._get_canon_dir` 改走统一解析」在实现时发现**同一根因下还有 3 处**，
+一并收口（否则会引入新缺陷）：
+
+| 位置 | 修复前行为 | 若不修 |
+|------|-----------|--------|
+| `canon.py` `cmd_canon_verify` 的 `md_file` 查找 | 拼 `changes/<name>/proposal.md` | SC-009 虽 rc=0（走「nothing to verify」分支），但**不输出通过项** ⇒ 不满足 SC-009 |
+| `canon.py` `_generate_one` 的 `output_dir` 默认值 | 拼 `changes/<id>/` | `stdd canon generate <已归档>` 会在 `changes/` 下**建出幻影目录**（修复前它 rc=1 干净失败 ⇒ 属**新引入**的坏副作用） |
+| `canon.py` `_generate_spec` 的 `output_dir` 默认值 | 同上 | 同上（spec Human View 侧） |
+
+**实现方式**：在 `canon.py` 内新增 `_resolve_change_dir(project_root, change_name)` 作为
+canon 侧唯一收口（内部调 `find_change_dir(..., include_archive=True)`，未解析到时回落原路径
+以保持既有错误文案），上述 4 处全部改走它。**不新增第 5 个解析器**。
+
+**保留不动的 `changes/` 拼接**（附理由）：
+- `_resolve_change_dir` 内的回落分支 —— 保持「未找到」时的错误文案与改动前一致；
+- `_find_current_change` —— 「当前 change」语义**本就只查在办**（Decision 3）；
+- `cmd_canon_init` 读 `.fstdd.yaml` 判 `task_type` —— 只影响 spec 目录选择，读不到回落 `code`，
+  且 `canon init` 对已归档 change 无意义；改动无收益却扩大回归面。
+
+**连带**：本 change 在 `canon.py` 顶部插入 helper 使既有吞异常点行号由 141 漂到 156
+（`EA-004`，同一逻辑点）。按 `fstdd-audit-deliver-closure` 规程**只改 `line`**
+（`audit/except-points.yaml`），哨兵 `audit_silent_except.py --check` 归零。
