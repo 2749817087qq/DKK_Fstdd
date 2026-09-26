@@ -8,11 +8,22 @@ import sys
 # 上游代码：随本仓库 vendor 在 upstream/ 下，故默认按脚本位置自动定位。
 # 也可用环境变量覆盖：FSTDD_SRC / FSTDD_OUT / FSTDD_PY
 SRC = Path(os.environ.get("FSTDD_SRC", Path(__file__).resolve().parent.parent / "upstream"))
-# 默认输出目录必须是 WorkBuddy **实际加载** 的用户级 skill 目录。
-# 实测（2026-09-16）：WorkBuddy 内核 cli/dist/codebuddy.js 中 `.workbuddy-ai` 出现 0 次，
-# 它加载的是 ~/.workbuddy/skills（以及 ~/.codebuddy/skills、项目级 .codebuddy/skills）。
-# 此前默认值写成 .workbuddy-ai/skills，导致装完不被加载（等于白装）。
-OUT = Path(os.environ.get("FSTDD_OUT", Path.home() / ".workbuddy" / "skills"))
+
+# 输出目录**不再硬编码**，改由 _skill_install_env 按内核同源顺序解析。
+#
+# 事故复盘（2026-09-16 起，装了 10 天）：
+#   本文件与 verify_workbuddy_skills.py **各自**写死 `~/.workbuddy/skills`，
+#   并以「与对方保持一致」互相背书 ⇒ 一起错、一起绿：校验器恒定 PASS，
+#   而应用实际加载的是 `~/.workbuddy-ai/skills` ⇒ 8 个 skill 全部无效。
+#   内核判据：getWorkbuddyConfigDir() = WORKBUDDY_CONFIG_DIR || ~/.workbuddy
+#   本机 WORKBUDDY_CONFIG_DIR = C:\Users\Administrator\.workbuddy-ai
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _skill_install_env import (  # noqa: E402
+    UPSTREAM_CLI, repo_stdd_version, resolve_skill_dir, shadow_installs, stamp_line,
+)
+
+OUT, OUT_WHY = resolve_skill_dir()
+REPO_VERSION = repo_stdd_version(Path(__file__).resolve().parent.parent)
 SHARED_ABS = (SRC / ".fstdd" / "skills" / "_shared").as_posix()
 CLI_ABS = (SRC / "bin" / "fstdd").as_posix()
 PY = os.environ.get("FSTDD_PY", sys.executable)
@@ -92,7 +103,21 @@ def strip_frontmatter(text: str) -> str:
 
 
 def adapt(body: str) -> str:
+    """把上游正文适配到本机：静态资源绝对路径 + CLI 入口。
+
+    2026-09-26 补漏：上游正文里的 CLI 命令用的是旧名（见 UPSTREAM_CLI），
+    而本仓库 vendor 时已把入口改名为 `bin/fstdd` ⇒ 装出来的 skill 在**教 AI
+    执行一个不存在的命令**（实测 fstdd-understand 正文含 `python bin/stdd canon generate`）。
+
+    原代码只替换了 `fstdd` 形态 —— 那是**死代码**（上游正文里没有 `fstdd`），
+    真正需要替换的旧名形态反而漏了。按实测枚举，全部形态只有两类：
+      · `python bin/stdd <verb> ...`  —— 13 处
+      · 反引号前缀的旧名 + 子命令     —— 5 处
+    下面两条逐一覆盖；漏改由 main() 的写后校验兜底（不再是静默失效）。
+    """
     body = body.replace(".fstdd/skills/_shared/", SHARED_ABS + "/")
+    body = body.replace("python bin/" + UPSTREAM_CLI, PY_CMD)
+    body = body.replace("`" + UPSTREAM_CLI + " ", "`" + PY_CMD + " ")
     body = body.replace("python bin/fstdd", PY_CMD)
     body = body.replace("`fstdd ", "`" + PY_CMD + " ")
     body = body.replace("`python \"{CLI_ABS}\"`".format(CLI_ABS=CLI_ABS), "`" + PY_CMD + "`")
@@ -234,7 +259,8 @@ def main() -> int:
             f"> 静态资源与共享片段根目录：`{SRC.as_posix()}`\n"
             f"> CLI 入口：`{PY_CMD}`（该解释器已具备 PyYAML / Jinja2 依赖）\n"
             "> 首次在某项目使用 FSTDD 前，需先在该项目根目录执行初始化："
-            f'`{PY_CMD} init` —— 生成 `.fstdd/` 骨架、模板与项目状态文件。\n\n'
+            f'`{PY_CMD} init` —— 生成 `.fstdd/` 骨架、模板与项目状态文件。\n'
+            + stamp_line(REPO_VERSION) + "\n"
         )
 
         fm = (
@@ -260,8 +286,13 @@ def main() -> int:
         name = s["name"]
         if s["key"] == "deliver" and SENTINEL not in content:
             errors.append(f"{name}: 安全策略哨兵缺失（{SENTINEL}）")
-        if "python bin/fstdd" in content:
-            errors.append(f"{name}: 残留未替换的 `python bin/fstdd`")
+        if "python bin/" + UPSTREAM_CLI in content:
+            errors.append(f"{name}: 残留未替换的上游 CLI 路径 "
+                          f"`python bin/{UPSTREAM_CLI}` —— 本仓库入口已改名 "
+                          f"bin/fstdd，该命令不存在")
+        if "`" + UPSTREAM_CLI + " " in content:
+            errors.append(f"{name}: 残留未替换的上游 CLI 命令前缀"
+                          f"（反引号 + {UPSTREAM_CLI}）")
         if ".fstdd/skills/_shared/" in content and SHARED_ABS not in content:
             errors.append(f"{name}: 残留未替换的相对路径 .fstdd/skills/_shared/")
         if f"name: {name}" not in content:
@@ -321,6 +352,7 @@ FSTDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
   - 依赖 PyYAML / Jinja2，本机使用 `C:\\Python311\\python.exe`（已具备）；换成其他解释器请先确认依赖
 - 已安装的阶段 skill：`{OUT.as_posix()}` 下的 `fstdd-understand/` `fstdd-spec/` `fstdd-build/` `fstdd-deliver/` `fstdd-upgrade/`
 
+{stamp_line(REPO_VERSION)}
 ## 首次使用（必须先初始化项目）
 
 在**项目根目录**执行：
@@ -360,6 +392,14 @@ FSTDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
     print(f"[OK] fstdd -> {entry_dir / 'SKILL.md'}")
 
     print("\n已安装 skill:", ", ".join(installed))
+    print(f"输出目录: {OUT}")
+    print(f"  判据: {OUT_WHY}")
+    shadows = shadow_installs(installed, OUT)
+    if shadows:
+        print("\n[WARN] 发现影子副本 —— 不会被应用加载，仅会误导排查（本脚本不删除）：")
+        for base, item in shadows:
+            print(f"  - {base}: {item}")
+        print("  处置建议：人工确认无用后删除，避免与真实安装混淆。")
     if errors:
         print("\n[FAIL] 校验未通过，以下问题必须修复后才能使用：")
         for e in errors:

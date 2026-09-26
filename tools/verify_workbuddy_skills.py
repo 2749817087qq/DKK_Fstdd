@@ -16,8 +16,18 @@ import tempfile
 
 # 与安装脚本一致：默认自动定位，可用 FSTDD_SRC / FSTDD_OUT 覆盖
 SRC = Path(os.environ.get("FSTDD_SRC", Path(__file__).resolve().parent.parent / "upstream"))
-# 与 install_workbuddy_skills.py 保持一致：WorkBuddy 实际加载的是 ~/.workbuddy/skills
-OUT = Path(os.environ.get("FSTDD_OUT", Path.home() / ".workbuddy" / "skills"))
+# 输出目录与安装脚本共用**同一个**解析器（_skill_install_env）。
+#
+# 历史教训：两处各自写死 `~/.workbuddy/skills` 并互相以「与对方保持一致」背书
+# ⇒ 一起错、一起绿，校验器恒定 PASS 而 skill 从未被加载。
+# **同一事实只允许有一处定义。**
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _skill_install_env import (  # noqa: E402
+    STAMP_PREFIX, UPSTREAM_CLI, repo_stdd_version, resolve_skill_dir, shadow_installs,
+)
+
+OUT, OUT_WHY = resolve_skill_dir()
+REPO_VERSION = repo_stdd_version(Path(__file__).resolve().parent.parent)
 SHARED_ABS = (SRC / ".fstdd" / "skills" / "_shared").as_posix()
 # FSTDD_CLI 用于故障注入测试：指向不可用时校验必须 FAIL，不得静默通过
 CLI_ABS = Path(os.environ.get("FSTDD_CLI", str(SRC / "bin" / "fstdd")))
@@ -91,6 +101,18 @@ def main() -> int:
         if f"name: {name}" not in text:
             fails.append(f"{name}: frontmatter name 缺失或不匹配")
 
+        # 生成戳：识别「装了但过期」。
+        #   缺失        = 旧版安装器产物，无法判断新鲜度 ⇒ FAIL（强制重装一次）
+        #   版本不一致  = 可能已过期 ⇒ WARN（skill 正文未必随版本变化，不阻断）
+        if f"{STAMP_PREFIX}{REPO_VERSION}" in text:
+            pass
+        elif STAMP_PREFIX in text:
+            warns.append(f"{name}: 生成戳版本与仓库不一致（期望 {REPO_VERSION}）"
+                         f"—— skill 可能已过期，建议重跑安装")
+        else:
+            fails.append(f"{name}: 缺少生成戳（{STAMP_PREFIX}<版本>）"
+                         f"—— 疑为旧版安装器产物，请重跑安装")
+
         if name == "fstdd-deliver":
             if SENTINEL not in text:
                 fails.append(f"{name}: 安全策略哨兵缺失（{SENTINEL}）—— 上传防线已被抹掉")
@@ -105,8 +127,16 @@ def main() -> int:
         if name == "fstdd-upgrade" and "升级 / 重装后必做" not in text:
             fails.append(f"{name}: 缺少「升级后必做」规程")
 
-        if "python bin/fstdd" in text:
-            fails.append(f"{name}: 残留未替换的 `python bin/fstdd`")
+        # 上游 CLI 旧名残留 = 装出来的 skill 在教 AI 跑不存在的命令。
+        # 注意检查的是**旧名**（bin/stdd）；原代码检查的 bin/fstdd 是死代码 ——
+        # 上游正文里根本没有 fstdd 形态，所以这条防线长期形同虚设。
+        if "python bin/" + UPSTREAM_CLI in text:
+            fails.append(f"{name}: 残留未替换的上游 CLI 路径 "
+                         f"`python bin/{UPSTREAM_CLI}` —— 本仓库入口已改名 "
+                         f"bin/fstdd，该命令不存在")
+        if "`" + UPSTREAM_CLI + " " in text:
+            fails.append(f"{name}: 残留未替换的上游 CLI 命令前缀"
+                         f"（反引号 + {UPSTREAM_CLI}）")
 
         if ".fstdd/skills/_shared/" in text and SHARED_ABS not in text:
             fails.append(f"{name}: 残留未替换的相对路径 .fstdd/skills/_shared/")
@@ -119,9 +149,14 @@ def main() -> int:
     if not smoke_ok:
         fails.append(f"CLI 端到端冒烟失败：{smoke_msg}")
 
+    for base, item in shadow_installs(EXPECTED, OUT):
+        warns.append(f"影子副本（不会被加载，仅会误导排查）：{base} 下有 {item}")
+
     print("=" * 60)
     print("FSTDD 全局 skill 校验")
     print("=" * 60)
+    print(f"  skill 目录：{OUT}")
+    print(f"  判据：{OUT_WHY}")
     print(f"  [{'PASS' if smoke_ok else 'FAIL'}] CLI 冒烟：{smoke_msg}")
     for w in warns:
         print(f"  [WARN] {w}")
@@ -129,9 +164,9 @@ def main() -> int:
         print(f"\n[FAIL] {len(fails)} 项未通过：")
         for x in fails:
             print(f"  - {x}")
+        installer = Path(__file__).resolve().parent / "install_workbuddy_skills.py"
         print("\n修复方式：重跑安装脚本")
-        print('  "C:\\Python311\\python.exe" '
-              '"C:/Users/Administrator/.workbuddy-ai/Fstdd/tools/install_workbuddy_skills.py"')
+        print(f'  "{PY}" "{installer}"')
         return 1
     print(f"[PASS] {len(EXPECTED)} 个 skill 全部通过：安全策略在位、路径适配完好")
     return 0

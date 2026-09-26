@@ -19,6 +19,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+# 目录解析与安装脚本共用同一事实源（见 _skill_install_env 的模块说明）。
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _skill_install_env import resolve_skill_dir  # noqa: E402
+
 
 def backup_root() -> Path:
     """与 check_skill_metadata.backup_root 保持一致：默认落在工作区 backups/。"""
@@ -256,9 +260,13 @@ def _hash_body(p: Path) -> str:
 def tc_005(repo: Path) -> tuple[bool, str]:
     """安装器生成的 6 个 FSTDD skill 天生合规"""
     bad = []
+    # 目录由 _skill_install_env 统一解析（与内核 getWorkbuddyConfigDir 同源）。
+    # 历史错误：此处曾写死 ~/.workbuddy/skills，并注「内核不加载 .workbuddy-ai」；
+    # 实测相反 —— 内核环境变量 WORKBUDDY_CONFIG_DIR 指向 .workbuddy-ai。
+    # 于是本用例一直在校验一个**不被加载**的目录，恒定 PASS。
+    out, _why = resolve_skill_dir()
     for name in FSTDD_SKILLS:
-        # WorkBuddy 实际加载的是 ~/.workbuddy/skills（内核不加载 .workbuddy-ai）
-        f = Path.home() / ".workbuddy" / "skills" / name / "SKILL.md"
+        f = out / name / "SKILL.md"
         if not f.exists():
             bad.append(f"{name}: 缺失")
             continue
