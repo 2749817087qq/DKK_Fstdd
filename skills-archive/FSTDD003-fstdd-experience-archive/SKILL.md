@@ -2,7 +2,7 @@
 name: fstdd-experience-archive
 description: "把 FSTDD 使用过程中发现的问题 / 新建或修改的 skill 归档到 D:\\FSTDD003（分布式任务根，task_id=FSTDD003）。当用户说「FSTDD 的问题记得保存」「归档到 FSTDD003」「经验回传」「FSTDD 报错要记录」，或你在用 fstdd 跑 UNDERSTAND/SPEC/BUILD/DELIVER 时踩到坑（CLI 报错、生成物对不上、change 落错目录、Gate 状态异常、ci/diff 输出与真值不符）时使用。含 FSTDD 本机定位、EXP 条目格式、目录命名、索引与 TASK.md 更新规则，以及 P1–P53 已知缺陷速查（含 Phase 4 归档必查四项、变异测试盲区、假依赖掩盖真路径、SKIP≠PASS、TC-ID 字面串口径、DELIVER 阶段「校验器查错 skills 根假 FAIL / structure 恒不可用 / canon verify 顺序自相矛盾」、`canon generate` 的 `--dry-run` 不 dry 与 Human View 静默丢 constraints/non_goals、以及 Phase 1 收口必查的「`complexity_score`/`mode`/`score_confidence` 三字段无 CLI 写入端 ⇒ thorough 静默降级 + 与 `long_range.mode` 同名碰撞」）。"
 agent_created: true
-version: 1.4.0
+version: 1.6.0
 license: unknown
 ---
 
@@ -202,10 +202,16 @@ python tools/share_experience.py --export             # 只导出不回传
   但 `existing_reqs & new_reqs` 只比 Requirement 标题。
 - **归档后必跑三查**：
   ```bash
-  grep -o "^#### Scenario: SC-[0-9]*" .fstdd/specs/*/spec.md | sort | uniq -c | awk '$1>1'   # 撞号
+  # ① 撞号 —— 🔴 必须带 -h！不带 -h 时 grep -o 会输出 "文件:匹配" 前缀，
+  #    于是同一 SC-ID 出现在**不同文件**里也会被算成不同字符串 ⇒ sort|uniq 永远抓不到跨文件撞号，
+  #    命令会给出「无输出 = 没撞号」的**假绿**（2026-09-26 实测：不带 -h 无输出，带 -h 发现 SC-001~017 各 2 次）。
+  grep -ho "^#### Scenario: SC-[0-9]*" .fstdd/specs/*/spec.md | sort | uniq -c | awk '$1>1'
   grep -c "^> Change:" .fstdd/specs/*/spec.md                                                 # 多组 header
   grep -c "^#### Scenario:" .fstdd/specs/<cap>/spec.md                                        # 应等于各变更之和
   ```
+- ⚠ **`^> Change:` 全为 1 时说明本次走的是「新目录 copy」而不是「append 合并」**
+  （新 capability 目录不会 append，所以不会多组 header）⇒ 这种情况撞号只会**跨文件**出现，
+  更要靠上面那条带 `-h` 的命令才看得见。
 - **处理原则**：**不擅自重编 master spec 的 SC-ID**（会破坏 Gate 已确认的 traceability）。
   内容确认没丢即可，**跨变更引用一律带变更名前缀**（`<change>/SC-002`），不裸用 `SC-002`。
 - **真源永远是归档原件**：`archive/<change>/canonical/specs/code/*.yaml` 逐变更独立编号。
@@ -350,6 +356,38 @@ for k in ('why','constraints','non_goals'):
 - 🔴 **schema 里的 `writers: [...]` 是「应该有人写」，不是「已经有人写」。**
   验写入端要 `grep` 到**实际赋值语句**为止；`required: false` 的字段
   **不会有任何校验器替你发现问题**（`stdd validate` 照样「验证通过」）。
+- 🔴 **`--dry-run` 逐命令失效，不能推广，每遇到一个都要当场验。** 机制同 P44/P52
+  （父 parser 全局开关、handler 不读）。**已知不 dry**：`canon generate` · `gate approve`（预览即真确认）·
+  **`phase advance`**（2026-09-26 实测：改 `current_phase` + 目标阶段 `status`）·
+  **`phase record-slice`**（2026-09-26 实测：真写切片证据）。
+  **对照组 `new --dry-run` 是真的 dry** ⇒ 同一 CLI 里有的 dry 有的不 dry。
+  ⇒ **规避：把 `--dry-run` 一律当「真执行」；想预览就 `cp` 备份 + `diff`。**
+  详见 `experiences/FSTDD003-EXP-20260926-DRYRUN-1.md`。
+- 🔴 **BUILD → DELIVER 有一个不在清单里的前置：per-slice 验证证据链。**
+  `phase advance` 会拒：「BUILD → DELIVER 需要 per-slice 验证证据链。请确保每个 Slice 的
+  `.fstdd.yaml` 中包含 `tc_coverage` / `new_tests` / `verified_at`」。
+  ⇒ Phase 3 收口时逐片跑（**这是强制约束 #5「切片验证不可跳过」的机械化落地**）：
+  ```bash
+  fstdd phase record-slice <change> <SID> \
+      --tc-coverage "TC-XXX-001 TC-XXX-002" --new-tests N --verified-at YYYY-MM-DD
+  ```
+  登记后 `ci check-failures` 的 `✓ N 个切片均有验证证据` 会转 PASS，
+  「无切片完成记录」那个 SKIP 随之消失（覆盖 7/10 → 8/10）。⚠ **该 SKIP 的根因是「证据没登记」，
+  不是工具缺陷** —— 与 (b)/(j)/(l) 那三类**假 SKIP** 性质不同，别混为一谈。
+- 🔴 **`fstdd new <name>` 会自动补日期前缀**（**P56**）—— 按仓库惯例传
+  `new 2026-09-26-<slug>` 会建出 **`2026-09-26-2026-09-26-<slug>`**（双前缀），
+  **exit=0、无警告**，且 `validate`/`canon verify` 照样通过（只看结构不看名字）⇒ **静默**。
+  ⇒ **正确用法：`new <纯 slug>`**（如 `new wx-post-cleanup`）。
+  详见 `experiences/FSTDD003-EXP-20260926-NEWNAME-1.md`。
+- 🔴 **`canon verify` 的 `DC-HASH` 会因「Human View 落后于 canonical YAML」而红，而 `canon generate`
+  修不了它**（P52：`_generate_one()` 不输出 `success_criteria_notes` 等字段 ⇒ regenerate 会**静默丢掉**它们，
+  等于假修）。⇒ 遇到 `DC-HASH 不一致` 时**不要 regenerate**，先确认 YAML 里多了什么字段，
+  再**手工**把那部分贴进 Human View。**这是内容决策，不是机械修复。**
+- 🔴 **`gate approve --gate 1` 会重新生成 `proposal.md`，把手工补的 `Motivation`/`Constraints`/`Non-Goals`
+  三节冲掉**（P52 在 Gate 上的实例，2026-09-26 实测：approve 后 grep 三节 = 0）。
+  ⇒ **定式**：approve 前先 `read_text` 备份三节 → approve → 断言三节已丢 → **立刻补回**。
+  ⚠ 但**改 MD 正文不会让 `DC-HASH` 变红**（它比的是「YAML 当前 hash vs MD 记录的 `source_hash`」）
+  ⇒ 补回后 `canon verify` 仍 2/2。**上一个 change 之所以 1/2，是因为 YAML 改了而 MD 没重生成。**
 
 ### P15 速记（Windows 本机跑 fstdd CLI 必踩）
 - 隔离 Python 二进制 `C:/Users/Administrator/.workbuddy-ai/binaries/python/versions/3.13.12/python.exe` 缺 `yaml`；`pyyaml` 装在 venv `C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe`。

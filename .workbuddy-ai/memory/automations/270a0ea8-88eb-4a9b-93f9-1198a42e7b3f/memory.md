@@ -49,6 +49,13 @@
 - **git**：显式路径提交 3 个文件（skill 副本 + memory/2026-09-24.md + 本自动化记忆），未用 `git add -A`（会连带暂存 `_scratch/` 25MB 基线、`TASK.md` 当日无关修改、`.fstdd/_notices/` 守护轮次产物、`docs/*.md` 人手工报告）。remote 数=0 未 push。
 - **偏离任务书**：未用 `git add -A`（同前 5 轮）。
 
+### 2026-09-27 00:10 运行（收纳对象 2026-09-26）— 第 8 轮
+- **skill**：**刷新 1 个** `skills-archive/FSTDD003-fstdd-experience-archive/SKILL.md`（源 40573B @ 09-26 12:18，副本 36922B @ 09-24 12:28 已 47h 未刷新、+3651B；`diff -rq` 刷新后 IDENTICAL）/ 跳过其余 12 个（源 mtime 最新 09-21，09-26 无变更）。
+- **经验文档**：0 新增。09-26 的 3 条 EXP（DRYRUN-1 / NEWNAME-1 / FAKERED-1）均由「工作台」change `2026-09-26-wx-post-cleanup` 当日自建并登记 README 索引，全部为 FSTDD 特有 CLI 缺陷（`--dry-run` 逐命令失效 / `fstdd new` 双日期前缀静默坑 / 变异自检 `env={...}` 清环境致假红），符合 EXP 判据，无未捕获坑点。本节点其余 7 段事件（6 轮轮询 + 2 次窗口超时同源）属**节点运营 / SOP 匹配**（K 侧窗口卡 5min SLA vs HOURLY 轮询粒度不兼容），RECON-1 / RECUR-1 已覆盖根因，不重复开 EXP。
+- **git**：显式路径提交 3 文件（skill 副本 + memory/2026-09-26.md + 本自动化记忆）。**未用 `git add -A`**（会连带 `_scratch/` 25M、`.fstdd/_notices/` 24 项守护产物、`TASK.md`、`docs/*.md`、内嵌 git repo）。remote 数=0 未 push。
+- **偏离任务书**：未用 `git add -A`（同前 7 轮）。
+- 详见 `D:\FSTDD003\.workbuddy-ai\memory\2026-09-26.md` 末尾「00:10 每日收纳」段。
+
 ### 2026-09-26 00:10 运行（收纳对象 2026-09-25）— 第 7 轮
 - **skill**：0 新增 / 0 刷新。源目录 09-25 无文件 mtime 变更（最新 09-24 13:25）。22 副本按 mtime 判据全 skip。
   - **新坑（已固化）**：`windows-junction-selfcontained` 被 `[ "$SRC" -nt "$DST" ]` 标记 REFRESH，实为**目录级 mtime 假阳性**（源目录 09-21 10:18 vs 副本 09-21 09:10，`diff -rq` exit=0 字节一致、SKILL.md 同为 14750B@09-21 09:32）⇒ 目录 mtime ≠ 内容 mtime（新建/删除子项、touch 都会改目录 mtime），**必须 `diff -rq` 兜底**后才动手拷。
