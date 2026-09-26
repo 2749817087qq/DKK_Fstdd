@@ -71,7 +71,13 @@ def cmd_structure_merge(args):
     project_root = Path.cwd()
     _ensure_structure_dir(project_root)
     change_name = args.target
-    delta_file = project_root / ".fstdd" / "changes" / change_name / "code-structure-delta.md"
+    # 2026-09-26：走统一解析器（含 archive/ 回退）—— 归档后仍能读到 delta，
+    # 不再报 "Delta not found"。未解析到时回落原路径，错误文案保持一致。
+    from ..finder import find_change_dir
+    change_dir = find_change_dir(change_name, project_root, include_archive=True)
+    if change_dir is None:
+        change_dir = project_root / ".fstdd" / "changes" / change_name
+    delta_file = change_dir / "code-structure-delta.md"
 
     if not delta_file.exists():
         print(f"  Delta not found for {change_name}. Run 'stdd structure delta {change_name}' first.")

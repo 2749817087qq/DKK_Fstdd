@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-26-finder-archive-fallback: proposals/2026-09-26-finder-archive-fallback.yaml
+specs:
+  agent:
+    2026-09-26-finder-archive-fallback: specs/agent/2026-09-26-finder-archive-fallback.yaml
+  code:
+    2026-09-26-finder-archive-fallback: specs/code/2026-09-26-finder-archive-fallback.yaml
+version: '2.9'

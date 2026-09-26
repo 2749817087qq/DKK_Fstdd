@@ -108,7 +108,7 @@ def cmd_extract_proposal(args: argparse.Namespace) -> None:
     get_logger()
 
     project_root = Path.cwd()
-    change_dir = find_change_dir(args.name, project_root)
+    change_dir = find_change_dir(args.name, project_root, include_archive=True)
     if change_dir is None:
         print(f" 找不到 change: {args.name or '(无)'}")
         sys.exit(1)

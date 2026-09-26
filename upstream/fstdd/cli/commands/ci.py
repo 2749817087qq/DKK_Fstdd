@@ -239,7 +239,7 @@ def _cmd_init(args: argparse.Namespace, project_root: Path, config: dict) -> Non
 def _cmd_check_failures(args: argparse.Namespace, project_root: Path) -> None:
     from ..finder import find_change_dir
 
-    change_dir = find_change_dir(getattr(args, "name", None), project_root)
+    change_dir = find_change_dir(getattr(args, "name", None), project_root, include_archive=True)
     if change_dir is None:
         print(f" 找不到 change: {getattr(args, 'name', None) or '(无)'}")
         sys.exit(1)
@@ -512,7 +512,7 @@ def _run_single_check(args: argparse.Namespace, project_root: Path, subcommand: 
     """Run a single named check and report result."""
     from ..finder import find_change_dir
 
-    change_dir = find_change_dir(getattr(args, "name", None), project_root)
+    change_dir = find_change_dir(getattr(args, "name", None), project_root, include_archive=True)
     if change_dir is None:
         print(f" 找不到 change: {getattr(args, 'name', None) or '(无)'}")
         sys.exit(1)

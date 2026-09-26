@@ -9,10 +9,25 @@ from pathlib import Path
 from datetime import datetime
 
 
+def _resolve_change_dir(project_root: Path, change_name: str) -> Path:
+    """解析 change 目录（含 ``archive/`` 回退）。
+
+    2026-09-26：canon 内所有「按名字定位 change」的路径统一收口到这里 ——
+    原先各处直接拼 ``.fstdd/changes/<name>``，change 归档后必然找不到
+    （canon verify 报 not found、canon generate 还会在 changes/ 下建出幻影目录）。
+    未解析到时回落原路径，错误文案与既有行为保持一致。
+    """
+    from ..finder import find_change_dir
+    found = find_change_dir(change_name, project_root, include_archive=True)
+    if found is not None:
+        return found
+    return project_root / ".fstdd" / "changes" / change_name
+
+
 def _get_canon_dir(project_root: Path, change_name: str = None) -> Path:
     """Get canonical directory. Defaults to changes/<change>/canonical/ (V2.9)."""
     if change_name:
-        return project_root / ".fstdd" / "changes" / change_name / "canonical"
+        return _resolve_change_dir(project_root, change_name) / "canonical"
     return project_root / ".fstdd" / "canonical"
 
 
@@ -255,7 +270,7 @@ def _generate_spec(project_root: Path, yaml_file: Path, output_dir: Path = None)
     change_id = data.get("meta", {}).get("change_id", yaml_file.stem)
     capability = data.get("meta", {}).get("capability", yaml_file.stem)
     if output_dir is None:
-        change_dir = project_root / ".fstdd" / "changes" / change_id
+        change_dir = _resolve_change_dir(project_root, change_id)
         output_dir = change_dir
     specs_dir = output_dir / "specs" / capability
     specs_dir.mkdir(parents=True, exist_ok=True)
@@ -311,7 +326,7 @@ def _generate_one(project_root: Path, change_id: str, gen_type: str,
 
     # Build Human View from template or direct mapping
     if output_dir is None:
-        change_dir = project_root / ".fstdd" / "changes" / change_id
+        change_dir = _resolve_change_dir(project_root, change_id)
     else:
         change_dir = output_dir
     change_dir.mkdir(parents=True, exist_ok=True)
@@ -380,7 +395,7 @@ def cmd_canon_verify(args):
         print(f"  Error: canonical/proposals/{args.change_name}.yaml not found")
         sys.exit(1)
 
-    md_file = project_root / ".fstdd" / "changes" / args.change_name / "proposal.md"
+    md_file = _resolve_change_dir(project_root, args.change_name) / "proposal.md"
     if not md_file.exists():
         print(f"  Warning: changes/{args.change_name}/proposal.md not found — nothing to verify")
         sys.exit(0)

@@ -73,7 +73,7 @@ points:
   justification: ssh 时钟探测失败返回空读数 → 三态「无法测量」，fail-safe 设计正确（TC-CAL-009 语义）
 - id: EA-004
   file: upstream/fstdd/cli/commands/canon.py
-  line: 138
+  line: 156
   stmt: pass
   handler: 'except Exception:'
   classification: 合理容错

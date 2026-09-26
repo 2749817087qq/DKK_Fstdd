@@ -1,0 +1,40 @@
+baseline:
+  at: '2026-09-26T04:04:19+00:00'
+  base_git_sha: f3b27139c0e6ee50778bd2878f4680a989f50e8a
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-1MEQDMR
+change_id: 2026-09-26-finder-archive-fallback
+complexity_score: null
+current_phase: build
+design_adjustments:
+  count: 0
+last_modified: '2026-09-26T04:05:02+00:00'
+mode: standard
+phases:
+  build:
+    status: in_progress
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-26T04:04:49+00:00'
+    confirmed_by: cli
+    confirmed_evidence: K-main（FSTDD skill 总工）裁定：REQ-001~003 / SC-001~013 与 test-plan
+      13 例一一对应，进入 BUILD。
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-26T04:04:19+00:00'
+    confirmed_by: cli
+    confirmed_evidence: K-main（FSTDD skill 总工）依据 D哥 全权授权裁定：问题与证据成立（四条命令归档后 rc=1 实测，observed_at=2026-09-26T04:00:45+00:00
+      / base=f3b2713），进入 SPEC 阶段。
+    status: completed
+score_confidence: null
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'
