@@ -61,16 +61,20 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 ├── UPSTREAM-LICENSE.txt             # 上游 STDD 的 MIT 许可原文（合规保留）
 ├── NOTICE.md                        # 版权与来源声明（重要，对外分发前请读）
 ├── README.md
+├── CHANGELOG.md                     # 更新日志（发布台账，与 tag 一一对应）
+├── .fstdd/                          # FSTDD 项目状态（变更 / 规范 / 规程 / 经验 / 配置）
+├── canonical/                       # 规范机器源（YAML-first，与 specs/ 双轨）
 ├── tools/
 │   ├── install_workbuddy_skills.py  # 生成适配后的全局 skill + 施加安全策略
-│   └── verify_workbuddy_skills.py   # 校验哨兵与路径适配是否仍在位
-├── docs/
-│   └── WORKBUDDY_INSTALL_NOTES.md   # 安装、适配、安全策略、实测验证记录
+│   ├── verify_workbuddy_skills.py   # 校验哨兵与路径适配是否仍在位
+│   ├── share_experience.py          # 经验回传（静默到我方端点；FSTDD_NO_SHARE=1 可关）
+│   └── ...                          # 其余运维脚本（部署 / 镜像 / 自检 / 校验）
+├── docs/                            # 专题文档与节点交付报告（含 007-change-isolation）
 ├── skills/
 │   └── fstdd-fin/SKILL.md            # 金融系统版 FSTDD（原创重构）
 └── upstream/                        # 上游 STDD V3.0.5 代码（vendor，MIT）
     ├── bin/fstdd                     # CLI 入口
-    ├── fstdd/cli/                    # 39 个命令模块
+    ├── fstdd/cli/                    # 命令模块
     └── .fstdd/                       # 模板、配置、知识库骨架
 ```
 
@@ -93,8 +97,8 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 
 ```bash
 # 只需克隆本仓库 —— 上游代码已 vendor 在 upstream/ 下，不必单独获取
-git clone https://github.com/2749817087qq/Fstdd.git
-cd Fstdd
+git clone https://github.com/2749817087qq/DKK_Fstdd.git
+cd DKK_Fstdd
 ```
 
 **推荐：一键安装**（自动完成依赖检查 → 生成 skill → 校验三步）
@@ -165,20 +169,44 @@ Skill 安装后需**重启 WorkBuddy 或执行 `/reload`** 才会出现在可用
 | 归档交付 | 「fstdd-deliver」 |
 | 金融系统研发 | 「fstdd-fin」「用 FinFSTDD 做支付系统」 |
 
+### 让 change 活在隔离环境里（`--isolate`）
+
+默认情况下 change 活在主工作区 —— 一个 change 停在只读相位（understand/spec）就会**冻结整个工作区**。
+需要并行、或 change 会长时间停在只读相位时，改用隔离形态：
+
+```bash
+stdd new fix-guard-scope --isolate worktree    # 独立 worktree（推荐，真隔离）
+stdd new fix-guard-scope --isolate branch      # 独立分支（共享工作区，弱隔离）
+stdd new fix-guard-scope                       # 默认 none，行为与旧版逐字一致
+```
+
+**帮助**：两处 change 各自只冻结自己 `scope.paths` 声明的路径，**互不干扰** —— 不再需要人肉错峰。
+
+详见 **[`docs/007-change-isolation.md`](./docs/007-change-isolation.md)**：三种形态对比、配置项，
+以及 **worktree 建在仓库外、需要手动清理** 这一注意事项。
+
 ---
 
 ## 6. 安全策略
 
-### 为什么要禁用经验上传
+### 经验回传：静默到「我方指定位置」，不外发第三方
 
-上游 `fstdd-deliver` 的 Step 2.8 会把项目沉淀的经验**自动上传到外部社区 Git 仓库**。
-这属于数据外发，可能把项目信息带出去。本适配层将其**默认禁用**：
-除非你本轮对话显式要求，一律跳过并输出「已按本机策略跳过」。
+上游 `fstdd-deliver` 的 Step 2.8 原本会把项目沉淀的经验**自动上传到外部社区 Git 仓库**
+（第三方外发）。该通道在本仓库**已永久移除**；Step 2.8 被**整段替换**为
+**静默回传到「我方指定位置」**—— 权威描述见 [`docs/WORKBUDDY_INSTALL_NOTES.md`](./docs/WORKBUDDY_INSTALL_NOTES.md)：
+
+- **目标锁死**：默认 `https://quanthub.ccreits.cn/inbox/api/share-experience`（无凭证时降级到
+  自建接收端点，进待审核池）—— **不向第三方外发**。
+- **载荷强制脱敏**；回传失败**不阻断** DELIVER（零阻塞）；结果写入 `.fstdd/share-audit.yaml`。
+- **关闭方式**：环境变量 `FSTDD_NO_SHARE=1`（优先，立即生效，适合临时/CI 场景），或
+  `.fstdd/config.d/experience.yaml` 的 `share.silent.enabled: false`。
+- 哨兵标记 `FSTDD_LOCAL_POLICY_NO_UPLOAD_V1` 用于防止升级把该策略块抹掉。
 
 上游的 `experience share` 子命令在本仓库已**永久移除**——它指向的两条外发通道
 （外部社区仓库、第三方服务器）都不再用，执行它只会得到「历史上传通道的代码已移除」的提示。
 
-需要回传经验时，改用本仓库自己的链路（见第 9 节）：
+需要**人工补传历史经验**时，用本仓库自己的链路（见第 9 节）：
+注意 `--export` 导出的是**整库**经验（实测 64 条），**不是**「本次 change 沉淀的经验」：
 
 ```bash
 python tools/share_experience.py --export --from-archive --publish
@@ -394,10 +422,11 @@ python tools/share_experience.py --export
 ## 11. 版本与文档（**文档导航**）
 
 ### 版本历史
-**当前版本：`3.0.6`** ｜ 完整更新日志见 **[`CHANGELOG.md`](./CHANGELOG.md)**
+**当前版本：`3.1.0`** ｜ 完整更新日志见 **[`CHANGELOG.md`](./CHANGELOG.md)**
 
 | 版本 | 日期 | 主题（一句话） | 值不值得升 |
 |---|---|---|---|
+| **3.1.0** | 2026-09-26 | **让 change 可以活在隔离环境里** —— `--isolate` 三形态；发布规程 + 节点交付物入库；README §6 经验回传口径更正 | ✅ 需要并行、或 change 会长时间停在只读相位的必升 |
 | **3.0.6** | 2026-09-21 | **让"失败不再静默"** —— 11 项检测静默修复 + 审计哨兵 + 变异测试锚定 | ✅ 建议升（检测可信度提升） |
 | 1.1.0 | 2026-09-18 | 时间基线（UTC 统一 / 跨平台哈希 / 时钟巡检） | ✅ 跨平台协作者必升 |
 | 1.0.0 | 2026-09-15 | 首个版本（更名 FSTDD + 规范归并） | — |
@@ -407,11 +436,12 @@ python tools/share_experience.py --export
 |---|---|
 | **新功能 / 版本变更** | [`CHANGELOG.md`](./CHANGELOG.md) |
 | 安装与快速开始 | 本文 §4 / §5 |
+| **change 隔离形态（`--isolate`）** | [`docs/007-change-isolation.md`](./docs/007-change-isolation.md) |
 | 分布式协作（多机/多 agent） | [`docs/DISTRIBUTED_ACCESS.md`](./docs/DISTRIBUTED_ACCESS.md) |
 | WorkBuddy 安装注意事项 | [`docs/WORKBUDDY_INSTALL_NOTES.md`](./docs/WORKBUDDY_INSTALL_NOTES.md) |
 | skill 发布检查 | [`docs/SKILL_RELEASE_CHECKLIST.md`](./docs/SKILL_RELEASE_CHECKLIST.md) |
-| **协作规程（内部规矩）** | [`.fstdd/standards/`](./.fstdd/standards/) —— 升级同步 / 节点接入 / 编号取号 / 交付物入库 / **发布与文档** |
-| 节点交付的报告 | [`docs/`](./docs/)（协议差距评估 / macOS 兼容报告 / 日志治理） |
+| **协作规程（内部规矩）** | [`.fstdd/standards/`](./.fstdd/standards/) —— 7 份：升级同步 / 节点接入 / 节点访问 SOP / 编号取号 / 交付物入库 / **发布与文档** / Python 规范 |
+| 节点交付的报告 | [`docs/`](./docs/)（日志治理 / macOS 兼容报告 / 协议差距评估 / DFX 现状） |
 | 面向 agent 的接入说明 | [`AGENTS.md`](./AGENTS.md) / [`FSTDD.md`](./FSTDD.md) |
 
 > **发布规矩**：见 [`.fstdd/standards/release-and-docs.md`](./.fstdd/standards/release-and-docs.md) ——

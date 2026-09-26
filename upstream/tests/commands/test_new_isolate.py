@@ -839,6 +839,19 @@ def test_iso_018_changelog_records_removal():
         p.read_text(encoding="utf-8", errors="replace") for p in candidates if p.is_file()
     )
     assert text, "未找到任何 CHANGELOG.md"
-    assert "V3.0.7" in text, "CHANGELOG 缺 V3.0.7 条目"
+
+    # 版本锚定（2026-09-26 修正）：原断言硬编码字面量 `V3.0.7`。两处缺陷：
+    #   ① 3.0.7 是 PATCH 误判 —— `--isolate` 是新增面向用户能力 ⇒ MINOR ⇒ 3.1.0；
+    #   ② 《发布与文档规程》§二把发布台账定在**仓库根** CHANGELOG.md，锚在上游文件上属锚错位置。
+    # 锚在版本号字面量上，版本号一改测试就失真（本次即被阻断）。
+    # 改为锚定**架构不变量**：仓库根 CHANGELOG 必须含 `project.yaml` 声明的 `stdd_version`。
+    ledger = _repo_root() / "CHANGELOG.md"
+    project = _repo_root() / ".fstdd" / "config.d" / "project.yaml"
+    declared = str(yaml.safe_load(project.read_text(encoding="utf-8"))["stdd_version"])
+    assert f"[{declared}]" in ledger.read_text(encoding="utf-8"), (
+        f"发布台账（仓库根 CHANGELOG.md）缺当前版本段 [{declared}] —— "
+        f"stdd_version 已提升但 CHANGELOG 未同步"
+    )
+
     assert "Two-Instance Kickoff" in text, "未记录 --parallel 当时的 V2.8 语义"
     assert "parallel" in text.lower(), "未提及被移除的 --parallel"

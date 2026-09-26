@@ -8,7 +8,10 @@
 
 ---
 
-## [未发布] — 迭代 02（2026-09-25）
+## [3.1.0] — 2026-09-26
+
+**主题**：**让 change 可以活在隔离环境里** —— 一个 change 不再必然劫持整个工作区。
+**规模**：含自 `fstdd-v3.0.6` 起的全部提交（原「迭代 02」+ 本次 change 隔离形态）。
 
 ### 修复
 - **回传端点迁移**：默认端点由 `http://43.134.236.80:8787` 改为 `https://quanthub.ccreits.cn/inbox/api/share-experience`
@@ -17,13 +20,33 @@
 - **测试与实现漂移修复**：两处测试断言仍写旧端点、`share_experience.py` 改动未提交
   ⇒ 全量套件由 **3 failed / 732 passed** 恢复为 **735 passed / 0 failed**。
   **帮助**：CI/回归不再有假红灯，改动可被信任。
+- **README §6 经验回传口径更正**：原文写「默认禁用、除非本轮显式要求一律跳过」，
+  与**权威设计**矛盾 —— `docs/WORKBUDDY_INSTALL_NOTES.md`（§经验策略，且被
+  `test_c3_doc_skill_count_and_policy` 守卫）明确：Step 2.8 为**静默回传到「我方指定位置」**，
+  **不向第三方外发**，可用 `FSTDD_NO_SHARE=1` 或 `share.silent.enabled: false` 关闭。
+  **帮助**：用户从 README 读到的行为描述与**真实行为一致** —— 不再误以为"经验不会被回传"
+  （这是**安全章节里的失实陈述**，比措辞不一致严重得多）。
 
 ### 新增
+- **`stdd new --isolate <none|worktree|branch>`（change 隔离形态）**：`worktree` 让 change 活在
+  独立 git worktree（默认建在仓外 `<项目>.worktrees/`）；`branch` 切独立分支、共享工作区；
+  `none` 为默认，行为与旧版**逐字一致**。配套：worktree 形态会把主仓的门禁 hook 注册文件
+  复制进去（保持 Guard 有效）；`stdd new` 增加提示行；`stdd init` 往
+  `.fstdd/config.d/project.yaml` 补 `isolation` 配置块。
+  **帮助**：**一个 change 停只读相位不再冻结整个工作区** —— 只冻结它自己 `scope.paths`
+  声明的路径，范围外的文件仅告警放行；两处 change 可以真正并行而不互相干扰
+  （此前只能靠人肉错峰协调）。
 - **四份规程入标准库**（`.fstdd/standards/`）：升级同步 / 节点接入 / 编号取号 / 交付物入库。
   **帮助**：新节点与后续升级**有据可依**，不再"各自猜"。
 - **节点交付物入库**：5 份实质交付（自检脚本 / 接入 SOP / 协议差距评估 / macOS 兼容报告 / 日志治理）
   收进主仓（`tools/`、`docs/`、`standards/`），均附来源头。
   **帮助**：此前只躺在协作目录、不进版本、新节点看不到的交付物，**现在可检索、可复用**。
+
+### 移除
+- **`stdd new --parallel` 死代码**：该开关**从未在 argparse 注册**（基线 `git grep -- "--parallel"` 零命中），
+  仅靠 `getattr(args, "parallel", False)` 读一个永不存在的属性 ⇒ 恒不执行；
+  其 `_setup_parallel_worktrees()`（V2.8 Two-Instance Kickoff）随之移除。
+  **帮助**：清掉「看起来有、实际永不生效」的死开关；隔离需求由新的 `--isolate` 承担。
 
 ---
 
@@ -79,7 +102,7 @@
 
 ---
 
-[未发布]: 见本文件顶部"未发布"段
+[3.1.0]: 对比 v3.0.6 —— change 隔离形态 + 迭代 02 全部条目
 [3.0.6]: 对比 v1.1.0 —— 79 files / +4934 行
 [1.1.0]: 对比 v1.0.0 —— time-baseline 8 Slice
 [1.0.0]: 首个版本
