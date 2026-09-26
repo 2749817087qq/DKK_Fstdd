@@ -1,0 +1,58 @@
+# 2026-09-26-guard-scope-unbound.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-09-26-guard-scope-unbound"
+  title: "Guard 无活跃 change 时因作用域变量未绑定而崩，导致「拦截」退化为放行"
+  created: "2026-09-26T14:24:45+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    `cmd_guard_check` 中 `scope_patterns` / `scope_in` 只在
+    `if active_dir:` 且 `.fstdd.yaml` 存在的**嵌套**分支内赋值，而「无活跃流程 → 拦截」
+    分支（guard.py:949 `if scope_in and scope_patterns:`）在**块外**引用它们。
+    因此「无活跃 change」这条最核心的路径会抛 `UnboundLocalError`，钩子以 exit 1 结束。
+    按本函数自身约定（0=放行 / 2=拦截），exit 1 属**非阻塞错误** ⇒ 平台放行编辑，
+    **Guard 在该路径上形同虚设**。
+  evidence:
+    observed_at: "2026-09-26T14:26:20+00:00"
+    observed_base_git_sha: "21d99b4"
+    details: |
+      复现（本机 Windows，项目内相对路径）：
+        $ cd <空临时目录>
+        $ echo '{"file_path": "x.py"}' | python upstream/bin/fstdd guard check --platform claude-code --hook-stdin
+        Traceback (most recent call last):
+          File ".../fstdd/cli/commands/guard.py", line 949, in cmd_guard_check
+            if scope_in and scope_patterns:
+        UnboundLocalError: cannot access local variable 'scope_in' where it is not associated with a value
+        [rc=1]
+
+      平台差异（原 TC-GHI-004 为何漏检）：该用例喂入 Windows 绝对路径
+      `D:\\tools\\FSTDD\\x.py`。Windows 上 `_is_inside_project` 判为「不在本项目内」
+      而提前 return 0，走不到拦截分支；Linux 上它只是一个含反斜杠的文件名，相对解析后
+      落在项目内，才触发。故本缺陷在 Linux（服务器全量测试）暴露、在 Windows 上静默。
+      服务器实测：`test_guard_hook_input.py::test_ghi_004_end_to_end_no_valueerror` FAILED
+      （`825 passed / 1 failed`，2026-09-26 全量回归）。
+
+what_changes:
+  - description: |
+      `cmd_guard_check` 在 `_find_active_change` 之后、`if active_dir:` 之前，
+      为 `scope_patterns`（`[]`）与 `scope_in`（`False`）预置**函数级 fail-safe 默认值**。
+  - description: |
+      新增回归用例 TC-GHI-005：显式使用**项目内相对路径**，断言无活跃流程时返回 2（拦截），
+      与平台无关。
+
+capabilities:
+  new:
+    - name: "guard-scope-default-binding"
+      description: "Guard 作用域变量在任何分支下均已绑定；无活跃流程时的拦截判定不再退化为异常"
+  modified:
+    - name: "guard-hook-input-robustness"
+      description: "钩子健壮性覆盖到「无活跃 change + 项目内路径」这条此前未覆盖的分支"
+
+success_criteria:
+  - "无活跃 change 时 `guard check --hook-stdin` 返回 2 且无 traceback"
+  - "TC-GHI-005 在 Windows 与 Linux 上均通过（平台无关）"
+  - "服务器全量测试由 1 failed 转为 0 failed"

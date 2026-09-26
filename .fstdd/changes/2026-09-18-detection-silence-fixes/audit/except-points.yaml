@@ -5,8 +5,8 @@ meta:
   observed_at: '2026-09-18T03:48:00+00:00'
   observed_base_git_sha: 3a4ad974beb042db473dbf00780382d8f530f1d8
   scanner: tools/audit_silent_except.py
-  refreshed_at: '2026-09-25T11:05:00+08:00'
-  refreshed_reason: 并发合并两次刷新 —— (a) guard.py V3.0.6→V3.0.8 合并新增 3 处 except
+  refreshed_at: '2026-09-26T22:35:00+08:00'
+  refreshed_reason: 2026-09-26 刷新 —— change 2026-09-26-guard-scope-unbound 在 guard.py ~840 行插入 10 行（作用域变量函数级默认值）⇒ EA-033 行号 1193→1203；其余 guard.py 条目（310/374/447/466）均在插入点之前，未受影响。此前：并发合并两次刷新 —— (a) guard.py V3.0.6→V3.0.8 合并新增 3 处 except
     兜底（EA-031/032/033，return False ×2 + return [] ×1），EA-010 350→374 / EA-030 295→310 行号刷新；
     (b) EA-027（L2 源层不可读文件静默跳过，P1）代码已修为 COV-004 记 scan_error，从 points
     移除并进 voiced_by_change；EA-019 理由勘误 + severity p1→p2。两次刷新叠加后 20-1=19
@@ -252,7 +252,7 @@ points:
     方向安全），V3.0.8 exclude_dirs 边界匹配的兜底容错
 - id: EA-033
   file: upstream/fstdd/cli/commands/guard.py
-  line: 1193
+  line: 1203
   stmt: return False
   refreshed_at: '2026-09-25T10:20:00+00:00'
   refreshed_reason: 2026-09-25 V3.0.7 guard-phase-path-scope —— cmd_guard_check 内新增

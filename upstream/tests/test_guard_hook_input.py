@@ -86,3 +86,37 @@ def test_ghi_004_end_to_end_no_valueerror(monkeypatch, tmp_path):
     except ValueError as e:      # 历史缺陷在这里炸
         pytest.fail(f"cmd_guard_check 不应抛 ValueError：{e}")
     assert isinstance(rc, int)
+
+
+# --------------------------------------------------------------------------
+# 5) 回归：无活跃 change 时「拦截」分支不得因作用域变量未绑定而崩（TC-GHI-005）
+# --------------------------------------------------------------------------
+
+def test_ghi_005_block_path_without_active_change_returns_2(monkeypatch, tmp_path):
+    """无活跃流程时应返回 **2（拦截）**，不得抛 UnboundLocalError。
+
+    实测缺陷：`scope_patterns` / `scope_in` 原先只在 `if active_dir:` 且
+    `.fstdd.yaml` 存在的嵌套分支内赋值，而拦截分支在块外引用它们
+    ⇒ `UnboundLocalError: cannot access local variable 'scope_in'`，
+    钩子以 exit 1 结束。按 guard.py 约定（0=放行 / 2=拦截），exit 1 属
+    **非阻塞错误** ⇒ 该拦截路径实际 fail-open，编辑被放行。
+
+    为什么原 TC-GHI-004 没抓到：它用 `D:\\tools\\FSTDD\\x.py` 这类
+    **Windows 绝对路径**，在 Windows 上被 `_is_inside_project` 判为「不在本项目内」
+    而提前 return 0，走不到拦截分支；Linux 上它只是一个含反斜杠的文件名，
+    相对解析后落在项目内，才触发。故本用例**显式使用项目内相对路径**，与平台无关。
+    """
+    _with_stdin(monkeypatch, '{"file_path": "x.py"}')
+    monkeypatch.chdir(tmp_path)
+
+    class _Args:
+        hook_stdin = True
+        check = True
+        enforce_stdd = None
+        json = False
+
+    rc = guard.cmd_guard_check(_Args())
+    assert rc == 2, (
+        "无活跃流程时应以 2 拦截；实测 rc=%r —— 若为 1 则说明走了异常路径，"
+        "平台会把钩子当成「非阻塞错误」而放行编辑" % rc
+    )

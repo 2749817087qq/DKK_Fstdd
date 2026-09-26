@@ -837,6 +837,16 @@ def cmd_guard_check(args: argparse.Namespace) -> int:
     # find active change
     active_dir, phase = _find_active_change(project_root)
 
+    # V3.0.9: 作用域变量**必须在函数级预置默认值**。
+    # 它们原先只在 `if active_dir:` 且 `.fstdd.yaml` 存在的**嵌套**分支内赋值，
+    # 而下方「无活跃流程 → 拦截」分支（`if scope_in and scope_patterns:`）在**块外**
+    # 引用它们 ⇒ 无活跃 change 时抛 `UnboundLocalError`，钩子以 exit 1 结束。
+    # 按本函数约定（0=放行 / 2=拦截），exit 1 属**非阻塞错误** ⇒ 该拦截路径实际
+    # 变成 fail-open（编辑放行），Guard 形同虚设。
+    # 默认值取 fail-safe：空作用域 = 不做作用域归因，拦截判定本身不变。
+    scope_patterns: list = []
+    scope_in = False
+
     # Full STDD change: check phase integrity + task_type permissions
     if active_dir:
         stdd_yaml = active_dir / ".fstdd.yaml"

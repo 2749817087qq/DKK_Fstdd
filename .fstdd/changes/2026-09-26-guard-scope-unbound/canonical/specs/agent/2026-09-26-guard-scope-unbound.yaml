@@ -1,0 +1,24 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+
+meta:
+  task_id: "TC-GHI-005"
+  change_id: "2026-09-26-guard-scope-unbound"
+  created: "2026-09-26T14:24:45+00:00"
+  task_type: code
+  system: "FSTDD Guard PreToolUse 钩子（upstream/fstdd/cli/commands/guard.py）"
+
+preconditions:
+  - "cwd 为一个空临时目录（不含 .fstdd/，故无活跃 change）"
+  - "stdin 提供 PreToolUse JSON，file_path 为**项目内相对路径**（如 x.py）"
+
+steps:
+  - action: "调用 `cmd_guard_check`（hook_stdin=True, enforce_stdd=None）"
+    verify: "不抛异常；返回值为 int"
+  - action: "断言返回值"
+    verify: "rc == 2（拦截），而非 1（异常）或 0（放行）"
+  - action: "以 CLI 形式复跑同一场景"
+    verify: "`fstdd guard check --platform claude-code --hook-stdin` 退出码为 2，stderr 无 traceback"
+
+expected_outcomes:
+  - "无活跃流程时的拦截判定被平台正确接收（exit 2），不再退化为非阻塞错误"
+  - "TC-GHI-005 在 Windows / Linux 上结果一致"

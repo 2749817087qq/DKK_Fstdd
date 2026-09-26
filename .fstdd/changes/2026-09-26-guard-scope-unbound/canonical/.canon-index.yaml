@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-26-guard-scope-unbound: proposals/2026-09-26-guard-scope-unbound.yaml
+specs:
+  agent:
+    2026-09-26-guard-scope-unbound: specs/agent/2026-09-26-guard-scope-unbound.yaml
+  code:
+    2026-09-26-guard-scope-unbound: specs/code/2026-09-26-guard-scope-unbound.yaml
+version: '2.9'
