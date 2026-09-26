@@ -3,6 +3,10 @@
 
 TDD 用途：实现前执行应多数 FAIL（RED），实现后应全部 PASS（GREEN）。
 
+**硬约束：校验脚本只读。** 任何用例都不得写入真实用户目录
+（`~/.workbuddy-ai/skills`、`~/.workbuddy/skills`）；需要验证写入行为时，
+一律在临时样本树上做。历史事故见 tc_004 的说明。
+
 用法：
     python tools/verify_skill_standards.py [--repo <stdd-repo 根>]
 退出码：全部通过 0，任一 FAIL 为 1。
@@ -21,22 +25,12 @@ from pathlib import Path
 
 # 目录解析与安装脚本共用同一事实源（见 _skill_install_env 的模块说明）。
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _skill_install_env import resolve_skill_dir  # noqa: E402
+from _skill_install_env import candidate_skill_dirs, resolve_skill_dir  # noqa: E402
 
 
-def backup_root() -> Path:
-    """与 check_skill_metadata.backup_root 保持一致：默认落在工作区 backups/。"""
-    env = os.environ.get("FSTDD_BACKUP_DIR")
-    if env:
-        return Path(env)
-    try:
-        cand = Path(__file__).resolve().parents[2] / "backups"
-        if cand.parent.exists():
-            return cand
-    except IndexError:
-        pass
-    return Path.home() / ".workbuddy-ai" / "backups"
-
+# 注：本文件曾自带 backup_root()，只服务于旧版 tc_004「检查 --fix 留下的备份」。
+# E 项改造后校验脚本不再触碰真实目录，该函数已无调用方，故删除。
+# （check_skill_metadata.py 自己仍保留同名函数，供其 --fix 路径使用。）
 PY = sys.executable
 # 源码在 stdd-repo（开发源），但实际运行的是安装位置 Fstdd。
 # 在 stdd-repo 里直接跑 verify 会因 FSTDD_SRC 指向副本的 upstream 而误判。
@@ -74,16 +68,18 @@ def _installed_tools() -> Path:
 
 
 INSTALLED_TOOLS = _installed_tools()
-SKILL_DIRS = [
-    Path.home() / ".workbuddy-ai" / "skills",
-    Path.home() / ".workbuddy" / "skills",
-]
+# 候选目录同样取自唯一事实源（含内核环境变量解析结果），不再手写两份。
+# 这里是**只读快照**用途：tc_004 用它断言「真实目录零改动」，
+# 故必须覆盖全部候选目录 —— 包括那份不被加载的影子目录。
+SKILL_DIRS = candidate_skill_dirs()
 FSTDD_SKILLS = ["fstdd", "fstdd-understand", "fstdd-spec", "fstdd-build",
                "fstdd-deliver", "fstdd-upgrade"]
 REQUIRED_FM = ["name", "description", "version", "license"]
 # 严格口径：只认 `version` 字段，不接受 `stdd_version`（后者是上游版本号，
-# 不是 skill 自身版本）。首次统计曾把两者混算得到「缺 23」，实测修正为 31。
-EXPECT_MISSING = {"license": 37, "version": 31}
+# 不是 skill 自身版本）。
+# 注：曾有 EXPECT_MISSING = {"license": 37, "version": 31}，已删除 ——
+# 它把「某一时刻真实目录的缺失数」固化成常量：--fix 跑过一次、或装了新 skill
+# 之后该数字必然过期。属「测试依赖可变外部状态」的反面教材，且实测从未被引用。
 
 
 def _hash(p: Path) -> str:
@@ -194,58 +190,104 @@ def tc_003(repo: Path) -> tuple[bool, str]:
 
 
 def tc_004(repo: Path) -> tuple[bool, str]:
-    """--fix 结果检查：元数据齐全 + 备份存在 + 正文与备份一致
+    """--fix 完整性与安全性 —— **全程在临时样本树上**，绝不触碰真实用户目录
 
-    幂等：已处于合规状态时再跑 --fix 不应报错，也不应造成任何改动。
+    历史问题（2026-09-26 实测）：
+      原实现直接对 `_all_skills()`（= 真实用户目录）执行
+      `check_skill_metadata.py --fix`。后果有二：
+        1. **副作用**：每次跑校验都会改写用户的第三方 skill（写入 license: unknown），
+           校验脚本不该有写权限；
+        2. **假失败**：首次运行必然因「幂等性破坏」报 FAIL，第二次才 PASS ——
+           症状是「6/7 → 7/7」，极易被当成偶发抖动而非缺陷。
+      根因：用例把**可变的外部状态**当成了测试夹具。
+
+    现设计（hermetic）：
+      1. 在 home 下建临时样本树（齐全 / 缺 license / 缺 version 各一）
+         —— 必须位于 home 内：check_skill_metadata.backup() 用
+            `f.relative_to(Path.home())` 定位备份，home 之外会抛 ValueError；
+      2. 快照**真实**候选目录全部 SKILL.md 的哈希；
+      3. 对样本树跑 `--fix`（`--dir` 限定 + `FSTDD_BACKUP_DIR` 指向临时目录）；
+      4. 断言 ①真实目录零改动（**反副作用闸门**）②样本四项齐全
+             ③正文保持字节级不变 ④备份数 == 待改数；
+      5. 再跑一次 `--fix` ⇒ 零改动（幂等）。
     """
     s = repo / "tools" / "check_skill_metadata.py"
     if not s.exists():
         return False, "缺少 check_skill_metadata.py"
 
-    files = _all_skills()
-    before = {str(f): _hash(f) for f in files}
-    r = subprocess.run([PY, str(s), "--fix"], capture_output=True, text=True,
-                       encoding="utf-8", errors="replace")
-    if r.returncode != 0:
-        return False, f"--fix 执行失败（退出码 {r.returncode}）"
-    after = {str(f): _hash(f) for f in files}
-    if before != after:
-        return False, "幂等性破坏：已合规状态下 --fix 仍改动了文件"
+    real = _all_skills()
+    real_before = {str(f): _hash(f) for f in real}
 
-    missing = []
-    for f in files:
-        fm = _frontmatter(f)
-        for k in REQUIRED_FM:
-            if not re.search(rf"^{k}:", fm, re.M):
-                missing.append(f"{f.parent.name}:{k}")
-    if missing:
-        return False, f"仍有 {len(missing)} 项缺失：{', '.join(missing[:5])}"
+    root = Path(tempfile.mkdtemp(prefix="ses_fix_", dir=str(Path.home())))
+    samples = root / "skills"
+    bk = root / "bk"
+    try:
+        bodies = {
+            "s_full": "---\nname: s_full\ndescription: d\nversion: 1.0.0\nlicense: MIT\n---\n\n# body A\n",
+            "s_nolic": "---\nname: s_nolic\ndescription: d\nversion: 1.0.0\n---\n\n# body B\n",
+            "s_nover": "---\nname: s_nover\ndescription: d\nlicense: MIT\n---\n\n# body C\n",
+        }
+        for name, body in bodies.items():
+            d = samples / name
+            d.mkdir(parents=True)
+            (d / "SKILL.md").write_text(body, encoding="utf-8", newline="")
+        files = sorted(samples.rglob("SKILL.md"))
+        body_before = {str(f): _hash_body(f) for f in files}
 
-    # 备份完整性：**存在备份时**才校验其正文与当前一致。
-    #
-    # 「没有备份」本身是合法状态：--fix 是幂等的，树已合规时它不做任何改动，
-    # 自然也不会留备份。此前无条件要求备份存在，会在合规环境里恒定误报 FAIL。
-    bk_root = backup_root()
-    cands = sorted(bk_root.glob("skill-metadata-*")) if bk_root.exists() else []
-    if not cands:
-        return True, "全部合规；无 --fix 备份（合规树无需改动，属合法状态）"
-    b = cands[-1]
-    n_same = n_diff = 0
-    for src in b.rglob("SKILL.md"):
-        dst = Path.home() / src.relative_to(b)
-        if not dst.exists():
-            continue
-        ob = _frontmatter(src).join([])  # 占位，实际比对正文
-        old_body = _hash_body(src)
-        new_body = _hash_body(dst)
-        if old_body == new_body:
-            n_same += 1
-        else:
-            n_diff += 1
-    if n_diff:
-        return False, f"{n_diff} 个文件正文与备份不一致"
-    return True, (f"全部 {len(files)} 个 skill 四项齐全；备份 {b.name} 中 "
-                  f"{n_same} 个文件正文一致；--fix 幂等")
+        bk.mkdir(parents=True, exist_ok=True)
+        env = dict(os.environ, FSTDD_BACKUP_DIR=str(bk))
+        cmd = [PY, str(s), "--dir", str(samples), "--fix"]
+
+        r = subprocess.run(cmd, capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", env=env)
+        if r.returncode != 0:
+            tail = ((r.stderr or r.stdout or "").strip().splitlines() or [""])[-1]
+            return False, f"--fix 执行失败（退出码 {r.returncode}）：{tail}"
+
+        # ① 反副作用闸门：真实目录必须一字未改
+        real_after = {str(f): _hash(f) for f in real}
+        if set(real_before) != set(real_after):
+            return False, "校验脚本改动了真实目录的文件集合（新增/删除）"
+        dirty = [k for k, v in real_before.items() if real_after.get(k) != v]
+        if dirty:
+            return False, (f"校验脚本改写了真实用户目录的 {len(dirty)} 个 skill"
+                           f"（例如 {Path(dirty[0]).parent.name}）"
+                           f"—— 校验脚本不得有副作用")
+
+        # ② 样本四项齐全
+        lack = []
+        for f in files:
+            fm = _frontmatter(f)
+            for k in REQUIRED_FM:
+                if not re.search(rf"^{k}:", fm, re.M):
+                    lack.append(f"{f.parent.name}:{k}")
+        if lack:
+            return False, f"--fix 后样本仍有缺失：{', '.join(lack)}"
+
+        # ③ 正文保持字节级不变
+        body_changed = [Path(k).parent.name for k, v in body_before.items()
+                        if _hash_body(Path(k)) != v]
+        if body_changed:
+            return False, f"--fix 改动了正文（应字节级不变）：{', '.join(body_changed)}"
+
+        # ④ 备份数 == 待改数（3 个样本中 2 个需要改）
+        n_bk = sum(1 for _ in bk.rglob("SKILL.md"))
+        if n_bk != 2:
+            return False, f"备份文件数 {n_bk}（期望 2：缺 license / 缺 version 各一）"
+
+        # ⑤ 幂等：已合规状态下再跑一次必须零改动
+        snap = {str(f): _hash(f) for f in files}
+        r2 = subprocess.run(cmd, capture_output=True, text=True,
+                            encoding="utf-8", errors="replace", env=env)
+        if r2.returncode != 0:
+            return False, f"第二次 --fix 失败（退出码 {r2.returncode}）"
+        if {str(f): _hash(f) for f in files} != snap:
+            return False, "幂等性破坏：已合规状态下 --fix 仍改动了文件"
+
+        return True, (f"样本树 --fix 完整且幂等（3 样本 / 2 备份 / 正文不变）；"
+                      f"真实目录 {len(real)} 个 SKILL.md 零改动（反副作用闸门通过）")
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
 
 
 def _hash_body(p: Path) -> str:
