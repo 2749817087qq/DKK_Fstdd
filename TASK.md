@@ -4,7 +4,7 @@ schema: fstdd-distributed-task/v0.1
 title: FSTDD 安装/运行工程测试与经验回传
 status: archived          # pending | running | blocked | done | archived
 created: 2026-09-12
-updated: 2026-09-23
+updated: 2026-09-27
 node: WORKBUDDY-AI-WIN   # 执行节点标识（本实例）
 owner: D哥
 mode: fstdd              # 走 FSTDD 四阶段 + 三确认门
@@ -336,6 +336,34 @@ tags: [install, hardening, experience-upload, distributed]
       ③ `canon verify` 增加**反向**检查 `DC-FIELD-REV`（YAML 非空字段须在 MD 有对应节）。
       本次规避：把 constraints / non_goals **人工贴进 Gate 1 确认框**。
       详见 `experiences/FSTDD003-EXP-20260924-CANON-1.md`。
+- [ ] **P54 待修（🔴 高 · `canon generate` 第二族，承 P52 · 2026-09-24 · 工作台）**：
+      **① `--type {proposal,design,spec}` 被静默忽略** —— `canon.py:243` 把 `args.type` 传进
+      `_generate_one()`，而函数体内 `output_file = change_dir / "proposal.md"` **硬编码**，
+      `grep -n "gen_type" canon.py` → **只有签名那一处、函数体零引用**。
+      实测 `--type spec` 与 `--type proposal` 输出**逐字相同**。与 P52 的 `--dry-run`、
+      `EXP-20260923-GATE-1` 的 `gate approve --dry-run` **同族：参数被解析、被传递、然后没人读**。
+      **② `--all` 复活已归档 change** —— `cmd_generate` 的 `--all` 分支扫的是**项目级**
+      `.fstdd/canonical/`（不是 change 级），且 `_generate_spec` 的输出目录取自 YAML 里的
+      `meta.change_id` ⇒ 只要项目级 canon 里留着任何已归档 change 的 YAML，就会被写回
+      `.fstdd/changes/<已归档名>/`。实测跑一次 `canon generate <change> --all` 凭空多出
+      `.fstdd/changes/2026-09-23-wizard-target-per-account/`（proposal.md + 2 个 spec.md），
+      而该 change 早已在 `.fstdd/archive/` 里 ⇒ 死 change 被 `status`/`validate`/
+      `_find_current_change` 当成**活跃变更**。另：`--all` 分支里 `<change>` 位置参数**被完全忽略**。
+      **③ 双轨漂移 ⇒ 再生成的内容比归档更差，还抹掉手工补注** —— 项目级副本只在**归档那一刻**
+      写一次，Phase 2 之后的修正与 BUILD 期手工补注**都不回灌**。实测归档里是修正后的
+      `{biz: {list_pulled_at}}（实现时去掉了原稿里的 fetched 字段…）`，再生成出来是**原稿**
+      `{biz: {list_pulled_at, fetched}}`；归档 `specs/按号列表进度记录/spec.md` 里那 2 行
+      BUILD 期偏离注记（`> ⚠️ BUILD 中第 2 次小偏离新增（范围轴）…`）在新产物里**消失**。
+      🔴 **而 `canon generate` 的两个入口读写不同副本**：`<change>` 读 **change 级**、
+      `--all` 读 **项目级** ⇒ **同一条命令的两种用法产出不同内容**，排查时最容易走偏。
+      **④ 🔴 关键事实纠正（我自己的认知错了）**：`specs/<cap>/spec.md` **不是** `canon generate`
+      生成的，而是 `gate approve --gate 2` 时由 `gate.py::_auto_generate_human_views` 从
+      **change 级** `canonical/specs/code/*.yaml` 自动生成（读对目录、逐条告警损坏 YAML、
+      跳过 `TODO` scaffold）—— **它是唯一正确的路径，Phase 2 结束时根本不需要手跑 `canon generate`**。
+      ⚠ 但 `fstdd-spec/SKILL.md:265` 把「`canon generate --all`」写成 Gate 2 **兜底手段**，
+      恰好把上面 ①②③ 三个坑**一次踩满** ⇒ **skill 必须改**（第 261 行那句是对的，第 265 行有害）。
+      本次规避：不删先隔离（`mv` 到 `.fstdd/_quarantine/`；动手前查 `os.lstat().st_reparse_tag`
+      确认**非目录联接**才敢用普通移动）。详见 `experiences/FSTDD003-EXP-20260924-CANON-2.md`。
 - [ ] **P53 待修（🔴 高 · 字段无人负责 + 静默降级 · 2026-09-24 · 工作台）**：
       `complexity_score` / `mode` / `score_confidence` **三个字段没有任何 CLI 写入端**。
       `new.py:59-62` 硬编码 `mode: "standard"` + `complexity_score: None` + `score_confidence: None`，
@@ -364,6 +392,48 @@ tags: [install, hardening, experience-upload, distributed]
       （`long_range.mode` → `interaction_mode`，或顶层 `mode` → `quality_mode`），
       并让 `stdd status` **两行都打**；⑤ 删掉 `new.py:61` 那句误导注释。
       详见 `experiences/FSTDD003-EXP-20260924-MODE-1.md`。
+- [ ] **P55 待修（🔴 高 · 门禁字段被静默降级 · 2026-09-24 · 工作台）**：
+      `stdd phase advance` **会把已过门阶段的 `status` 从 `completed` 降回 `in_progress`**
+      —— 即「已确认的门被无声撤销」。
+      **实测**：`gate approve 2026-09-24-native-wx-ui --gate 2 --confirmed-by dialog --evidence "确认"`
+      正确写入 `phases.spec.status: completed`（`confirmed_*` 四字段齐全），
+      之后为了修正 `current_phase`（approve **不写**这个字段，仍停在 `understand`）跑了
+      `phase advance 2026-09-24-native-wx-ui spec` ⇒ 输出**只有一行正常的推进文案**
+      `Phase 1: UNDERSTAND → Phase 2: SPEC`，**无报错、无警告、无「会覆盖已有状态」提示**，
+      而 `phases.spec.status` 已变成 `in_progress`。
+      **根因①**：`phase.py` advance 分支（约 :173-175）
+      `phases.setdefault(nxt, {})["status"] = "in_progress"` —— `setdefault` **只保证键存在、
+      不保证值不被覆盖**，对 `nxt`（要进入的阶段）**零前置检查**；
+      同一分支对 `current`（要离开的阶段）**反而有** gate 检查（`confirmed_at` 必须存在）
+      ⇒ **只防「没确认就想走」，不防「已确认的被退回」**。`set` 分支（:194）是**同一写法**。
+      **根因②**：`target_phase` 位置参数**被完全忽略** —— advance 分支只做
+      `nxt = _PHASE_ORDER[idx + 1]`，**从不读 `args.target_phase`**。
+      实测传 `spec`（恰 == `understand+1`）看不出异常；传 `build` 也照样只推进到 `spec`。
+      与 P52（`canon generate --dry-run`）、P54（`canon generate --type`）、
+      `EXP-20260923-GATE-1`（`gate approve --dry-run`）**同族：参数被解析、被传递、然后没人读**。
+      **🔴 危害面 = 门禁字段，不是展示字段**：`guard.py:415`（「前序阶段全部 `completed`」才算合法到达）、
+      `batch.py:539`（`spec.status != "completed"` ⇒ 批级直接 🚫 阻断）、
+      `batch.py:351-353`（门状态显示 ✅ → ○，**已确认的门看起来没过**）、
+      `archive.py:29`（`build_done` 判定 ⇒ **拒绝归档**）、`status.py`（人看到的唯一界面变了）。
+      **🔴 最阴的一层**：`confirmed_at` / `confirmed_by` / `confirmed_evidence` **三字段原样保留**
+      ⇒ YAML 里「确认信息」看着完好无损，**只有 `status` 一个词变了**；
+      排查时若只 grep `confirmed`，会得出「门还在」的结论。
+      **为什么这次会踩到**：`fstdd-spec/SKILL.md` Step 7 第 5 项写「更新 `.fstdd.yaml`
+      （phase: spec → completed, confirmed_at 时间戳）」——**不给命令、也不说不要用什么命令**，
+      执行者自然会拿官方推进命令 `phase advance` 去「更新 phase」；而
+      `gate approve` 与 `phase advance` **各自只负责一半状态**（前者只写 `status`、
+      后者只写 `current_phase`），且 `advance` 会破坏 `approve` 的成果
+      ⇒ **正确顺序只能是 advance → approve，反过来就丢状态**。
+      本次规避：手工把 `phases.spec.status` 改回 `completed`（`confirmed_*` 未动），
+      并**同时核对 `current_phase` 与 `phases.<x>.status` 两个字段都对**（只修一个会留下
+      「阶段对了但门显示没过」或反之）；**不再跑 `phase advance`**。
+      修法：① advance 加「禁止降级」守卫
+      （`if nxt_data.get("status") != "completed": nxt_data["status"] = "in_progress"`，
+      要重开必须走显式 `set` + 确认）；② advance 读取 `target_phase`，
+      或在忽略它时**明确报错**；③ `gate approve` 顺带把 `phase_key` 写进 `current_phase`
+      ⇒ **从根上消除「必须再跑 advance」这个多余动作**；④ skill 侧写明正确顺序（已改）；
+      ⑤ `phase status` 增加提示：`status == in_progress` 但 `confirmed_at` 存在 ⇒
+      打印「可能被 advance 降级，请核对」。详见 `experiences/FSTDD003-EXP-20260924-PHASE-1.md`。
 - [x] **（已闭合）引擎副本与源漂移** —— 见「15. 第 15 轮」。
       原条目：「引擎副本与源会随时间漂移（`setup_engine.py` 每次比对 sha256 并告警，
       `TC_SC_034` 也守着）。**不改上游**是 D哥 定的范围，漂移只告警不自动同步。」
@@ -1255,4 +1325,357 @@ approve 分支无条件走 `_auto_generate_human_views()` + `_confirm_gate()`。
   **必须手工补写这三个键**，直到 P53 修掉为止（否则每开一个 change 就静默降级一次）。
 
 
+
+## 21. 第 21 轮（2026-09-24 · 工作台 · Phase 2 SPEC 的 Step 5.5 自检，挖出 P54）
+
+**触发**：Phase 2 的 `test-plan.md` 刚写完，按 skill 的「Gate 2 前五项自检」逐项核对，
+其中一项写的是「`specs/`（`canon generate --all` 后生成）」⇒ 去跑 `canon generate`。
+**这一轮的价值来自「按清单核对」这个动作本身 —— 清单里那一项本身就是错的。**
+
+### 本轮新缺陷：P54 —— `canon generate` 的第二族（承 P52）
+
+三条症状，一次踩满：
+
+| # | 症状 | 实测证据 |
+|---|---|---|
+| ① | `--type {proposal,design,spec}` **被静默忽略** | `canon generate <change> --type spec` → 输出的仍是 `proposal.md`，与 `--type proposal` **逐字相同**。`grep -n "gen_type" canon.py` → **只有签名那一处**，函数体内 `output_file = change_dir / "proposal.md"` 硬编码 |
+| ② | `--all` **复活已归档 change** | 跑一次后 `.fstdd/changes/` 凭空多出 `2026-09-23-wizard-target-per-account/`（proposal.md + 2 个 spec.md），而该 change 早在 `.fstdd/archive/` 里 |
+| ③ | 再生成的内容**比归档差**，且抹掉手工补注 | 归档 `proposal.md` 是修正后的 `{biz: {list_pulled_at}}（实现时去掉了原稿里的 fetched 字段…）`，新产物是**原稿** `{biz: {list_pulled_at, fetched}}`；归档 spec.md 里 2 行 BUILD 期偏离注记在新产物里**消失** |
+
+三条根因链：
+
+1. **参数被解析、被传递、然后没人读** —— 与 P52 的 `--dry-run`、`EXP-20260923-GATE-1` 的
+   `gate approve --dry-run` **完全同族**。这已经是**第三例**了 ⇒ 应当升级成一条**通用审计**：
+   全命令 `grep` 每个参数名，凡在签名/解析器里出现、handler 不读的，一律补上或删掉参数。
+2. **`--all` 的扫描范围与输出目录分属两套基准** —— 扫的是**项目级** `.fstdd/canonical/`，
+   输出目录却取自 YAML 里的 `meta.change_id`。归档动作既不清理项目级 canon，
+   `--all` 也不排除 `archive/` 里的名字 ⇒ 死 change 必然被复活。
+3. **双轨（项目级 vs change 级 `canonical/`）真的漂移了** —— 项目级副本只在**归档那一刻**写一次，
+   Phase 2 之后的修正、BUILD 期的手工补注**都不回灌**。🔴 **最阴的一层**：
+   `canon generate` 的**两个入口读写不同副本**（`<change>` 读 change 级、`--all` 读项目级）
+   ⇒ **同一条命令的两种用法产出不同内容**，排查时极易走偏。
+
+### 🔴 本轮最重要的一条：一个被写错的「自检清单」
+
+我此前记的「Gate 2 前五项自检包含 `canon generate --all`」是**错的**。
+`gate.py::_auto_generate_human_views` 的 docstring 与实现写明：
+
+```python
+# - Gate 1 → proposal.md from changes/<change>/canonical/proposals/<change>.yaml
+# - Gate 2 → specs/<cap>/spec.md from changes/<change>/canonical/specs/code/*.yaml
+```
+
+⇒ **`specs/<cap>/spec.md` 是 `gate approve --gate 2` 时自动生成的**，
+读的正是我们写的 **change 级** YAML，还会逐条告警损坏的 YAML 而不静默（DFX-011）、
+跳过 `TODO` scaffold。**它是本项目里唯一正确的 Human View 生成路径。**
+**Phase 2 结束时根本不需要手跑 `canon generate`** —— 跑了只有害。
+
+⚠ 而 `fstdd-spec/SKILL.md:265` 写着「若 Gate 2 自动生成未生效，手动执行
+`stdd canon generate --all` 补齐」⇒ **这条兜底恰好把 ①②③ 三个坑一次踩满**。
+同文件第 261 行那句（「无需重复执行 `canon generate --all`」）是**对的**。
+⇒ **同一个 skill 里两行自相矛盾，而错的那一行是「出问题时才会看」的那一行。**
+
+### 为什么这条比前几条更值得记
+
+- **P52 与 P54 是同一个函数的两族缺陷，且都没被任何校验器覆盖。**
+  P52 是「丢了内容」（人一眼能看出少了节），P54 是「给了更旧/更错的内容」
+  —— 后者更危险，因为**看起来是完整的**。
+- **它是「工具会主动破坏证据」**：`canon generate` 会用旧快照覆盖掉
+  「带 BUILD 期手工补注」的 Human View。而 Human View 是**用户唯一的审阅面**。
+  一次误操作就能把审计链上最有信息量的那两行注记抹掉，且**无备份、无告警**。
+- **「清单里的错误」比「代码里的错误」更贵**：代码错了会报错，清单错了会让人
+  **按清单执行一个有害动作**。这正是本轮的收获 —— 我差点就照着自己写的清单跑了。
+
+### 本次处理
+
+1. **不删、先隔离**：`mv .fstdd/changes/2026-09-23-wizard-target-per-account
+   .fstdd/_quarantine/2026-09-23-resurrected-by-canon-generate-all-20260924/`。
+   - 🔴 动手前按跨项目铁律查 `os.lstat().st_reparse_tag`：`0x0` ⇒ **不是目录联接**，
+     才能安全用普通移动（若是 junction 就只能 `os.rmdir`，否则会递归删掉联接目标里的真文件）。
+   - **隔离而不是删**：它与归档**内容不同**（见症状 ③），先留证据给决策人看。
+2. **不再跑 `canon generate --all`**，改由 `gate approve --gate 2` 自动生成 spec Human View。
+3. 修正 `fstdd-spec/SKILL.md:265` 那条有害兜底（改为「Gate 2 自动生成；若未生效，
+   先看 `.fstdd.yaml` 的 gate 状态，**不要**用 `canon generate --all`」）。
+4. `changes/` 恢复为 `2026-09-20-workbench-local-pg` + `2026-09-24-native-wx-ui` 两个。
+
+### 本轮方法侧收获（可复用）
+
+- **「按清单核对」之前，先核对清单本身。** 清单是上次的自己写的，
+  而上次的自己可能记错了 —— 本轮全部价值都来自「跑之前先读了 `gate.py` 的实现」。
+- **凡是「兜底手段」，先确认它在当前状态下是不是**有害**的。**
+  兜底通常写于「正常路径不可用」的假设下，但**正常路径可用时跑它，它可能比不做更糟**。
+- **一个工具如果同时有「扫 A 写 B」的入口和「扫 B 写 B」的入口，它们迟早会分叉。**
+  看到 `--all` 与 `<name>` 两种用法时，先问「它们读写的是同一份东西吗」。
+- **第三例同族缺陷 ⇒ 停止逐例记录，改记一条通用审计规则。**
+  （`--dry-run` 不 dry / `gate approve --dry-run` 不 dry / `--type` 被忽略 —— 三例同族。）
+- **删除前先看 `st_reparse_tag`** 已经是一条跨项目铁律，本轮再次救了场：
+  如果那个目录是联接，`rmtree` 会删掉归档里的真文件。
+
+### 本轮结论
+
+- P54 已记录并归档，工作区已恢复干净状态。
+- ⚠ **留给后续 change 的硬约束**：**Phase 2 结束时不要跑 `stdd canon generate`**
+  （任何形态：`--all` / `--type spec`）。spec Human View 由 `gate approve --gate 2` 自动生成。
+  若确实需要预览，**只用** `canon generate <change>`（不带 `--all`、不带 `--type`），
+  且它只会重新生成 `proposal.md` —— 它**不生成 spec**，别指望它。
+
+
+
+
+
+## 22. 第 22 轮（2026-09-24 · 工作台 · Phase 2 SPEC 过 Gate 2，挖出 P55）
+
+### 触发
+
+change `2026-09-24-native-wx-ui` 的 Phase 2 SPEC 走完 Step 5（`test-plan.md`）与
+Step 5.5（四路独立审查），D哥 回复「确认」⇒ 跑 `gate approve --gate 2` 过门。
+过门后做 Step 7 的收尾两项（更新 `.fstdd.yaml`、生成 `phase-context.md`），
+**在「更新 `.fstdd.yaml`」这一步踩到 P55**。
+
+### 症状
+
+| # | 症状 | 实测 |
+|---|---|---|
+| 1 | `gate approve --gate 2` 正确写 `phases.spec.status: completed` + `confirmed_*` 四字段 | ✅ 正常 |
+| 2 | 但 `current_phase` 仍停在 `understand` | approve **不写**这个字段 |
+| 3 | 为修它跑 `phase advance … spec`，输出只有一行正常推进文案 | `Phase 1: UNDERSTAND → Phase 2: SPEC` |
+| 4 | 而 `phases.spec.status` 被改回 `in_progress` | 🔴 **无报错、无警告** |
+| 5 | `confirmed_at` / `confirmed_by` / `confirmed_evidence` **原样保留** | 🔴 只 grep `confirmed` 查不出来 |
+
+### 根因链
+
+1. **`nxt` 无条件写成 `in_progress`** —— `phase.py` advance 分支
+   `phases.setdefault(nxt, {})["status"] = "in_progress"`。`setdefault` 只保证键存在、
+   不保证值不被覆盖。**对 `nxt` 零检查，对 `current` 反而有 gate 检查**
+   ⇒ 只防「没确认就想走」，不防「已确认的被退回」。
+2. **`target_phase` 被完全忽略** —— advance 分支只做 `nxt = _PHASE_ORDER[idx + 1]`，
+   从不读 `args.target_phase`。传 `spec` 恰好等于 `current+1` 所以看不出；
+   传 `build` 也照样只推进一格。**与 P52 / P54 / GATE-1 同族**（参数被解析、被传递、然后没人读）。
+3. **门禁字段被降级的危害面** —— `guard.py:415`（前序阶段全 `completed` 才算合法到达）、
+   `batch.py:539`（批级 🚫 阻断）、`batch.py:351-353`（门显示 ✅→○）、
+   `archive.py:29`（`build_done` ⇒ 拒绝归档）、`status.py`（人看到的唯一界面）。
+4. **skill 措辞把人引向这个动作** —— `fstdd-spec/SKILL.md` Step 7 第 5 项
+   「更新 `.fstdd.yaml`（phase: spec → completed, confirmed_at 时间戳）」
+   **不给命令、也不说不要用什么命令**；执行者自然会拿官方推进命令 `phase advance` 去「更新 phase」。
+
+### 本轮最重要的一条：两个命令各自只负责一半状态
+
+- `gate approve` 写 `phases.<x>.status = completed` + `confirmed_*`，**不写 `current_phase`**；
+- `phase advance` 写 `current_phase` + 目标阶段 `status = in_progress`，**不写 `confirmed_*`**；
+- ⇒ **两者只能按 advance → approve 的顺序跑**，反过来 `advance` 就把 `approve` 的成果冲掉。
+
+**这是「一个状态被两个命令各写一半、且其中一个会破坏另一个」的典型。**
+正确修法不是让执行者记住顺序，而是**让 `gate approve` 顺带写 `current_phase`**
+⇒ 把「必须再跑一次 advance」这个多余动作从流程里删掉。
+
+### 为什么这条比前几条更值得记
+
+前几条（P52 / P54）坏的是**产物内容**（Human View 丢字段、被旧快照覆盖），
+删掉重跑就能修。**P55 坏的是「门本身」**：
+
+- 它让**已通过的门在状态上变成未通过**，而 `confirmed_*` 还在 ⇒
+  **审计链看上去完整，实际状态已不一致**；
+- 它**没有报错**，输出是一句正常的推进文案 ⇒
+  执行者会以为「我刚刚只是修了个阶段字段」；
+- 它的受害者是 `guard` / `batch` / `archive` 三处**流程闸门** ⇒
+  一次误跑可能导致**归档被拒**或**后续阶段被判定为非法到达**，
+  而排查方向会被引到「为什么 archive 说 BUILD 没完成」这种完全错误的地方。
+
+**一句话：这是「安全机制的状态字段被静默改写」，与 `EXP-20260923-GATE-1`
+（`gate approve --dry-run` 不 dry，把防 AI 自批的门一起放行）是同一类问题的两个面。**
+
+### 本次处理
+
+1. 手工把 `phases.spec.status` 改回 `completed`（`confirmed_*` 未动）。
+2. **同时核对两个字段**：`current_phase: spec` ✅ + `phases.spec.status: completed` ✅
+   （只修一个会留下「阶段对了但门显示没过」或反之）。
+3. 复查 `stdd phase status`（`Status: completed`）与 `stdd status`
+   （`Phase 2: SPEC: completed (确认于 …)`、`Spec 文件: 3 个`）。
+4. **不再跑 `phase advance`**。
+5. 归档 `D:\FSTDD003`：`experiences/FSTDD003-EXP-20260924-PHASE-1.md` + 本文件顶层 P55 + 本轮 + README 行。
+6. 改 `fstdd-spec/SKILL.md` Step 7 第 5 项：写明「`gate approve` 已写入 `status` 与 `confirmed_*`，
+   **不要**再跑 `phase advance`；若需 `current_phase` 正确，**正确顺序是先 advance 再过门**」。
+
+### 方法侧收获
+
+- **过门之后立刻核对「门字段」与「阶段字段」两处，而不是只看一处。**
+  凡是「一个逻辑状态被拆成多个字段」的设计，都要问：**这几个字段是否同时被更新？谁负责哪一个？**
+- **官方命令不一定适用于你当前所处的状态。**
+  `phase advance` 是「推进」命令，在**已经推进到位**的状态下跑它，它不是幂等的 ——
+  而是**破坏性的**。⇒ 用任何「推进 / 初始化 / 同步」类命令前，先问它**在当前状态下是否幂等**。
+- **看到「输出只有一句正常文案」时要更警惕，而不是更放心。**
+  本轮两次踩坑（P54 的 `canon generate`、P55 的 `phase advance`）都是
+  「打印了正常的成功文案，同时静默做了一件坏事」。
+- **skill 里的「更新 X」这类措辞必须给命令，或明确写「不要用某命令」。**
+  只写意图不写手段，执行者就会挑一个看起来最对的手段 —— 而它可能恰好是最坏的那个。
+- **本次 gate approve 本身是健康的**：3 个 `spec.md` Human View 自动生成，
+  43 个 Scenario 全覆盖（28 + 10 + 5）、SC-042 / SC-043 都在、无 `TODO` scaffold、
+  无告警、**未触发 P54 的 `--all` 复活**。⇒ 缺陷是**局部的**，不是流程整体不可用。
+
+### 本轮结论
+
+- P55 已记录并归档。
+- ⚠ **留给后续 change 的硬约束（两条）**：
+  1. 🔴 **过门与推进的正确顺序是：先 `stdd phase advance <change> <phase>`，再 `stdd gate approve --gate N`。**
+     反过来跑会**把刚确认的门降级**。若已经搞反，**手工把 `status` 改回 `completed`**，
+     并**同时**核对 `current_phase`。
+  2. 🔴 **不要用 `stdd phase advance` 去「修 `current_phase`」** ——
+     它同时会写目标阶段的 `status`。要只改阶段而不动状态，用 `stdd phase set`（但注意
+     `set` 分支有**同一写法**的降级问题，见 P55 根因①）。
+- ⚠ 本轮还留了一个**未处理的旧账**：僵尸 change `2026-09-20-workbench-local-pg`
+  （09-20 过 Gate 1 后无进展，`validate` 报缺 `design.md` / `test-plan.md`），
+  以及 `.fstdd/_quarantine/` 下的 P54 隔离产物 —— 待 D哥 裁定后处置。
+
+## 23. 第 23 轮（2026-09-25 · 工作台 · change `2026-09-24-native-wx-ui` Phase 3 Part C 的 `ci check-failures`）
+
+**场景**：同一 change 的 Phase 3 BUILD 收尾（Part C 质量验证）跑到 10.4
+`fstdd ci check-failures`，**四项口径漂移全量复发**（与第 17 轮 P45/P46/P47 同一批）。
+
+### 本轮结论
+
+- ✅ 结果：`通过 4 / 警告 2 / 跳过 3 / 错误 1`，**10 项全部逐项处置**并写进 `test-report.md`。
+- 🔴 **不是新缺陷，是既有 P45 / P46 / P47 的第二次复现** —— 已归档
+  `experiences/FSTDD003-EXP-20260925-CI-1.md`（**只记新细节，不重复首次发现**）。
+- **三条既有条目没覆盖的新细节**：
+  1. **(d) 的规避手段「交叉引用一律用案例号」治不了「同一 TC-ID 被两条测试函数共用」**
+     （`tests/test_skeleton.py:78` 与 `:93` 都是 `TC-SVC-003`，分别验设计令牌与组件样式）
+     —— 这是**测试侧**组织方式，不是文档侧交叉引用 ⇒ **用户侧不可规避**，
+     必须改 `check_tcid_unique` 的实现。
+  2. **`TC 实现覆盖` 对「刻意不带 TC-ID 的测试文件」结构性失明**：
+     `tests/test_embed_and_identity.py` docstring 第 5 行明写「不属于任何既有 capability」⇒
+     该文件永远不计入统计，而本 change 的 `CP-10` 正依赖它覆盖 SC-002/004/007/008/009
+     ⇒ 「68%」是**分母错配**，不是覆盖缺口。
+  3. **`(j)` 是「文件位置」陷阱**，不只是「没人产出」：`--cov-report=json` 默认写 cwd，
+     而检查器读 `<root>/coverage.json`；且 **Git Bash 把 POSIX 路径传给 Windows Python
+     会静默失败**（终端说 "Coverage JSON written to file"，文件却不存在）。
+- 🔴 **本轮最有价值的元结论**：**规避手段写在经验库/文档里，换一个工作区就全量复发。**
+  两条 CI 经验之间隔两天、换 change、换工作区，**同一台机器同一个 CLI**，四项一项不少地复现。
+  ⇒ 凡「用户侧规避」的修法，必须同时落成 **(a) 上游源码修复** 或 **(b) 项目模板/脚手架的默认值**；
+  只写文档 = 只对读过它的人、且只对读过的那一次有效。
+
+### 遗留项（本轮新增）
+
+- [ ] **P45 / P46 / P47 仍未修** —— 本轮证明其影响是**跨工作区普遍性**的，优先级应上调。
+  尤其 **P46（`check_tcid_unique`）**：既有规避手段被证明**用户侧不可达**。
+- [ ] 建议把三条规避**做进 `new` 的模板**（见 EXP 条目的「元结论」一节）：
+  test-plan 模板默认「交叉引用走案例号」/ proposal.md 在 `### New Capabilities` 下同时产出
+  `- capability: <名>` 行 / quality.yaml 模板给一条可复制的覆盖率命令（含 cwd 说明）。
+- [ ] `TC 实现覆盖` 建议增加**「文件级归属」**：允许测试文件头部声明
+  `# TC-ID: 本文件不适用（原因）`，被声明的文件从分母剔除并在报告里单列。
+
+### 第 23 轮追加（2026-09-26 · 同一 change 的 Gate 3 收口）
+
+**Gate 3 已过，BUILD → DELIVER 推进成功**（`build.status: completed` + `confirmed_by: dialog`；
+`current_phase: deliver`；**build 未被降级**，P55 的坑未触发）。
+
+- 🔴 **新增缺陷：`--dry-run` 逐命令失效的**两个新实例****
+  （机制早已记过：P44「父 parser 全局开关、handler 不读」/ P52 / GATE-1）：
+  - `phase advance --dry-run` —— **真写盘**：实测把 `current_phase: spec` 改成 `build`、
+    并把目标阶段 `status` 改成 `in_progress`。输出**只有正常成功文案**，没有 `[dry-run] 将…`。
+  - `phase record-slice --dry-run` —— **真写盘**：打印 `Slice S1 evidence recorded`，且 `grep` 确认
+    切片证据真的进了 `.fstdd.yaml`。
+  - 已归档 `experiences/FSTDD003-EXP-20260926-DRYRUN-1.md`（含「已知不 dry 的命令」对照表 +
+    `new --dry-run` **真的 dry** 这个对照组 ⇒ **失效是逐命令的，不能推广，必须当场验**）。
+  - 本轮**良性的巧合**：`phase advance --dry-run` 顺手把过期的 `current_phase` 修正了，
+    反而避开了 P55（若 `current_phase` 落后，approve 后再 advance 会把刚完成的阶段降级）。
+    ⚠ **是运气不是设计，别依赖**。
+- 🔴 **新发现：BUILD → DELIVER 有一个隐藏前置** —— `phase advance` 会拒：
+  「BUILD → DELIVER 需要 per-slice 验证证据链。请确保每个 Slice 的 `.fstdd.yaml` 中包含
+  `tc_coverage` / `new_tests` / `verified_at`」。⇒ 必须在收口时逐片跑
+  `fstdd phase record-slice <change> <SID> --tc-coverage "…" --new-tests N --verified-at YYYY-MM-DD`
+  （本次 10 片全部补登记）。**这条不在 skill 的显式清单里**，是「强制约束 #5 切片验证不可跳过」
+  的机械化落地 —— 建议写进 `fstdd-build` 的 Phase 3 收口清单，否则每次都会卡在推进那一步。
+
+### 遗留项（第 23 轮追加）
+
+- [ ] **P56 待修（新，2026-09-26）**：`fstdd new <name>` **自动补日期前缀** ⇒ 按仓库惯例传
+      `new 2026-09-26-<slug>` 会建出 **`2026-09-26-2026-09-26-<slug>`**（双前缀），且 **exit=0 无警告**；
+      `validate` / `canon verify` 照样通过（只看结构不看名字）⇒ **静默**。
+      正确用法 `new <纯 slug>`。已归档 `experiences/FSTDD003-EXP-20260926-NEWNAME-1.md`。
+      修法建议：检测「已含日期前缀」直接当完整名用（或明确报错）+ `--help` 示例补一句
+      「**不要**自己带日期」+ `validate` 加一条「目录名不得双日期前缀」的廉价检查。
+- [ ] **P57 待修（新，2026-09-26）· 变异自检里的「假红」**：变异夹具用 `env={"PYTHONPATH": ""}`
+      **替换**了整个操作系统环境（`subprocess` 的 `env=` 是替换不是叠加）⇒ Windows 上缺 `PATH`/`SystemRoot` 等
+      ⇒ pytest **启动即崩**（`OSError: [WinError 10106]` winsock 初始化失败）⇒ `rc=1`
+      **看起来与「守卫咬到了」一模一样**，实际与被测代码无关。
+      🔴 **假红比假绿更隐蔽**：它**符合预期**，几乎没人会去查「为什么红了」。
+      ⇒ 纪律：**「红了」不是证据，「红的理由」才是** —— 变异自检必须打印并看一眼失败的那条断言/异常。
+      已归档 `experiences/FSTDD003-EXP-20260926-FAKERED-1.md`（含 harness 自检与三自证清单）。
+- [ ] **P44 / P52 家族应升级为一条独立 P 编号**：「`fstdd` 的 `--dry-run` 逐命令失效」，
+      并在 `fstdd-*` 各 skill 里对**每个带 `--dry-run` 的命令**标注「已验 dry / 未验 / 不 dry」。
+      现状是散在三条经验里，读者容易以为「修过一次就都好了」。
+- [ ] 建议 `_write_state()` 统一入口加 `if args.dry_run: print("[dry-run] 将…"); return`，
+      并在 `--dry-run` 时**禁止**打印正常成功文案。
+- [ ] 建议把「per-slice 验证证据链」写进 `fstdd-build` 的 Phase 3 收口清单。
+- [ ] **P58 待修（新，2026-09-27）· `validate` 的 AND 上限是硬编码绝对值且不归属 Scenario**：
+      `validate.py:67-70` 用 `len(re.findall(r"\*\*AND\*\*", content)) > 5` 判定，两个独立问题 ——
+      ① 上限 `5` 是写死的绝对值（同函数的 GIVEN/WHEN/THEN 都是「少于 Scenario 数量」的归一化判据），
+      没有出处、无配置、无 CLI 参数；② 🔴 计数是**全文**次数、**不归属到具体 Scenario** ⇒
+      「1 个 Scenario 带 6 条 AND」与「3 个 Scenario 各 2 条 AND」**同样告警**，后者完全正常。
+      设计意图（单 Scenario 上限 vs 全文上限）从实现上无法判断。
+      🔴 **最刺眼的一层**：同一文件 `validate.py:75-78` 的 TC-ID 检查**正是为修「全文计数误判」加过修正**
+      （改为只统计案例定义行），AND 检查**没有做等价处理**。
+      影响面：只 append 到 `warnings`、不影响退出码、Gate 2 照常通过 ⇒ 危害在**诱导性** ——
+      为了消警去删实质判据，等于「为了守卫改内容」（与 09-26 D-7「改 source_hash 指针」同型）。
+      已归档 `experiences/FSTDD003-EXP-20260927-ANDLIMIT-1.md`。
+      修法：按 `#### Scenario:` 切段后逐段计数（与 GIVEN/WHEN/THEN 语义对齐）+ 上限提为配置项 +
+      告警文案带归属信息 + 补「3×2 不告警 / 1×6 告警」的对照自测。
+- [ ] **（流程教训，本轮新增）**：新增 P 编号前**必须**在 `TASK.md` 里 grep 关键词比对，
+      本轮 5 条候选里有 **4 条命中既有编号或属误报**（详见「24. 第 24 轮」对照表）。
+      正确动作顺序应是「先 grep 查号 → 再决定新增/引用/撤回」，而非「边踩边编号」。
+
+## 24. 第 24 轮（2026-09-27 · 工作台 · Phase 4 DELIVER 收口 + 缺陷编号回查）
+
+change `2026-09-27-idx-dedupe-guard-ast`（**追溯建档 · test-only**，CP-4 去重守卫由静态文本判据
+换成 AST 结构审计）。D哥 22:12 在 Gate 3 确认框选择「全部按建议值放行」后进 DELIVER。
+
+### 交付结果（全部实测）
+
+| 步骤 | 结果 |
+|---|---|
+| Gate 3 | ✅ `gate approve … --gate 3 --confirmed-by dialog`（evidence 逐条写明 7 项待确认的处置） |
+| structure delta / merge | ✅ delta 归档前生成、merge 归档后执行（顺序正确） |
+| archive | ✅ `archive/2026-09-27-idx-dedupe-guard-ast` + Human View `specs/文章索引去重守卫/spec.md` |
+| canon 三件套 | ⚠ `stdd archive` **未合并**（**P20 既有**）⇒ 手工 `cp -n` 三份 YAML + 补 `.canon-index.yaml` 三处 |
+| canon verify | ✅ **2/2**（DC-HASH + DC-FIELD）；根副本与归档副本 sha256 一致 |
+| index 结构 | ✅ `yaml.safe_load` 通过：proposals 4→5、agent 4→5、code 7→8 |
+| 经验回传 | ❌ **HTTP 401**，68 条分 4 批全部 unauthorized（`Fstdd-experiences` 侧凭证问题） |
+| 知识图谱 | ⚠ 社区图谱不可用 → 本地降级，本地无待合并经验 |
+
+### 🔴 本轮最有价值的发现：新增编号前必须回查
+
+本轮原本按「接续本地编号」的思路，准备把 5 条缺陷编为 P59~P63。
+**实际回查 `TASK.md` 后，5 条里只有 1 条成立：**
+
+| 本地候选 | 现象 | 回查结论 |
+|---|---|---|
+| 本地 P56 | `extract-proposal --format json` 把 `Capabilities` 并入 `what_changes`、四个字段全丢空 | ⚠ **= P12**（既有）。且第 13 轮已追加实测「**直供 canonical 也照丢**」，规避方式早已写明：「Gate 内容一律读 YAML 原文，不信 `extract-proposal` 摘要」 |
+| 本地 P57 | `status` 显示「Spec 文件: 0 个」 | ⚠ **非缺陷**。第 13 轮已载明：该数字统计的是 `changes/<change>/specs/**/*.md`（Human View），**不是** canonical YAML ⇒ Gate 2 之前显示 0 是**正常** |
+| 本地 P58 | `spec.md` AND 数量 (15) 超上限 (5) | ✅ **真新缺陷 → P58** |
+| 本地 P59 | `canon generate --dry-run` 非真 dry-run | ⚠ **= P52**（既有），且在 `EXP-20260926-DRYRUN-1` 的「已知不 dry 命令」表**第一行** |
+| 本地 P60 | `stdd archive` 不合并 canonical 三件套 | ⚠ **= P20**（既有，`EXP-20260919-ARCHIVE-2`） |
+
+**结论：5 条候选 → 1 条新编号 + 2 条既有编号重复 + 1 条误报 + 1 条已记载的正常行为。**
+
+🔴 **讽刺点**：本地记忆当时写「应重编号为 P59/P60/P61」，那是**没查 `TASK.md` 直接接本地号**的结果，
+差一步就把 P59~P63 全编错了。**「先查后编」不是形式主义，它直接决定编号是否正确。**
+
+同时：`TASK.md` 的 `updated` 字段停在 `2026-09-25`（内容已含 09-26 的第 24 轮）⇒ **本次已同步为 2026-09-27**。
+
+### 固化的三条判据
+
+1. **新增 P 编号前的三步**：① `grep -o "P[0-9]\+" TASK.md | sort -u -V | tail` 取真实最大号
+   （不靠记忆估算）；② 按现象**关键词** grep（不是按自己的猜测编号）；③ 命中既有编号则
+   **引用而非新建**，并在本轮记录里写明对照关系。
+2. **「告警」不等于「缺陷」**：`validate` 的 `warnings` 与 `errors` 是两个桶，
+   `warnings` 不影响退出码。判定时**先确认它进的是哪个桶**，再谈危害面。
+3. 🔴 **同一文件内的一致性是最好的缺陷探测器**：P58 之所以成立，正是因为 `validate.py`
+   里 TC-ID 检查已经为「全文计数误判」加过修正、AND 检查没做 —— **同类问题一处修了、另一处没修**，
+   就是缺陷的最强证据，比任何抽象论证都硬。
+
+### 经验条目
+
+| 编号 | 条目 |
+|---|---|
+| P58 | `experiences/FSTDD003-EXP-20260927-ANDLIMIT-1.md` |
 
