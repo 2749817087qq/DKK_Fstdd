@@ -59,7 +59,7 @@ ssh fstdd-hub 'echo OK; hostname'
 git clone fstdd-hub:/home/ubuntu/fstdd-git/stdd-repo.git
 ```
 
-已有本地仓库（如法定源 `D:/tools/FSTDD/stdd-repo`）：
+已有本地仓库（如法定源，本机 = `E:/FSTDD/stdd-repo`）：
 
 ```bash
 git remote add server fstdd-hub:/home/ubuntu/fstdd-git/stdd-repo.git
@@ -148,7 +148,7 @@ FSTDD_MIRROR_URL=/tmp/other.git ./tools/check_mirror.sh   # 巡检另一个目�
 | node_id | 说明 |
 |---|---|
 | `FSTDD001` … `FSTDD006` | 6 个 agent 的稳定标识 |
-| `FSTDD005` | 法定源所在开发机（D 盘工作区）上的 agent |
+| `FSTDD005` | 法定源所在开发机（本机工作区 `E:/FSTDD`）上的 agent |
 | `fstdd-hub-infra` | **基础设施节点**（服务器侧），用于投递镜像告警等运维通知；不是 agent |
 
 - node_id 是**协作层**标识，与控制面（8788）注册表一致

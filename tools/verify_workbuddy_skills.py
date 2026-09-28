@@ -4,8 +4,8 @@
 用途：升级 / 重装 / 手动覆盖 skill 文件之后必须运行。
 退出码：0 = 全部通过；1 = 存在 FAIL 项（此时禁止继续 DELIVER 相关操作）。
 
-用法：
-    "C:\\Python311\\python.exe" "D:/tools/FSTDD/stdd-repo/tools/verify_workbuddy_skills.py"
+用法（本机解释器与路径见 docs/WORKBUDDY_INSTALL_NOTES.md §1）：
+    "<managed default env python>" "<workspace>/stdd-repo/tools/verify_workbuddy_skills.py"
 """
 from pathlib import Path
 import os

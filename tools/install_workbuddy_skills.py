@@ -349,7 +349,7 @@ FSTDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
 
 - 静态资源与模板：`{SRC.as_posix()}`
 - CLI 入口：`{PY_CMD}`
-  - 依赖 PyYAML / Jinja2，本机使用 `C:\\Python311\\python.exe`（已具备）；换成其他解释器请先确认依赖
+  - 依赖 PyYAML / Jinja2，本机使用 `{PY}`（已具备）；换成其他解释器请先确认依赖
 - 已安装的阶段 skill：`{OUT.as_posix()}` 下的 `fstdd-understand/` `fstdd-spec/` `fstdd-build/` `fstdd-deliver/` `fstdd-upgrade/`
 
 {stamp_line(REPO_VERSION)}

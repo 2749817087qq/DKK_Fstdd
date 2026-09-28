@@ -87,13 +87,32 @@ class TestAResolutionOrder:
         i_outside = src.find('".workbuddy-ai" / "Fstdd" / "tools"')
         assert i_here != -1 and i_outside != -1 and i_here < i_outside
 
-    def test_a5_backup_check_tolerates_absent_backup(self):
-        """备份完整性必须容忍「无备份」——合规树不产生备份是合法状态。"""
+    def test_a5_verify_script_has_no_side_effects(self):
+        """校验脚本**不得对真实用户目录执行 --fix**（E 项改造后的不变式）。
+
+        历史：本用例原名 `test_a5_backup_check_tolerates_absent_backup`，
+        断言 `verify_skill_standards.py` 源码里含「属合法状态」字样 ——
+        属**源码字符串断言**，与被测行为无因果关系。E 项把 `--fix` 移出真实目录后
+        该字样自然消失，用例随即变红，而实际行为是**更安全了**。
+        故改为断言真正的不变式（可被 tc_004 的行为断言交叉验证）。
+        """
         src = (REPO / "tools/verify_skill_standards.py").read_text(encoding="utf-8")
-        assert "未找到任何 --fix 备份目录" not in src, (
-            "仍在无条件要求备份存在 —— 会在合规环境里恒定误报 FAIL"
+        # ① 不得存在不带 --dir 的裸 --fix 调用（那会改写真实用户目录）
+        assert '[PY, str(s), "--fix"]' not in src, (
+            "存在不带 --dir 的 --fix 调用 —— 会改写真实用户目录的第三方 skill"
         )
-        assert "属合法状态" in src, "缺少「无备份合法」的显式说明"
+        assert '"--dir", str(samples), "--fix"' in src, (
+            "缺少「临时样本树 + --dir」形式的 --fix 调用"
+        )
+        # ② 反副作用闸门必须在位（真实目录前后哈希快照）
+        assert "real_before" in src and "real_after" in src, (
+            "缺少真实目录前后哈希快照 —— 反副作用闸门失效"
+        )
+        # ③ 不再依赖 --fix 备份目录
+        assert "未找到任何 --fix 备份目录" not in src
+        assert "skill-metadata-" not in src, (
+            "仍在依赖 --fix 备份目录 —— 该依赖已随 E 项移除"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -183,11 +202,23 @@ class TestCContractAndDocs:
             "ALLOWED_REFS 应已清空；留着以「拉取源」为由的条目即白名单腐烂"
         )
 
-    def test_c2_doc_skill_dir_is_workbuddy(self):
-        """文档必须写对全局 skill 目录（内核实际加载 `~/.workbuddy/skills`）。"""
+    def test_c2_doc_skill_dir_is_instance_home(self):
+        """文档必须写对全局 skill 目录。
+
+        2026-09-26 纠正：09-16 依据「内核 bundle 里 `.workbuddy-ai` 出现 0 次」
+        得出「加载 `~/.workbuddy/skills`」，属**误判** —— bundle 里的
+        `getWorkbuddyConfigDir()` 是 `WORKBUDDY_CONFIG_DIR || ~/.workbuddy`，
+        而桌面应用启动时把该变量设为本实例 home（本机 = `~/.workbuddy-ai`）。
+
+        本条原为「断言旧错误结论」，等于**用测试守护 bug**：只要有人改回正确目录，
+        测试就报红。故改为断言该结论已移除、且已写明正确判据。
+        """
         doc = (REPO / "docs/WORKBUDDY_INSTALL_NOTES.md").read_text(encoding="utf-8")
-        assert ".workbuddy\\skills" in doc or "~/.workbuddy/skills" in doc
-        assert "装到 `.workbuddy-ai/skills` 等于白装" in doc
+        assert "~/.workbuddy-ai/skills" in doc, "文档未写明本实例实际加载目录"
+        assert "WORKBUDDY_CONFIG_DIR" in doc, "文档未写明目录解析判据"
+        assert "等于白装" not in doc, (
+            "旧的错误论断仍在 —— 它曾在代码/文档/测试/经验记录四处互相强化"
+        )
 
     def test_c3_doc_skill_count_and_policy(self):
         """文档的 skill 数量与经验策略必须与事实一致。"""
