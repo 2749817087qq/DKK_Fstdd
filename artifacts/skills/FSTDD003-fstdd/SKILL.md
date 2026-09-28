@@ -8,11 +8,11 @@ description: |
 stdd_version: "3.0.5"
 version: "3.0.5"
 license: MIT（上游 STDD leonai42/stdd，版权归杭州大道一以科技有限公司；
-  本文件为其在 WorkBuddy 平台的适配版本，含本地安全策略与路径适配）
+  本文件为其在 TRAE 平台的适配版本，含本地安全策略与路径适配）
 source: https://github.com/leonai42/stdd
 ---
 
-# FSTDD 总入口（WorkBuddy 全局安装）
+# FSTDD 总入口（TRAE 全局安装）
 
 ## 这是什么
 
@@ -26,12 +26,12 @@ FSTDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
 | P3 BUILD | `fstdd-build` | slices、TDD 实现、test-report.md | Gate 3 |
 | P4 DELIVER | `fstdd-deliver` | archive、合并 specs、git tag | 无 |
 
-## 本机安装位置
+## 本机安装位置（TRAE 版）
 
 - 静态资源与模板：`C:/Users/Administrator/.workbuddy-ai/FSTDD/upstream`
 - CLI 入口：`"C:\Users\Administrator\.workbuddy-ai\binaries\python\envs\default\Scripts\python.exe" "C:/Users/Administrator/.workbuddy-ai/FSTDD/upstream/bin/fstdd"`
-  - 依赖 PyYAML / Jinja2，本机使用 `C:\Python311\python.exe`（已具备）；换成其他解释器请先确认依赖
-- 已安装的阶段 skill：`C:/Users/Administrator/.workbuddy-ai/skills` 下的 `fstdd-understand/` `fstdd-spec/` `fstdd-build/` `fstdd-deliver/` `fstdd-upgrade/`
+  - 依赖 PyYAML / Jinja2；当前解释器已具备。若换用其他 Python，请先确认依赖齐全；请勿使用 Windows Store 的 python stub（`C:\Users\Administrator\AppData\Local\Microsoft\WindowsApps\python.exe`）
+- 已安装的阶段 skill：`C:/Users/Administrator/.trae-cn/builtin_skills/` 下的 `fstdd/` `fstdd-understand/` `fstdd-spec/` `fstdd-build/` `fstdd-deliver/` `fstdd-upgrade/`
 
 ## 首次使用（必须先初始化项目）
 
