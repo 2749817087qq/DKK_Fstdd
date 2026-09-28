@@ -22,11 +22,14 @@ SOFTWARE.
 
 ---
 
-本许可仅覆盖本仓库的原创内容（适配层脚本、安装文档、stdd-fin skill、NOTICE/README）。
+本许可仅覆盖本仓库的原创内容（适配层脚本、安装文档、fstdd-fin skill、NOTICE/README）；
+**不覆盖上游来源的内容** —— 包括 `upstream/` 内核（含本仓库对其所做的命名空间替换与内核改动）
+与仓库根由上游模板生成的 `.fstdd/` 骨架等。
 
-上游 STDD 项目（https://github.com/leonai42/stdd，V3.0.5）
+上游 STDD 项目（https://github.com/leonai42/stdd）
 版权归 杭州大道一以科技有限公司 所有，采用 MIT License，
-其许可全文见 UPSTREAM-LICENSE.txt，本仓库未对上游版权与许可声明作任何改动。
+其许可全文见 UPSTREAM-LICENSE.txt；本仓库未对上游自身的版权与许可声明作任何改动
+（`upstream/` 的命名空间替换与内核改动属衍生修改，依 MIT 允许，署名保持原样）。
 
 第三方 skill「fintech-engineer」未声明开源许可，本仓库不包含其任何原文内容，
 仅参考其领域分类视角并以原创形式重新组织，已在 NOTICE.md 中署名说明。

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     FSTDD for WorkBuddy —— 一键安装（Windows / PowerShell）
 
@@ -67,7 +67,10 @@ if ($verOk -ne "1") {
 # ---------- 2. 依赖检查 ----------
 Write-Step "[2/4] 依赖检查：PyYAML / Jinja2"
 $depsOk = $true
-try { & $Python -c "import yaml, jinja2" 2>$null } catch { $depsOk = $false }
+# 原生命令的非零退出**不会**触发 PowerShell 的 catch（实测 PS 5.1），
+# 故改为直接判定 $LASTEXITCODE —— 否则缺依赖时会误报「OK（已具备）」。
+& $Python -c "import yaml, jinja2" 2>$null
+if ($LASTEXITCODE -ne 0) { $depsOk = $false }
 if ($depsOk) {
     Write-Host "      OK（已具备）"
 } else {

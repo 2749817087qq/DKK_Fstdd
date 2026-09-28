@@ -4,11 +4,12 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Upstream](https://img.shields.io/badge/upstream-leonai42%2Fstdd%20v3.0.5-lightgrey.svg)](https://github.com/leonai42/stdd)
 
-> 上游 [leonai42/stdd](https://github.com/leonai42/stdd) V3.0.5（MIT）的衍生作品。
-> 本仓库**完整 vendor 了上游代码**（`upstream/`，704 个文件，含上游 `LICENSE` 原文）——
-> 克隆本仓库即可用，**无需另行获取上游源码**；本仓库只在其上叠加 WorkBuddy 适配层与金融扩展。
-> vendor 时做了命名空间适配：上游 STDD → FSTDD（目录 / 包 / CLI 入口 / 文档文件名），
-> 正文中「上游 STDD」的署名**原样保留**；本仓库不含任何无许可的第三方原文。
+> 上游 [leonai42/stdd](https://github.com/leonai42/stdd)（MIT）的衍生作品。
+> 本仓库把上游代码纳入 `upstream/` 作为**适配内核**（704 个已跟踪文件，含上游 `LICENSE` 原文）——
+> 克隆本仓库即可用，**无需另行获取上游源码**。
+> `upstream/` **不是逐字节冻结的上游快照**：除命名空间替换（上游 STDD → FSTDD，目录 / 包 / CLI 入口 / 文档文件名）外，
+> 本仓库亦按 change 流程直接维护其中的内核代码与版本条目；正文中「上游 STDD」的署名**原样保留**，
+> 本仓库不含任何无许可的第三方原文。
 > 完整版权与来源说明见 [`NOTICE.md`](./NOTICE.md)。
 
 ---
@@ -46,7 +47,7 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 
 | 内容 | 在哪 |
 |------|------|
-| 方法论、模板、CLI、`.fstdd/` 骨架 | `upstream/`（vendor 自上游，MIT 许可与版权原样保留） |
+| 方法论、模板、CLI、`.fstdd/` 骨架 | `upstream/`（源自上游的适配内核，MIT 许可与版权原样保留；含本仓库的内核改动） |
 | 适配层脚本、安装文档、`fstdd-fin` 源 | 本仓库 `tools/` `docs/` `skills/` |
 | 生成的 7 个 skill（`fstdd`、`fstdd-understand/spec/build/deliver/upgrade` + `fstdd-fin`） | **运行时生成物**，由安装脚本产生 |
 
@@ -75,7 +76,7 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 ├── docs/                            # 专题文档与节点交付报告（含 007-change-isolation）
 ├── skills/
 │   └── fstdd-fin/SKILL.md            # 金融系统版 FSTDD（原创重构）
-└── upstream/                        # 上游 STDD V3.0.5 代码（vendor，MIT）
+└── upstream/                        # 上游代码适配内核（源自上游，MIT；含本仓库内核改动）
     ├── bin/fstdd                     # CLI 入口
     ├── fstdd/cli/                    # 命令模块
     └── .fstdd/                       # 模板、配置、知识库骨架
@@ -94,12 +95,12 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
   python -c "import yaml, jinja2; print('依赖 OK')"
   ```
 
-- 已克隆本仓库（上游源码已 vendor 在 `upstream/` 下，**无需**单独获取）
+- 已克隆本仓库（上游源码已随 `upstream/` 内核提供，**无需**单独获取）
 
 ### 安装
 
 ```bash
-# 只需克隆本仓库 —— 上游代码已 vendor 在 upstream/ 下，不必单独获取
+# 只需克隆本仓库 —— 上游代码已随 upstream/ 内核提供，不必单独获取
 git clone https://github.com/2749817087qq/DKK_Fstdd.git
 cd DKK_Fstdd
 ```
@@ -152,7 +153,7 @@ FSTDD_PY=/path/to/python tools/install_workbuddy_skills.py
 进入你的项目根目录，初始化一次：
 
 ```bash
-python "C:/路径/stdd/bin/fstdd" init
+python "<本仓库路径>/upstream/bin/fstdd" init
 ```
 
 生成 `.fstdd/` 骨架、模板与项目状态文件。**未初始化的项目，流程无法完整执行。**

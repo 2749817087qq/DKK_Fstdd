@@ -1,7 +1,8 @@
 # 版权与来源声明
 
 本仓库是 **FSTDD（Spec+Test Driven Development）的 WorkBuddy 适配层与金融领域扩展**，
-属于上游项目的衍生作品。所有第三方权利均在此列明，未列明的内容均为本仓库原创。
+属于上游项目的衍生作品。所有第三方权利均在此列明；**凡源自上游的内容（含 `upstream/` 内核与
+仓库根由上游模板生成的 `.fstdd/` 骨架）均依上游 MIT 许可处理，不主张为本仓库原创**；其余未列明内容为本仓库原创。
 
 ---
 
@@ -19,14 +20,21 @@
 **义务履行**：上游 MIT 许可全文已随本仓库保留于 [`UPSTREAM-LICENSE.txt`](./UPSTREAM-LICENSE.txt)，
 原版权声明与许可声明未被移除或改动。
 
-**vendor 说明**：本仓库 `upstream/` 目录是上游 V3.0.5 代码的 **vendor 副本（704 个文件）**，
+**vendor 说明**：本仓库 `upstream/` 目录（704 个已跟踪文件）是**上游代码的适配内核**，
 随本仓库一并分发 —— 克隆本仓库即可使用，**无需另行获取上游源码**。
-为适配 WorkBuddy 的命名空间，vendor 时对**路径与文件名**做了命名替换 ——
+为适配 WorkBuddy 的命名空间，对**路径与文件名**做了命名替换 ——
 目录 `.stdd/` → `.fstdd/`、包 `stdd/` → `fstdd/`、入口 `bin/stdd` → `bin/fstdd`、文档 `STDD*.md` → `FSTDD*.md`（均为上游 STDD → FSTDD）；
 文件**正文中的「上游 STDD」等署名性表述保持原样**，未作改写 —— 依 MIT 要求，署名须忠于事实
 （判据见 [`tools/verify_rename.py`](./tools/verify_rename.py) 的 `ALLOWED_OLD_MENTIONS`）。
 
-未随 vendor 纳入的上游内容：`website/`（独立部署的站点）与 `.stdd/archive/`（历史变更归档）。
+> ⚠️ **`upstream/` 不是逐字节冻结的上游快照**：它同时是本仓库**持续维护、随版本发布**的内核，
+> 其中的文件由本仓库按 change 流程直接修改（如 CLI 内核代码、`upstream/CHANGELOG.md` 的版本条目）。
+> 这些修改属**本仓库的衍生改动**，不是上游的内容；上游自身的版权与许可声明（`upstream/LICENSE`）
+> **未被改动**。故上游版本号见 `upstream/pyproject.toml`（`3.0.5`），内核的实际发布版本
+> 以仓库根 [`CHANGELOG.md`](./CHANGELOG.md) 为准。
+
+未纳入版本控制（**不随本仓库分发**）的上游内容：`website/`（独立部署的站点，上游 `.gitignore`
+亦忽略之）与 `.stdd/archive/`（历史变更归档）。
 另需说明：`upstream/tools/` 与 `upstream/WORKBUDDY_INSTALL_NOTES.md` 为 **2026-09-14 首次安装时的
 本地脚手架留档**，非上游内容，与仓库根的现役版本（[`tools/`](./tools/)、
 [`docs/WORKBUDDY_INSTALL_NOTES.md`](./docs/WORKBUDDY_INSTALL_NOTES.md)）并存。
@@ -41,8 +49,10 @@
 4. 安全策略：默认禁用「经验自动上传社区」步骤（该步骤会向外部仓库外发项目数据），
    并加入哨兵标记与校验机制，防止升级时被静默抹除。
 
-上述改动**以上游代码（`upstream/`）为基准叠加**，改动文件均位于 [`tools/`](./tools/) 与
-[`docs/`](./docs/)，**不在上游仓库中**（上游 vendor 副本见 `upstream/`）。
+上述四项适配**以上游代码（`upstream/`）为基准叠加**：其**适配实现**位于 [`tools/`](./tools/) 与
+[`docs/`](./docs/)（由安装脚本施加，不落地为 `upstream/` 内的文件改动）。
+但 `upstream/` 内核本身**另经本仓库修改**：命名空间替换（见上）与按 change 流程开发的内核改动
+（如 `--isolate`、`upstream/CHANGELOG.md` 版本条目）—— 完整清单见 `git log -- upstream/`。
 
 ---
 
