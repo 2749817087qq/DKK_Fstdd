@@ -1,8 +1,8 @@
 ---
 name: fstdd-experience-archive
-description: "把 FSTDD 使用过程中发现的问题 / 新建或修改的 skill 归档到 D:\\FSTDD003（分布式任务根，task_id=FSTDD003）。当用户说「FSTDD 的问题记得保存」「归档到 FSTDD003」「经验回传」「FSTDD 报错要记录」，或你在用 fstdd 跑 UNDERSTAND/SPEC/BUILD/DELIVER 时踩到坑（CLI 报错、生成物对不上、change 落错目录、Gate 状态异常、ci/diff 输出与真值不符）时使用。含 FSTDD 本机定位、EXP 条目格式、目录命名、索引与 TASK.md 更新规则，以及 P1–P53 已知缺陷速查（含 Phase 4 归档必查四项、变异测试盲区、假依赖掩盖真路径、SKIP≠PASS、TC-ID 字面串口径、DELIVER 阶段「校验器查错 skills 根假 FAIL / structure 恒不可用 / canon verify 顺序自相矛盾」、`canon generate` 的 `--dry-run` 不 dry 与 Human View 静默丢 constraints/non_goals、以及 Phase 1 收口必查的「`complexity_score`/`mode`/`score_confidence` 三字段无 CLI 写入端 ⇒ thorough 静默降级 + 与 `long_range.mode` 同名碰撞」）。"
+description: "把 FSTDD 使用过程中发现的问题 / 新建或修改的 skill 归档到 D:\\FSTDD003（分布式任务根，task_id=FSTDD003）。当用户说「FSTDD 的问题记得保存」「归档到 FSTDD003」「经验回传」「FSTDD 报错要记录」，或你在用 fstdd 跑 UNDERSTAND/SPEC/BUILD/DELIVER 时踩到坑（CLI 报错、生成物对不上、change 落错目录、Gate 状态异常、ci/diff 输出与真值不符）时使用。含 FSTDD 本机定位、EXP 条目格式、目录命名、索引与 TASK.md 更新规则，以及 P1–P57 已知缺陷速查（含 Phase 4 归档必查四项、变异测试盲区、假依赖掩盖真路径、SKIP≠PASS、TC-ID 字面串口径、DELIVER 阶段「校验器查错 skills 根假 FAIL / structure 恒不可用 / canon verify 顺序自相矛盾」、`canon generate` 的 `--dry-run` 不 dry 与 Human View 静默丢 constraints/non_goals、以及 Phase 1 收口必查的「`complexity_score`/`mode`/`score_confidence` 三字段无 CLI 写入端 ⇒ thorough 静默降级 + 与 `long_range.mode` 同名碰撞」）。"
 agent_created: true
-version: 1.6.0
+version: 1.7.0
 license: unknown
 ---
 
@@ -158,7 +158,12 @@ python tools/share_experience.py --export             # 只导出不回传
 
 ---
 
-## 五、已知缺陷速查（P1–P53，别重复踩）
+## 五、已知缺陷速查（P1–P57，别重复踩）
+
+⚠ **本表编号与 `TASK.md` 在 P15–P19 段不一致**：`TASK.md` 的 P15/P17/P18 分别是
+「成功标准分母错配 / Phase 4 路径基准三套并存 / 长程模式 RED 静默跳过」，与本表的
+P15/P17/P18 不是同一件事。查编号前先确认查的是哪一份。本表是**速查口径**，
+`TASK.md` 顶层「遗留项」是**权威编号**（截至 2026-09-26 为 P12–P57）。
 
 | 编号 | 问题 | 严重度 |
 |---|---|---|
@@ -177,11 +182,13 @@ python tools/share_experience.py --export             # 只导出不回传
 | **P16** | **SSH 私钥位置**：节点服务器私钥恒在 **D 盘根 `/d/id_ed25519`**（ed25519），**不是** `$USERPROFILE/.ssh/id_ed25519`；scp/ssh 用 `-i /d/id_ed25519 -o StrictHostKeyChecking=no`，Host `ubuntu@43.134.236.80`。误用 `.ssh/` 那把会 `Permission denied (publickey)`（假阻塞） | 高 |
 | **P17** | **服务端不去重**：同 `experience_id` 重复 POST 会累加 `received` 计数。本地须用 `.fstdd/_fstdd003_share_log.json` 记录已提交 ID（`tools/fstdd003_daily_share.py` 据此增量发），否则每日重发污染计数 | 中 |
 | **P18** | **回执闭环**：K 下发的 `FSTDD00X收-<主题>.md` 任务，完成后写 `FSTDD00X复-<主题>.md` 经 scp 回 `ubuntu@43.134.236.80:/home/ubuntu/fstdd-notices/FSTDD00X/`（仅本节点目录，禁碰他人文件夹）。回执四要素：标题/收到时间/执行结果/未完成项（见 00-NOTICE.md 第四节） | 中 |
-| **P19** | **收/复 对账缺失导致回执漏发（2026-09-20 真实事故）**：仅"拉取本轮新任务→执行"的线性流程，不会核对"服务器所有 `收-*` 是否都有 `复-*`"。`FSTDD003收-凭证下发-补发.md`（priority: 最高，10:12 到）因落在上一轮 hourly 拉取（09:39）之后、下一轮（10:39）之前，漏发回执，靠人工发现。平台自动化调度器最小粒度为 **HOURLY（无 15 分钟 / MINUTELY 选项）** | 高 |
+| **事故·未编 P 号** | **收/复 对账缺失导致回执漏发（2026-09-20 真实事故）**：仅"拉取本轮新任务→执行"的线性流程，不会核对"服务器所有 `收-*` 是否都有 `复-*`"。`FSTDD003收-凭证下发-补发.md`（priority: 最高，10:12 到）因落在上一轮 hourly 拉取（09:39）之后、下一轮（10:39）之前，漏发回执，靠人工发现。平台自动化调度器最小粒度为 **HOURLY（无 15 分钟 / MINUTELY 选项）** | 高 |
 | **P19** | **`archive` 合并 master specs 时 SC 编号跨变更静默重复**：冲突检测只比 `### Requirement:` 标题，**漏检 SC-ID 撞号** → `specs/<cap>/spec.md` 里出现两组 `SC-001..N`，归档输出仍显示「Specs 已合并到 specs/」无警告。危害：SC-ID 失去全局唯一性，而 test-plan / `agent_spec.yaml` 正是靠它做映射 | 中 |
 | **P20** | **`archive` 的「Specs 已合并到 specs/」只合并 Human View**（`<ws>/.fstdd/specs/<cap>/spec.md`），**项目级 canonical 双轨未同步** —— `canonical/specs/{code,agent}/`、`canonical/proposals/`、`.canon-index.yaml` 全都不动，必须手工补三步。文案诚实但极易被误读成「已全部合并」 | 中 |
 | **P21**（流程侧） | **两类形同虚设的断言**：① 裸 `in file` 关键词断言会命中**注释/文档**而非代码；② 服务层常量被 worker 显式覆盖后，只测路由层 ⇒ 该字段**不可观测**，注入变异也不变红。17 次变异注入才抓出 2 条假绿 | 高 |
 | **P22**（流程侧） | **两类「假东西掩盖真路径」**：① 逐用例手塞假依赖（`session=object()`）⇒ 被测代码「不注入时自建依赖」那段**覆盖率恒为 0**，真机第一次真跑每篇抛 `'NoneType' object has no attribute 'get'`；② 造的假数据被**被测代码自己的归一化函数**改写（`link_key` 冒号截断 + 丢非 ASCII ⇒ 5 篇去重成 1 篇） | 高 |
+| **P23**（流程侧） | **真机 E2E 不可替代，且与变异测试互补**：变异只能改「被执行到的代码」，测不到「根本没执行」和「只在真数据下才触发」的两类洞（实测 95 单测 + 17 变异全绿仍漏 3 个 bug）。另：真数据才暴露的两类口径偏差 —— 抽样取前 N 把全量估成 63 GB（索引按时间倒序，前排全是带图大篇；改等距抽样 → 2.2 GB）、「失败 1,264 篇」不带原因（两份索引根本不写 `dir`） | 高 |
+| **P24**（流程侧） | **「先写实现后补测试」的变更事后补救 = 切片级 revert 重放**：摘掉该切片引入的实现 → 只跑它的 TC → 必须变红 → 按字节还原。实测 36/36 变红，并抓出三类变异/E2E 都抓不到的洞：① 兜底分支让断言恒真（`X if cond else <整个文件>`）；② `in src` 关键词断言（改名即失效，P21 再现）；③ 切片↔TC 映射是事后追认的（实测 3 条归错）。⚠ 补丁坑：改名目标串**不能保留原串作为子串**，否则补丁等于没打、重放给出假的绿 | 高 |
 | **P45** | **`ci check-failures` 三项检查恒 SKIP**（检查器与脚手架/模板约定漂移）：`(b)` 找 `proposal.md` 的 `- capability:` 行而模板产出 `### New Capabilities` 粗体符号；`(j)` 找 `coverage.json` 而无人产出它；`(l)` 找**项目级** `.fstdd/canonical/proposals/<change>.yaml` 而 canon 放 **change 级** ⇒ 建库→交付之间恒 SKIP（先有鸡还是先有蛋）。🔴 **SKIP 与 PASS 在汇总里同权** ⇒ 可长期报「0 错误」而三类失败模式从未被检查 | **高** |
 | **P46** | **`ci` 的 `(d)` 把「TC-ID 唯一性」实现成「字符串出现次数 == 1」**（`ci.py:311-325`）⇒ test-plan 里正常的交叉引用（矩阵 / 建议顺序）被报成重复，实测 19 个全判 FAIL。规避：**交叉引用一律用案例号**，TC-ID 只在 `**ID**` 行写一次 | 中 |
 | **P47** | **`stdd diff` 两条解析口径**：① TC 引用按**连字符**找，而 Python 标识符不能含连字符（测试函数名只能下划线）⇒ 覆盖率**假 0%**；② 案例标题正则 `[\d.]+` **不收字母** ⇒ `案例 A.1` 全部解析不到、直接退出。另「测试函数」列归属算法会被类 docstring 的分组注释带偏。⚠ 实测 `ci` 与 `diff` 口径**一致**（都做字面子串搜索）⇒ 一次格式错配让两条独立质量信号**同时失效** | 中 |
@@ -191,8 +198,10 @@ python tools/share_experience.py --export             # 只导出不回传
 | **P51** | **`canon verify <change>` 归档后必失败**：`canon.py` 里 `generate` 用 `_get_canonical_dir()`（change 级→项目级兜底），`verify` 直接拼 change 级路径、找不到就 `Error:` + exit 1 ⇒ 白皮书给的 `archive → 合并 canon → canon verify → structure merge` 里，**`canon verify` 在自己的顺序里不可执行**。规避：**只在归档前跑**（2/2 通过） | 中 |
 | **P52** | **`stdd canon generate` 两处，丢的正是用户唯一审阅面**：① **`--dry-run` 不 dry** —— 真写了 `proposal.md` 且打印 `Generated …`（不是 `[dry-run] 将…`）；与 **P44** 同型（`--dry-run` 是父 parser 全局开关、handler 不读）。⚠ 对照 `stdd new --dry-run` **真的 dry** ⇒ 失效是**逐命令**的。② **Human View 静默丢三节** —— `canon.py:317` 注释写 "from template or direct mapping"，但函数是**硬编码拼字符串**，只覆盖 title/Why.problem/what_changes/capabilities/success_criteria ⇒ **`why.motivation` / `constraints` / `non_goals` 全丢**（实测丢 13 条），而 `templates/human-view/proposal-brief.md` 是**死代码**。🔴 **为什么一直没被发现**：`canon verify` 的 `DC-FIELD` 验的是**反方向**（「MD 引用的字段在 YAML 里存在」）⇒ **两个方向都绿灯，内容已少一半** | **高** |
 | **P53** | **`complexity_score` / `mode` / `score_confidence` 三个字段没有任何 CLI 写入端**：`new.py:59-62` 硬编码 `mode: "standard"` + 两个 `None`（注释写 `# set by Phase 1 Step 3.5`，**从未实现**），全 CLI `grep "complexity_score"` 只有 `new.py:61`/`batch.py:567` **都在写 `None`**，`grep -n "mode" gate.py` → **0 命中**（schema 声明 `mode.writers: [new, gate]` ⇒ **声明的写入端不存在**）；`fstdd-understand/SKILL.md:104` 只说「写入 `.fstdd.yaml`」**不给命令** ⇒ 只走 CLI 的执行者**不可能合规**。实测 Phase 1 走完 + Gate 1 已锁，仍 `null / null / standard` ⇒ **12 分 → thorough 静默丢失**；而 `fstdd-build/SKILL.md:95/:180` 真读 `mode` 决定质量门强度 ⇒ **大型变更按标准档执行**，无报错、`validate` 照样「通过」（`required: false` 永远拦不到）。🔴 **最阴一层**：`status.py:29-30` 读**同名不同义**的 `long_range.mode`（交互模式）而非顶层 `mode`（复杂度档位）⇒ 没有 CLI 界面能读回它，排查时极易改**错的那个键**。规避：手工补写三键，**且先读代码确认 `phase.py`/`gate.py` 是 `safe_load→原地改→dump`**（手改键才不会被抹掉） | **高** |
-| **P24**（流程侧） | **「先写实现后补测试」的变更事后补救 = 切片级 revert 重放**：摘掉该切片引入的实现 → 只跑它的 TC → 必须变红 → 按字节还原。实测 36/36 变红，并抓出三类变异/E2E 都抓不到的洞：① 兜底分支让断言恒真（`X if cond else <整个文件>`）；② `in src` 关键词断言（改名即失效，P21 再现）；③ 切片↔TC 映射是事后追认的（实测 3 条归错）。⚠ 补丁坑：改名目标串**不能保留原串作为子串**，否则补丁等于没打、重放给出假的绿 | 高 |
-| **P23**（流程侧） | **真机 E2E 不可替代，且与变异测试互补**：变异只能改「被执行到的代码」，测不到「根本没执行」和「只在真数据下才触发」的两类洞（实测 95 单测 + 17 变异全绿仍漏 3 个 bug）。另：真数据才暴露的两类口径偏差 —— 抽样取前 N 把全量估成 63 GB（索引按时间倒序，前排全是带图大篇；改等距抽样 → 2.2 GB）、「失败 1,264 篇」不带原因（两份索引根本不写 `dir`） | 高 |
+| **P54** | **`canon generate` 第二族（承 P52）三处**：① **`--type {proposal,design,spec}` 被静默忽略** —— `canon.py:243` 把 `args.type` 传进 `_generate_one()`，函数体 `output_file = change_dir / "proposal.md"` **硬编码**，`grep gen_type` 只有签名、函数体零引用，实测 `--type spec` 与 `--type proposal` 输出**逐字相同**；② **`--all` 复活已归档 change** —— `--all` 分支扫**项目级** `.fstdd/canonical/` 且输出目录取自 YAML 的 `meta.change_id`，实测凭空多出早已归档的 change 目录 ⇒ 死 change 被 `status`/`validate` 当**活跃变更**；③ **双轨漂移** —— 项目级副本只在归档那一刻写一次，BUILD 期手工补注不回灌，且 `<change>` 读 change 级 / `--all` 读项目级 ⇒ **同一命令两种用法产出不同内容**。🔴 **关键事实纠正**：`specs/<cap>/spec.md` **不是** `canon generate` 产的，而是 `gate approve --gate 2` 由 `gate.py::_auto_generate_human_views` 自动生成（唯一正确路径）⇒ Phase 2 结束**根本不需要手跑 `canon generate`**，而 `fstdd-spec/SKILL.md:265` 把它写成兜底手段 = 一次踩满三个坑 | 高 |
+| **P55** | **`phase advance` 把已过门阶段的 `status` 从 `completed` 降回 `in_progress`（已确认的门被无声撤销）**：`phase.py` advance 分支 `phases.setdefault(nxt, {})["status"] = "in_progress"` —— `setdefault` 只保键**不保值**，对 `nxt` 零前置检查，却对 `current` 有 gate 检查 ⇒ **只防「没确认就想走」，不防「已确认的被退回」**；`target_phase` 位置参数**被完全忽略**（与 P52/P54 同族：参数被解析、被传递、没人读）。🔴 **危害面是门禁字段不是展示字段**：`guard.py:415` / `batch.py:539`（批级 🚫）/ `batch.py:351`（门 ✅→○）/ `archive.py:29`（**拒绝归档**）/ `status.py`（人看的唯一界面）。🔴 **最阴一层**：`confirmed_at` / `confirmed_by` / `confirmed_evidence` **三字段原样保留**，只 `status` 一个词变 ⇒ 只 grep `confirmed` 会得出「门还在」的结论。**正确顺序只能是 advance → approve**（approve 只写 `status`、advance 只写 `current_phase`，反过来就丢状态） | 高 |
+| **P56** | **`fstdd new <name>` 自动补日期前缀** ⇒ 按仓库惯例传 `new 2026-09-26-<slug>` 会建出 **`2026-09-26-2026-09-26-<slug>`**（双前缀），**exit=0、无警告**，`validate`/`canon verify` 照样通过（只看结构不看名字）⇒ **静默**。正确用法：**`new <纯 slug>`**。详见 `experiences/FSTDD003-EXP-20260926-NEWNAME-1.md` | 中 |
+| **P57** | **变异自检里的「假红」**：变异夹具用 `env={"PYTHONPATH": ""}` **替换**了整个操作系统环境（`subprocess` 的 `env=` 是**替换不是叠加**）⇒ Windows 上缺 `PATH`/`SystemRoot` ⇒ pytest **启动即崩**（`OSError: [WinError 10106]` winsock 初始化失败）⇒ `rc=1` **看起来与「守卫咬到了」一模一样**，实际与被测代码无关。🔴 **假红比假绿更隐蔽**：它**符合预期**，几乎没人会去查「为什么红了」 ⇒ 纪律：**「红了」不是证据，「红的理由」才是** —— 变异自检必须打印并看一眼失败的那条断言/异常。详见 `experiences/FSTDD003-EXP-20260926-FAKERED-1.md` | 高 |
 
 ### P19 速记（归档后必查）
 
@@ -388,6 +397,25 @@ for k in ('why','constraints','non_goals'):
   ⇒ **定式**：approve 前先 `read_text` 备份三节 → approve → 断言三节已丢 → **立刻补回**。
   ⚠ 但**改 MD 正文不会让 `DC-HASH` 变红**（它比的是「YAML 当前 hash vs MD 记录的 `source_hash`」）
   ⇒ 补回后 `canon verify` 仍 2/2。**上一个 change 之所以 1/2，是因为 YAML 改了而 MD 没重生成。**
+
+### P54–P57 速记（Phase 2 结束与变异自检必查）
+
+- 🔴 **Phase 2 结束时不要手跑 `canon generate`**（P54④）—— `specs/<cap>/spec.md` 是
+  **`gate approve --gate 2`** 由 `gate.py::_auto_generate_human_views` 自动生成的
+  （读对目录、逐条告警损坏 YAML、跳过 `TODO` scaffold），它是**唯一正确的路径**。
+  而 `fstdd-spec/SKILL.md:265` 把 `canon generate --all` 写成「兜底手段」，
+  恰好一次踩满 P54 的 ①`--type` 被忽略 ②`--all` 复活已归档 change ③双轨漂移三个坑。
+  ⇒ 归档 `canon generate` 意外多出来的 change 目录时，**先查 `os.lstat().st_reparse_tag`
+  确认不是目录联接**才敢用普通 `mv`（联接会被递归带进 `_quarantine/`）。
+- 🔴 **`phase advance` 只能在 `gate approve` 之前跑**（P55）。`approve` 只写
+  `phases.<x>.status`、`advance` 只写 `current_phase`，两者各管一半；反过来跑
+  `advance` 会把 `completed` 降回 `in_progress`。修完要**同时核对两个字段都对**
+  （只修一个会留下「阶段对了但门显示没过」或反之）。
+  验门是否真还在：别只 grep `confirmed`（那三字段原样保留），**要看 `status` 本身**。
+- 🔴 **`fstdd new <纯 slug>`**，不要自己带日期前缀（P56）。双前缀 `validate` 不拦，静默。
+- 🔴 **「红了」不是证据，「红的理由」才是**（P57）。变异自检必须打印并看一眼
+  失败的那条断言/异常；夹具**绝不用 `env={...}` 整体替换**环境 —— 要用
+  `env={**os.environ, "PYTHONPATH": ...}`。假红与假绿同源：**都符合你的期待**。
 
 ### P15 速记（Windows 本机跑 fstdd CLI 必踩）
 - 隔离 Python 二进制 `C:/Users/Administrator/.workbuddy-ai/binaries/python/versions/3.13.12/python.exe` 缺 `yaml`；`pyyaml` 装在 venv `C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe`。

@@ -164,6 +164,26 @@ assert req_c == req_h
 ```
 
 > 坑：Human View 里若在「增量 Scenario」表格中重复列出 SC，正则计数会偏大 —— **比对集合，不要比计数**。
+>
+> ⛔ **坑（实测）：先确认 Human View 的 REQ 标题里到底有没有 REQ 编号。** 上式正则只匹配
+> `### REQ-001 · ...` 这种标题。若本项目的 Human View 生成器写的是
+> `### Requirement: <描述文本>`（**标题里没有编号**），`req_h` 会是**空集**，
+> `assert req_c == req_h` 就会**假 FAIL**（canonical 5 条 vs human 0 条），而双轨其实完全一致。
+> 此时改用**数量 + 描述逐条相等**：
+>
+> ```python
+> # Human View 标题无编号时的等价校验：按顺序逐条比对描述文本
+> h_reqs = re.findall(r"^### Requirement:\s*(.+)$", hv_text, re.M)
+> assert len(h_reqs) == len(canon_reqs), (len(h_reqs), len(canon_reqs))
+> for (rid, desc), hline in zip(canon_reqs, h_reqs):
+>     assert desc.strip() == hline.strip(), (rid, desc, hline)
+> # SC 用编号，仍然比集合：
+> h_sc = set(re.findall(r"^#### Scenario:\s*(SC-\d+)", hv_text, re.M))
+> c_sc = {s["id"] for r in canon_reqs for s in r["scenarios"]}
+> assert c_sc == h_sc
+> ```
+>
+> 先 `head -20` 看一眼 Human View 的标题长什么样，再决定用哪种校验 —— 不要照抄上式就跑。
 
 **MODIFIED capability**（`specs/<capability>/` 已存在）→ 合并新增 REQ，并在文件里标注
 「变更日期 + change 名称」，不要覆盖。
@@ -229,6 +249,39 @@ git tag -a <change>-<YYYYMMDD> -m "<变更摘要 + 归档路径>"
 4. **社区知识图谱可能 404 或连接被拒** → 按降级策略转「仅本地」，不阻断 DELIVER，把错误记进 `meta.community_error`。
 5. **脚本落点**：`_etl_tmp/` 之类的 scratch 目录通常被 gitignore，脚本放那里会丢 →
    要么放进技能目录，要么提交进仓库。
+6. **`stdd_canon_merge.py` 有三处硬编码前提，任一不符就废**（实测，工作台项目 2026-09-27）：
+   ① `BASE = os.path.join(ROOT, ".stdd")` 写死 `.stdd`（项目可能是 `.fstdd`）；
+   ② 读的是 **change 根下的扁平 `spec.yaml`** —— 若项目 Phase 2 直接产出的是
+      `canonical/specs/code/*.yaml` + `specs/<capability>/spec.md`，change 根下没有 `spec.yaml`，
+      脚本直接 `[FATAL] 找不到 spec.yaml`；
+   ③ 它把 `.canon-index.yaml` 写成 **`entries:` 列表** schema，而不少项目用的是
+      `proposals:` / `specs.agent:` / `specs.code:` **三个 map**（键分别 = change_id / change_id / capability 名）。
+      已有索引的项目**跑一次就会把索引整个重写成不兼容结构**。
+   → 结论：先比对目标项目既有 `.canon-index.yaml` 的 schema 与 change 目录结构，
+      不符时**放弃脚本，改为「整棵复制 + 文本手工 upsert」**（能保留原注释与键序）。
+7. **MODIFIED capability 的 Human View 不要覆盖重写**：项目惯例通常是**新块前置**，
+   用 `<!-- 合并自 <change> -->` 分隔本次增量与旧内容（实测样例：本次 change 的 scenario 块
+   插在文件顶部，标记行在其后、旧 `# Spec:` 标题之前）。纯新增 capability 才是整文件新建。
+8. **Gate 3 通道别自作主张**：本技能 Step 1 说 `file_token` 是「无 CLI 项目唯一通道」，
+   但不少项目全程只用 **`dialog` 通道**（确认只记在 `.stdd.yaml` / `.fstdd.yaml` 的
+   `phases.build.confirmed_*` 四键里，**不建** `GATE3_APPROVED` 文件）。
+   → 动手前先 `find .stdd/ -name 'GATE*'` 并看既有归档件里有没有 gate 文件：
+      **全仓都没有 → 沿用项目惯例，不要为了「符合技能」凭空造一个新通道文件。**
+9. **归档件状态字段的两种写法，都要接受**：有的项目归档后 `phases.deliver.status` 仍停在
+   `in_progress`（无 CLI 无法推进，属遗留），有的写成 `completed` 并加 `completed_at`；
+   有的项目归档件**没有** `archived_at` / `archive_path`（本技能 Step 2 建议加，加了无害 ——
+   前提是先 `grep -rn archived_at` 确认没有脚本在读该 key，加了不会破坏别的）。
+10. **`.stdd/changes/` 通常不入库、`.stdd/archive/` 入库**：`changes/` 是临时工作区（
+    未跟踪但也没被 gitignore），归档那一刻才成为版本控制对象。
+    → Step 5 的 `git add` 里写 `.stdd/archive/` 是对的；但**别顺手 `git add .stdd/changes/`**
+       把别的活跃 change 一起带上。提交前用 `git add -n <paths>` 干跑一遍看真实入库清单。
+11. **tag 命名随项目走**：先看 `git tag --list`。有的项目用 `<change>-<YYYYMMDD>`，
+    有的用 `change/<YYYY-MM-DD>-<change>`（带斜杠，与 change_id 完全同形）。照抄既有格式。
+12. **知识图谱「数据不足」的判据是硬约束**：项目自有 `.stdd/skills/spec.md` 常写着
+    「`knowledge-graph.yaml` 不存在或数据不足 → 跳过此步骤，不报错」。
+    `nodes: []` 的空壳就是「数据不足」。此时**不要**拿本技能的 `stdd_knowledge_merge.py` 去填充它 ——
+    该脚本产出 `meta` / `stats` / `nodes` 三键的 schema，会**丢掉项目原有的 `graph_version` /
+    `last_merged` / `edges` 顶层键**。宁可跳过并在提交信息里写明理由。
 
 ---
 

@@ -63,6 +63,13 @@
 - **git**：显式路径提交 7 文件（`.gitignore` + `MEMORY.md` + `2026-09-23.md` + `2026-09-25.md` + 3 automation memory）。remote 数=0 未 push。`.gitignore` 新增忽略凭证文件 `.fstdd/_fstdd003_quanthub.json`（安全改进，已入库）。未提交 `_scratch/`(25M)、内嵌 git repo、`TASK.md`、`docs/*.md`、`.fstdd/_notices/**`。
 - **偏离任务书**：未用 `git add -A`（同前 6 轮）。
 
+### 2026-09-28 00:10 运行（收纳对象 2026-09-27）— 第 9 轮
+- **skill**：**刷新 2 个**（mtime 判据 + `diff -rq` 字节级验证均通过）—— `skills-archive/FSTDD003-fstdd-experience-archive/SKILL.md`（源 46002B @ 09-27 18:20，副本 40573B @ 09-27 00:14 已 18h 未刷新、+5429B）、`artifacts/skills/FSTDD003-stdd-file-convention/SKILL.md`（源 15655B @ 09-27 15:44，副本 11061B @ 09-21 已 6 天未刷新、+4594B）。刷新后两处 `diff -rq` 均 IDENTICAL。跳过其余 20 个（源 mtime 均 ≤ 09-26）。
+- **经验文档**：**新增 1 条** `FSTDD003-EXP-20260927-SCPLEAK-1.md`（P59）—— 主 `scp -r` 快照窗口内新到/未拷文件被静默漏拷，09-27 单日 3 次触发（14:20/20:04 两次是**新任务卡**落在 scp 4–6min 传输窗口内、21:17 一次是**跨轮累积的 2 份历史老文件**——09-18 通道演练 + 09-24 凭证下发）；根因=`scp -r` 快照式传输（先列目录再传输、无增量语义）+ 对账兜底在**下一轮** HOURLY 才触发。与 RECON-1（缺对账）/ RECUR-1（对账看文件名而非义务）**机制不同**、独立编号；修法首选=主 `scp` 结束后追加 `ssh ls` 差集比对 + 单文件循环补拉（本节点侧自解，无需 K 介入）。判据：`grep -l "2026-09-27\|20260927" experiences/*.md` 仅命中 ANDLIMIT-1 + README（ANDLIMIT-1 是工作台 change 自建的 FSTDD CLI 缺陷，与本节点 SCP 边缘场景不重叠）。README 索引同步（表头说明行 + 表末行）。
+- **git**：显式路径提交 5 文件（2 个 skill 副本 + memory/2026-09-27.md + automation memory + EXP 文档不进 git 因 `experiences/` 被 gitignore）。**未用 `git add -A`**（会连带 `_scratch/` 25M、`.fstdd/_notices/**` 数十项守护产物、`artifacts/hardening-src/_backup_stdd_20260916/stdd-repo` 内嵌 git repo、`TASK.md`、`docs/*.md`）。remote 数=0 未 push。
+- **偏离任务书**：未用 `git add -A`（同前 8 轮）。
+- 详见 `D:\FSTDD003\.workbuddy-ai\memory\2026-09-27.md` 末尾「2026-09-28 00:10 每日收纳」段。
+
 ## 下次运行须知（固化判据）
 1. **skill 判据 = mtime 比较 + `diff -rq` 兜底**，不是「目录存在即跳过」：
    `if [ -d "$DST" ] && [ "$SRC" -nt "$DST" ]; then` **`diff -rq "$SRC" "$DST"` 有实际差异才** `cp -r "$SRC/." "$DST/"; fi`
