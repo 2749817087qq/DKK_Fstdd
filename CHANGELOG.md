@@ -106,6 +106,22 @@
   **帮助**：Windows 用户在 Git Bash 下按 README §4 执行 `./install.sh` 不再必然失败 ——
   修复后实跑 exit 0，定位到 `…/envs/default/Scripts/python.exe`（3.13.14），
   依赖检查 OK、7 个 skill 全生成、`verify_workbuddy_skills.py` PASS。
+- **内核元数据 `upstream/pyproject.toml` 修正三处改名残留 + 一处依赖漏列**：
+  `8693d82 feat(S2): CLI 与 Python 包改名为 fstdd` 把包目录 / CLI 入口 / 数据目录都改成了
+  `fstdd`，**唯独漏改 `pyproject.toml`**（`git log` 可证：该文件最后一次改动仍是引入提交
+  `3aa7d25`，从未被改名提交触及）。于是它同时声明了四处指向不存在物的**改名前旧名**：
+  分发包名是旧名、`readme` 指向的 Markdown 文件名不存在（现役名为 `FSTDD.md`）、CLI 入口
+  指向不存在的模块（现役为 `fstdd.cli`）、`packages.find include` 模式与 `package-data` 的
+  包名键都匹配不到任何真实包。实测：`upstream/` 下只有 `fstdd/` 包、
+  只有 `bin/fstdd`；全仓测试一律 `from fstdd.cli… import`。**对外分发时 `pip install ./upstream`
+  会因「readme 缺失 / 找不到包 / 入口指向不存在的模块」而断裂。**
+  **另**补声明 `requests>=2.28` —— `fstdd/cli/commands/{experience,curate,knowledge}.py`
+  均 `import requests`，且 `init` 会拉入 `experience`；macOS 干净 venv 全新安装时 123 个用例
+  因此连带失败（占首跑失败的 92.5%，取证见 [docs/006-macos-compat-report.md](./docs/006-macos-compat-report.md) §4.1）。
+  `authors` 保留上游署名不动（依 MIT 要求，署名须忠于事实）。
+  **帮助**：分发出的内核**自洽可装** —— 包名 / 入口 / readme / 依赖声明与真实结构一致，
+  不再是「改名只改了一半」的半成品。回归锚点：
+  `upstream/tests/test_install_source.py::TestEPackagingMetadata`（5 项）。
 
 ### 规范 / 路径口径
 - **退役被取代的 canonical spec `d-drive-home`**：该 spec 来自变更 `2026-09-17-migrate-to-d-drive`，

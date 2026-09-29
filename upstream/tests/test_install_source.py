@@ -258,3 +258,68 @@ class TestDChangeHygiene:
         assert "_change_dir()" in src
         assert '.fstdd" / "archive"' in src or '.fstdd/archive' in src
         assert 'CHANGE_DIR = REPO' not in src, "不应再硬编码单一 change 路径"
+
+
+# ---------------------------------------------------------------------------
+# E. 分发元数据自洽性（pyproject 与真实包结构一致）
+# ---------------------------------------------------------------------------
+
+class TestEPackagingMetadata:
+    """`upstream/pyproject.toml` 必须与改名后的真实包结构一致。
+
+    背景：`8693d82 feat(S2): CLI 与 Python 包改名为 fstdd` 改了目录 / 包 / 入口，
+    **漏改 `pyproject.toml`** —— 它仍声明 `stdd` 包、`stdd.cli:main` 入口与不存在的
+    `STDD.md`，且未声明代码实际使用的 `requests`。对外分发时 `pip install .`
+    会因「找不到包 / 入口指向不存在的模块 / readme 缺失」而断裂。
+    """
+
+    @staticmethod
+    def _load():
+        try:
+            import tomllib
+        except ModuleNotFoundError:  # Python 3.10 无 tomllib
+            pytest.skip("需要 Python 3.11+ 的 tomllib 读取 pyproject")
+        with (UPSTREAM / "pyproject.toml").open("rb") as fh:
+            return tomllib.load(fh)
+
+    def test_e1_name_matches_package(self):
+        cfg = self._load()
+        assert cfg["project"]["name"] == "fstdd", "分发包名应与真实包 fstdd 一致"
+
+    def test_e2_readme_file_exists(self):
+        cfg = self._load()
+        readme = cfg["project"]["readme"]
+        assert (UPSTREAM / readme).is_file(), f"readme 指向不存在的文件：{readme}"
+
+    def test_e3_console_script_module_exists(self):
+        cfg = self._load()
+        for target in cfg["project"]["scripts"].values():
+            mod = target.split(":", 1)[0]
+            as_file = UPSTREAM / (mod.replace(".", "/") + ".py")
+            as_pkg = UPSTREAM / mod.replace(".", "/") / "__init__.py"
+            assert as_file.is_file() or as_pkg.is_file(), (
+                f"入口 {target} 指向不存在的模块 {mod}"
+            )
+
+    def test_e4_package_discovery_matches_reality(self):
+        cfg = self._load()
+        include = cfg["tool"]["setuptools"]["packages"]["find"]["include"]
+        pkg_dirs = [p.name for p in UPSTREAM.iterdir()
+                    if p.is_dir() and (p / "__init__.py").is_file()]
+        assert pkg_dirs, "未找到任何真实包目录"
+        for pat in include:
+            base = pat.rstrip("*")
+            assert any(d.startswith(base) for d in pkg_dirs), (
+                f"packages.find include {pat!r} 匹配不到真实包 {pkg_dirs}"
+            )
+
+    def test_e5_declared_deps_cover_third_party_imports(self):
+        """声明依赖须覆盖代码里的第三方 import（历史漏列 requests —— macOS venv 断裂）。"""
+        cfg = self._load()
+        declared = " ".join(cfg["project"]["dependencies"]).lower()
+        assert "requests" in declared, "requests 未声明，而 fstdd/cli/commands 有 import requests"
+        importers = [
+            p for p in (UPSTREAM / "fstdd").rglob("*.py")
+            if re.search(r"^\s*import\s+requests\b", p.read_text(encoding="utf-8"), re.M)
+        ]
+        assert importers, "未找到 import requests —— 与上面的声明相矛盾"
