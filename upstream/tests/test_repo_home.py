@@ -244,6 +244,22 @@ class TestDDocsAndMemory:
         assert HOME.as_posix() in mem, "记忆未写明工作区 %s" % HOME.as_posix()
         assert "DKK_Fstdd" in mem and "不要动" in mem, "记忆里的调试副本告警被删了"
 
+    def test_d4_superseded_d_drive_spec_retired(self):
+        """被取代的 spec `d-drive-home` 必须已从现行 spec 集移除（2026-09-29 retire）。
+
+        它的 SC-008 / SC-009 仍要求「法定源 SHALL 写为 `D:/tools/FSTDD/stdd-repo`」——
+        与该迁移从未落地的事实相反，且与继任 spec `canonical-in-workspace` 冲突。
+        留在现行 `.fstdd/specs/` 会被 `fstdd index` 当作活能力（`index.py` 按 spec 目录建索引）。
+        历史原文留档于 archive，故不丢证据。
+        """
+        assert not (REPO / ".fstdd/specs/d-drive-home").exists(), (
+            "d-drive-home 仍在现行 specs/ —— 它守着一个从未落地的迁移")
+        assert (REPO / ".fstdd/specs/canonical-in-workspace/spec.md").exists(), (
+            "继任 spec canonical-in-workspace 丢失")
+        assert (REPO / ".fstdd/archive/2026-09-17-migrate-to-d-drive"
+                / "specs/d-drive-home/spec.md").exists(), (
+            "被 retire 的 spec 历史原文应留档于 archive，不得丢证据")
+
 
 # ---------------------------------------------------------------------------
 # E. 不误伤其它位置

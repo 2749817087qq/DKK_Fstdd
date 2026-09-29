@@ -250,5 +250,8 @@ cd E:/FSTDD/stdd-repo && git push local master --tags
 - Python 解释器口径 = managed **default env**（具依赖），弃用不存在的 `C:\Python311`；
 - `test_migrate_to_d_drive.py` 按实际工作区重写为 `test_repo_home.py`（断言工作区/法定源/裸库/skill 路径一致性），不再假设 D 盘。
 
-> 📌 下游待办（需走正式 FSTDD change，本文档不代劳）：canonical spec
-> `d-drive-home` 已被 `canonical-in-workspace` 取代，应正式 retire。
+> ✅ 下游待办已收口（2026-09-29）：被取代的 spec `d-drive-home` 已从现行 `.fstdd/specs/` 移除。
+> 它的 SC-008 / SC-009 仍要求「法定源 SHALL 写为 `D:/tools/FSTDD/stdd-repo`」—— 与该迁移从未
+> 落地的事实相反，且与继任 spec `canonical-in-workspace` 冲突（留着会被 `fstdd index` 当作活能力）。
+> 历史原文仍留档于 `.fstdd/archive/2026-09-17-migrate-to-d-drive/specs/d-drive-home/spec.md`；
+> `canonical-in-workspace` 保留为现行权威。回归锚点见 `upstream/tests/test_repo_home.py::test_d4`。

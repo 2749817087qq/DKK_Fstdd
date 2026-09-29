@@ -107,6 +107,18 @@
   修复后实跑 exit 0，定位到 `…/envs/default/Scripts/python.exe`（3.13.14），
   依赖检查 OK、7 个 skill 全生成、`verify_workbuddy_skills.py` PASS。
 
+### 规范 / 路径口径
+- **退役被取代的 canonical spec `d-drive-home`**：该 spec 来自变更 `2026-09-17-migrate-to-d-drive`，
+  其 SC-008 / SC-009 仍要求「法定源 SHALL 写为 `D:/tools/FSTDD/stdd-repo`」—— 而该迁移
+  **从未在本机落地**（实测 `D:\tools` 不存在，仓库实际位于 `E:\FSTDD\stdd-repo`），继任 spec
+  `canonical-in-workspace` 已把「法定源 = 工作区内的 `stdd-repo`」定为权威。留着它有两个害处：
+  ① `fstdd index` 按 spec 目录建索引（`index.py`），会把它当**活能力**；② 它守着一个从未发生的
+  事实，后来者据以排查必被误导（与 `test_migrate_to_d_drive.py` 13 项恒红同源）。
+  处理：从现行 `.fstdd/specs/` 移除；历史原文留档于
+  `.fstdd/archive/2026-09-17-migrate-to-d-drive/specs/d-drive-home/spec.md`（不丢证据）。
+  **帮助**：现行规范集与实际工作区布局一致，索引里不再有指向不存在路径的能力。
+  回归锚点：`upstream/tests/test_repo_home.py::TestDDocsAndMemory::test_d4_superseded_d_drive_spec_retired`。
+
 ---
 
 ## [3.1.0] — 2026-09-26
