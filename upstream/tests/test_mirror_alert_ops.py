@@ -36,9 +36,36 @@ CHECK_MIRROR = ROOT / "tools" / "check_mirror.sh"
 INFRA_NODE_ID = "fstdd-hub-infra"
 
 _HOOK_RE = re.compile(r"<<'HOOKBODY'\n(.*?)\nHOOKBODY\n", re.DOTALL)
-BASH = shutil.which("bash")
 
-pytestmark = pytest.mark.skipif(BASH is None, reason="本机无 bash，跳过钩子执行类测试")
+
+def _find_usable_bash() -> str | None:
+    """返回**实际可用**的 bash 路径；不存在、或存在但跑不起来，均返回 None。
+
+    只判 `shutil.which("bash") is not None` 不够：Windows 下
+    `C:\\Windows\\system32\\bash.exe` 是 WSL 启动器，未安装任何发行版时它
+    **存在却一执行就失败**（实测 rc=1，打印 "install a Linux distribution"）。
+    于是 skipif 不触发 → 45 个用例真跑 → 本机全线失败（2026-09-29 实测
+    31 failed），「跳过」退化成「假失败」，掩盖真实的测试基线。
+    故改为**真执行一次**再判定可用性。
+    """
+    candidate = shutil.which("bash")
+    if candidate is None:
+        return None
+    try:
+        probe = subprocess.run(
+            [candidate, "-c", "true"], capture_output=True, timeout=10
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return candidate if probe.returncode == 0 else None
+
+
+BASH = _find_usable_bash()
+
+pytestmark = pytest.mark.skipif(
+    BASH is None,
+    reason="本机无可用 bash（不存在，或存在但无法执行，如未装发行版的 WSL），跳过钩子执行类测试",
+)
 
 
 # --------------------------------------------------------------------------- #
