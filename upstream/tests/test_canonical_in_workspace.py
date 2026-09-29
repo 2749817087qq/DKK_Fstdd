@@ -14,6 +14,7 @@ from __future__ import annotations
 import importlib.util
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -24,6 +25,37 @@ REPO = UPSTREAM.parent
 WORKSPACE = REPO.parent
 BACKUPS = WORKSPACE / "backups"
 OUTSIDE = Path.home() / ".workbuddy-ai" / "Fstdd"
+
+# skill 加载目录必须走内核同源解析（tools/_skill_install_env），不得硬编码
+# 兜底值 ~/.workbuddy/skills —— 详见该模块头部的事故复盘。
+TOOLS = REPO / "tools"
+if str(TOOLS) not in sys.path:
+    sys.path.insert(0, str(TOOLS))
+from _skill_install_env import resolve_skill_dir  # noqa: E402
+
+
+def _content_files(root: Path):
+    """只数内容文件：排除 VCS 元数据（.git 目录）。
+
+    .git 是版本库元数据、不是被归档的内容；且它会随
+    「在该目录里 git init/加 remote」这类外部动作自行出现或变化，
+    与「归档是否完整」无关（实测 2026-09-18：源多出 .git/config 一份）。
+    """
+    return [
+        p for p in root.rglob("*")
+        if p.is_file() and ".git" not in p.relative_to(root).parts
+    ]
+
+
+def _archive_timestamp(archive: Path) -> float | None:
+    """从归档目录名 `canonical-archived-<YYYYMMDD>-<HHMMSS>` 解析归档时刻。"""
+    m = re.search(r"canonical-archived-(\d{8})-(\d{6})", str(archive))
+    if not m:
+        return None
+    try:
+        return datetime.strptime(m.group(1) + m.group(2), "%Y%m%d%H%M%S").timestamp()
+    except ValueError:
+        return None
 
 
 def _load(name: str, rel: str):
@@ -154,17 +186,23 @@ class TestCArchive:
         if a is None or not OUTSIDE.exists():
             pytest.skip("归档或原目录不存在（可能已被清理）")
 
-        def _content_files(root: Path):
-            """只数内容文件：排除 VCS 元数据（.git 目录）。
-
-            .git 是版本库元数据、不是被归档的内容；且它会随
-            「在该目录里 git init/加 remote」这类外部动作自行出现或变化，
-            与「归档是否完整」无关（实测 2026-09-18：源多出 .git/config 一份）。
-            """
-            return [
-                p for p in root.rglob("*")
-                if p.is_file() and ".git" not in p.relative_to(root).parts
-            ]
+        # SC-008 的前提是「源目录在归档后被冻结」。该前提可被**外部程序**打破：
+        # 本机 ~/.workbuddy-ai/Fstdd 正是另一程序的活动目录。实测 2026-09-29：
+        # 归档 733 文件、源 1045 —— 源侧 .fstdd/ 自 13 文件增殖到 300、
+        # experiences/ 19 文件被清理、37 个共有文件内容已变，属归档后的持续演化。
+        # 用归档目录名内嵌的时刻做判据：源中若有文件晚于该时刻被改动，
+        # 「归档时刻逐文件一致」已不可复验 —— 环境依赖（非代码缺陷），跳过。
+        archived_at = _archive_timestamp(a)
+        if archived_at is not None:
+            newest = max((p.stat().st_mtime for p in _content_files(OUTSIDE)), default=0)
+            if newest > archived_at:
+                pytest.skip(
+                    "源目录在归档后被外部程序改动（源最新 mtime %s 晚于归档 %s）——"
+                    "SC-008 只保证归档时刻逐文件一致，当前状态无法复验" % (
+                        datetime.fromtimestamp(newest).isoformat(timespec="seconds"),
+                        datetime.fromtimestamp(archived_at).isoformat(timespec="seconds"),
+                    )
+                )
 
         n_src = len(_content_files(OUTSIDE))
         n_dst = len(_content_files(a))
@@ -187,14 +225,27 @@ class TestCArchive:
 # ---------------------------------------------------------------------------
 
 class TestDInstalledSkill:
-    """TC-CIW-010 —— skill 路径指向工作区。"""
+    """TC-CIW-010 —— skill 路径指向工作区。
 
-    SKILL_DIR = Path.home() / ".workbuddy" / "skills"
+    加载目录必须走内核同源解析（tools/_skill_install_env.resolve_skill_dir）：
+    本机实际加载的是 `~/.workbuddy-ai/skills`，而 `~/.workbuddy/skills` 只是
+    **内核兜底值**下的影子副本（不被扫描、仅误导排查）。此前本类写死兜底值
+    ⇒ 在影子副本上「一起错、一起绿」，正是该模块头部复盘的 2026-09-16 事故。
+    """
+
+    def _managed(self) -> list[str]:
+        """安装器管理的 skill 名 —— 直接取自安装脚本，避免此处再抄一份名单。"""
+        import install_workbuddy_skills as iws
+        return [s["name"] for s in iws.SKILLS] + iws.LOCAL_SKILLS + ["fstdd"]
 
     def _skills(self) -> list[Path]:
-        if not self.SKILL_DIR.exists():
-            return []
-        return sorted(self.SKILL_DIR.glob("fstdd*/SKILL.md"))
+        d, _why = resolve_skill_dir()
+        out: list[Path] = []
+        for n in self._managed():
+            f = d / n / "SKILL.md"
+            if f.exists():
+                out.append(f)
+        return sorted(out)
 
     def test_d1_no_outside_path(self):
         skills = self._skills()
