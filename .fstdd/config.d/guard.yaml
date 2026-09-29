@@ -16,10 +16,10 @@ guard:
         max_files: 3
         max_lines: 50
         action: "warn"         # allow | warn | block
-        message: "⚠️ 检测到中等规模修改（{files}文件/{lines}行），建议 /stdd-understand 启动流程"
+        message: "⚠️ 检测到中等规模修改（{files}文件/{lines}行），建议 /fstdd-understand 启动流程"
       large:
         action: "block"
-        message: "🔒 检测到重大修改（{files}文件/{lines}行），请先 /stdd-understand <需求描述>"
+        message: "🔒 检测到重大修改（{files}文件/{lines}行），请先 /fstdd-understand <需求描述>"
 
     # 核心模块路径（命中则升级为拦截）
     critical_paths: []

@@ -39,11 +39,27 @@
   「`grep '/stdd-'` 命中项全部位于 `.fstdd/archive/` 下」判该评语不成立；此判据不成立 ——
   顶层两处文档确有残留（该评语命名者是对的）。归档文档本身仍按规约保留原样，不在本次改动内。
   **帮助**：agent 读到的命令表与真实可用的命令集一致，不再引导不存在的 `/stdd-continue`。
-  **遗留（需另立 change 裁定）**：`.fstdd/config.d/guard.yaml` 的 guard 提示语
-  （`/stdd-understand`）与 `.fstdd/skills/_shared/version-check.md` 的 `/stdd-upgrade` 提示仍是旧名。
-  二者是**活配置 / 活 skill**（guard 会真的打印给用户），但其内容与内核 `upstream/.fstdd/` 同源，
-  且 `.fstdd/` 是门禁的**显式排除区** —— 是否把「活配置 / 活 skill」纳入改名范围
-  （同时不误伤 `.fstdd/archive/` 历史），属规范层决策，单独立 change。
+  **遗留的收口**：本条所指「活配置 / 活 skill 仍是旧命令名」的规范层决策见下条 —— 已裁定并落地。
+- **「活配置 / 活 skill」旧命令名收口 —— 上条遗留的规范层决策已裁定落地**：
+  裁定「纳入改名范围」＝**运行时会真正被读取、并向用户打印文案**的 `.fstdd/config.d/*.yaml`
+  与 `.fstdd/skills/**`（`specs/`、`changes/`、`standards/`、`templates/`、`archive/` 属文档 / 历史，本次不动）。
+  本条刻意**不复现旧名字面量**（同 `4be8b35` 的教训：检测器只认「独立标识」，在此写下它反被判为残留）。
+  据此修正 4 处：
+  - `.fstdd/config.d/guard.yaml` 与 `upstream/.fstdd/config.d/guard.yaml` 的中 / 大规模提示语：
+    两处**旧斜杠命令** → `/fstdd-understand`；
+  - `.fstdd/skills/_shared/version-check.md` 与 `upstream/.fstdd/skills/_shared/version-check.md` 的
+    版本漂移提示：一处**旧斜杠命令** → `/fstdd-upgrade`；另一处**裸写的旧 CLI 名 + `upgrade` 子命令**
+    → `fstdd upgrade --unlock`（根副本两处皆旧，内核副本仅裸名那处待改）。
+  **为何危险**：这两处是 guard / 版本自检**真的会打印给用户**的文案 —— 引导用户执行
+  `/stdd-understand` 或**裸写的旧 CLI 名 + `upgrade` 子命令**这类**不存在**的命令，用户照做必然失败；
+  且它避开了门禁（`.fstdd/` 是 TC-RENAME-002 的显式排除区），属**结构性命中盲区**。
+  **根副本为何滞后**：`fstdd init` 从内核 `upstream/.fstdd/` 拷贝这两个文件，而根副本的拷贝
+  发生在内核修正**之前** —— 于是出现「模板已对、项目副本仍错」；同源内核
+  `upstream/.fstdd/skills/_shared/version-check.md` 的 `/stdd-upgrade` 与 CLI 代码
+  `new.py` / `install.py` 的 `/fstdd-understand` 早已正确，唯 guard 提示两侧皆漏。
+  本次把四处副本两两对齐（根 = 内核）。
+  **帮助**：guard 与版本自检打印的命令**真实可用**，不再把用户引向死路；也不再把「模板对 / 副本错」
+  的分歧一路带到发布。
 
 ### 文档
 - **更正 README / NOTICE 关于「是否复制上游代码」的失实表述**：README 原文称
