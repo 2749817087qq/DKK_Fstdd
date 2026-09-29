@@ -20,7 +20,7 @@
 **义务履行**：上游 MIT 许可全文已随本仓库保留于 [`UPSTREAM-LICENSE.txt`](./UPSTREAM-LICENSE.txt)，
 原版权声明与许可声明未被移除或改动。
 
-**vendor 说明**：本仓库 `upstream/` 目录（704 个已跟踪文件）是**上游代码的适配内核**，
+**vendor 说明**：本仓库 `upstream/` 目录是**上游代码的适配内核**（**整目录纳入版本控制**），
 随本仓库一并分发 —— 克隆本仓库即可使用，**无需另行获取上游源码**。
 为适配 WorkBuddy 的命名空间，对**路径与文件名**做了命名替换 ——
 目录 `.stdd/` → `.fstdd/`、包 `stdd/` → `fstdd/`、入口 `bin/stdd` → `bin/fstdd`、文档 `STDD*.md` → `FSTDD*.md`（均为上游 STDD → FSTDD）；

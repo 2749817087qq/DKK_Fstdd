@@ -5,7 +5,7 @@
 [![Upstream](https://img.shields.io/badge/upstream-leonai42%2Fstdd%20v3.0.5-lightgrey.svg)](https://github.com/leonai42/stdd)
 
 > 上游 [leonai42/stdd](https://github.com/leonai42/stdd)（MIT）的衍生作品。
-> 本仓库把上游代码纳入 `upstream/` 作为**适配内核**（704 个已跟踪文件，含上游 `LICENSE` 原文）——
+> 本仓库把上游代码**整目录**纳入 `upstream/` 作为**适配内核**（含上游 `LICENSE` 原文）——
 > 克隆本仓库即可用，**无需另行获取上游源码**。
 > `upstream/` **不是逐字节冻结的上游快照**：除命名空间替换（上游 STDD → FSTDD，目录 / 包 / CLI 入口 / 文档文件名）外，
 > 本仓库亦按 change 流程直接维护其中的内核代码与版本条目；正文中「上游 STDD」的署名**原样保留**，
