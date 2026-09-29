@@ -68,6 +68,15 @@
   声明 `C:\Python311` 已弃用）。`upstream/tests/test_{constitution_contract,inbox_endpoint,silent_share}.py`
   三处运行说明同步换掉不存在的解释器；`install.ps1` 的 `-Python` 示例由具体不存在路径改为占位符。
   **帮助**：发布前检查清单**逐条可照抄执行**（不再"看起来没问题"却跑不通），且运行说明一律指向法定源。
+- **瘦身计划文档的回归锚点由「快照数」改为「命令式」**：`upstream/V3.0_SLIM_PLAN.md`
+  的「落地核对」结语原写「回归锚点：全量套件 `803 passed / 54 skipped`」，而该项「落地核对」
+  本为 2026-09-29（`81e4d79`）所加 —— **数写下即漂移**：2026-09-30 实测已是
+  **`811 passed / 54 skipped / 0 failed`**（`pytest upstream/tests -q`，退出码 0）。
+  改为只锚「**0 failed** + 命令」，不再内嵌易变计数，并注明取证日期，与 `38769b5`
+  同一教训（活文档不承载快照数字）。**帮助**：后来者按锚点复核时**照抄命令即可**，
+  不会因读到过期计数而误判「V3.0 瘦身四项未落地」——该项结论经复核为**真**
+  （`PHASE_ORDER` 4 相位、`LEGACY_PHASE_MAP` 归一、`COMMAND_GROUPS`、`_auto_generate_human_views`、
+  `batch.py` 批级管线均在位），过期的是**佐证数字**而非结论本身。
 
 ### 测试 / 验证
 - **`test_canonical_in_workspace.py` 两处环境相关失败收口**（承接上一版「留待专档处理」）：
