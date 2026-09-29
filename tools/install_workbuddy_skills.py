@@ -44,16 +44,16 @@ LOCAL_SKILLS = ["fstdd-fin"]
 
 
 def _check_runtime_deps() -> None:
-    """FSTDD CLI 需要 PyYAML 与 Jinja2，缺了会在 init 时才炸，提前提醒。"""
+    """FSTDD CLI 需要 PyYAML / Jinja2 / requests，缺了会在 init 时才炸，提前提醒。"""
     missing = []
-    for mod in ("yaml", "jinja2"):
+    for mod in ("yaml", "jinja2", "requests"):
         try:
             __import__(mod)
         except ModuleNotFoundError:
             missing.append(mod)
     if missing:
         print(f"[WARN] 解释器 {PY} 缺少依赖: {', '.join(missing)}")
-        print(f"       请执行: \"{PY}\" -m pip install pyyaml jinja2")
+        print(f"       请执行: \"{PY}\" -m pip install pyyaml jinja2 requests")
         print("       或设置 FSTDD_PY 指向已装依赖的解释器")
 
 SKILLS = [
@@ -257,7 +257,7 @@ def main() -> int:
             "> 本 skill 来自开源项目 FSTDD (Spec+Test Driven Development) V3.0.5，"
             "源仓库 https://github.com/leonai42/stdd ，已适配 WorkBuddy 全局 skill 目录。\n"
             f"> 静态资源与共享片段根目录：`{SRC.as_posix()}`\n"
-            f"> CLI 入口：`{PY_CMD}`（该解释器已具备 PyYAML / Jinja2 依赖）\n"
+            f"> CLI 入口：`{PY_CMD}`（该解释器已具备 PyYAML / Jinja2 / requests 依赖）\n"
             "> 首次在某项目使用 FSTDD 前，需先在该项目根目录执行初始化："
             f'`{PY_CMD} init` —— 生成 `.fstdd/` 骨架、模板与项目状态文件。\n'
             + stamp_line(REPO_VERSION) + "\n"
@@ -349,7 +349,7 @@ FSTDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
 
 - 静态资源与模板：`{SRC.as_posix()}`
 - CLI 入口：`{PY_CMD}`
-  - 依赖 PyYAML / Jinja2，本机使用 `{PY}`（已具备）；换成其他解释器请先确认依赖
+  - 依赖 PyYAML / Jinja2 / requests，本机使用 `{PY}`（已具备）；换成其他解释器请先确认依赖
 - 已安装的阶段 skill：`{OUT.as_posix()}` 下的 `fstdd-understand/` `fstdd-spec/` `fstdd-build/` `fstdd-deliver/` `fstdd-upgrade/`
 
 {stamp_line(REPO_VERSION)}

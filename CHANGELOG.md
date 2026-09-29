@@ -144,6 +144,20 @@
   **帮助**：分发出的内核**自洽可装** —— 包名 / 入口 / readme / 依赖声明与真实结构一致，
   不再是「改名只改了一半」的半成品。回归锚点：
   `upstream/tests/test_install_source.py::TestEPackagingMetadata`（5 项）。
+- **一键装依赖检查漏 `requests`（补 `pyproject.toml` 的半修）**：上一版给 `upstream/pyproject.toml`
+  补了 `requests>=2.28`（见上条），但**依赖声明的其余四个点没跟上** —— README 前置要求、
+  `install.sh` / `install.ps1` 的 `[2/4]` 检查、`tools/install_workbuddy_skills.py::_check_runtime_deps`
+  仍只列 PyYAML / Jinja2。后果（EXP-20260916-C1 实录）：干净 venv 下四步闭环在 `[4/4]` 断裂 ——
+  `fstdd init` 因顶层 `import requests` 崩溃，而 `[2/4]` 却报「OK（已具备）」、`[4/4]` 只报
+  「CLI 端到端冒烟失败」，**归因指向错误方向**（教用户去查 yaml/jinja2）。修复：四处声明点
+  一并补 `requests`，并让 `tools/verify_workbuddy_skills.py` 的依赖前置检查也覆盖 `requests`，
+  使缺依赖时直接点名包名、不再伪装成冒烟失败。
+  **帮助**：一键装的「依赖检查 → 生成 → 校验」闭环不再在最后一步因漏声明而断；
+  对外分发时按 README 前置要求装齐三个依赖即可一次性装成。
+  实跑：`install.sh --yes`（`FSTDD_OUT` 指向临时目录）退出码 0，
+  `[2/4] 依赖检查: PyYAML / Jinja2 / requests` OK、`[4/4]` 冒烟通过。
+  回归锚点：`upstream/tests/test_install_source.py::TestFInstallDepDeclarations`（5 项，
+  防「只修 pyproject、其余声明点不动」的半修）。
 
 ### 规范 / 路径口径
 - **退役被取代的 canonical spec `d-drive-home`**：该 spec 来自变更 `2026-09-17-migrate-to-d-drive`，

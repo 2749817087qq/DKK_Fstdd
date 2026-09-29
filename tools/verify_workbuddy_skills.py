@@ -85,9 +85,10 @@ def main() -> int:
     try:
         import yaml  # noqa: F401
         import jinja2  # noqa: F401
+        import requests  # noqa: F401
     except ModuleNotFoundError as e:
         fails.append(
-            f"当前解释器缺少依赖 {e.name}。请 pip install pyyaml jinja2，"
+            f"当前解释器缺少依赖 {e.name}。请 pip install pyyaml jinja2 requests，"
             f"或用 FSTDD_PY 指定已装依赖的解释器"
         )
 

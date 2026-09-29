@@ -60,7 +60,7 @@ if [[ -z "$PY" ]]; then
   for c in python3 python py; do
     if command -v "$c" >/dev/null 2>&1; then cands+=("$(command -v "$c")"); fi
   done
-  # 安装目标就是 WorkBuddy：其自带环境的解释器通常已具备 PyYAML / Jinja2
+  # 安装目标就是 WorkBuddy：其自带环境的解释器通常已具备 PyYAML / Jinja2 / requests
   for e in "$HOME"/.workbuddy-ai/binaries/python/envs/*/Scripts/python.exe; do
     [[ -e "$e" ]] && cands+=("$e")
   done
@@ -76,8 +76,8 @@ echo "[1/4] Python: $PY"
 "$PY" --version
 
 # ---------- 2. 依赖检查 ----------
-echo "[2/4] 依赖检查: PyYAML / Jinja2"
-if "$PY" -c "import yaml, jinja2" 2>/dev/null; then
+echo "[2/4] 依赖检查: PyYAML / Jinja2 / requests"
+if "$PY" -c "import yaml, jinja2, requests" 2>/dev/null; then
   echo "      OK（已具备）"
 else
   echo "      缺失，安装脚本会生成 skill，但 CLI 运行时会失败。"
@@ -87,8 +87,8 @@ else
     read -r -p "      现在安装？(y/N) " REPLY </dev/tty 2>/dev/null || REPLY=""
   fi
   if [[ "$REPLY" =~ ^[Yy]$ ]]; then
-    "$PY" -m pip install pyyaml jinja2 || {
-      echo "[FAIL] 依赖安装失败。可手动执行: $PY -m pip install pyyaml jinja2"
+    "$PY" -m pip install pyyaml jinja2 requests || {
+      echo "[FAIL] 依赖安装失败。可手动执行: $PY -m pip install pyyaml jinja2 requests"
       exit 1
     }
     echo "      已安装"

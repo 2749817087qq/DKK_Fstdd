@@ -38,7 +38,7 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 |------|---------|
 | 上游安装器输出到 `~/.workbuddy/skills/*.md`（单文件），而 WorkBuddy 实际加载 `~/.workbuddy-ai/skills/<name>/SKILL.md` | 改为目录格式 |
 | skill 正文里的项目相对路径（`.fstdd/skills/_shared/*`、`python bin/fstdd`）全局安装后解析不了 | 安装时固化为绝对路径 |
-| CLI 依赖 PyYAML / Jinja2，系统默认解释器可能没有 | 绑定到具备依赖的解释器 |
+| CLI 依赖 PyYAML / Jinja2 / requests，系统默认解释器可能没有 | 绑定到具备依赖的解释器 |
 | Deliver 阶段会**自动向外部社区仓库上传项目经验**（数据外发） | 默认禁用 + 哨兵标记 + 校验脚本 |
 | **升级会静默覆盖 skill，把上述策略全部抹掉** | 三层防护 + 升级后强制重跑规程 |
 | 金融系统研发缺少领域约束 | 新增 `fstdd-fin` |
@@ -88,11 +88,11 @@ Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续�
 
 ### 前置要求
 
-- Python **3.10+**，且已安装 `PyYAML` 与 `Jinja2`（上游 CLI 依赖）
+- Python **3.10+**，且已安装 `PyYAML`、`Jinja2` 与 `requests`（上游 CLI 依赖）
 
   ```bash
-  pip install pyyaml jinja2
-  python -c "import yaml, jinja2; print('依赖 OK')"
+  pip install pyyaml jinja2 requests
+  python -c "import yaml, jinja2, requests; print('依赖 OK')"
   ```
 
 - 已克隆本仓库（上游源码已随 `upstream/` 内核提供，**无需**单独获取）
@@ -139,7 +139,7 @@ python tools/verify_workbuddy_skills.py    # 校验（输出 [PASS] 才算装好
 | `OUT` skill 目录 | `~/.workbuddy-ai/skills` | 环境变量 `FSTDD_OUT` |
 | `PY` 解释器 | 当前 `sys.executable` | 环境变量 `FSTDD_PY` |
 
-若当前解释器缺 PyYAML / Jinja2，脚本会打印 `[WARN]` 并提示安装命令；
+若当前解释器缺 PyYAML / Jinja2 / requests，脚本会打印 `[WARN]` 并提示安装命令；
 也可直接指定已装依赖的解释器：
 
 ```bash
@@ -263,7 +263,7 @@ python tools/verify_workbuddy_skills.py   # FAIL 时禁止继续 DELIVER 相关�
 
 | 现象 | 原因与处理 |
 |------|-----------|
-| `ModuleNotFoundError: No module named 'yaml'` | 当前解释器缺 PyYAML。换装了依赖的解释器，或 `pip install pyyaml jinja2` |
+| `ModuleNotFoundError: No module named 'yaml'` | 当前解释器缺 PyYAML。换装了依赖的解释器，或 `pip install pyyaml jinja2 requests` |
 | `verify` 报「残留未替换的 `python bin/fstdd`」 | skill 文件被上游原件覆盖了，重跑安装脚本 |
 | `verify` 报哨兵缺失 | 同上，且说明上传防线已失效，**先修复再继续 DELIVER** |
 | 提示 `.fstdd/templates/*` 不存在 | 项目未初始化，在项目根目录跑一次 `fstdd init` |

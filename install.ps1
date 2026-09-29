@@ -61,7 +61,7 @@ if (-not $Python) {
         $cmd = Get-Command $c -ErrorAction SilentlyContinue
         if ($cmd) { $candidates += $cmd.Source }
     }
-    # 安装目标就是 WorkBuddy：其自带环境的解释器通常已具备 PyYAML / Jinja2
+    # 安装目标就是 WorkBuddy：其自带环境的解释器通常已具备 PyYAML / Jinja2 / requests
     $candidates += Get-ChildItem -Path (Join-Path $HOME ".workbuddy-ai/binaries/python/envs/*/Scripts/python.exe") `
         -ErrorAction SilentlyContinue | Sort-Object FullName | ForEach-Object { $_.FullName }
     foreach ($cand in $candidates) {
@@ -76,11 +76,11 @@ Write-Host "      使用：$Python"
 & $Python --version
 
 # ---------- 2. 依赖检查 ----------
-Write-Step "[2/4] 依赖检查：PyYAML / Jinja2"
+Write-Step "[2/4] 依赖检查：PyYAML / Jinja2 / requests"
 $depsOk = $true
 # 原生命令的非零退出**不会**触发 PowerShell 的 catch（实测 PS 5.1），
 # 故改为直接判定 $LASTEXITCODE —— 否则缺依赖时会误报「OK（已具备）」。
-& $Python -c "import yaml, jinja2" 2>$null
+& $Python -c "import yaml, jinja2, requests" 2>$null
 if ($LASTEXITCODE -ne 0) { $depsOk = $false }
 if ($depsOk) {
     Write-Host "      OK（已具备）"
@@ -92,9 +92,9 @@ if ($depsOk) {
         $doInstall = ($ans -eq "y" -or $ans -eq "Y")
     }
     if ($doInstall) {
-        & $Python -m pip install pyyaml jinja2
+        & $Python -m pip install pyyaml jinja2 requests
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "[FAIL] 依赖安装失败，请手动执行：$Python -m pip install pyyaml jinja2" -ForegroundColor Red
+            Write-Host "[FAIL] 依赖安装失败，请手动执行：$Python -m pip install pyyaml jinja2 requests" -ForegroundColor Red
             exit 1
         }
         Write-Host "      已安装"

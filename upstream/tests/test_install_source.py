@@ -323,3 +323,59 @@ class TestEPackagingMetadata:
             if re.search(r"^\s*import\s+requests\b", p.read_text(encoding="utf-8"), re.M)
         ]
         assert importers, "未找到 import requests —— 与上面的声明相矛盾"
+
+
+# ---------------------------------------------------------------------------
+# F. 一键装「依赖声明」自洽性（各声明点须覆盖 CLI 实际 import 的 requests）
+# ---------------------------------------------------------------------------
+
+class TestFInstallDepDeclarations:
+    """一键装的依赖声明须覆盖 CLI 实际 `import` 的第三方包。
+
+    背景：`pyproject.toml` 已补 `requests`（由 `TestEPackagingMetadata::test_e5` 守之），
+    但 README 前置要求、`install.sh` / `install.ps1` 的 `[2/4]` 检查，以及
+    `install_workbuddy_skills.py` 的 `_check_runtime_deps` 仍只声明 PyYAML / Jinja2。
+    后果（EXP-20260916-C1 实录）：干净 venv 下四步闭环在 `[4/4]` 断裂 ——
+    `fstdd init` 因顶层 `import requests` 崩溃，而 `[2/4]` 却报「OK（已具备）」，
+    归因指向错误方向。本类把四个声明点一并纳入门禁，防止只修 pyproject 的半修。
+    """
+
+    _README = (REPO / "README.md").read_text(encoding="utf-8")
+    _SH = (REPO / "install.sh").read_text(encoding="utf-8")
+    _PS1 = (REPO / "install.ps1").read_text(encoding="utf-8")
+    _INSTALLER = (REPO / "tools/install_workbuddy_skills.py").read_text(encoding="utf-8")
+    _VERIFY = (REPO / "tools/verify_workbuddy_skills.py").read_text(encoding="utf-8")
+
+    def test_f1_readme_prereq_mentions_requests(self):
+        assert re.search(r"pip install[^\n]*\brequests\b", self._README), (
+            "README 前置要求/安装命令须写明 requests"
+        )
+
+    def test_f2_install_sh_checks_and_installs_requests(self):
+        assert re.search(r"import yaml, jinja2, requests", self._SH), (
+            "install.sh [2/4] 检查须覆盖 requests"
+        )
+        assert re.search(r"pip install pyyaml jinja2 requests", self._SH), (
+            "install.sh 补装命令须覆盖 requests"
+        )
+
+    def test_f3_install_ps1_checks_and_installs_requests(self):
+        assert re.search(r"import yaml, jinja2, requests", self._PS1), (
+            "install.ps1 [2/4] 检查须覆盖 requests"
+        )
+        assert re.search(r"pip install pyyaml jinja2 requests", self._PS1), (
+            "install.ps1 补装命令须覆盖 requests"
+        )
+
+    def test_f4_installer_runtime_deps_include_requests(self):
+        m = re.search(
+            r"def _check_runtime_deps\(.*?for mod in \(([^)]*)\)",
+            self._INSTALLER, re.S,
+        )
+        assert m, "未找到 _check_runtime_deps 的依赖元组"
+        assert "requests" in m.group(1), "_check_runtime_deps 须检查 requests"
+
+    def test_f5_verify_preflight_imports_requests(self):
+        assert re.search(r"^\s*import requests\b", self._VERIFY, re.M), (
+            "verify 的依赖前置检查须覆盖 requests，否则冒烟失败归因指向错误"
+        )
