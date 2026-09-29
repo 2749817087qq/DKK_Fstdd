@@ -114,6 +114,14 @@
   声明 `C:\Python311` 已弃用）。`upstream/tests/test_{constitution_contract,inbox_endpoint,silent_share}.py`
   三处运行说明同步换掉不存在的解释器；`install.ps1` 的 `-Python` 示例由具体不存在路径改为占位符。
   **帮助**：发布前检查清单**逐条可照抄执行**（不再"看起来没问题"却跑不通），且运行说明一律指向法定源。
+- **活 canonical spec 里残留的不存在解释器收口**：`canonical/specs/agent/2026-09-25-new-isolate-flag.yaml`
+  的 `meta.system` 仍写 `C:/Python311/python.exe`（**本机不存在**），与上条「解释器口径 = managed default env」
+  的定稿相反。该 spec 是**逐条可照抄执行**的隔离 E2E 验证规格，照抄即失败 —— 与上条同一缺陷类型，
+  只是漏在 `canonical/`（上条只覆盖了清单与 `upstream/tests/` 三处运行说明）。本次改为
+  managed **default env** 解释器（`$PY`），与清单口径一致；`.fstdd/archive/**` 的归档副本保留原样
+  （历史留档，不动）。**为何逃过门禁**：`tools/verify_rename.py` 只认改名前的旧 CLI 名，不校验解释器路径 ——
+  `C:/Python311` 的残留是门禁的**结构性盲区**（与它在别处一路全绿同源）。
+  **帮助**：后继者按此 spec 实跑隔离 E2E 时，拿到的解释器**真实存在**，不会再照抄一个不存在的路径。
 - **瘦身计划文档的回归锚点由「快照数」改为「命令式」**：`upstream/V3.0_SLIM_PLAN.md`
   的「落地核对」结语原写「回归锚点：全量套件 `803 passed / 54 skipped`」，而该项「落地核对」
   本为 2026-09-29（`81e4d79`）所加 —— **数写下即漂移**：2026-09-30 实测已是

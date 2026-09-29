@@ -7,7 +7,7 @@ meta:
   change_id: "2026-09-25-new-isolate-flag"
   created: "2026-09-25T12:38:52+00:00"
   task_type: code
-  system: "stdd-repo（真 git 仓）+ 临时沙箱仓；经 C:/Python311/python.exe upstream/bin/fstdd 调用真 CLI"
+  system: "stdd-repo（真 git 仓）+ 临时沙箱仓；经 managed default env 解释器（$PY，含 PyYAML/Jinja2/requests）调用 upstream/bin/fstdd 真 CLI"
 
 preconditions:
   - "已提交本次改动（工作区干净），否则 worktree 会把未提交改动带偏，结论不可采信"
