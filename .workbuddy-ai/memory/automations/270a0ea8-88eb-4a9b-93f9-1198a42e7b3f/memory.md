@@ -70,6 +70,24 @@
 - **偏离任务书**：未用 `git add -A`（同前 8 轮）。
 - 详见 `D:\FSTDD003\.workbuddy-ai\memory\2026-09-27.md` 末尾「2026-09-28 00:10 每日收纳」段。
 
+### 2026-09-29 00:15 运行（收纳对象 2026-09-28）— 第 10 轮
+- **skill**：**刷新 6 个** FSTDD 内置 skill（`C:\Users\Administrator\.trae-cn\builtin_skills\` 6 个 FSTDD 目录 mtime 均 2026-09-28 22:22:29，本地副本陈旧 3–11 天；刷新后 SHA-256 全 OK）：`artifacts/skills/FSTDD003-fstdd/SKILL.md`（+120B）、`fstdd-build`（+45B）、`fstdd-deliver`（+45B）、`fstdd-spec`（+45B）、`fstdd-understand`（+45B）、`fstdd-upgrade`（+45B）。`TRAE-security-review` 09-28 20:03 更新但非 FSTDD 产出，按约束排除；`builtin/global/skills/*` 与工作区 `.trae\skills\` 09-28 无更新。
+- **经验文档**：**无新增**。判据：`grep -l "2026-09-28\|20260928" experiences/*.md` 仅命中 `README.md`（索引元数据）；当日 FSTDD 使用场景仅两条自动化（周汇总报告 W39 无缺陷、每小时轮询 18:52 零缺口零 POST），无 FSTDD 工具链缺陷。
+- **git**：显式路径提交。**未用 `git add -A`**（同前 9 轮）。remote 数=0 未 push。
+
+### 2026-09-29 00:10 运行（收纳对象 2026-09-28）— 第 11 轮（幂等复核）
+- 触发时机与第 10 轮目标日相同，本轮作为幂等复核：
+- **skill**：**无新增，无刷新**。`builtin_skills/{fstdd,fstdd-build,fstdd-deliver,fstdd-spec,fstdd-understand,fstdd-upgrade}` 源 mtime 仍为 2026-09-28 22:22:29，与 `artifacts/skills/FSTDD003-fstdd*/SKILL.md` 目的端完全一致（0 字节 delta，SHA-256 一致）。`skills-archive/` 未新增。`builtin/global/skills/` 与工作区 `.trae\skills\` 09-28 仍 0 命中。
+- **经验文档**：**无新增**。`experiences/` 最新 P 编号仍为 SCPLEAK-1（09-27）。
+- **git**：显式路径提交本轮日志。**未用 `git add -A`**（同前 10 轮）。remote 数=0 未 push。
+
+### 2026-09-30 00:10 运行（收纳对象 2026-09-29）— 第 12 轮
+- **skill**：**无新增，无刷新**。判据：`builtin_skills/` 6 个 FSTDD 内置 skill 源 mtime 仍 2026-09-28 22:22:29（第 10/11 轮已刷新到位），09-29 全天无变更；`builtin/global/skills/` 与 `.workbuddy-ai\skills\` 中 FSTDD 相关最新 mtime 均 ≤ 09-28；`builtin_skills/TRAE-*` 09-29 00:04 有 3 个更新但非 FSTDD 产物，按约束排除；`skills-archive/` 未新增。
+- **经验文档**：**无新增**。判据：`experiences/` 最新 P 编号仍为 `FSTDD003-EXP-20260927-SCPLEAK-1.md`（P59）；09-29 全天本节点仅执行 1 轮每小时轮询守护（01:07，零缺口 40/40、零回写、零 POST、零执行动作），无 FSTDD 工具链缺陷、无坑点/报错/改善方法可沉淀；09-29 00:11:33–00:11:50 服务器批量 scp 落地一批 notice 属 06ec2c4f 轮询守护业务数据，非 FSTDD 工具链缺陷。
+- **git**：显式路径提交 2 文件（memory/2026-09-29.md + 本自动化记忆）。**未用 `git add -A`**（会连带 `_scratch/` 25M、`.fstdd/_notices/**` 数十项守护产物、`_daemon_tmp/`、内嵌 git repo、`TASK.md`、`docs/*.md`、`tools/*.py/*.sh`、`pull_probe.*`）。remote 数=0 未 push。
+- **偏离任务书**：未用 `git add -A`（同前 11 轮）；任务书写 `.trae\memory\`，沿用既有惯例创建 `.workbuddy-ai\memory\2026-09-29.md`（沿用第 10/11 轮惯例）。
+- 详见 `D:\FSTDD003\.workbuddy-ai\memory\2026-09-29.md`。
+
 ## 下次运行须知（固化判据）
 1. **skill 判据 = mtime 比较 + `diff -rq` 兜底**，不是「目录存在即跳过」：
    `if [ -d "$DST" ] && [ "$SRC" -nt "$DST" ]; then` **`diff -rq "$SRC" "$DST"` 有实际差异才** `cp -r "$SRC/." "$DST/"; fi`
