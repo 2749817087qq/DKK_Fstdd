@@ -22,7 +22,7 @@
   防止断言空转（"检查了但永远通过"）。
 
 运行：
-    cd upstream && C:/Python311/python.exe -m pytest tests/test_silent_share.py -q
+    cd upstream && C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe -m pytest tests/test_silent_share.py -q
 """
 from __future__ import annotations
 

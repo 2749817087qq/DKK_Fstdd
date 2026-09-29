@@ -17,7 +17,7 @@
 .EXAMPLE
     .\install.ps1
     .\install.ps1 -Yes
-    .\install.ps1 -Python "C:\Python311\python.exe"
+    .\install.ps1 -Python "C:\path\to\python.exe"
     $env:FSTDD_OUT = "D:\skills"; .\install.ps1
 
 .NOTES

@@ -42,6 +42,13 @@
   不再内嵌会随提交漂移的计数。
   **帮助**：合规声明**不会因后续提交而自我失效** —— 活文档不承载快照数字，就不再需要每次动
   `upstream/` 后回头校数（上一条的 704 / 1156 即因此在一日内失准）。
+- **发布清单与派生测试的运行口径对齐法定源**：`docs/SKILL_RELEASE_CHECKLIST.md` 的
+  §1/§3/§4/§5 命令长期写 `C:/Python311/python.exe`（**本机不存在**）与归档副本
+  `~/.workbuddy-ai/Fstdd/tools/`（**不是法定源**），照抄必失败。统一改为 managed **default env**
+  解释器 + 法定源 `E:/FSTDD/stdd-repo/tools/`，并在清单顶部补「运行约定」（cwd = 法定源根、`$PY` 定义、
+  声明 `C:\Python311` 已弃用）。`upstream/tests/test_{constitution_contract,inbox_endpoint,silent_share}.py`
+  三处运行说明同步换掉不存在的解释器；`install.ps1` 的 `-Python` 示例由具体不存在路径改为占位符。
+  **帮助**：发布前检查清单**逐条可照抄执行**（不再"看起来没问题"却跑不通），且运行说明一律指向法定源。
 
 ### 测试 / 验证
 - **`test_canonical_in_workspace.py` 两处环境相关失败收口**（承接上一版「留待专档处理」）：

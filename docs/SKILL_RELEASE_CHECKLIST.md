@@ -3,6 +3,14 @@
 > 适用：仓库从 PRIVATE 转 PUBLIC、或发布新版本 skill 之前
 > 原则：每一项都给出**可执行命令**与**明确判据**，不接受"看起来没问题"
 
+**运行约定**：以下命令在**法定源根** `E:/FSTDD/stdd-repo` 下执行；
+`$PY` 指 managed **default env** 解释器（`C:\Python311\python.exe` 本机不存在，勿再用；
+路径口径见 [WORKBUDDY_INSTALL_NOTES](./WORKBUDDY_INSTALL_NOTES.md) §2）：
+
+```bash
+PY="C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe"
+```
+
 ---
 
 ## 1. 许可声明
@@ -10,7 +18,7 @@
 **检查内容**：每个 skill 的 `license` 字段是否存在、是否与真实来源一致。
 
 ```bash
-python tools/check_skill_metadata.py
+"$PY" tools/check_skill_metadata.py
 ```
 
 **通过判据**：
@@ -58,7 +66,7 @@ grep -rn "C:\\\\Users\\\\\|C:/Users/" ~/.workbuddy-ai/skills/ | grep -v "^Binary
 
 ```bash
 FSTDD_SRC=/tmp/fake-upstream FSTDD_OUT=/tmp/fake-skills \
-  python tools/install_workbuddy_skills.py
+  "$PY" tools/install_workbuddy_skills.py
 ```
 
 能正常生成且不残留旧路径，才算通过。
@@ -70,9 +78,10 @@ FSTDD_SRC=/tmp/fake-upstream FSTDD_OUT=/tmp/fake-skills \
 **检查内容**：CLI 实际能跑，而不只是文件在位。
 
 ```bash
-FSTDD_PY="C:/Python311/python.exe" \
-  python ~/.workbuddy-ai/Fstdd/tools/verify_workbuddy_skills.py
+FSTDD_PY="$PY" "$PY" tools/verify_workbuddy_skills.py
 ```
+
+> 校验脚本取**法定源** `E:/FSTDD/stdd-repo/tools/`，不是归档副本 `~/.workbuddy-ai/Fstdd/`。
 
 **通过判据**：
 
@@ -81,8 +90,7 @@ FSTDD_PY="C:/Python311/python.exe" \
 - 门禁有效性反向验证（确认它真的会拦）：
 
 ```bash
-FSTDD_CLI=/nonexistent/stdd FSTDD_PY="C:/Python311/python.exe" \
-  python ~/.workbuddy-ai/Fstdd/tools/verify_workbuddy_skills.py
+FSTDD_CLI=/nonexistent/fstdd FSTDD_PY="$PY" "$PY" tools/verify_workbuddy_skills.py
 echo "退出码应为非 0，实际: $?"
 ```
 
@@ -93,9 +101,9 @@ echo "退出码应为非 0，实际: $?"
 **检查内容**：四项元数据齐全，且修改过程未损伤正文。
 
 ```bash
-python tools/check_skill_metadata.py          # dry-run
-python tools/check_skill_metadata.py --fix    # 备份后修复
-python tools/verify_skill_standards.py --repo .
+"$PY" tools/check_skill_metadata.py          # dry-run
+"$PY" tools/check_skill_metadata.py --fix    # 备份后修复
+"$PY" tools/verify_skill_standards.py --repo .
 ```
 
 **通过判据**：
@@ -110,7 +118,7 @@ python tools/verify_skill_standards.py --repo .
 **回滚**：
 
 ```bash
-python tools/check_skill_metadata.py --revert
+"$PY" tools/check_skill_metadata.py --revert
 ```
 
 ---

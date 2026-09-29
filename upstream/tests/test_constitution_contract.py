@@ -7,7 +7,7 @@
   宪法是**给 AI 读的强制指令**，它必须与实际行为一致，且只能有一个真源。
   因此本文件既断言「文本无旧名/无反向措辞」，也断言「仓库副本 == 模板输出」。
 
-运行：cd upstream && C:/Python311/python.exe -m pytest tests/test_constitution_contract.py -q
+运行：cd upstream && C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe -m pytest tests/test_constitution_contract.py -q
 """
 from __future__ import annotations
 

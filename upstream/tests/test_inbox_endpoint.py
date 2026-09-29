@@ -28,7 +28,7 @@
 · 每个用例验证**真实可观测行为**（HTTP 状态码 + 磁盘文件），不是走过场。
 
 运行：
-    cd upstream && C:/Python311/python.exe -m pytest tests/test_inbox_endpoint.py -q
+    cd upstream && C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe -m pytest tests/test_inbox_endpoint.py -q
 """
 from __future__ import annotations
 
