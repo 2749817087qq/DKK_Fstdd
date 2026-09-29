@@ -24,12 +24,17 @@ SCRIPT_DIR="$(_winpath "$(cd "$(dirname "$0")" && pwd)")"
 PY="${FSTDD_PY:-}"
 AUTO_YES=0
 
-for arg in "$@"; do
-  case "$arg" in
+# 参数解析：`--py` 的取值须按**当前位置**读取。原实现用 `for arg in "$@"` 配 `shift`，
+# 当 `--py` 不是首个参数时（如 `--yes --py /x/python`）会 shift 掉错误元素，
+# 令 `${1}` 指向 `--py` 自身，PY 被赋成字面量 `--py` —— 随后即报
+# 「未找到可用的 Python 3.10+」，而机器里其实有可用解释器。
+while [[ $# -gt 0 ]]; do
+  case "$1" in
     --yes) AUTO_YES=1 ;;
-    --py) shift; PY="${1:-}" ;;
-    --py=*) PY="${arg#*=}" ;;
+    --py) PY="${2:-}" ;;
+    --py=*) PY="${1#*=}" ;;
   esac
+  shift
 done
 
 echo "=============================================="

@@ -106,6 +106,16 @@
   **帮助**：Windows 用户在 Git Bash 下按 README §4 执行 `./install.sh` 不再必然失败 ——
   修复后实跑 exit 0，定位到 `…/envs/default/Scripts/python.exe`（3.13.14），
   依赖检查 OK、7 个 skill 全生成、`verify_workbuddy_skills.py` PASS。
+- **一键装 `install.sh` 的 `--py` 取值解析错位**：参数解析用 `for arg in "$@"` 配 `shift`，
+  当 `--py` 不是首个参数时（如常用组合 `./install.sh --yes --py /path/python`）会 shift 掉
+  错误元素，`$1` 落到 `--py` 自身，`PY` 被赋成字面量 `--py` —— 随后报
+  `[FAIL] 未找到可用的 Python 3.10+`，而所给路径其实可用。
+  （实测：修复前 `./install.sh --yes --py <可用解释器>` 退出码 1，仅打印该 FAIL；
+  修复后退出码 0，`[1/4] Python:` 正确回显所给路径。）
+  修复：改为 `while [[ $# -gt 0 ]]` 按当前位置读取 `--py` 的取值（`${2:-}`）；
+  `--py=/path` 与默认无参形式行为不变（三种形式修复后实跑均 exit 0）。
+  **帮助**：显式指定解释器（本机 PATH 无可用 `python` 时唯一可靠路径）不再静默失败 ——
+  脚本头部与 README §4 均记载该用法。
 - **内核元数据 `upstream/pyproject.toml` 修正三处改名残留 + 一处依赖漏列**：
   `8693d82 feat(S2): CLI 与 Python 包改名为 fstdd` 把包目录 / CLI 入口 / 数据目录都改成了
   `fstdd`，**唯独漏改 `pyproject.toml`**（`git log` 可证：该文件最后一次改动仍是引入提交
