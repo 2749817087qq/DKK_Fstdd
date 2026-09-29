@@ -91,8 +91,21 @@
   并追加 WorkBuddy 自带环境解释器作为兜底。
   **帮助**：一键装在「PATH 只有 Store 别名」的 Windows 上**真正可用**（修复后实跑 exit 0，
   定位到 3.13.14，7 个 skill 全装、`verify_workbuddy_skills.py` PASS），失败时也不再指错方向。
-  说明：POSIX 孪生脚本 `install.sh` 有同类「存在即用」选择，但本机无可执行的 bash
-  （`bash -c true` 实测 rc≠0，见本文件「bash 可用性判定」条目），**未在本机实测**，本次不改动。
+  说明：POSIX 孪生脚本 `install.sh` 的同类「存在即用」选择，**本次一并修复**（见下条）。
+- **一键装 `install.sh`（POSIX 孪生脚本）同类误选解释器修复**：上条曾以「本机无可执行的
+  bash」为由暂缓，后经实测**该前提已不成立** —— PATH 上的 `C:\Windows\system32\bash.exe`
+  确为失败桩，但 WorkBuddy 自带的 PortableGit bash
+  （`~/.workbuddy-ai/binaries/PortableGit/*/bin/bash.exe`，5.3.15）`true` / `false`
+  退出码实测 **0 / 1**，可完整执行 `install.sh`。
+  症状与 `install.ps1` 同源：`pick_python` 以 `command -v python3 python py`「存在即用」，
+  而 Git Bash 下 `python3` / `python` 解析到 Microsoft Store 的应用执行别名桩 ——
+  选中后 `"$PY" --version` 退出 9009（实测，脚本报 `[FAIL] 该解释器无法执行`，无输出），
+  且**不回落**到机器里可用解释器（`~/.workbuddy-ai/binaries/python/envs/*`）。
+  修复：候选改为**真跑一次版本探测**（`sys.version_info >= (3,10)`）才采纳，坏桩自动跳过；
+  并追加 WorkBuddy 自带环境解释器兜底，与 `install.ps1` 对齐。
+  **帮助**：Windows 用户在 Git Bash 下按 README §4 执行 `./install.sh` 不再必然失败 ——
+  修复后实跑 exit 0，定位到 `…/envs/default/Scripts/python.exe`（3.13.14），
+  依赖检查 OK、7 个 skill 全生成、`verify_workbuddy_skills.py` PASS。
 
 ---
 

@@ -38,29 +38,37 @@ echo "=============================================="
 echo
 
 # ---------- 1. 定位 Python ----------
-pick_python() {
-  local cands=("$@")
-  for c in "${cands[@]}"; do
-    command -v "$c" >/dev/null 2>&1 && { printf '%s' "$c"; return 0; }
-  done
-  return 1
+# 候选择优：**真跑一次**才采纳。Windows（含 Git Bash）上 `python3` / `python` 常指向
+# Microsoft Store 的「应用执行别名」桩 —— `command -v` 找得到，一执行却退出 9009（无输出）。
+# 原实现「存在即用」会误选该桩并报「该解释器无法执行」，而机器里其实有可用解释器
+# （如 WorkBuddy 自带的 ~/.workbuddy-ai/binaries/python/envs/*）。本修复与 install.ps1 对齐。
+test_python() {
+  local p="$1"
+  [[ -n "$p" ]] || return 1
+  local v
+  v="$("$p" -c 'import sys; print(1 if sys.version_info >= (3,10) else 0)' 2>/dev/null)" || return 1
+  [[ "$v" == "1" ]]
 }
 
 if [[ -z "$PY" ]]; then
-  PY="$(pick_python python3 python py 2>/dev/null || true)"
+  cands=()
+  for c in python3 python py; do
+    if command -v "$c" >/dev/null 2>&1; then cands+=("$(command -v "$c")"); fi
+  done
+  # 安装目标就是 WorkBuddy：其自带环境的解释器通常已具备 PyYAML / Jinja2
+  for e in "$HOME"/.workbuddy-ai/binaries/python/envs/*/Scripts/python.exe; do
+    [[ -e "$e" ]] && cands+=("$e")
+  done
+  for cand in "${cands[@]:-}"; do
+    if test_python "$cand"; then PY="$cand"; break; fi
+  done
 fi
-if [[ -z "$PY" ]]; then
-  echo "[FAIL] 未找到 Python。请先安装 Python 3.10+，或用 --py 指定路径。"
+if ! test_python "$PY"; then
+  echo "[FAIL] 未找到可用的 Python 3.10+。请先安装 Python，或用 --py 指定路径。"
   exit 1
 fi
 echo "[1/4] Python: $PY"
-"$PY" --version || { echo "[FAIL] 该解释器无法执行"; exit 1; }
-
-# 版本检查（需 >= 3.10）
-"$PY" - <<'EOF' || { echo "[FAIL] 需要 Python 3.10 或以上"; exit 1; }
-import sys
-sys.exit(0 if sys.version_info >= (3, 10) else 1)
-EOF
+"$PY" --version
 
 # ---------- 2. 依赖检查 ----------
 echo "[2/4] 依赖检查: PyYAML / Jinja2"
