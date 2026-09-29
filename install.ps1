@@ -42,27 +42,38 @@ Write-Host ""
 
 # ---------- 1. 定位 Python ----------
 Write-Step "[1/4] 定位 Python"
+
+# 候选择优：**真跑一次**才采纳。Windows 上 `python3` / `python` 常指向 Microsoft Store
+# 的「应用执行别名」桩 —— Get-Command 找得到，一执行却退出 9009（无输出）。原实现
+# 「存在即用」，当 PATH 上只有该桩时会误选并报「需要 Python 3.10 或以上」，
+# 而机器里其实有可用解释器（如 WorkBuddy 自带的 ~/.workbuddy-ai/binaries/python/envs/*）。
+function Test-Python([string]$p) {
+    if (-not $p -or -not (Test-Path -LiteralPath $p)) { return $false }
+    $global:LASTEXITCODE = 0
+    try { $v = & $p -c "import sys; print(1 if sys.version_info >= (3,10) else 0)" 2>$null }
+    catch { return $false }
+    return ($LASTEXITCODE -eq 0 -and ("$v").Trim() -eq "1")
+}
+
 if (-not $Python) {
+    $candidates = @()
     foreach ($c in @("python3", "python", "py")) {
         $cmd = Get-Command $c -ErrorAction SilentlyContinue
-        if ($cmd) { $Python = $cmd.Source; break }
+        if ($cmd) { $candidates += $cmd.Source }
+    }
+    # 安装目标就是 WorkBuddy：其自带环境的解释器通常已具备 PyYAML / Jinja2
+    $candidates += Get-ChildItem -Path (Join-Path $HOME ".workbuddy-ai/binaries/python/envs/*/Scripts/python.exe") `
+        -ErrorAction SilentlyContinue | Sort-Object FullName | ForEach-Object { $_.FullName }
+    foreach ($cand in $candidates) {
+        if (Test-Python $cand) { $Python = $cand; break }
     }
 }
-if (-not $Python) {
-    Write-Host "[FAIL] 未找到 Python。请先安装 Python 3.10+，或用 -Python 指定路径。" -ForegroundColor Red
+if (-not (Test-Python $Python)) {
+    Write-Host "[FAIL] 未找到可用的 Python 3.10+。请先安装 Python，或用 -Python 指定路径。" -ForegroundColor Red
     exit 1
 }
 Write-Host "      使用：$Python"
-try { & $Python --version } catch {
-    Write-Host "[FAIL] 该解释器无法执行" -ForegroundColor Red
-    exit 1
-}
-
-$verOk = & $Python -c "import sys; print(1 if sys.version_info >= (3,10) else 0)"
-if ($verOk -ne "1") {
-    Write-Host "[FAIL] 需要 Python 3.10 或以上" -ForegroundColor Red
-    exit 1
-}
+& $Python --version
 
 # ---------- 2. 依赖检查 ----------
 Write-Step "[2/4] 依赖检查：PyYAML / Jinja2"

@@ -79,6 +79,20 @@
   修复：为 `install.ps1` 补 UTF-8 BOM（`EF BB BF`；行尾仍为 LF）。
   **帮助**：Windows 用户按 README §4 照抄 `.\install.ps1` 不再必然失败 —— 此前该文件
   在本机默认 shell 下**完全不可用**，是一键装路径上被掩盖的阻断点。
+- **一键装 `install.ps1` 在「PATH 上只有 Store 别名桩」的 Windows 上误选解释器**：
+  候选选择原为「`Get-Command` 找得到就用第一个」（`python3` → `python` → `py`）。
+  而 Windows 上 `python3` / `python` 常指向 Microsoft Store 的**应用执行别名**桩 ——
+  它**存在**，一执行却退出 9009、无输出。于是当 PATH 上只有该桩、机器里另有可用解释器
+  （如 WorkBuddy 自带的 `~/.workbuddy-ai/binaries/python/envs/*/Scripts/python.exe`）时，
+  脚本报 `[FAIL] 需要 Python 3.10 或以上` —— **归因错误**：用户照做去升 Python 也修不好。
+  （实测：`powershell -ExecutionPolicy Bypass -File install.ps1` 退出码 1，选中
+  `…\WindowsApps\python3.exe`；同机 workbuddy env 的 3.13.14 可正常 `import yaml, jinja2`。）
+  修复：候选改为**真跑一次版本探测**（`sys.version_info >= (3,10)`）才采纳，坏桩自动跳过；
+  并追加 WorkBuddy 自带环境解释器作为兜底。
+  **帮助**：一键装在「PATH 只有 Store 别名」的 Windows 上**真正可用**（修复后实跑 exit 0，
+  定位到 3.13.14，7 个 skill 全装、`verify_workbuddy_skills.py` PASS），失败时也不再指错方向。
+  说明：POSIX 孪生脚本 `install.sh` 有同类「存在即用」选择，但本机无可执行的 bash
+  （`bash -c true` 实测 rc≠0，见本文件「bash 可用性判定」条目），**未在本机实测**，本次不改动。
 
 ---
 
