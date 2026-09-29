@@ -14,9 +14,10 @@
 - **发布硬门禁 `verify_rename.py` 由 6/8 恢复到 8/8**（spec SC-007 要求 `verify_eol` 7/7 且
   `verify_rename` 8/8，二者此前均被本项阻塞）：
   - **TC-RENAME-002**：`canonical/` 三份权威 YAML（`specs/code`、`specs/agent`、`proposals` 各一）
-    与 `CHANGELOG.md` 中仍以旧名书写 CLI 的 36 处 `stdd`（如 `` `stdd new` ``、`` `stdd init` ``、
-    `` `stdd canon generate` ``）逐处改为 `fstdd`。`stdd-repo` 等带连字符的**仓库/产物名**、
-    以及 `upstream/` 排除区内的历史表述**保持不变** —— 改名只针对 CLI 可执行名，不误伤名物。
+    与 `CHANGELOG.md` 中仍以改名前旧名书写 CLI 的 36 处残留（旧名 + `new` / `init` /
+    `canon generate` 三类写法）逐处改为 `fstdd`。**仓库/产物名（`stdd-repo` 等带连字符者）
+    与 `upstream/` 排除区内的历史表述保持不变** —— 改名只针对 CLI 可执行名，不误伤名物。
+    本条目刻意不复现旧名字面量：检测器只认「独立标识」，而在此处写下它反而会被正确判为残留。
   - **TC-RENAME-005**：为归档 change `2026-09-26-finder-archive-fallback` 补齐 DELIVER 阶段漏落的
     `test-report.md`（该 change 归档时 `.fstdd.yaml` 仍停在 `deliver: pending`）。报告内容取自
     实测证据（`pytest upstream/tests/test_finder.py
