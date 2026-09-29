@@ -78,7 +78,7 @@ class _STDDParser(argparse.ArgumentParser):
         for group_name, cmds in COMMAND_GROUPS:
             lines.append(f"  [{group_name}]")
             for c in cmds:
-                lines.append(f"    stdd {c:<22} {_CMD_HELP.get(c, '')}")
+                lines.append(f"    fstdd {c:<22} {_CMD_HELP.get(c, '')}")
             lines.append("")
         lines.append("全局选项：")
         for a in self._actions:
@@ -90,10 +90,10 @@ class _STDDParser(argparse.ArgumentParser):
                 lines.append("  -v, --verbose      详细输出（-v INFO, -vv DEBUG）")
         lines.append("")
         lines.append("示例：")
-        lines.append("  stdd new fix-login-bug      创建新 change")
-        lines.append("  stdd gate approve --gate 1  确认 Gate 1（自动生成 proposal.md）")
-        lines.append("  stdd batch open \"修复\"     打开批次 / 批级管线")
-        lines.append("  stdd install claude-code    安装到 Claude Code")
+        lines.append("  fstdd new fix-login-bug      创建新 change")
+        lines.append("  fstdd gate approve --gate 1  确认 Gate 1（自动生成 proposal.md）")
+        lines.append("  fstdd batch open \"修复\"     打开批次 / 批级管线")
+        lines.append("  fstdd install claude-code    安装到 Claude Code")
         return "\n".join(lines) + "\n"
 
 

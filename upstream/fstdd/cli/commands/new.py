@@ -60,7 +60,7 @@ def _print_isolation_hint(mode: str, raw_name: str) -> None:
         print("  💡 隔离形态: branch（独立分支，工作区仍共享）")
     else:
         print(f"  💡 隔离形态: none（与主工作区共享）｜如需隔离："
-              f"stdd new {raw_name} --isolate worktree")
+              f"fstdd new {raw_name} --isolate worktree")
 
 
 _DEFAULT_BRANCH_PREFIX = "fstdd/"
@@ -398,12 +398,12 @@ def cmd_new(args: argparse.Namespace) -> None:
         canon_ok = False
         print(f" ⚠️ Canonical YAML scaffold 失败（exit={exc.code}）")
         print(f"   change 目录已建，但 canonical/ 可能缺失 —— 请手动执行：")
-        print(f"   stdd canon init --change {dir_name}")
+        print(f"   fstdd canon init --change {dir_name}")
     except Exception as exc:  # 非 SystemExit 的异常同样要出声，不能静默
         canon_ok = False
         print(f" ⚠️ Canonical YAML scaffold 异常: {type(exc).__name__}: {exc}")
         print(f"   change 目录已建，但 canonical/ 可能缺失 —— 请手动执行：")
-        print(f"   stdd canon init --change {dir_name}")
+        print(f"   fstdd canon init --change {dir_name}")
 
     logger.info("Change 创建完成: .fstdd/changes/%s", dir_name)
     print(f" Change 创建完成: .fstdd/changes/{dir_name}")
@@ -418,7 +418,7 @@ def cmd_new(args: argparse.Namespace) -> None:
     if canon_ok and not canon_root.exists():
         canon_ok = False
         print(f" ⚠️ 终态校验失败: canonical/ 目录不存在于 .fstdd/changes/{dir_name}/")
-        print(f"   change 可用，但缺 YAML-first 骨架 —— 请手动执行：stdd canon init --change {dir_name}")
+        print(f"   change 可用，但缺 YAML-first 骨架 —— 请手动执行：fstdd canon init --change {dir_name}")
     print(f"   Canonical 终态: {'✅ 就绪' if canon_ok else '❌ 缺失（见上方告警）'}")
 
     # V3.0.7: 隔离可见性 —— 一行提示，零交互（SC-011 / SC-012）。

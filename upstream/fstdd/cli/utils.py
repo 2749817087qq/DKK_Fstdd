@@ -166,7 +166,7 @@ def try_version_check(project_root: Path) -> None:
 
         if source_ver and proj_ver and compare_versions(proj_ver, source_ver) < 0:
             print(f"  [STDD] 有新版本可用: {source_ver} (当前: {proj_ver})")
-            print("  [STDD] 运行 'stdd upgrade --check' 查看详情，"
-                  "或 'stdd upgrade --lock' 锁定版本")
+            print("  [STDD] 运行 'fstdd upgrade --check' 查看详情，"
+                  "或 'fstdd upgrade --lock' 锁定版本")
     except Exception:
         pass  # Never block execution

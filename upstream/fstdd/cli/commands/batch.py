@@ -10,10 +10,10 @@ classifier. Descriptions signaling large changes (重构/架构/新模块)
 are rejected with a suggestion to use full STDD.
 
 Usage:
-    stdd batch open "修复界面展示bug"     # opens a batch
-    stdd batch add "fix: fees 展示为负值" # adds item to current batch
-    stdd batch close                      # closes the batch
-    stdd batch archive                    # archives to archive/
+    fstdd batch open "修复界面展示bug"     # opens a batch
+    fstdd batch add "fix: fees 展示为负值" # adds item to current batch
+    fstdd batch close                      # closes the batch
+    fstdd batch archive                    # archives to archive/
 """
 
 import argparse
@@ -219,8 +219,8 @@ def _cmd_batch_open(project_root: Path, description: str = "", strategy: str = "
         print(f"     范围判定: {_classify_description(description)}")
         print(f"     {description}")
     print(f"  💡 现在可以直接编辑文件，Guard 已放行。")
-    print(f"     用 'stdd batch add <描述>' 记录每次修复")
-    print(f"     完成后 'stdd batch close' 闭合批次")
+    print(f"     用 'fstdd batch add <描述>' 记录每次修复")
+    print(f"     完成后 'fstdd batch close' 闭合批次")
 
 
 def _cmd_batch_add(project_root: Path, description: str) -> None:
@@ -231,7 +231,7 @@ def _cmd_batch_add(project_root: Path, description: str) -> None:
     """
     batch = _find_open_batch(project_root)
     if batch is None:
-        print("  当前无打开的批次。请先 'stdd batch open \"描述\"'")
+        print("  当前无打开的批次。请先 'fstdd batch open \"描述\"'")
         return
 
     import yaml
@@ -249,11 +249,11 @@ def _cmd_batch_add(project_root: Path, description: str) -> None:
             changed = [f for f in result.stdout.strip().split("\n") if f]
             if len(changed) > 10:
                 print(f"  🚫 已修改 {len(changed)} 个文件，超出 batch 适用范围。")
-                print(f"     请用 'stdd new <name>' 创建 change 走完整 STDD 流程。")
+                print(f"     请用 'fstdd new <name>' 创建 change 走完整 STDD 流程。")
                 return
             elif len(changed) > 5:
                 print(f"  ⚠️  已修改 {len(changed)} 个文件，超过 batch 常规范围 (≤5)。")
-                print(f"     如需完整流程请用 'stdd new <name>'；继续 add 请确认。")
+                print(f"     如需完整流程请用 'fstdd new <name>'；继续 add 请确认。")
     except Exception:
         pass  # git not available — skip check
 
@@ -295,7 +295,7 @@ def _cmd_batch_archive(project_root: Path) -> None:
                 if data and data.get("closed_at"):
                     closed_batches.append(d)
         if not closed_batches:
-            print("  无已闭合批次可归档。请先 'stdd batch open' 创建批次。")
+            print("  无已闭合批次可归档。请先 'fstdd batch open' 创建批次。")
             return
         batch = max(closed_batches, key=lambda d: d.stat().st_mtime)
         print(f"  选取最近闭合批次: {batch.name}")
@@ -333,7 +333,7 @@ def _cmd_batch_status(project_root: Path) -> None:
     batch = _find_open_batch(project_root)
     if batch is None:
         print("  当前无打开的批次")
-        print("  用 'stdd batch open \"描述\"' 开始一个调试/修复批次")
+        print("  用 'fstdd batch open \"描述\"' 开始一个调试/修复批次")
         return
 
     import yaml
@@ -420,7 +420,7 @@ def _cmd_batch_close(project_root: Path, force: bool = False) -> None:
                     if age_minutes < 60:
                         print(f"  ⚠️  批次仅 {len(items)} 项、才开了 {int(age_minutes)} 分钟。")
                         print(f"     batch 适合收纳多个小修复，不建议频繁开关。")
-                        print(f"     如果确认要闭合，请用 'stdd batch close --force'。")
+                        print(f"     如果确认要闭合，请用 'fstdd batch close --force'。")
                         return
                 except ValueError:
                     pass
@@ -492,7 +492,7 @@ def _cmd_batch_proposal(project_root: Path, batch: Path, description: str = "") 
 
     print(f"  ✅ 批级 proposal 已写入: canonical/proposals/{batch_id}.yaml")
     print(f"     design.md 已就绪")
-    print(f"     下一步: stdd batch gate --gate 1  确认 Gate 1（自动生成 proposal.md）")
+    print(f"     下一步: fstdd batch gate --gate 1  确认 Gate 1（自动生成 proposal.md）")
 
 
 def _cmd_batch_gate(project_root: Path, batch: Path, gate_num: int,
@@ -505,7 +505,7 @@ def _cmd_batch_gate(project_root: Path, batch: Path, gate_num: int,
 
     if confirmed_by not in ("dialog", "file_token", "cli"):
         print("  🚫 批级 Gate 需要 confirmed_by 通道声明:")
-        print("     stdd batch gate --gate N --confirmed-by dialog --evidence \"用户确认原文\"")
+        print("     fstdd batch gate --gate N --confirmed-by dialog --evidence \"用户确认原文\"")
         return
 
     valid, err = _check_gate_order(gate_num, batch)
@@ -521,11 +521,11 @@ def _cmd_batch_gate(project_root: Path, batch: Path, gate_num: int,
     if gate_num == 1:
         _update_batch_phase(batch, "spec")
         print("  Phase: understand → spec")
-        print("     下一步: stdd batch proposal 或确认批级 spec 后 gate 2")
+        print("     下一步: fstdd batch proposal 或确认批级 spec 后 gate 2")
     elif gate_num == 2:
         _update_batch_phase(batch, "build")
         print("  Phase: spec → build")
-        print("     下一步: stdd batch child add <name> \"<描述>\" 创建子 change")
+        print("     下一步: fstdd batch child add <name> \"<描述>\" 创建子 change")
 
 
 def _cmd_batch_child_add(project_root: Path, batch: Path, name: str, description: str) -> None:
@@ -538,9 +538,9 @@ def _cmd_batch_child_add(project_root: Path, batch: Path, name: str, description
     data = _read_batch_state(batch)
     if data.get("phases", {}).get("spec", {}).get("status") != "completed":
         print(f"  🚫 批级尚未通过 Gate 2。请先:")
-        print(f"     stdd batch proposal <描述>  → 写批级 proposal")
-        print(f"     stdd batch gate --gate 1    → 确认理解")
-        print(f"     stdd batch gate --gate 2    → 确认规格")
+        print(f"     fstdd batch proposal <描述>  → 写批级 proposal")
+        print(f"     fstdd batch gate --gate 1    → 确认理解")
+        print(f"     fstdd batch gate --gate 2    → 确认规格")
         return
 
     import yaml
@@ -623,17 +623,17 @@ def _cmd_batch_deliver(project_root: Path, batch: Path,
     # V3.0.5: Gate 3 通道声明必填
     if confirmed_by not in ("dialog", "file_token", "cli"):
         print("  🚫 批级 deliver 需要 Gate 3 确认通道声明:")
-        print("     stdd batch deliver --confirmed-by dialog --evidence \"用户确认原文\"")
+        print("     fstdd batch deliver --confirmed-by dialog --evidence \"用户确认原文\"")
         return
 
     children_dir = batch / "changes"
     if not children_dir.is_dir():
-        print("  批次下无子 change。先 'stdd batch child add <name> \"<描述>\"'")
+        print("  批次下无子 change。先 'fstdd batch child add <name> \"<描述>\"'")
         return
 
     children = sorted([d for d in children_dir.iterdir() if d.is_dir()])
     if not children:
-        print("  批次下无子 change。先 'stdd batch child add <name> \"<描述>\"'")
+        print("  批次下无子 change。先 'fstdd batch child add <name> \"<描述>\"'")
         return
 
     # Aggregate evidence from each child
@@ -717,7 +717,7 @@ def _cmd_batch_deliver(project_root: Path, batch: Path,
     print(f"  ✅ 批级交付完成: test-report.md 已生成")
     print(f"     累计 {total_tests} 测试（新增 {total_new}），合并 {merged_specs} 个 spec")
     print(f"     批次当前阶段: deliver")
-    print(f"     下一步: stdd batch close 闭合批次")
+    print(f"     下一步: fstdd batch close 闭合批次")
 
 
 # ------- dispatcher -------
@@ -734,7 +734,7 @@ def cmd_batch(args: argparse.Namespace) -> None:
     elif action == "add":
         description = getattr(args, "description", None)
         if not description:
-            print("  用法: stdd batch add \"修复描述\"")
+            print("  用法: fstdd batch add \"修复描述\"")
             return
         _cmd_batch_add(project_root, description)
     elif action == "archive":
@@ -747,17 +747,17 @@ def cmd_batch(args: argparse.Namespace) -> None:
     elif action == "proposal":
         batch = _find_open_batch(project_root)
         if batch is None:
-            print("  当前无打开的批次。请先 'stdd batch open \"描述\"'")
+            print("  当前无打开的批次。请先 'fstdd batch open \"描述\"'")
             return
         _cmd_batch_proposal(project_root, batch, getattr(args, "description", "") or "")
     elif action == "gate":
         batch = _find_open_batch(project_root)
         if batch is None:
-            print("  当前无打开的批次。请先 'stdd batch open \"描述\"'")
+            print("  当前无打开的批次。请先 'fstdd batch open \"描述\"'")
             return
         gate_num = getattr(args, "gate", None)
         if gate_num not in (1, 2):
-            print("  用法: stdd batch gate --gate 1|2 --confirmed-by dialog|file_token|cli")
+            print("  用法: fstdd batch gate --gate 1|2 --confirmed-by dialog|file_token|cli")
             return
         _cmd_batch_gate(project_root, batch, gate_num,
                         confirmed_by=getattr(args, "confirmed_by", "") or "",
@@ -766,12 +766,12 @@ def cmd_batch(args: argparse.Namespace) -> None:
         sub = getattr(args, "child_action", "status")
         batch = _find_open_batch(project_root)
         if batch is None:
-            print("  当前无打开的批次。请先 'stdd batch open \"描述\"'")
+            print("  当前无打开的批次。请先 'fstdd batch open \"描述\"'")
             return
         if sub == "add":
             name = getattr(args, "name", None)
             if not name:
-                print("  用法: stdd batch child add <name> \"<描述>\"")
+                print("  用法: fstdd batch child add <name> \"<描述>\"")
                 return
             _cmd_batch_child_add(project_root, batch, name, getattr(args, "description", "") or "")
         else:
@@ -779,7 +779,7 @@ def cmd_batch(args: argparse.Namespace) -> None:
     elif action == "deliver":
         batch = _find_open_batch(project_root)
         if batch is None:
-            print("  当前无打开的批次。请先 'stdd batch open \"描述\"'")
+            print("  当前无打开的批次。请先 'fstdd batch open \"描述\"'")
             return
         _cmd_batch_deliver(project_root, batch,
                            confirmed_by=getattr(args, "confirmed_by", "") or "",
@@ -793,11 +793,11 @@ def _cmd_batch_child_list(batch: Path) -> None:
     import yaml
     children_dir = batch / "changes"
     if not children_dir.is_dir():
-        print("  批次下无子 change。用 'stdd batch child add <name> \"<描述>\"' 创建")
+        print("  批次下无子 change。用 'fstdd batch child add <name> \"<描述>\"' 创建")
         return
     children = sorted([d for d in children_dir.iterdir() if d.is_dir()])
     if not children:
-        print("  批次下无子 change。用 'stdd batch child add <name> \"<描述>\"' 创建")
+        print("  批次下无子 change。用 'fstdd batch child add <name> \"<描述>\"' 创建")
         return
     print(f"  子 change ({len(children)}):")
     for c in children:

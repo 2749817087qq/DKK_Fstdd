@@ -58,7 +58,7 @@ def _integrity_reason_for_incomplete_gate() -> str:
 
 
 def _extract_fix_cmd(reason: str) -> str:
-    m = re.search(r"修复:\s*(stdd gate approve[^\n]*)", reason)
+    m = re.search(r"修复:\s*(fstdd gate approve[^\n]*)", reason)
     assert m, f"报错文本里找不到修复命令: {reason!r}"
     return m.group(1).strip()
 
@@ -85,7 +85,7 @@ def test_fix_cmd_passes_change_name_positionally() -> None:
     assert "--change" not in fix_cmd, (
         f"修复命令仍在使用不存在的 --change 选项: {fix_cmd!r}"
     )
-    assert re.match(r"stdd gate approve <change_id> ", fix_cmd), (
+    assert re.match(r"fstdd gate approve <change_id> ", fix_cmd), (
         f"修复命令应把 change 名作为位置参数紧跟 approve: {fix_cmd!r}"
     )
 
@@ -114,7 +114,7 @@ def test_fix_cmd_executes_end_to_end() -> None:
         )
 
         fix_cmd = _extract_fix_cmd(_integrity_reason_for_incomplete_gate())
-        real_cmd = fix_cmd.replace("stdd ", "", 1).replace(
+        real_cmd = fix_cmd.replace("fstdd ", "", 1).replace(
             "<change_id>", "2026-01-01-demo"
         )
 

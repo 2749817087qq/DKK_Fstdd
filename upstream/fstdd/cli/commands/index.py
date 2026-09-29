@@ -109,7 +109,7 @@ def cmd_index_show(args):
     index_file = project_root / "project-index.yaml"
 
     if not index_file.exists():
-        print("  project-index.yaml not found. Run 'stdd index update' first.")
+        print("  project-index.yaml not found. Run 'fstdd index update' first.")
         sys.exit(1)
 
     index = yaml.safe_load(index_file.read_text(encoding="utf-8"))
@@ -136,7 +136,7 @@ def cmd_index_trace(args):
     index_file = project_root / "project-index.yaml"
 
     if not index_file.exists():
-        print("  project-index.yaml not found. Run 'stdd index update' first.")
+        print("  project-index.yaml not found. Run 'fstdd index update' first.")
         sys.exit(1)
 
     index = yaml.safe_load(index_file.read_text(encoding="utf-8"))

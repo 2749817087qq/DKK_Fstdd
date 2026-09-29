@@ -1,4 +1,4 @@
-"""stdd experience curate — Official maintainer tool for curating community experiences (V2.5)."""
+"""fstdd experience curate — Official maintainer tool for curating community experiences (V2.5)."""
 
 import argparse
 import sys
@@ -332,7 +332,7 @@ def cmd_curate_pack(args: argparse.Namespace, project_root: Path) -> None:
 
 
 def cmd_curate(args: argparse.Namespace) -> None:
-    """CLI entry: stdd experience curate <subcommand>."""
+    """CLI entry: fstdd experience curate <subcommand>."""
     project_root = Path.cwd()
     subcommand = getattr(args, "curate_subcommand", "pull")
 

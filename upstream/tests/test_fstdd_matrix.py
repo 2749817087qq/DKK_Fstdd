@@ -17,6 +17,7 @@ import datetime
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -107,6 +108,18 @@ class TestCLI:
         assert rc == 0
         for cmd in ("init", "new", "status", "archive", "gate", "experience", "install"):
             assert cmd in out, f"--help 未列出 {cmd}"
+
+    def test_b1b_help_does_not_reference_old_exe(self, tmp_path):
+        """回归（旧命令名收口）：--help 输出不得再把旧可执行名当命令前缀。
+
+        判据取自**真实产物**：逐行匹配 ``^\\s*stdd\\s``。
+        该模式不会误伤 ``fstdd``（前缀非行首）、``STDD CLI``（大写）、
+        ``stdd-repo``（后接 '-' 而非空白）。
+        """
+        rc, out = run_cli(["--help"], tmp_path)
+        assert rc == 0
+        offenders = [ln for ln in out.splitlines() if re.match(r"^\s*stdd\s", ln)]
+        assert not offenders, f"--help 仍引用旧可执行名 'stdd': {offenders!r}"
 
     def test_b2_init_creates_skeleton(self, tmp_path):
         rc, _ = init_project(tmp_path)

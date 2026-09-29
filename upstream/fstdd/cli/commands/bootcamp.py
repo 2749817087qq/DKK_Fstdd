@@ -98,7 +98,7 @@ def cmd_bootcamp_start(args: argparse.Namespace) -> None:
         else:
             print(f"  🎓 已毕业！等级: {_calc_level(list(passed))}")
             print(f"  通过关卡: {sorted(passed)}")
-            print(f"  重学: stdd bootcamp start --module <N>")
+            print(f"  重学: fstdd bootcamp start --module <N>")
             return
 
     level_info = LEVELS[start_level]
@@ -138,8 +138,8 @@ def cmd_bootcamp_start(args: argparse.Namespace) -> None:
         _run_all_levels(project_root, start_level)
         return
     print(f"  📋 请按上述任务完成训练。完成后执行:")
-    print(f"     stdd bootcamp grade {start_level}  自动评分")
-    print(f"     stdd bootcamp status              查看进度")
+    print(f"     fstdd bootcamp grade {start_level}  自动评分")
+    print(f"     fstdd bootcamp status              查看进度")
 
 
 def _run_all_levels(project_root, start_level):
@@ -192,7 +192,7 @@ def cmd_bootcamp_retry(args: argparse.Namespace) -> None:
     cert = _load_cert(project_root)
     target = getattr(args, "level", None)
     if not target:
-        print("  用法: stdd bootcamp retry <N>")
+        print("  用法: fstdd bootcamp retry <N>")
         sys.exit(1)
     lv = int(target)
     if lv < 1 or lv > 5:
@@ -218,7 +218,7 @@ def cmd_bootcamp_skip(args: argparse.Namespace) -> None:
     cert = _load_cert(project_root)
     target = getattr(args, "level", None)
     if not target:
-        print("  用法: stdd bootcamp skip <N>")
+        print("  用法: fstdd bootcamp skip <N>")
         sys.exit(1)
     lv = int(target)
     print(f"  ⚠️ 确认跳过第 {lv} 关? 此操作需要用户明确同意。")
@@ -237,7 +237,7 @@ def cmd_bootcamp_grade(args: argparse.Namespace) -> None:
     project_root = Path.cwd()
     level = getattr(args, "level", None)
     if not level:
-        print("  用法: stdd bootcamp grade <N>")
+        print("  用法: fstdd bootcamp grade <N>")
         sys.exit(1)
     lv = int(level)
     cert = _load_cert(project_root)

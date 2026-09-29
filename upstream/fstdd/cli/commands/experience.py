@@ -993,7 +993,7 @@ def _cmd_extract(args, exp_dir):
     print(f"  Generated {count} draft(s) (lifecycle=discovered)")
     if skipped > 0:
         print(f"  {skipped} low-value pattern(s) skipped")
-    print("  Run 'stdd experience review' to confirm drafts")
+    print("  Run 'fstdd experience review' to confirm drafts")
 
 
 def _parse_test_report(text):
@@ -1056,7 +1056,7 @@ def _cmd_review(args, exp_dir):
     """Interactive review of discovered experience drafts."""
     exp_dir_path = Path(exp_dir)
     if not exp_dir_path.exists():
-        print("  Experience library is empty. Run 'stdd experience extract' first.")
+        print("  Experience library is empty. Run 'fstdd experience extract' first.")
         return
     drafts = []
     for f in _iter_experience_files(exp_dir_path):

@@ -267,7 +267,7 @@ def cmd_knowledge_query(args: argparse.Namespace) -> None:
         if fmt == "json":
             print(json.dumps([], ensure_ascii=False))
         else:
-            print("  知识图谱为空。运行 'stdd knowledge merge' 创建图谱。")
+            print("  知识图谱为空。运行 'fstdd knowledge merge' 创建图谱。")
         return
 
     # Search nodes
@@ -345,7 +345,7 @@ def cmd_knowledge_predict(args: argparse.Namespace) -> None:
 
     change_name = getattr(args, "change_name", "")
     if not change_name:
-        print("  请指定 change 名称: stdd knowledge predict <change>")
+        print("  请指定 change 名称: fstdd knowledge predict <change>")
         return
 
     # Extract features from current change
@@ -402,7 +402,7 @@ def cmd_knowledge_fix(args: argparse.Namespace) -> None:
 
     exp_id = getattr(args, "experience_id", "")
     if not exp_id:
-        print("  请指定经验 ID: stdd knowledge fix <EXP-ID>")
+        print("  请指定经验 ID: fstdd knowledge fix <EXP-ID>")
         return
 
     # Find the node matching this experience ID
@@ -434,7 +434,7 @@ def cmd_knowledge_fix(args: argparse.Namespace) -> None:
                 break
 
     if not target_node:
-        print(f"  该经验（{exp_id}）在知识图谱中暂无记录。运行 'stdd knowledge merge' 同步。")
+        print(f"  该经验（{exp_id}）在知识图谱中暂无记录。运行 'fstdd knowledge merge' 同步。")
         return
 
     fix_refs = target_node.get("fix_template_refs", [])

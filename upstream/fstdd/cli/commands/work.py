@@ -70,7 +70,7 @@ def cmd_work(args: argparse.Namespace) -> None:
         work_type = getattr(args, "work_type", "other") or "other"
         description = getattr(args, "description", "")
         if not description:
-            print("  Usage: stdd work add --type bugfix \"描述\"")
+            print("  Usage: fstdd work add --type bugfix \"描述\"")
             sys.exit(1)
         commit = getattr(args, "commit_hash", "") or ""
 
@@ -93,4 +93,4 @@ def cmd_work(args: argparse.Namespace) -> None:
             print(f"    {i}. [{w.get('type', '?')}] {w.get('description', '?')}{commit_str}")
     else:
         print(f"  暂无关联工作记录。")
-        print(f"  用 'stdd work add --type bugfix \"描述\"' 记录附带工作。")
+        print(f"  用 'fstdd work add --type bugfix \"描述\"' 记录附带工作。")

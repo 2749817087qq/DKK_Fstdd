@@ -130,7 +130,7 @@ def _show_zombie_changes(project_root: Path, current_name: str) -> None:
                 zombies.append(d.name)
 
     if zombies:
-        print(f"  ⚠️ 僵尸 Change ({len(zombies)}): {', '.join(zombies)} — 建议 stdd abort 清理")
+        print(f"  ⚠️ 僵尸 Change ({len(zombies)}): {', '.join(zombies)} — 建议 fstdd abort 清理")
     if undetermined:
         print(f"  ⚠️ 僵尸检测无法判定 ({len(undetermined)}): "
               f"{', '.join(undetermined)} — 请检查其 last_modified 字段")
@@ -164,4 +164,4 @@ def _show_guard_status(project_root: Path) -> None:
     if agents_file.exists() and "STDD-GUARD-ENABLED" in agents_file.read_text(encoding="utf-8"):
         print(f"  Guard: ✅ 已激活 (Codex CLI)")
         return
-    print(f"  Guard: ⚠️ 未安装 — 执行 stdd guard init 安装")
+    print(f"  Guard: ⚠️ 未安装 — 执行 fstdd guard init 安装")

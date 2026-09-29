@@ -1,7 +1,7 @@
-"""STDD main entry point for `python -m stdd`.
+"""STDD main entry point for `python -m fstdd`.
 
-This module enables `python -m stdd` to work, which is more reliable
-than relying on the `stdd` bash wrapper being in PATH (especially in
+This module enables `python -m fstdd` to work, which is more reliable
+than relying on the `fstdd` bash wrapper being in PATH (especially in
 non-interactive shells used by Claude Code hooks).
 """
 

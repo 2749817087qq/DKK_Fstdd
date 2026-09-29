@@ -80,7 +80,7 @@ def cmd_structure_merge(args):
     delta_file = change_dir / "code-structure-delta.md"
 
     if not delta_file.exists():
-        print(f"  Delta not found for {change_name}. Run 'stdd structure delta {change_name}' first.")
+        print(f"  Delta not found for {change_name}. Run 'fstdd structure delta {change_name}' first.")
         sys.exit(1)
 
     # Copy delta to deltas/ archive
@@ -155,7 +155,7 @@ def cmd_structure_show(args):
     project_root = Path.cwd()
     yaml_file = _get_structure_dir(project_root) / ".structure-index.yaml"
     if not yaml_file.exists():
-        print("  No structure index found. Run 'stdd structure merge <change>' first.")
+        print("  No structure index found. Run 'fstdd structure merge <change>' first.")
         return
 
     index_data = yaml.safe_load(yaml_file.read_text(encoding="utf-8")) or {}

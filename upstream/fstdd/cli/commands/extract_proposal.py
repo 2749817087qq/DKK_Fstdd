@@ -1,4 +1,4 @@
-"""stdd extract-proposal — Extract structured data from proposal.md."""
+"""fstdd extract-proposal — Extract structured data from proposal.md."""
 import argparse
 import sys
 import re

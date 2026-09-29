@@ -199,7 +199,7 @@ def _post_init_guard(project_root: Path) -> None:
             continue
         except Exception:
             continue
-    print("  [STDD] Guard: 未检测到支持的平台，跳过自动安装。可手动执行 stdd guard init")
+    print("  [STDD] Guard: 未检测到支持的平台，跳过自动安装。可手动执行 fstdd guard init")
 
 
 def _post_init_experiences(project_root: Path, stdd_source: Path) -> None:
@@ -213,7 +213,7 @@ def _post_init_experiences(project_root: Path, stdd_source: Path) -> None:
     except SystemExit:
         pass
     except Exception:
-        print("  [STDD] 社区经验拉取失败（网络不可用），可稍后手动执行 stdd experience pull")
+        print("  [STDD] 社区经验拉取失败（网络不可用），可稍后手动执行 fstdd experience pull")
 
 
 def _post_init_constitution(project_root: Path) -> None:
@@ -388,5 +388,5 @@ def _post_init_self_check(project_root: Path) -> None:
     # Check experiences
     exp_dir = project_root / ".fstdd" / "experiences"
     exp_count = len([p for p in exp_dir.glob("*.md") if not p.name.startswith(".")]) if exp_dir.exists() else 0
-    print(f"    经验库: {'✅ ' + str(exp_count) + ' 条' if exp_count > 0 else '⚠️ 空（手动拉取: stdd experience pull）'}")
+    print(f"    经验库: {'✅ ' + str(exp_count) + ' 条' if exp_count > 0 else '⚠️ 空（手动拉取: fstdd experience pull）'}")
     print(f"    Agent验证: ✅ agent_tests/ 已创建")

@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def cmd_fix(args):
-    """Main fix dispatch: stdd fix --level 1|2|3 [--dry-run]."""
+    """Main fix dispatch: fstdd fix --level 1|2|3 [--dry-run]."""
     level = getattr(args, "level", 1)
     dry_run = getattr(args, "dry_run", False)
 

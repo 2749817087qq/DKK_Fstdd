@@ -102,7 +102,7 @@ def main():
     exp_count = len([p for p in exp_dir.glob("*.md") if not p.name.startswith(".")]) if exp_dir.exists() else 0
     if exp_count > 0:
         print(f"[STDD] Experience library: {exp_count} entries")
-        print(f"[STDD] Tip: run 'stdd experience curate' to extract new patterns")
+        print(f"[STDD] Tip: run 'fstdd experience curate' to extract new patterns")
 
 if __name__ == "__main__":
     main()

@@ -524,7 +524,7 @@ def _check_phase_integrity(data: dict, current_phase: str) -> tuple:
             return False, (
                 f"Phase 完整性异常：当前 phase='{current_phase}' 但 "
                 f"Phase '{prev}' 状态为 '{prev_status}'（应为 'completed'）。"
-                " 请用 'stdd phase advance' 逐步推进，不要手动修改 .fstdd.yaml。"
+                " 请用 'fstdd phase advance' 逐步推进，不要手动修改 .fstdd.yaml。"
             )
 
     # Check required gate phases have confirmed_at.
@@ -540,7 +540,7 @@ def _check_phase_integrity(data: dict, current_phase: str) -> tuple:
                 gate_label = _GATE_PHASES_DICT.get(gp, f"Gate {gp_idx + 1}")
                 actual = ", ".join(sorted(gp_data.keys())) if gp_data else "(无字段)"
                 fix_cmd = (
-                    f"stdd gate approve <change_id> --gate {gp_idx + 1} "
+                    f"fstdd gate approve <change_id> --gate {gp_idx + 1} "
                     "--confirmed-by dialog"
                 )
                 hint = ""
@@ -597,7 +597,7 @@ def _assess_and_recommend(project_root: Path,
             result["scope"] = _SCOPE_MICRO
             result["reason"] = (
                 f"批级管线阶段: {pipeline_phase}（尚未通过 {gate_label}）"
-                " — 仅允许文档编辑；代码编辑请先 'stdd batch gate' 推进"
+                " — 仅允许文档编辑；代码编辑请先 'fstdd batch gate' 推进"
             )
             return result
 
@@ -612,7 +612,7 @@ def _assess_and_recommend(project_root: Path,
             result["scope"] = _SCOPE_LARGE
             result["reason"] = (
                 f"已修改 {file_count} 个文件，超出 batch 上限 ({_BATCH_MAX_FILES_HARD})。"
-                " 请用 'stdd new' 创建 full change，走完整 STDD 流程。"
+                " 请用 'fstdd new' 创建 full change，走完整 STDD 流程。"
             )
             return result
 
@@ -622,7 +622,7 @@ def _assess_and_recommend(project_root: Path,
             # Still allow, but with strong warning
             result["reason"] = (
                 f"⚠️  已修改 {file_count} 个文件 (batch 推荐上限 {_BATCH_MAX_FILES})。"
-                " 建议转 full STDD: 'stdd new <change-name>'"
+                " 建议转 full STDD: 'fstdd new <change-name>'"
             )
             return result
 
@@ -660,13 +660,13 @@ def _assess_and_recommend(project_root: Path,
             result["scope"] = _SCOPE_MICRO
             result["reason"] = (
                 f"检测到 {file_count} 个文件改动，属于微修复范围。"
-                " 用 'stdd batch open \"描述\"' 快速开始。"
+                " 用 'fstdd batch open \"描述\"' 快速开始。"
             )
         elif file_count <= 5:
             result["scope"] = _SCOPE_SMALL
             result["reason"] = (
                 f"检测到 {file_count} 个文件改动。"
-                " 微修复用 'stdd batch open \"描述\"'，较大改动用 'stdd new'。"
+                " 微修复用 'fstdd batch open \"描述\"'，较大改动用 'fstdd new'。"
             )
         else:
             result["scope"] = _SCOPE_MEDIUM
@@ -676,7 +676,7 @@ def _assess_and_recommend(project_root: Path,
             )
     else:
         result["reason"] = (
-            "无 active change。微修复用 'stdd batch open \"描述\"'，"
+            "无 active change。微修复用 'fstdd batch open \"描述\"'，"
             "新功能/重构用 '/fstdd-understand'。"
         )
 
@@ -809,7 +809,7 @@ def cmd_guard_check(args: argparse.Namespace) -> int:
             _guard_report(args, "🚫 GATE<N>_APPROVED token 必须由用户人工创建，AI 不得写入。")
             return 2
         if _is_state_confirmation_edit(project_root, hook_path, hook_content):
-            _guard_report(args, "🚫 不得直接修改 .fstdd.yaml 确认字段；请走 'stdd gate approve' CLI 通道。")
+            _guard_report(args, "🚫 不得直接修改 .fstdd.yaml 确认字段；请走 'fstdd gate approve' CLI 通道。")
             return 2
         # V3.0.8: exclude_dirs 生效 —— 运维元数据（memory/automations 等）
         # 不参与 STDD 门禁。置于上述两处硬阻断之后：GATE token 与 .fstdd.yaml
@@ -1120,7 +1120,7 @@ def _guard_init_opencode(project_root: Path) -> None:
     if not guard_exists:
         settings["hooks"]["PreToolUse"].append({
             "matcher": "Edit|Write",
-            "hooks": [{"type": "command", "command": "stdd guard check --platform opencode"}]
+            "hooks": [{"type": "command", "command": "fstdd guard check --platform opencode"}]
         })
     settings_file.parent.mkdir(parents=True, exist_ok=True)
     settings_file.write_text(json.dumps(settings, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -1154,7 +1154,7 @@ def _guard_init_aider(project_root: Path) -> None:
     if "pre-commit" not in conf:
         conf["pre-commit"] = []
     pre_commit = conf["pre-commit"] if isinstance(conf["pre-commit"], list) else [conf["pre-commit"]]
-    guard_cmd = "stdd guard check --platform aider"
+    guard_cmd = "fstdd guard check --platform aider"
     if guard_cmd not in str(pre_commit):
         pre_commit.append(guard_cmd)
     conf["pre-commit"] = pre_commit
@@ -1248,7 +1248,7 @@ def cmd_guard_disable(args: argparse.Namespace) -> None:
     elif dry_run:
         print("  [STDD Guard] --dry-run: 以上为预览，未修改任何文件。")
     else:
-        print("  [STDD Guard] Hook disabled. Run 'stdd guard enable' to re-enable.")
+        print("  [STDD Guard] Hook disabled. Run 'fstdd guard enable' to re-enable.")
 
 
 def cmd_guard_enable(args: argparse.Namespace) -> None:

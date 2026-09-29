@@ -16,7 +16,7 @@ def cmd_proposal_init(args):
     """
     print("  ⚠️ [DEPRECATED] proposal init 的 MD→YAML 解析已废弃（V3.0.5 YAML-first）")
     print("     YAML 才是源头：直接编辑 canonical/proposals/ 下的 YAML")
-    print("     Human View MD 用 `stdd canon generate` 生成（Gate 时自动）")
+    print("     Human View MD 用 `fstdd canon generate` 生成（Gate 时自动）")
     print("     本命令现在仅作为 scaffold 模板的别名：\n")
 
     from .canon import cmd_canon_init

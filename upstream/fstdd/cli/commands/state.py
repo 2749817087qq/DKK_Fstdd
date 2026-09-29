@@ -1,4 +1,4 @@
-"""stdd state — Read/write resume context fields in .fstdd.yaml (V2.5)."""
+"""fstdd state — Read/write resume context fields in .fstdd.yaml (V2.5)."""
 
 import argparse
 import sys
@@ -65,7 +65,7 @@ def write_resume_context(change_dir: Path, **kwargs) -> None:
 
 
 def cmd_state(args: argparse.Namespace) -> None:
-    """CLI entry: stdd state <change-name> [--resume] [--set KEY=VALUE]."""
+    """CLI entry: fstdd state <change-name> [--resume] [--set KEY=VALUE]."""
     project_root = Path.cwd()
     change_dir = _find_change_dir(getattr(args, "name", None), project_root)
 

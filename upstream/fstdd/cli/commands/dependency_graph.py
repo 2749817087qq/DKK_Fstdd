@@ -1,4 +1,4 @@
-"""stdd dependency-graph — Build dependency graph from spec GIVEN clauses."""
+"""fstdd dependency-graph — Build dependency graph from spec GIVEN clauses."""
 import argparse
 import sys
 import re

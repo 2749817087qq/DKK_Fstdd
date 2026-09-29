@@ -1,4 +1,4 @@
-"""stdd gate — CLI and file-token based Gate confirmation (V2.5)."""
+"""fstdd gate — CLI and file-token based Gate confirmation (V2.5)."""
 
 import argparse
 import hashlib
@@ -170,12 +170,12 @@ def _auto_generate_human_views(project_root: Path, change_dir: Path, gate_num: i
                     print(f"    ⚠️  跳过损坏的 spec YAML: {name} — {reason}")
                 if broken:
                     print(f"    ⚠️  共 {len(broken)} 个 spec YAML 未生成，其余 {generated} 个正常"
-                          f"（可手动运行 `stdd canon generate` 排查）")
+                          f"（可手动运行 `fstdd canon generate` 排查）")
     except SystemExit as e:  # DFX-011: 不再静默
-        print(f"    ⚠️  spec Human View 生成中断（{e}）；可手动运行 `stdd canon generate`")
+        print(f"    ⚠️  spec Human View 生成中断（{e}）；可手动运行 `fstdd canon generate`")
     except Exception as e:
         print(f"    ⚠️  spec Human View 生成失败（{type(e).__name__}: {str(e)[:80]}）；"
-              f"可手动运行 `stdd canon generate`")
+              f"可手动运行 `fstdd canon generate`")
 
 
 def _read_gates_config(project_root: Path) -> dict:

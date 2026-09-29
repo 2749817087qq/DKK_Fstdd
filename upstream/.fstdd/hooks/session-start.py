@@ -100,7 +100,7 @@ def _check_zombie_changes(project_root: Path) -> None:
     if zombies:
         print("[STDD Guard] ⚠️ 僵尸 Change 检测（>7天未推进）:")
         for name, phase in zombies:
-            print(f"[STDD Guard]   {name} (phase: {phase}) — 建议 stdd abort 或 archive")
+            print(f"[STDD Guard]   {name} (phase: {phase}) — 建议 fstdd abort 或 archive")
         print()
 
 
@@ -145,7 +145,7 @@ def _show_guard_status(project_root: Path) -> None:
                 return  # Guard active, silent
         except Exception:
             pass
-    print("[STDD Guard] ⚠️ Guard 未安装 — 手动执行: stdd guard init")
+    print("[STDD Guard] ⚠️ Guard 未安装 — 手动执行: fstdd guard init")
 
 
 if __name__ == "__main__":

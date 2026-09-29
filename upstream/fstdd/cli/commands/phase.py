@@ -138,7 +138,7 @@ def cmd_phase(args: argparse.Namespace) -> None:
                 print(f"     请先完成 {gate_name} 确认:")
                 print(f"       - 对话确认: 在 Phase 结束时等待用户确认")
                 print(f"       - 文件确认: 创建 GATE{gate_num}_APPROVED 文件")
-                print(f"       - CLI 确认: stdd gate approve --gate {gate_num}")
+                print(f"       - CLI 确认: fstdd gate approve --gate {gate_num}")
                 sys.exit(1)
 
         # V3.0.5: Pre-condition checks for phase transitions (merged at build→deliver)
@@ -185,7 +185,7 @@ def cmd_phase(args: argparse.Namespace) -> None:
     elif action == "set":
         target = getattr(args, "target_phase", None)
         if not target:
-            print("  Usage: stdd phase set <phase>")
+            print("  Usage: fstdd phase set <phase>")
             sys.exit(1)
         if target not in _PHASE_ORDER:
             print(f"  Invalid phase: {target}. Valid: {', '.join(_PHASE_ORDER)}")

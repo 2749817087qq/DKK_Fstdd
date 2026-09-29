@@ -31,7 +31,7 @@ def cmd_archive(args: argparse.Namespace) -> None:
         if not (build_done or legacy_verify_done):
             print("   ❌ Phase 3 (BUILD) 尚未完成，无法归档。")
             print("     请先完成 BUILD: 运行测试、失败模式检查、Gate 3 确认。")
-            print("     用 'stdd phase advance' 推进到 build，完成后再次归档。")
+            print("     用 'fstdd phase advance' 推进到 build，完成后再次归档。")
             sys.exit(1)
 
     archive_dir = project_root / ".fstdd" / "archive" / change_dir.name

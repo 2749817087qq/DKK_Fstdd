@@ -60,6 +60,36 @@
   本次把四处副本两两对齐（根 = 内核）。
   **帮助**：guard 与版本自检打印的命令**真实可用**，不再把用户引向死路；也不再把「模板对 / 副本错」
   的分歧一路带到发布。
+- **CLI 自身运行时文案的旧命令名收口 —— 上条裁定口径的又一次未收口，且是命中面最大的一次**：
+  上条已裁定「纳入改名范围 ＝ 运行时会被读取、并向用户打印文案」的路径，但**只枚举了配置层与
+  skill 层两个目录**，未覆盖 CLI 源码 —— 而 CLI 恰是把命令名打印给用户最多的地方。
+  实测：`fstdd --help` 逐行仍以**改名前旧 CLI 名**为前缀列出全部子命令与 4 条示例，
+  用户照抄必然失败（可执行文件早已改名为 `fstdd`）。
+  本次按同一口径修正 **30 个文件、约 100 处**：
+  - `upstream/fstdd/cli/__init__.py`：`--help` 构建器（每条子命令一行）与 4 条示例；
+  - `upstream/fstdd/cli/commands/*.py`：所有 `print(...)` 的用法与下一步引导
+    （batch 28 处、guard 11 处、ci 7 处、bootcamp 6 处，其余命令 1–4 处不等）；
+  - `upstream/fstdd/cli/utils.py` 的版本自检提示、`upstream/.fstdd/hooks/*.py` 的会话提示；
+  - `ci.py` **写入生成物**的模板（CI 配置与 pre-commit hook）里的 `python bin/<旧名> ...`
+    一并改为 `python bin/fstdd ...` —— 否则生成出来的流水线自身就调用不存在的入口。
+  **刻意不动**（load-bearing，改了会反向破坏）：hook 探测标记（须同时保留新旧两种形态）、
+  `guard.py` / `status.py` 的既有安装探测、`upgrade.py` 的**迁移对**（其左侧本就是改名前的形态），
+  以及产品 / 署名性标签（大写项目名、方括号前缀等）；解释历史的注释与文档串同样保留。
+  **为何逃过门禁**：`tools/verify_rename.py` 的 `EXCLUDE_DIRS` 含 `upstream`，而 CLI 源码整体位于
+  其中 —— 这约 100 处旧命令名**结构性地**不可见。与前两条同一机理，本次命中面最大。
+  **修补不只改字面**：
+  1. `test_fstdd_matrix.py` 新增 `test_b1b_help_does_not_reference_old_exe`，对**真实产物**
+     `fstdd --help` 逐行断言不再以旧命令名为命令前缀（判据为「行首 + 旧名 + 空白」，
+     不误伤 `stdd-repo` 这类名物）；
+  2. `guard.py` 完整性报错里**给用户复制的修复命令**同样带旧命令名，一并修正；随之同步
+     `test_guard_error_messages.py` 的三处锚定 —— 该测试此前把旧命令名与「命令可用」一起锁死，
+     属**用测试守护 bug**（与 `test_repo_home.py` 的既有教训同源），故改的是被守护的错误结论，
+     而非放宽断言。
+  **帮助**：用户从 CLI 得到的第一手提示（`--help`、报错里可复制的修复命令、各命令的下一步引导）
+  **真实可执行** —— 此前一个新用户装完 FSTDD、第一次运行帮助，拿到的就是一张指向不存在命令的清单。
+  回归锚点：`pytest upstream/tests -q` → 812 passed / 54 skipped / 0 failed。
+  发布门禁须**在提交后**复跑：`verify_eol.py` 的 TC-EOL-005 只容忍 `tools/` `docs/` `skills/`
+  前缀的未提交 diff，改 `upstream/` 与 `CHANGELOG.md` 必须先提交（本次实测该门禁因此先行报红）。
 
 ### 文档
 - **更正 README / NOTICE 关于「是否复制上游代码」的失实表述**：README 原文称
