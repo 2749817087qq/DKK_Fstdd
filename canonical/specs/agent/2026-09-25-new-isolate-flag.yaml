@@ -11,7 +11,7 @@ meta:
 
 preconditions:
   - "已提交本次改动（工作区干净），否则 worktree 会把未提交改动带偏，结论不可采信"
-  - "临时沙箱仓：在系统临时目录 `git init` 一个空仓并完成 `stdd init`，避免污染 stdd-repo"
+  - "临时沙箱仓：在系统临时目录 `git init` 一个空仓并完成 `fstdd init`，避免污染 stdd-repo"
   - "沙箱仓的 .git 存在且 HEAD 至少有一次提交（worktree add 需要可解析的 HEAD）"
 
 steps:

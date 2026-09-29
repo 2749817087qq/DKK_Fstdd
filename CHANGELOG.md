@@ -10,6 +10,21 @@
 
 ## [Unreleased]
 
+### 门禁 / 改名一致性
+- **发布硬门禁 `verify_rename.py` 由 6/8 恢复到 8/8**（spec SC-007 要求 `verify_eol` 7/7 且
+  `verify_rename` 8/8，二者此前均被本项阻塞）：
+  - **TC-RENAME-002**：`canonical/` 三份权威 YAML（`specs/code`、`specs/agent`、`proposals` 各一）
+    与 `CHANGELOG.md` 中仍以旧名书写 CLI 的 36 处 `stdd`（如 `` `stdd new` ``、`` `stdd init` ``、
+    `` `stdd canon generate` ``）逐处改为 `fstdd`。`stdd-repo` 等带连字符的**仓库/产物名**、
+    以及 `upstream/` 排除区内的历史表述**保持不变** —— 改名只针对 CLI 可执行名，不误伤名物。
+  - **TC-RENAME-005**：为归档 change `2026-09-26-finder-archive-fallback` 补齐 DELIVER 阶段漏落的
+    `test-report.md`（该 change 归档时 `.fstdd.yaml` 仍停在 `deliver: pending`）。报告内容取自
+    实测证据（`pytest upstream/tests/test_finder.py
+    upstream/tests/commands/test_finder_archive_fallback.py -q` → 21 passed / 8.57s；基线
+    `f3b2713`、被测版本 `db4cc7e`），未臆造数据。
+  **帮助**：改名后的发布门禁**真正全绿**，而不是靠排除区掩盖旧名残留 —— 此前 6/8 意味着
+  「改名未完成」这一事实被 `--help`、归档资产两处缺口共谋隐藏。
+
 ### 文档
 - **更正 README / NOTICE 关于「是否复制上游代码」的失实表述**：README 原文称
   「本仓库只放我们自己的改动层 —— **不复制**上游那 900 多个文件」，与事实相反 ——
@@ -52,7 +67,7 @@
   （实测 old=True / new=False）。
   **帮助**：缺依赖不再被静默放过，避免 skill 看似装好、真正跑 CLI 时才失败。
 - **README §4 初始化示例路径修正**：`python "C:/路径/stdd/bin/fstdd" init` → `python "<本仓库路径>/upstream/bin/fstdd" init`
-  （原路径 `stdd/bin/fstdd` 在仓库中不存在，照抄必失败）。
+  （原路径 `C:/路径/stdd/bin/fstdd` 在仓库中不存在，照抄必失败）。
 
 ### 修复 / 分发可用性
 - **一键装 `install.ps1` 在 Windows PowerShell 5.1 下无法解析（文件缺 UTF-8 BOM）**：
