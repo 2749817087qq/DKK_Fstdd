@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     FSTDD for WorkBuddy —— 一键安装（Windows / PowerShell）
 

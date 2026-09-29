@@ -54,6 +54,16 @@
 - **README §4 初始化示例路径修正**：`python "C:/路径/stdd/bin/fstdd" init` → `python "<本仓库路径>/upstream/bin/fstdd" init`
   （原路径 `stdd/bin/fstdd` 在仓库中不存在，照抄必失败）。
 
+### 修复 / 分发可用性
+- **一键装 `install.ps1` 在 Windows PowerShell 5.1 下无法解析（文件缺 UTF-8 BOM）**：
+  该文件以 UTF-8 **无 BOM** 入库，而 Windows PowerShell 5.1 对无 BOM 脚本默认按系统
+  ANSI 代码页读取 —— 本机代码页为 936（GBK），中文正文被错误解码、引号配对被打乱，
+  于是 `& $Python -c "…"` 之后的语句被当作代码解析，直接抛 `Unexpected token 'if'`
+  （实测 `powershell -ExecutionPolicy Bypass -File install.ps1` 退出码 1，一行未执行）。
+  修复：为 `install.ps1` 补 UTF-8 BOM（`EF BB BF`；行尾仍为 LF）。
+  **帮助**：Windows 用户按 README §4 照抄 `.\install.ps1` 不再必然失败 —— 此前该文件
+  在本机默认 shell 下**完全不可用**，是一键装路径上被掩盖的阻断点。
+
 ---
 
 ## [3.1.0] — 2026-09-26
