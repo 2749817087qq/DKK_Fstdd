@@ -24,11 +24,15 @@
 - **镜像告警测试的 bash 可用性判定由「存在即用」改为「实跑判定」**：`test_mirror_alert_ops.py`
   的模块级守卫原是 `skipif(shutil.which("bash") is None)`。Windows 下 `C:\Windows\system32\bash.exe`
   是 WSL 启动器，未装发行版时它**存在却一执行就失败**（`bash -c true` 实测 rc=1），
-  于是守卫不触发、需真实执行 bash 的用例照跑并在本机全线失败（实测全量套件
-  **31 failed / 816 passed**，FAILED 行全为本文件的钩子执行类用例；全仓仅此文件执行 bash，
-  `grep` 可证）。改为**真执行一次** `bash -c true` 再判定可用性。
+  于是守卫不触发、需真实执行 bash 的用例照跑并在本机全线失败（改前全量套件
+  **31 failed / 816 passed / 4 skipped**）。改为**真执行一次** `bash -c true` 再判定可用性。
   **帮助**：无 bash 的机器上这些用例**如实跳过**（本文件 **49 skipped / exit 0**），
-  不再把环境差异伪装成红灯 —— 测试基线不再被环境差异污染。
+  不再把环境差异伪装成红灯（改后全量套件 **2 failed / 796 passed / 53 skipped**）。
+  **遗留（非本次引入）**：改后仍有 2 项失败，均在 `test_canonical_in_workspace.py` ——
+  `TestDInstalledSkill::test_d2` 硬编码**旧** skill 目录 `~/.workbuddy/skills`（实际本实例为
+  `~/.workbuddy-ai/skills`，旧目录只剩影子副本，故「指向工作区」计数为 0）；
+  `TestCArchive::test_c2` 比对**区外归档副本**文件数（733 vs 1045，环境相关）。
+  二者同属「测试判定与环境事实不符」，留待专档处理。
 
 ### 合规 / 来源声明
 - **来源口径再校正：`upstream/` 是「持续维护的适配内核」，不是冻结的上游 vendor 快照**。
