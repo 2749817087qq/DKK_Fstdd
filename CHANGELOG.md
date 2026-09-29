@@ -53,6 +53,18 @@
   **31 failed / 816 passed / 4 skipped**）。改为**真执行一次** `bash -c true` 再判定可用性。
   **帮助**：无 bash 的机器上这些用例**如实跳过**（本文件 **49 skipped / exit 0**），
   不再把环境差异伪装成红灯。
+- **一键安装脚本首次获得回归测试**：`install.sh` / `install.ps1` 此前**在整套测试中零引用** ——
+  同日连续三处「一键装」缺陷（`install.ps1` 缺 BOM、两个脚本误选 Store 别名桩、`--py` 取值错位）
+  全靠人工实跑发现，**修完即无防线**。新增 `upstream/tests/test_install_scripts.py`（3 项）：
+  以**可用解释器实跑**脚本，断言 `--yes --py <解释器>`（`--py` 非首参，正是出错的那条路径）、
+  `--py=<解释器>`、`install.ps1 -Python` 三种形式**都选中指定解释器并以 0 退出**；
+  `FSTDD_OUT` 一律指向临时目录，**不触碰真实用户 skill 目录**。
+  bash 可用性沿用「真跑 `bash -c true` 才采纳」判据，并补 Git for Windows 常见安装位 ——
+  否则 `shutil.which("bash")` 命中的 WSL 启动器桩会让整组测试**静默跳过**（假绿）。
+  **帮助**：「一键装可用」从人工口头结论变成可回归的门禁。RED 验证：把 `install.sh` 还原到
+  修复前 `81e4d79`，`test_install_sh_py_after_yes` 如期失败并逐字复现
+  `[FAIL] 未找到可用的 Python 3.10+`；恢复后 3/3 通过。
+  回归锚点：`upstream/tests/test_install_scripts.py`（3 项）。
 
 ### 合规 / 来源声明
 - **来源口径再校正：`upstream/` 是「持续维护的适配内核」，不是冻结的上游 vendor 快照**。
