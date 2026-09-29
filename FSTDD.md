@@ -132,5 +132,5 @@ archive/            # 已完成变更 / Completed changes
 |---------------|-------------------|
 | `/fstdd-understand` | Phase 1: 需求理解与确认 / Requirement understanding |
 | `/fstdd-spec` | Phase 2: 规格设计与测试方案 / Spec & test design |
-| `/stdd-continue` | 从当前阶段继续执行 (Phase 3-4) / Continue from current phase |
-| `/stdd-status` | 查看当前变更状态 / View current change status |
+| `/fstdd-continue` | 从当前阶段继续执行 (Phase 3-4) / Continue from current phase |
+| `fstdd status` | 查看当前变更状态 / View current change status |

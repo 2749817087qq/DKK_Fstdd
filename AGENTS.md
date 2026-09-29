@@ -32,8 +32,8 @@ archive/                # 已完成变更 / Completed changes
 |---------------|---------------|
 | `/fstdd-understand` | Phase 1: 启动新变更需求理解 / Start new change understanding |
 | `/fstdd-spec` | Phase 2: 进入规格设计 / Enter spec design |
-| `/stdd-continue` | 继续执行当前变更（Phase 3-6）/ Continue current change |
-| `/stdd-status` | 查看变更状态 / View change status |
+| `/fstdd-continue` | 继续执行当前变更（Phase 3-4）/ Continue current change |
+| `fstdd status` | 查看变更状态 / View change status |
 
 ## 开发约定 / Development Conventions
 

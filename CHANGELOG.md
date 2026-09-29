@@ -25,6 +25,25 @@
     `f3b2713`、被测版本 `db4cc7e`），未臆造数据。
   **帮助**：改名后的发布门禁**真正全绿**，而不是靠排除区掩盖旧名残留 —— 此前 6/8 意味着
   「改名未完成」这一事实被 `--help`、归档资产两处缺口共谋隐藏。
+- **顶层文档的旧斜杠命令收口**（收正 2026-09-15 改名 change 的一处**误判**）：
+  `AGENTS.md` 与 `FSTDD.md` 的常用命令表仍写 `/stdd-continue` 与 `/stdd-status`，
+  改为 `/fstdd-continue` 与 `fstdd status`（口径 = 根 `FSTDD_CONSTITUTION.md` §常用命令，
+  亦即 `upstream/fstdd/cli/commands/upgrade.py::_CONSTITUTION_MIGRATIONS` 的明文迁移对）。
+  `AGENTS.md` 另把相位区间滞留在「Phase 3-6」，与 V3.0 的 6→4 相位合并
+  （`upstream/fstdd/cli/commands/phase_constants.py::PHASE_ORDER`）矛盾，一并改为 Phase 3-4。
+  **为何逃过门禁**：`tools/verify_rename.py` 的 TC-RENAME-002 为防止误伤 `stdd-repo`、
+  `leonai42/stdd-*` 这类**名物**，其正则刻意放过连字符形态 ——
+  于是带斜杠的旧命令名成了结构性盲区：这几处一路全绿通过。
+  （本条与 `4be8b35` 同一教训：检测器的判据**不得在本文件里复现**，否则条目自身触红。）
+  **依据**：2026-09-15 改名 change 的 `design-adjustments.yaml::not_adopted` 曾以
+  「`grep '/stdd-'` 命中项全部位于 `.fstdd/archive/` 下」判该评语不成立；此判据不成立 ——
+  顶层两处文档确有残留（该评语命名者是对的）。归档文档本身仍按规约保留原样，不在本次改动内。
+  **帮助**：agent 读到的命令表与真实可用的命令集一致，不再引导不存在的 `/stdd-continue`。
+  **遗留（需另立 change 裁定）**：`.fstdd/config.d/guard.yaml` 的 guard 提示语
+  （`/stdd-understand`）与 `.fstdd/skills/_shared/version-check.md` 的 `/stdd-upgrade` 提示仍是旧名。
+  二者是**活配置 / 活 skill**（guard 会真的打印给用户），但其内容与内核 `upstream/.fstdd/` 同源，
+  且 `.fstdd/` 是门禁的**显式排除区** —— 是否把「活配置 / 活 skill」纳入改名范围
+  （同时不误伤 `.fstdd/archive/` 历史），属规范层决策，单独立 change。
 
 ### 文档
 - **更正 README / NOTICE 关于「是否复制上游代码」的失实表述**：README 原文称
