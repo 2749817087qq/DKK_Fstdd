@@ -10,6 +10,23 @@
 
 ## [Unreleased]
 
+### 合规
+- **开源合规红线由「散文改写」升级为可执行门禁**：`be4711d` 已把 NOTICE / README / LICENSE 的
+  vendor 口径与事实对齐（上游内容**随本仓库一并分发**；不得主张为原创），但**只改了散文**，
+  无任何自动化防线 —— 任一次后续改写都可能让越界主张悄悄回归，而现有门禁
+  （`verify_eol` / `verify_rename`）都看不到它。新增 `upstream/tests/test_license_compliance.py`
+  守**事实性契约**（15 项）：
+  1. `UPSTREAM-LICENSE.txt` 与内核 `upstream/LICENSE` **逐字节一致**（MIT 署名义务：原文未被改动）；
+  2. 根 `LICENSE` 明确把 `upstream/` 排除在授权范围外，并指向上游许可原文；
+  3. `NOTICE.md` / `README.md` 承认「无需另行获取上游源码」（vendor 事实）且指向 NOTICE；
+  4. **反向断言**：越界主张（「未列明的内容均为本仓库原创」）不得在 LICENSE / NOTICE / README 复现 ——
+     这正是 `be4711d` 修掉的病根。
+  **为何是门禁而非再写一遍文档**：这三份文件对外分发时是**唯一的来源声明**，其失真属
+  「版权声明里的失实陈述」；此前**只有人工复核**能发现。本门禁只断言事实，不锁措辞、不固化计数
+  （同 `38769b5` 教训）。
+  **帮助**：对外分发前一条命令即可核验合规声明与事实一致。
+  回归锚点：`pytest upstream/tests/test_license_compliance.py -q` → 15 passed / 0 failed。
+
 ### 门禁 / 改名一致性
 - **发布硬门禁 `verify_rename.py` 由 6/8 恢复到 8/8**（spec SC-007 要求 `verify_eol` 7/7 且
   `verify_rename` 8/8，二者此前均被本项阻塞）：
