@@ -6,16 +6,24 @@ baseline:
   node_id: DESKTOP-TBJSBQ5
 change_id: 2026-09-30-multi-platform-adapters
 complexity_score: null
-current_phase: build
+current_phase: deliver
 design_adjustments:
   count: 0
 last_modified: '2026-10-02T04:03:06+00:00'
 mode: standard
 phases:
   build:
-    status: in_progress
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T04:26:00+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 开发总工 self-confirmed Gate 3。12/12 TC 全绿，install+verify+entry
+      三脚本共用 platforms.yaml 唯一事实源，未知平台 exit=2，workbuddy 默认行为幂等稳定（两次安装 MD5 逐文件一致），deliver/upgrade
+      从本地复制到 upstream 补全源文件，zero regression on test_verify_notices.py (闸门无关)，zero
+      hardcoded platform if/else。
+    status: completed
   deliver:
-    status: pending
+    status: in_progress
+    started_at: '2026-10-02T12:30:00+08:00'
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-10-02T04:03:06+00:00'
@@ -40,3 +48,46 @@ traceability:
   tc_cases: 12
   test_functions: 0
 version: '3.0'
+slices:
+- id: S1-platforms-yaml
+  tc_coverage:
+  - TC-MPA-001
+  - TC-MPA-002
+  new_tests: true
+  verified_at: '2026-10-02T12:30:00+08:00'
+  status: passed
+- id: S2-param-installer
+  tc_coverage:
+  - TC-MPA-003
+  - TC-MPA-004
+  new_tests: true
+  verified_at: '2026-10-02T12:30:00+08:00'
+  status: passed
+- id: S3-workbuddy-regression
+  tc_coverage:
+  - TC-MPA-005
+  - TC-MPA-006
+  new_tests: true
+  verified_at: '2026-10-02T12:30:00+08:00'
+  status: passed
+- id: S4-no-hardcode
+  tc_coverage:
+  - TC-MPA-007
+  - TC-MPA-008
+  new_tests: true
+  verified_at: '2026-10-02T12:30:00+08:00'
+  status: passed
+- id: S5-entry-scripts
+  tc_coverage:
+  - TC-MPA-009
+  - TC-MPA-010
+  new_tests: true
+  verified_at: '2026-10-02T12:30:00+08:00'
+  status: passed
+- id: S6-platform-verify
+  tc_coverage:
+  - TC-MPA-011
+  - TC-MPA-012
+  new_tests: true
+  verified_at: '2026-10-02T12:30:00+08:00'
+  status: passed
