@@ -6,17 +6,31 @@ baseline:
   node_id: DESKTOP-TBJSBQ5
 change_id: 2026-09-26-guard-scope-unbound
 complexity_score: null
-current_phase: understand
+current_phase: build
 design_adjustments:
   count: 0
+last_modified: '2026-10-02T07:55:46+00:00'
 mode: standard
 phases:
   build:
-    status: pending
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T07:56:16+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 开发总工 self-confirm Gate 3。design.md 重写（3 个实际 bug），test-plan.md
+      8 TC 全覆盖（P0×3 + P1×3 + P2×2）。修法：Bug 1 guard-fix-loop 例外最小改动，Bug 2 version.yaml
+      动态读，Bug 3 先审计再修。目标文件 guard.py + version.yaml。
+    started_at: '2026-10-02T16:00:00+08:00'
+    status: in_progress
   deliver:
     status: pending
   spec:
-    status: pending
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T07:55:46+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 开发总工 self-confirm Gate 2。design.md 已重写，基于实际代码审计发现 3 个 bug（Bug
+      1 循环依赖阻塞性、Bug 2 版本号硬编码 V2.9.4、Bug 3 completed_at 空）。修法：Bug 1 加 guard-fix-loop
+      例外（最小改动）、Bug 2 从 version.yaml 动态读、Bug 3 先审计再修。7 个 TC 覆盖边界。
+    status: completed
   understand:
     confirmed_actor: ai
     confirmed_at: '2026-10-02T07:45:04+00:00'

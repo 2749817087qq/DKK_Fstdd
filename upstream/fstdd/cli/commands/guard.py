@@ -39,6 +39,13 @@ from .phase_constants import (
 # error non-reproducible and sent debugging in the wrong direction.
 _GATE_PHASES = tuple(_GATE_PHASE_ORDER)
 
+# Guard 模块自身的版本号 —— 独立于 CLI 主版本。
+# V2.9.4: Phase integrity checks
+# V3.0.5: 4-phase model collapse
+# V3.0.6: agent runtime dirs exempted
+# V3.0.10: guard-fix loop exception + status 动态版本号
+GUARD_VERSION = "3.0.10"
+
 assert set(_GATE_PHASES) == set(_GATE_PHASES_DICT.keys()), (
     "phase_constants 漂移：GATE_PHASE_ORDER 与 GATE_PHASES 的键集不一致"
 )
@@ -496,6 +503,39 @@ def _is_inside_project(project_root: Path, file_path: str) -> bool:
         return True
 
 
+def _is_guard_source(project_root: Path, file_path: str) -> bool:
+    """V3.0.10: 目标路径是否是 Guard 自身源码。
+
+    用于 guard-fix-loop 例外 — 当 active change 的 goal 是修 Guard 本身时，
+    understand/spec 阶段放行 guard.py 编辑（解除循环依赖：Guard 阻断
+    修 Guard bug 的 change 自己跑不起来）。
+
+    匹配范围：
+      - upstream/fstdd/cli/commands/guard.py   ← 主源码
+      - upstream/fstdd/cli/__init__.py        ← CLI 入口（极少见）
+      - upstream/bin/fstdd                    ← CLI 入口脚本
+
+    返回 False 的路径（明确不放行）：
+      - tools/verify_guard*.py — 这些是**独立测试脚本**，不属于 Guard 源码
+                                 （测试脚本编辑属于 BUILD 阶段正常范围，
+                                  不应被 guard-fix-loop 放行）
+    """
+    if not file_path:
+        return False
+    try:
+        p = Path(file_path)
+        if not p.is_absolute():
+            p = project_root / p
+        resolved = str(p.resolve()).replace("\\", "/")
+        return (
+            "upstream/fstdd/cli/commands/guard.py" in resolved
+            or resolved.endswith("upstream/fstdd/cli/__init__.py")
+            or resolved.endswith("upstream/bin/fstdd")
+        )
+    except Exception:
+        return False
+
+
 def _guard_report(args: argparse.Namespace, msg: str) -> None:
     """Print a guard message (stderr for claude-code platform, stdout otherwise)."""
     import sys as _sys
@@ -891,6 +931,28 @@ def cmd_guard_check(args: argparse.Namespace) -> int:
                     )
                     return 0
 
+            # V3.0.10: Guard-fix loop 例外 — 解除循环依赖。
+            # 修 Guard bug 的 change（change_id 含 "guard-" 前缀）在
+            # understand/spec 阶段需要编辑 guard.py 源码，但 Guard 自身
+            # 在这些阶段封锁了编辑 ⇒ 循环依赖 bug。
+            # 安全出口：仅放行 guard.py 本身（不放其他文件），
+            # BUILD 阶段的 change 自动失效（BUILD 本身是 editable）。
+            GUARD_FIX_KEYWORDS = ("guard-",)
+            if phase in ("understand", "spec"):
+                change_id = change_data.get("change_id") or active_dir.name
+                if any(kw in change_id.lower() for kw in GUARD_FIX_KEYWORDS):
+                    if hook_path and _is_guard_source(project_root, hook_path):
+                        if not getattr(args, "quiet", False):
+                            print(f"  [STDD Guard] Active change: {active_dir.name} "
+                                  f"(phase: {phase}, guard-fix loop exception) ✅")
+                        return 0
+                    elif hook_path:
+                        _guard_report(
+                            args,
+                            f"Guard-fix loop override 仅放 guard 源码 — "
+                            f"目标 {hook_path} 仍被 Phase 封锁",
+                        )
+
             # V2.9.4: task_type-aware editable phases
             editable = _EDITABLE_PHASES_BY_TYPE.get(task_type, _EDITABLE_PHASES)
             if phase in editable:
@@ -999,7 +1061,7 @@ def cmd_guard_status(args: argparse.Namespace) -> None:
             editable = phase in editable_phases
             integrity_ok, _ = _check_phase_integrity(change_data, phase)
 
-    print("  STDD Guard Status (V2.9.4 智能门禁):")
+    print(f"  STDD Guard Status (V{GUARD_VERSION} 智能门禁):")
     print(f"    enforce_stdd:  {enforce}")
     print(f"    allow_bypass:  {allow_bypass}")
     print(f"    exempt dirs:   {sorted(_exempt_dir_names(project_root))}")

@@ -1,28 +1,62 @@
-# 测试方案：Guard 作用域变量未绑定
+# Test Plan — 2026-09-26-guard-scope-unbound
 
-## 追溯表
+## Bug 1: Guard-fix-loop 例外（循环依赖解除）
 
-| SC | TC | 测试函数 | 文件 |
-|---|---|---|---|
-| SC-001 | TC-GHI-005 | `test_ghi_005_block_path_without_active_change_returns_2` | `upstream/tests/test_guard_hook_input.py` |
-| SC-002 | TC-GHI-001~003（既有） | `test_ghi_00*` | 同上 |
-| SC-003 | TC-GHI-004（既有） | `test_ghi_004_end_to_end_no_valueerror` | 同上 |
+### TC-GF-001 (P0) — guard change understand 阶段放行 guard.py
+**GIVEN**: active change = `2026-09-26-guard-scope-unbound`, phase = understand
+**WHEN**: 调用 `fstdd guard check --hook-stdin <guard.py_path>`
+**THEN**: exit code = 0, 放行
 
-## TC-GHI-005
+### TC-GF-002 (P0) — guard change understand 阶段仍阻断非 guard.py
+**GIVEN**: active change = `2026-09-26-guard-scope-unbound`, phase = understand
+**WHEN**: 调用 `fstdd guard check --hook-stdin <tools/verify_notices.py_path>`
+**THEN**: exit code = 2, 阻断 + 提示 "Guard-fix loop override 仅放 guard.py"
 
-**目标**：无活跃 change 时，拦截分支必须返回 2，不得因作用域变量未绑定而抛异常。
+### TC-GF-003 (P0) — 非 guard change understand 阶段正常阻断 guard.py
+**GIVEN**: active change = `2026-09-19-notices-authenticity-gate`, phase = understand
+**WHEN**: 调用 `fstdd guard check --hook-stdin <guard.py_path>`
+**THEN**: exit code = 2, 阻断（无 override，正常 understand 封锁）
 
-**步骤**：
+### TC-GF-004 (P1) — guard change spec 阶段放行 guard.py
+**GIVEN**: active change = `2026-09-26-guard-scope-unbound`, phase = spec
+**WHEN**: 调用 `fstdd guard check --hook-stdin <guard.py_path>`
+**THEN**: exit code = 0
 
-1. `monkeypatch.chdir(tmp_path)`（空临时目录，无 `.fstdd/`）；
-2. `_with_stdin` 注入 `{"file_path": "x.py"}`（**项目内相对路径** —— 与平台无关）；
-3. 调用 `guard.cmd_guard_check(_Args())`；
-4. 断言 `rc == 2`。
+### TC-GF-005 (P1) — 无 active change 仍阻断 guard.py
+**GIVEN**: 无 active change (所有 change 都是 completed/archive)
+**WHEN**: 调用 `fstdd guard check --hook-stdin <guard.py_path>`
+**THEN**: exit code = 2, 完全阻断（无 override）
 
-**为什么必须用相对路径**：原 TC-GHI-004 用 Windows 绝对路径，在 Windows 上会被
-`_is_inside_project` 提前放行，**永远走不到拦截分支**，因此漏检了本缺陷。
+## Bug 2: Guard status 版本号动态读取
 
-## 回归范围
+### TC-GF-006 (P1) — version.yaml 存在时显示实际版本
+**GIVEN**: `.fstdd/version.yaml` 含 `version: "3.0.5"`
+**WHEN**: 调用 `fstdd guard status`
+**THEN**: 输出含 `V3.0.5` 不含 `V2.9.4`
 
-- 定向：`pytest upstream/tests/test_guard_hook_input.py -q`
-- 全量：服务器 `fstdd-hub`（本机全量约 100 分钟，服务器约 2 分钟）
+### TC-GF-007 (P2) — version.yaml 不存在时 fallback
+**GIVEN**: `.fstdd/version.yaml` 被临时移走
+**WHEN**: 调用 `fstdd guard status`
+**THEN**: 输出含 `unknown` 不含 crash
+
+## Bug 3: Phase Lag 假阳性（非阻塞，先审计）
+
+### TC-GF-008 (P2) — 归档 change completed_at 为空时的行为
+**GIVEN**: 归档 change `.fstdd.yaml` 里 `completed_at: ""` 或不存在
+**WHEN**: 调用 `fstdd guard status`
+**THEN**: （审计后确定）要么不再报 lag 警告，要么提示文案更清晰
+
+---
+
+## 执行矩阵
+
+| Bug | TCs | 优先级 |
+|---|---|---|
+| Bug 1 (guard-fix-loop) | GF-001..005 | P0: 3, P1: 2 |
+| Bug 2 (version) | GF-006, GF-007 | P1: 1, P2: 1 |
+| Bug 3 (lag) | GF-008 | P2: 1 |
+
+## 目标文件
+
+- `upstream/fstdd/cli/commands/guard.py` — 主修改
+- `.fstdd/version.yaml` — 只读
