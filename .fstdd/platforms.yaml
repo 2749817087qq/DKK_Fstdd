@@ -48,6 +48,7 @@ platforms:
     display_name: Trae
     skill_dir_rules:
       - env: FSTDD_OUT
+      - windows: "%USERPROFILE%\\.trae-cn\\skills"
       - windows: "%USERPROFILE%\\.trae\\skills"
       - unix: "~/.trae/skills"
     frontmatter:
