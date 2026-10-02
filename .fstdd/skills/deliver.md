@@ -55,7 +55,24 @@ stdd_version: "3.0.5"
 
 ### Step 2.5: 代码结构摘要合并（V2.9）
 
-执行 `python bin/stdd structure merge <change>` 将本 change 的 delta 合并到项目索引。
+⚠️ **本步骤须在 Step 1 归档之前执行**（实测踩过）：
+
+`structure delta <change>` 读取的是 `changes/<change>/` 目录，
+而 Step 1 会把它移走 —— 按本节的字面顺序执行时必然报
+`changes/<change>/ not found`，随后 merge 也因找不到 delta 而失败。
+
+正确顺序：
+
+```
+Step 0 → [structure delta] → Step 1 归档 → Step 2 合并 → [structure merge] → …
+```
+
+即：**delta 在归档前生成，merge 在归档后执行**。
+
+```bash
+python bin/fstdd structure delta <change>    # 归档前
+python bin/fstdd structure merge <change>    # 归档后
+```
 
 ### Step 2.8: 经验自动上传（V2.9.6）
 
