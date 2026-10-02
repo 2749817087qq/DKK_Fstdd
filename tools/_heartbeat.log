@@ -1077,3 +1077,7 @@
 [2026-10-03 00:12:04] ⚠️ 连续失败超限 → 继续但标记告警
 [2026-10-03 00:12:10] ❌ beat fail (200/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
 [2026-10-03 00:12:10] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 00:13:05] ❌ beat fail (306/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 00:13:05] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 00:13:11] ❌ beat fail (201/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 00:13:11] ⚠️ 连续失败超限 → 继续但标记告警
