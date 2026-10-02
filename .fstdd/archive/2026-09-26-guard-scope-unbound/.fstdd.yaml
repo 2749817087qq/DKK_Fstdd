@@ -6,23 +6,30 @@ baseline:
   node_id: DESKTOP-TBJSBQ5
 change_id: 2026-09-26-guard-scope-unbound
 complexity_score: null
-current_phase: build
+current_phase: deliver
 design_adjustments:
   count: 0
 last_modified: '2026-10-02T07:55:46+00:00'
 mode: standard
 phases:
   build:
+    completed_at: '2026-10-02T16:05:00+08:00'
     confirmed_actor: ai
     confirmed_at: '2026-10-02T07:56:16+00:00'
     confirmed_by: cli
     confirmed_evidence: 开发总工 self-confirm Gate 3。design.md 重写（3 个实际 bug），test-plan.md
       8 TC 全覆盖（P0×3 + P1×3 + P2×2）。修法：Bug 1 guard-fix-loop 例外最小改动，Bug 2 version.yaml
       动态读，Bug 3 先审计再修。目标文件 guard.py + version.yaml。
+    slices:
+    - id: slice-1
+      new_tests: 3
+      tc_coverage: 3
+      verified_at: '2026-10-02T16:05:00+08:00'
     started_at: '2026-10-02T16:00:00+08:00'
-    status: in_progress
+    status: completed
   deliver:
-    status: pending
+    started_at: '2026-10-02T16:05:00+08:00'
+    status: in_progress
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-10-02T07:55:46+00:00'
@@ -40,7 +47,7 @@ phases:
       形同虚设。另 Guard scope 边界：当前 change 本身在 understand 阶段就阻断编辑——循环依赖 bug。
     status: completed
 score_confidence: null
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 0

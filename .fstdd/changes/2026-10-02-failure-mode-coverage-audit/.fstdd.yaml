@@ -6,17 +6,23 @@ baseline:
   node_id: DESKTOP-TBJSBQ5
 change_id: 2026-10-02-failure-mode-coverage-audit
 complexity_score: null
-current_phase: understand
+current_phase: build
 design_adjustments:
   count: 0
 mode: standard
 phases:
   build:
-    status: pending
+    status: in_progress
   deliver:
     status: pending
   spec:
-    status: pending
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T08:38:47+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 开发总工 self-confirm Gate 2。审计 14 类失败模式：6 类有实装、5 类仅 skill 引导、3
+      类仅文字引用。修法：先补 skill build.md 的 C 档 6 类引导段落，再可选加 Guard _check_failure_patterns()
+      轻量 hook 检测。不搞 CLI detect 子命令（职责分离）。
+    status: completed
   understand:
     confirmed_actor: ai
     confirmed_at: '2026-10-02T07:45:04+00:00'
