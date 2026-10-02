@@ -1,0 +1,116 @@
+# spec.yaml — 行为规格（Canonical YAML）
+
+meta:
+  capability: "d-drive-home"
+  change_id: "2026-09-17-migrate-to-d-drive"
+  created: "2026-09-17T08:58:10.715222"
+  confidence: high
+
+requirements:
+  - id: REQ-001
+    description: "全部 FSTDD 资产必须完整迁移到 D 盘，不随 C 盘系统重装丢失"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "proposal.yaml：C 盘现有 ≈5379 文件，含 4 个已归档 change 与全部证据链"
+        given: "C 盘工作区（stdd-repo + backups + .workbuddy-ai + 根文件）"
+        when: "整体复制到 `D:/tools/FSTDD/`"
+        then: "D 盘副本的文件数 SHALL 与 C 盘一致"
+        and:
+          - "逐文件哈希 SHALL 一致"
+          - "目录结构 SHALL 一致（镜像而非只搬仓库）"
+
+      - id: SC-002
+        confidence: high
+        evidence: "git 历史与 tag 是不可再生资产"
+        given: "`D:/tools/FSTDD/stdd-repo`"
+        when: "检查其 git 状态"
+        then: "HEAD / 分支 / tag `fstdd-v1.0.0` / remote SHALL 与 C 盘一致"
+        and:
+          - "工作区 SHALL 干净（无未提交改动）"
+
+      - id: SC-003
+        confidence: high
+        evidence: "D哥：C 盘工作区保留作历史归档"
+        given: "迁移完成后"
+        when: "检查 C 盘工作区"
+        then: "SHALL 仍完整存在，文件数不变"
+        and:
+          - "SHALL NOT 被删除或清空"
+
+  - id: REQ-002
+    description: "D 盘必须成为新的法定源，环境自洽"
+    scenarios:
+      - id: SC-004
+        confidence: high
+        evidence: "D哥：今后的开发就在 fstdd 文件夹了"
+        given: "`D:/tools/FSTDD/stdd-repo`"
+        when: "从该位置运行三项校验"
+        then: "`verify_eol` SHALL 7/7、`verify_skill_standards` SHALL 7/7、`verify_rename` SHALL 8/8"
+        and:
+          - "校验脚本的路径解析 SHALL 自适配到 D 盘（基于 `__file__`，不硬编码 C 盘）"
+
+      - id: SC-005
+        confidence: high
+        evidence: "迁移后环境自洽的最低要求"
+        given: "`D:/tools/FSTDD/stdd-repo`"
+        when: "从该位置运行全量测试"
+        then: "SHALL 543 passed，无回归"
+        and:
+          - "SHALL NOT 因路径变化而出现新增失败"
+
+      - id: SC-006
+        confidence: high
+        evidence: "实测：安装器 SRC 取脚本自身所在仓库的 upstream"
+        given: "`D:/tools/FSTDD/stdd-repo/tools/install_workbuddy_skills.py`"
+        when: "从该位置执行安装（不设 `FSTDD_SRC`）"
+        then: "SRC SHALL 解析为 `D:/tools/FSTDD/stdd-repo/upstream`"
+        and:
+          - "SHALL NOT 解析到 C 盘路径"
+
+  - id: REQ-003
+    description: "已安装 skill 的固化路径必须指向 D 盘"
+    scenarios:
+      - id: SC-007
+        confidence: high
+        evidence: "实测：当前 6 个 skill 指向 C 盘工作区，那正是最脆弱的位置"
+        given: "从 D 盘重装后的 `~/.workbuddy/skills/fstdd*/SKILL.md`"
+        when: "检查其中的绝对路径"
+        then: "SHALL 指向 `D:/tools/FSTDD/stdd-repo`"
+        and:
+          - "SHALL NOT 含 C 盘工作区路径（`WorkBuddy AI/2026-…`）"
+          - "`verify_workbuddy_skills.py` SHALL 全绿"
+
+  - id: REQ-004
+    description: "文档与记忆必须反映新位置"
+    scenarios:
+      - id: SC-008
+        confidence: high
+        evidence: "文档是判断「法定源在哪」的依据来源"
+        given: "`docs/WORKBUDDY_INSTALL_NOTES.md`"
+        when: "阅读第 0 节"
+        then: "法定源 SHALL 写为 `D:/tools/FSTDD/stdd-repo`"
+        and:
+          - "SHALL 说明 C 盘工作区保留作历史归档"
+          - "SHALL 保留「GitHub 是上传目标」与「`D:/Programs/DKK_Fstdd` 不要动」"
+
+      - id: SC-009
+        confidence: high
+        evidence: "项目 MEMORY.md 是后续判断的依据"
+        given: "项目 `MEMORY.md`"
+        when: "读取法定源条目"
+        then: "SHALL 反映 D 盘为新家"
+        and:
+          - "SHALL 保留 `D:/Programs/DKK_Fstdd` 的告警"
+
+  - id: REQ-005
+    description: "迁移不得影响其它位置的既有资产"
+    scenarios:
+      - id: SC-010
+        confidence: high
+        evidence: "proposal.yaml out_of_scope"
+        given: "`D:/Programs/DKK_Fstdd` 与 `~/.workbuddy-ai/Fstdd`"
+        when: "迁移前后比对"
+        then: "二者 SHALL 未被本变更修改"
+        and:
+          - "`D:/Programs/DKK_Fstdd` 是另一程序的调试副本，全程只读"

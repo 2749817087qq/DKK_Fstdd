@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-17-canonical-in-workspace: proposals/2026-09-17-canonical-in-workspace.yaml
+specs:
+  agent:
+    2026-09-17-canonical-in-workspace: specs/agent/2026-09-17-canonical-in-workspace.yaml
+  code:
+    2026-09-17-canonical-in-workspace: specs/code/2026-09-17-canonical-in-workspace.yaml
+version: '2.9'

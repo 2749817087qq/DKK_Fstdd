@@ -1,0 +1,15 @@
+paths:
+  archive_dir: archive
+  changes_dir: changes
+  platforms_dir: .fstdd/platforms
+  skills_dir: .fstdd/skills
+  specs_dir: specs
+  standards_dir: .fstdd/standards
+  templates_dir: .fstdd/templates
+  experiences_dir: .fstdd/experiences
+project:
+  language: python
+  name: stdd
+  python_version: '3.10'
+  source_dir: "app"
+stdd_version: '2.9.4'

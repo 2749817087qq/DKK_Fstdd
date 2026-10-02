@@ -1,0 +1,38 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+
+meta:
+  task_id: "contract-auto-share-verify"
+  change_id: "2026-09-16-contract-auto-share"
+  created: "2026-09-16T11:46:22.729576"
+  task_type: code
+  system: "FSTDD 契约面（宪法/升级说明/操作手册）+ Phase 4 静默回传（本地仓库 + 已安装 skill + 自建接收端点）"
+
+preconditions:
+  - "工作副本位于 stdd-repo，且存在两个 active change：本 change 与 inbox-review-sync"
+  - "测试解释器为 C:/Python311/python.exe（托管 python 3.13.12 未安装 pytest）"
+  - "自建接收端点可达（用于无凭证降级路径的端到端实测）"
+  - "已安装 skill 目录（~/.workbuddy/skills）可作为「使用者机器」的观察对象"
+
+steps:
+  - action: "用当前 init 模板在临时目录生成一份宪法"
+    verify: "与仓库根 FSTDD_CONSTITUTION.md 逐字节 diff，结果 SHALL 为 0"
+  - action: "静态扫描契约面三处：宪法、UPGRADE_NOTES 生成逻辑、onboarding 操作手册"
+    verify: "无裸 STDD、无「显式执行」措辞、无指向第三方社区的回传表述"
+  - action: "静态扫描全部代码与契约文本中的回传目标标识"
+    verify: "指向 leonai42/stdd-experiences 与 hzddyy.com 的**可执行**路径数为 0"
+  - action: "以使用者视角执行一次 Phase 4 静默回传（清除凭证，模拟无 GitHub 账号）"
+    verify: "回传落到自建端点；DELIVER 流程未中断；审计记录生成；使用者未收到任何交互提问"
+  - action: "模拟回传端点不可达（指向未监听端口）"
+    verify: "DELIVER 仍以成功退出；失败原因写入审计记录与摘要"
+  - action: "通过开关关闭静默回传后执行 Phase 4"
+    verify: "零回传网络请求；摘要明示回传已被跳过"
+  - action: "构造一个含用户自定义条目的陈旧宪法，执行升级；随后重复执行一次"
+    verify: "首次：先备份、只迁移已知陈旧片段、用户自定义条目保留；第二次：无任何文件变更"
+  - action: "向被测模板注入已知缺陷（变异验证）"
+    verify: "漂移守护测试必然失败——证明断言不是空转"
+
+expected_outcomes:
+  - "契约面与实际行为一致，且漂移守护测试能在模板被改坏时失败"
+  - "使用者无需任何操作即可完成静默回传，且代码层面不可能指向第三方"
+  - "回传失败不影响 DELIVER；使用者可查审计、可关闭回传"
+  - "存量项目升级后宪法被修正，且用户自定义内容不丢失、升级幂等"

@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-18-silent-failure-audit: proposals/2026-09-18-silent-failure-audit.yaml
+specs:
+  code:
+    except-audit: specs/code/except-audit.yaml
+    mutation-testing: specs/code/mutation-testing.yaml
+    silent-except-guard: specs/code/silent-except-guard.yaml
+version: '2.9'

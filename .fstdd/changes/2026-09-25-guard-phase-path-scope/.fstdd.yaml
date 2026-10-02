@@ -1,0 +1,40 @@
+baseline:
+  at: '2026-09-25T04:10:35+00:00'
+  base_git_sha: df3b27cace3b28c6762932ef03638217024c2dae
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-1MEQDMR
+change_id: 2026-09-25-guard-phase-path-scope
+complexity_score: null
+current_phase: build
+design_adjustments:
+  count: 0
+last_modified: '2026-09-25T05:03:28+00:00'
+mode: standard
+phases:
+  build:
+    status: in_progress
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-25T05:03:22+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 2026-09-25 13:05 对话确认：Gate 2 通过（SPEC 产物 design.md + spec.md
+      + test-plan.md 齐全，canon verify 2/2 通过）
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-25T04:10:35+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 2026-09-25 12:09 对话确认：Gate 1确认（change 2026-09-25-guard-phase-path-scope，Guard
+      相位门路径作用域）
+    status: completed
+score_confidence: null
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

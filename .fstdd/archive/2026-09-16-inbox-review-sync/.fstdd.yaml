@@ -1,0 +1,74 @@
+audit_amendments:
+- amended_actor: user
+  amended_at: '2026-09-17T10:57:11'
+  amended_by: dialog
+  amended_by_tool_version: '3.0'
+  amended_evidence: D哥确认追认：inbox-review-sync 的 Phase 1 proposal 与原 Gate 1 结论有效，保留原始
+    AI 记录。
+  gate: 1
+  idempotency_key: 2026-09-16-inbox-review-sync:gate1:2cd14e84e61144bd
+  original_confirmed_actor: ai
+  original_confirmed_at: '2026-09-16T11:40:54'
+  original_confirmed_by: dialog
+  original_confirmed_evidence: 确认，进入 SPEC
+- amended_actor: user
+  amended_at: '2026-09-17T10:57:12'
+  amended_by: dialog
+  amended_by_tool_version: '3.0'
+  amended_evidence: D哥确认追认：inbox-review-sync 的设计、规格与测试计划可执行，保留原始 AI 记录。
+  gate: 2
+  idempotency_key: 2026-09-16-inbox-review-sync:gate2:159719a54e1c1b6b
+  original_confirmed_actor: ai
+  original_confirmed_at: '2026-09-17T07:55:02'
+  original_confirmed_by: dialog
+  original_confirmed_evidence: 确认，进入 BUILD（6 项决策 + 16 TC 认可）
+change_id: 2026-09-16-inbox-review-sync
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 0
+last_modified: '2026-09-17T11:00:14.518906'
+mode: standard
+phases:
+  build:
+    confirmed_actor: user
+    confirmed_at: '2026-09-17T11:00:13'
+    confirmed_by: dialog
+    confirmed_evidence: D哥确认 Gate 3：已审阅 inbox-review-sync test-report，相关测试 67 passed/0
+      failed，TC-IRS 16/16 覆盖，允许进入 DELIVER。
+    slices_completed:
+      S1:
+        new_tests: 8
+        tc_coverage: TC-IRS-001,TC-IRS-002,TC-IRS-003,TC-IRS-004,TC-IRS-005,TC-IRS-006
+        verified_at: '2026-09-17T10:52:00'
+      S2:
+        new_tests: 8
+        tc_coverage: TC-IRS-007,TC-IRS-008,TC-IRS-009,TC-IRS-010,TC-IRS-011,TC-IRS-012
+        verified_at: '2026-09-17T10:52:00'
+      S3:
+        new_tests: 7
+        tc_coverage: TC-IRS-013,TC-IRS-014,TC-IRS-015,TC-IRS-016
+        verified_at: '2026-09-17T10:52:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T07:55:02'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 BUILD（6 项决策 + 16 TC 认可）
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-16T11:40:54'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 SPEC
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

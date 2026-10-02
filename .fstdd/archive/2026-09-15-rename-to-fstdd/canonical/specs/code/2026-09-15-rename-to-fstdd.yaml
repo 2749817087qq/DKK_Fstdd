@@ -1,0 +1,78 @@
+# spec.yaml — 行为规格（Canonical YAML）
+# capability: 独立命名空间（rename-to-fstdd）
+
+meta:
+  capability: "独立命名空间"
+  change_id: "2026-09-15-rename-to-fstdd"
+  created: "2026-09-15T22:40:53.535980"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    description: "标识替换必须正确且无自匹配产物（对应 SC1、SC4）"
+    scenarios:
+      - id: "SC-001"
+        confidence: high
+        evidence: "proposal.yaml success_criteria SC1；失败案例：手工改名产生 FFSTDD_SRC"
+        given: "替换脚本已对目标文件执行完毕"
+        when: "全仓库检索 FFSTDD_ 前缀"
+        then: "检索结果 SHALL 为 0 处匹配"
+        and:
+          - "FSTDD_SRC / FSTDD_OUT / FSTDD_PY / FSTDD_CLI 四个环境变量名 SHALL 各出现且拼写完整"
+      - id: "SC-002"
+        confidence: high
+        evidence: "proposal.yaml success_criteria SC4；经验 EXP-A4（正则误伤）"
+        given: "替换脚本已执行完毕，排除 upstream/ 与 .git 目录"
+        when: "以词边界正则检索独立的 stdd 标识"
+        then: "SHALL 无残留的独立 stdd 标识（skill 名、命令名、项目名均已更名）"
+        and:
+          - "非标识用途的 stdd 字样（如第三方 URL、许可证原文）SHALL 被显式记录为例外，不得静默忽略"
+
+  - id: "REQ-002"
+    description: "CLI 在包改名后必须仍然可用（对应 SC2）"
+    scenarios:
+      - id: "SC-003"
+        confidence: high
+        evidence: "proposal.yaml risk_areas：包改名后 import 断裂风险"
+        given: "Python 包目录已由 upstream/stdd/ 改名为 upstream/fstdd/，且所有 import 已同步"
+        when: "执行 upstream/bin/fstdd --help"
+        then: "命令 SHALL 正常退出（退出码 0），且 usage 行显示 fstdd"
+        and:
+          - "init / new / status 三个子命令 SHALL 均能正常执行"
+
+  - id: "REQ-003"
+    description: "安装脚本必须生成更名后的 skill（对应 SC3）"
+    scenarios:
+      - id: "SC-004"
+        confidence: high
+        evidence: "proposal.yaml what_changes C1；上次污染真实目录的教训"
+        given: "使用隔离输出目录（FSTDD_OUT 指向临时路径）执行 install 脚本"
+        when: "检查生成结果"
+        then: "SHALL 生成 6 个以 fstdd 为前缀的 skill 目录"
+        and:
+          - "verify 脚本 SHALL 输出 PASS"
+          - "隔离目录之外的 skill 目录 SHALL 不被本次测试改动"
+
+  - id: "REQ-004"
+    description: "数据目录迁移不得丢失历史资产（对应 SC5）"
+    scenarios:
+      - id: "SC-005"
+        confidence: high
+        evidence: "proposal.yaml risk_areas：历史 change 丢失风险"
+        given: "迁移前已对 .fstdd/ 完成 bundle 备份，且存在两个已归档 change"
+        when: "将 .fstdd/ 改名为 .fstdd/ 后执行 fstdd status"
+        then: "命令 SHALL 能正常读取新目录，且两个已归档 change 均可被列出"
+        and:
+          - "归档目录下的 test-report.md / proposal.md SHALL 仍可访问"
+
+  - id: "REQ-005"
+    description: "改名后既有质量防线必须仍然有效（对应 SC6）"
+    scenarios:
+      - id: "SC-006"
+        confidence: high
+        evidence: "proposal.yaml success_criteria SC6"
+        given: "改名全部完成且工作区已提交"
+        when: "依次执行 verify_eol / verify_skill_standards / verify_workbuddy_skills"
+        then: "三项校验 SHALL 全部通过"
+        and:
+          - "哨兵名 SHALL 已更新为 FSTDD_LOCAL_POLICY_* 且仍能被 verify 识别"

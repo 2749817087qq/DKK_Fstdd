@@ -1,0 +1,25 @@
+change_id: dashboard
+current_phase: deliver
+mode: thorough
+phases:
+  build:
+    slices_completed:
+      '1':
+        new_tests: 10
+        status: done
+        tc_coverage: 10/10
+        verified_at: '2026-07-09'
+    status: completed
+  deliver:
+    status: completed
+  slice:
+    status: completed
+  spec:
+    confirmed_at: '2026-07-09'
+    status: completed
+  understand:
+    confirmed_at: '2026-07-09'
+    status: completed
+  verify:
+    confirmed_at: '2026-07-09'
+    status: completed

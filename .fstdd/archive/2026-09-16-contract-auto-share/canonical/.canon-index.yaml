@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-16-contract-auto-share: proposals/2026-09-16-contract-auto-share.yaml
+specs:
+  agent:
+    2026-09-16-contract-auto-share: specs/agent/2026-09-16-contract-auto-share.yaml
+  code:
+    2026-09-16-contract-auto-share: specs/code/2026-09-16-contract-auto-share.yaml
+version: '2.9'

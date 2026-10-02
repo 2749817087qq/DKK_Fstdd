@@ -1,0 +1,47 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+meta:
+  task_id: "multi-platform-adapters-verify"
+  change_id: "2026-09-30-multi-platform-adapters"
+  created: "2026-09-30T06:46:21+00:00"
+  task_type: code
+  system: "本仓库 FSTDD 安装层：一套共享 skill 正文 + platforms.yaml 薄清单 + 参数化 installer（install_workbuddy_skills.py --platform，默认 workbuddy）/ 平台感知校验器；上游 vendor 于 upstream/，改造只落在本仓库安装层"
+
+preconditions:
+  - "法定源为 `e:/FSTDD/stdd-repo`；当前 change 处于 SPEC 阶段且 Gate 2 尚未确认"
+  - "解释器为 `C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe`（含 PyYAML / Jinja2 / requests）"
+  - "`python` / `python3` 为 Microsoft Store 别名桩，禁止使用；一律用绝对路径解释器"
+  - "变更前已保存 workbuddy 产出的字节级基准快照，供逐字节回归比对"
+  - "所有实现代码修改必须在 Gate 2 后的 BUILD active change 内完成"
+
+steps:
+  - id: CP-001
+    action: "检查 design.md、canonical code spec、agent spec 与 test-plan.md 的双轨一致性"
+    verify: "REQ/SC 与 test-plan 的 TC 一一可追溯；`validate` 无错误；每个 Scenario 至少 1 个 TC"
+  - id: CP-002
+    action: "读取 platforms.yaml，枚举每平台清单（显示名 / skill 根目录解析规则 / front-matter 规则）"
+    verify: "workbuddy、claude-code、trae 均有清单；正文来源指向共享正文，清单内无正文副本"
+  - id: CP-003
+    action: "执行安装器 `--platform workbuddy`（以及缺省不传 --platform），与变更前基准快照逐字节比对"
+    verify: "两个路径的产出与基准 `Compare-Object`/哈希比对结果完全一致（逐字节回归不破）"
+  - id: CP-004
+    action: "执行安装器 `--platform claude-code`，检查落点与 front-matter"
+    verify: "产出于 `<claude skills 根>/<name>/SKILL.md`；front-matter 无 version / trigger_keywords，description 为引号形态"
+  - id: CP-005
+    action: "执行安装器传入未声明平台，例如 `--platform qoder`"
+    verify: "安装器非零退出并列出可用平台；未静默回退安装任何平台"
+  - id: CP-006
+    action: "审查安装层源码，搜索按平台展开的 if/else 分支；比对任一平台正文与共享正文源"
+    verify: "无按平台硬编码分支；平台差异全部数据驱动；无第二份手写正文副本"
+  - id: CP-007
+    action: "分别以 `./install.sh --platform <p>` 与 `./install.ps1 -Platform <p>` 做端到端安装与校验（至少 claude-code 与 trae）"
+    verify: "两入口均把平台透传给安装器与校验器；装完即可通过对应平台校验"
+  - id: CP-008
+    action: "运行校验器缺省与 `--platform <p>` 两种调用"
+    verify: "缺省校验 workbuddy；指定平台时校验该平台安装点与其 front-matter 规则；能与安装器共用 platforms.yaml"
+
+expected_outcomes:
+  - "多平台适配由 platforms.yaml 单一事实源驱动，新增平台仅改清单、不改代码分支"
+  - "`--platform workbuddy`（含缺省）产出与变更前逐字节一致，回归不破"
+  - "install.sh / install.ps1 平台选择可透传，端到端可装可通过对应平台校验"
+  - "校验器平台感知，装哪平台就校验哪平台"
+  - "全部 Phase 2 文档就绪后由用户确认 Gate 2；Gate 2 前不修改实现代码"

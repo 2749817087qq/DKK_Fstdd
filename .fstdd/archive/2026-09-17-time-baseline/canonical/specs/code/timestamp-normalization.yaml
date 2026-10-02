@@ -1,0 +1,83 @@
+# spec.yaml - 行为规格（Canonical YAML）
+meta:
+  capability: "timestamp-normalization"
+  change_id: "2026-09-17-time-baseline"
+  created: "2026-09-17T15:23:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-005
+    description: "CLI 写入持久化产物的时间戳必须带时区，且与控制面可直接比较"
+    scenarios:
+      - id: SC-010
+        confidence: high
+        evidence: "proposal.yaml → why.evidence (2)：4 个实测字段中 3 个无时区（`meta.created: 2026-09-17T14:18:03.135357`、`confirmed_at: 2026-09-17T15:21:49`、`generated_at: 2026-09-17T15:56:11.800867`）；且本 change 由 `fstdd new` 生成时 `meta.created` 被写成 `2026-09-17T16:02:17.968509` —— **CLI 此刻仍在产出 naive 时间戳**"
+        given: "改造后的 CLI 生成一个含时间字段的产物"
+        when: "检查该时间字段的值"
+        then: "该值 SHALL 匹配带时区的 ISO 8601（`([+-]\\d{2}:\\d{2}|Z)$`）"
+        and:
+          - "该值 SHALL NOT 为 naive 形态（无 offset 后缀）"
+          - "该值 SHALL 由单一来源函数产生，而非各调用点自行拼装"
+      - id: SC-011
+        confidence: high
+        evidence: "proposal.yaml → why.evidence (2)：控制面 `tools/fstdd_hub.py:99` 用 `datetime.now(timezone.utc).isoformat()`（UTC 带时区）→ 与 CLI 的 naive 时间戳构成「第 4 种形态」，**CLI 与控制面的时间不可直接比较**"
+        given: "CLI 产物中的时间字段与控制面返回的时间字段"
+        when: "对两者做字符串比较或排序"
+        then: "比较与排序 SHALL 得到正确的时间先后关系"
+        and:
+          - "无需解析或换算时区即可比较"
+          - "两者的时区表示 SHALL 一致（同为 UTC offset 形式）"
+      - id: SC-012
+        confidence: medium
+        evidence: "risk_areas: 统一时间戳规范 → 若把「日期字段」也强改为带时刻的时间戳，会与既有产物形态断裂并产生巨大 diff；而「带时刻却不带时区」才是真正不可比较的形态"
+        given: "某字段是纯日期语义（无时刻）"
+        when: "检查该字段的值"
+        then: "该字段 SHALL 为 `YYYY-MM-DD`，SHALL NOT 含时刻部分"
+        and:
+          - "含时刻却无时区的形态 SHALL 被判定为违规"
+          - "用作标识符或目录名的日期片段 SHALL NOT 被判定为时间戳字段"
+
+  - id: REQ-006
+    description: "naive 时间戳必须可被检测，且检测器不得产生大量误报"
+    scenarios:
+      - id: SC-013
+        confidence: high
+        evidence: "EXP-20260917-A1（high）：『质量检查工具用「文本出现次数」代替「语义单位」做判定，导致规范产物被普遍误报』。实测 `datetime.now()` 相关命中 ~48 处 / 19 文件，其中真正的持久化时间戳字段约 25 处 / 15 文件"
+        given: "产物文件中存在一个 naive 时间戳字段值"
+        when: "运行时间戳规范检测"
+        then: "检测器 SHALL 报出该字段及其位置"
+        and:
+          - "判定 SHALL 基于字段的**值**，而非源码中是否出现某个调用"
+          - "检测器 SHALL 输出被检查的字段总数，使「0 个违规」可被信任"
+      - id: SC-014
+        confidence: high
+        evidence: "同上 EXP-20260917-A1：误报累积后使用者会养成忽略红叉的习惯，真正的失败反而被漏掉。实测存在 4 类非时间戳用途：单调钟（`experience.py:193-212` 的 `time.time()`）、标识符/目录名（`batch.py:77-93`）、纯时间差计算（`status.py:106`）、渲染参数（`ci.py:131/158`）"
+        given: "源码中存在上述 4 类非时间戳用途的 `datetime.now()` / `time.time()` 调用"
+        when: "运行时间戳规范检测"
+        then: "检测器 SHALL NOT 将其报为违规"
+        and:
+          - "豁免类别 SHALL 以**配置数据**形式维护，而非散落在代码注释中"
+          - "每条豁免 SHALL 附理由"
+      - id: SC-015
+        confidence: high
+        evidence: "豁免清单若只增不减，会在被重构后变成「永久遗忘的空白许可」—— 与本 change 治理「没有基线的陈旧状态」的立意同源（proposal.yaml → why.evidence (8)：状态文件自相矛盾）"
+        given: "豁免清单中登记了若干条目"
+        when: "运行豁免清单自检"
+        then: "每条豁免 SHALL 仍能在源码中定位到对应位置"
+        and:
+          - "无法定位的豁免 SHALL 被报出"
+          - "该自检 SHALL 有对应测试覆盖"
+
+  - id: REQ-007
+    description: "时间戳规范必须有可执行的验收口径"
+    scenarios:
+      - id: SC-016
+        confidence: high
+        evidence: "success_criteria：『全仓时间字段扫描：活跃 change 与模板中的时间戳 100% 带时区，naive 时间戳为 0 个』—— 该 SC 需要一条可重复执行的扫描命令才能验收"
+        given: "全仓扫描已执行"
+        when: "统计活跃 change 与模板中的 naive 时间戳数量"
+        then: "结果 SHALL 为 0"
+        and:
+          - "扫描范围 SHALL 明确列出（活跃 change 的 `.fstdd.yaml` / canonical YAML / Human View 头部 + 两处 templates）"
+          - "扫描 SHALL 可在任意节点重复执行且结果一致"
+          - "扫描 SHALL 只读，SHALL NOT 修改任何被扫描文件"

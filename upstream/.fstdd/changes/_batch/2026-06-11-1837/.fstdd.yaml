@@ -1,0 +1,10 @@
+batch_id: 2026-06-11-1837
+batch_type: monthly
+closed_at: '2026-06-11T18:37:27.077233'
+created_at: '2026-06-11T18:37:12'
+description: Playground按钮英文翻译缺失
+items:
+- added_at: '2026-06-11T18:37:26.855208'
+  description: Playground按钮：添加data-t=pl_btn，zh/en双语支持
+max_items: 5
+mode: batch

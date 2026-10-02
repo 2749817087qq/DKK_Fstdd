@@ -1,0 +1,104 @@
+# spec.yaml - 行为规格（Canonical YAML）
+meta:
+  capability: "time-baseline"
+  change_id: "2026-09-17-time-baseline"
+  created: "2026-09-17T15:22:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-001
+    description: "每个 change 必须携带显式时间基线，且四项非空"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "proposal.yaml → why.evidence (4)：`grep -rn base_git_sha`（排除 archive）只命中 `tools/fstdd_hub.py:62/178/194` 与 `test_fstdd_hub.py:69` —— 只有「被分派的任务」才有代码基线，本地发起的 change 完全没有"
+        given: "一个 change 已经过 Gate 1 确认"
+        when: "读取其 `.fstdd.yaml`"
+        then: "文件 SHALL 含 `baseline` 块，且包含 `at` / `base_git_sha` / `node_id` / `clock_source` 四项"
+        and:
+          - "四项 SHALL 均非空（不得为 null / 空字符串）"
+          - "`at` SHALL 是带时区的 ISO 8601（匹配 `([+-]\\d{2}:\\d{2}|Z)$`）"
+          - "`node_id` SHALL 为建立基线的节点标识"
+      - id: SC-002
+        confidence: high
+        evidence: "constraints：『时钟巡检必须幂等且只读 —— 本环境经 ssh 的命令会执行两次』；非幂等的建立动作会在本机环境下产生两次不同结果"
+        given: "某 change 的 `baseline` 块已存在且四项非空"
+        when: "再次执行基线建立（不带 `--force`）"
+        then: "系统 SHALL 保持既有四项取值不变"
+        and:
+          - "命令 SHALL NOT 报错"
+          - "命令 SHALL 以退出码 0 结束"
+          - "输出 SHALL 报告「已存在，未改写」"
+      - id: SC-003
+        confidence: high
+        evidence: "proposal.yaml → what_changes C1：基线必须能被消费，否则「填了但不影响任何判断」（risk_areas: 时间基线契约 的风险条目）"
+        given: "某 change 的基线已建立"
+        when: "执行 `fstdd baseline show <change>`"
+        then: "系统 SHALL 输出该 change 的基线四项"
+        and:
+          - "`--format json` SHALL 输出可被程序解析的结构"
+          - "输出 SHALL 包含 `base_git_sha`，使「基于哪个状态」可被读取"
+
+  - id: REQ-002
+    description: "基线必须锚定代码状态，且锚点可被 git 定位"
+    scenarios:
+      - id: SC-004
+        confidence: high
+        evidence: "proposal.yaml → why.evidence (4)：`.fstdd.yaml` 中只有 `last_modified` 与各 Gate 的 `confirmed_at`，**没有任何 sha 字段**"
+        given: "在 HEAD 为 `<sha>` 的工作区建立基线"
+        when: "读取 `baseline.base_git_sha`"
+        then: "该值 SHALL 与建立时刻的 `git rev-parse HEAD` 一致"
+        and:
+          - "短 sha 与完整 sha SHALL 可互相校验（短 sha 是完整 sha 的前缀）"
+      - id: SC-005
+        confidence: high
+        evidence: "proposal.yaml → why.evidence (4)：『`git log` 与产物之间没有可追溯的连接』—— 本需求正是要建立这条连接"
+        given: "`baseline.base_git_sha` 已记录"
+        when: "以该值在仓库中执行 `git log` 查询"
+        then: "系统 SHALL 能定位到对应的提交"
+        and:
+          - "该提交 SHALL 是建立基线时 HEAD 的祖先或自身"
+
+  - id: REQ-003
+    description: "回填基线时不得伪造时刻"
+    scenarios:
+      - id: SC-006
+        confidence: high
+        evidence: "本 change 自身的 Gate 1 在实现之前已确认（`phases.understand.confirmed_at: 2026-09-17T23:07:38`）→ 其基线只能回填；若回填时取「回填动作发生的时刻」，基线记录本身就是一条假信息，与本 change 的目的直接冲突"
+        given: "某 change 的 Gate 1 已确认但缺 `baseline` 块"
+        when: "执行回填"
+        then: "`baseline.at` SHALL 等于该 change 的 `phases.understand.confirmed_at`"
+        and:
+          - "`baseline.at` SHALL NOT 取回填动作发生的时刻"
+          - "回填 SHALL 幂等"
+      - id: SC-007
+        confidence: high
+        evidence: "risk_areas: 时间基线契约 → mitigation『让 Gate 检查引用它』；来源不可分辨时无法判断该值是否可信"
+        given: "基线由不同途径建立"
+        when: "读取 `baseline.established_by`"
+        then: "该字段 SHALL 标明建立途径（`gate1` / `cli` / `backfill`）"
+        and:
+          - "三种取值 SHALL 可区分"
+          - "`clock_source` SHALL 标明时间来源（`system` / `hub` / `manual`）"
+
+  - id: REQ-004
+    description: "基线完整性必须可被机器检查，且检查不阻断既有 change"
+    scenarios:
+      - id: SC-008
+        confidence: high
+        evidence: "success_criteria：『宪法中存在时间基线条款，且至少 1 个 Gate 的检查引用它』—— 纯文档条款无法被机器验证；而 Gate approve 硬阻断会让本 change 自身（存量无基线）立即自锁"
+        given: "一个 change 缺 `baseline` 块或其四项有空值"
+        when: "执行 `fstdd validate <change>`"
+        then: "系统 SHALL 报告基线缺失或不完整"
+        and:
+          - "该报告 SHALL 为 warning 级，SHALL NOT 使校验失败"
+          - "退出码 SHALL 保持校验通过时的取值"
+      - id: SC-009
+        confidence: high
+        evidence: "既有巡检范式 `tools/check_mirror.sh`：0 = 正常、非 0 = 需处置，且不同故障用不同码；基线检查沿用同一范式以便被脚本消费"
+        given: "以 `--check` 模式执行基线查询"
+        when: "基线完整"
+        then: "系统 SHALL 以退出码 0 结束"
+        and:
+          - "基线缺失或不完整时 SHALL 以非 0 退出码结束"
+          - "输出 SHALL 可被脚本直接判定，无需人工解读"

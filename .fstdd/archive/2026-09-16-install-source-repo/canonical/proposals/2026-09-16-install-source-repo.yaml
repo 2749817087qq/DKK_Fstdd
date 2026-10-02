@@ -1,0 +1,109 @@
+# 2026-09-16-install-source-repo.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-09-16-install-source-repo"
+  title: "确立法定源并消除多副本互检误报（法定源 + git 双向同步 + 契约收敛）"
+  created: "2026-09-16T17:32:28.036493"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    上一个 change（`contract-auto-share`）做 DELIVER 时，**三项提交前校验级联失败**
+    （`verify_eol` → `verify_rename` → `verify_skill_standards`）。逐层排查后，
+    根因**不是校验脚本写错，而是「谁是权威」这件事从来没定清楚**。
+
+    ## 一、机器上并存三个位置，职责混乱
+
+    | 位置 | 实际角色 | 状态 |
+    |---|---|---|
+    | `…/stdd-repo`（会话工作区） | 开发副本 | 最新，含全部提交 |
+    | `~/.workbuddy-ai/Fstdd` | **法定源**（`docs/WORKBUDDY_INSTALL_NOTES.md` 已指定） | **无 `.git`** |
+    | `D:/Programs/DKK_Fstdd` | 另一程序的调试副本 | 落后，且有未提交改动 |
+
+    三者之间**靠手工 cp 同步** —— 这正是本日两轮漂移的共同根源：
+    没有 hash、没有冲突检测，漂移可以静默发生。
+
+    ## 二、误报的具体机制
+
+    `verify_skill_standards.py::_installed_tools()` 把 `D:/Programs/DKK_Fstdd` **硬编码在首位**。
+    于是从仓库运行时它跑去校验**调试副本**的 verify，而那份期望 skill 引用 D 盘路径；
+    与实际安装不符 —— **两相对照必然 FAIL**。
+
+    同一脚本的「备份完整性」检查**无条件要求存在 `--fix` 备份**；
+    但 `--fix` 幂等，**树已合规时不留备份** → 合规环境里恒定 FAIL。
+
+    调试副本里其实**已有一份修复**（自定位），仓库却没有 —— 又是一次**双向漂移**。
+
+    ## 三、调试副本里还有一份仓库没有的实质工作
+
+    | 文件 | 内容 |
+    |---|---|---|
+    | `upstream/fstdd/cli/commands/knowledge.py` | 移除硬编码的 `leonai42/stdd-experiences` 默认值；`repo` 为空时**提前返回**（否则空值会落到 `gh clone` 仍外联） |
+    | `upstream/.fstdd/config.d/knowledge.yaml` | `repo: ""`（不拉取社区图谱） |
+    | `upstream/.fstdd/config.d/experience.yaml` | `registries: []`（移除上游三方 registry） |
+
+    **这是数据流策略变更**：既有策略是「可拉上游社区（只进）」；这份工作把**拉取源也去掉**，
+    完全收敛到自有仓库。D哥 已决定**采纳**。
+
+    且它与 `contract-auto-share` **冲突**：该 change 的 `ALLOWED_REFS` 白名单，
+    理由写的是「`knowledge.py` 是拉取（只进）源，属既定策略」。采纳后该条目**立即腐烂**
+    （其 `test_a6_allowlist_is_not_rotten` 会红），必须同步调整。
+
+    ## 四、既有文档已陈旧 4 处
+
+    `docs/WORKBUDDY_INSTALL_NOTES.md`：全局 skill 目录写成 `~/.workbuddy-ai/skills`
+    （内核实际加载 `~/.workbuddy/skills`，正是「有脑子没腿」的根因）、skill 数量写 6（实为 7）、
+    「经验自动上传默认禁用」（已改为静默回传我方位置）、未写清三者关系。
+
+    ## 五、决策（D哥）
+
+    - **法定源 = `~/.workbuddy-ai/Fstdd`**（既有文档已指定，独立于会话）
+    - **同步机制 = git 双向同步**，不再手工 cp
+    - **GitHub 是法定源的上传目标**，不是源
+    - `D:/Programs/DKK_Fstdd` 被另一程序占用，**完全不动**
+    - 采纳「移除上游拉取源」，完全收敛到自有仓库
+    - 冗余位置**先归档不删**
+
+what_changes:
+  - description: "归并调试副本的独有工作：`knowledge.py` / `config.d/knowledge.yaml` / `config.d/experience.yaml`（移除上游拉取源，收敛到自有仓库）"
+  - description: "归并 `verify_skill_standards.py` / `verify_rename.py` 的自定位修复（含「无备份是合法状态」）"
+  - description: "法定源 `~/.workbuddy-ai/Fstdd` 执行 `git init`，与工作区建立 git 双向同步"
+  - description: "校验脚本安装位置解析：自定位优先，法定源为默认，D 盘位置仅作历史兜底"
+  - description: "重装 skill，使 skill 内固化路径指向**法定源**（与既有文档一致）"
+  - description: "更新 `docs/WORKBUDDY_INSTALL_NOTES.md`：修正 4 处陈旧内容 + 补写 法定源／工作区／GitHub 三者关系"
+  - description: "调整 `contract-auto-share` 的 `ALLOWED_REFS`：`knowledge.py` 不再是拉取源，条目须移除或改写"
+
+capabilities:
+  new:
+    - name: "canonical-source"
+      description: "法定源唯一：`~/.workbuddy-ai/Fstdd`；工作区与 GitHub 均非权威"
+    - name: "git-bidirectional-sync"
+      description: "法定源与开发副本之间用 git 双向同步，取代手工 cp"
+  modified:
+    - name: "verify-skill-standards"
+      description: "不再硬编码 D 盘路径；备份检查容忍「无备份」"
+    - name: "verify-rename"
+      description: "安装位置解析改为自定位"
+    - name: "knowledge-pull"
+      description: "移除上游社区拉取源，完全收敛到自有仓库"
+    - name: "contract-auto-share-allowlist"
+      description: "白名单随拉取源移除而调整"
+
+success_criteria:
+  - "法定源存在且为 git 仓库，工作区可 `push`/`pull` 双向同步"
+  - "工作区全部提交已进入法定源（`git log` 一致）"
+  - "调试副本的 3 份独有工作已归并进仓库，且调试副本**未被修改**"
+  - "从仓库运行三项校验全绿：`verify_eol` 7/7、`verify_skill_standards` 7/7、`verify_rename` 8/8"
+  - "校验不再依赖 `D:/Programs/DKK_Fstdd` 是否存在"
+  - "已安装 skill 内的路径指向**法定源**（不含会话工作区路径）"
+  - "`docs/WORKBUDDY_INSTALL_NOTES.md` 中 4 处陈旧内容已修正，并写明三者关系"
+  - "`contract-auto-share` 的白名单不再含「拉取源」条目，其 `test_a6` 仍通过"
+  - "全量测试无回归（基线 487 passed）"
+
+out_of_scope:
+  - "不改动 `D:/Programs/DKK_Fstdd`（另一程序在用）"
+  - "不删除任何位置；冗余位置仅归档"
+  - "不改 GitHub 仓库结构（法定源 push 上传即可）"
+  - "不引入文件同步工具（rsync 等），同步一律走 git"

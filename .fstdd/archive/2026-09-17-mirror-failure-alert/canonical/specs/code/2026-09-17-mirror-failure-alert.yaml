@@ -1,0 +1,198 @@
+# spec.yaml - 行为规格（Canonical YAML）
+meta:
+  capability: "mirror-failure-alert"
+  change_id: "2026-09-17-mirror-failure-alert"
+  created: "2026-09-17T15:43:57+08:00"
+  confidence: high
+
+requirements:
+  - id: REQ-001
+    description: "镜像结果必须回显给推送方，且同时保留落盘日志"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "实测钩子 `} >> \"$LOG\" 2>&1` 把全部输出重定向到 mirror.log，推送方在 git push 输出中看不到任何镜像结果"
+        given: "post-receive 钩子已安装"
+        when: "一次推送落到服务器裸库"
+        then: "推送方 SHALL 在 git push 的命令输出中看到镜像结果"
+        and:
+          - "同一份输出 SHALL 同时写入 mirror.log"
+          - "回显 SHALL NOT 要求推送方额外执行任何命令"
+      - id: SC-002
+        confidence: high
+        evidence: "当前钩子仅有 [OK]/[WARN] 前缀，且推送方根本看不到这些行"
+        given: "钩子执行完毕"
+        when: "检查推送方输出"
+        then: "镜像成功与失败 SHALL 在输出中可明确区分"
+        and:
+          - "成功 SHALL NOT 与失败共用同一标识"
+
+  - id: REQ-002
+    description: "镜像失败必须输出结构化告警块，不得被误读为成功"
+    scenarios:
+      - id: SC-003
+        confidence: high
+        evidence: "实测钩子恒以 exit 0 结束，推送方无法从退出码感知失败；失败仅写一行 [WARN]"
+        given: "镜像失败（目标不可达或非快进）"
+        when: "钩子结束"
+        then: "输出 SHALL 包含结构化告警块"
+        and:
+          - "告警块 SHALL 说明「裸库已更新、GitHub 未同步、对外通道滞后」"
+          - "告警块 SHALL 包含失败项与失败原因"
+          - "告警块 SHALL NOT 与成功输出混淆"
+      - id: SC-004
+        confidence: high
+        evidence: "钩子分两次推送（--all 与 --tags），可能只失败其中一项"
+        given: "钩子分别推送分支与 tag"
+        when: "其中一项失败而另一项成功"
+        then: "告警 SHALL 明确指出是哪一项失败"
+        and:
+          - "成功项 SHALL 仍然被记录为成功"
+
+  - id: REQ-003
+    description: "镜像失败必须留下可被程序读取的故障标记"
+    scenarios:
+      - id: SC-005
+        confidence: high
+        evidence: "实测服务器上不存在任何 fstdd 巡检机制，失败状态只能靠人读日志判断"
+        given: "镜像失败"
+        when: "钩子结束"
+        then: "系统 SHALL 写入故障标记文件 mirror-failed.flag"
+        and:
+          - "标记 SHALL 包含时间戳"
+          - "标记 SHALL 包含失败项"
+      - id: SC-006
+        confidence: high
+        evidence: "若标记不会被自动清除，故障态将永久滞留并失去指示意义"
+        given: "故障标记文件存在"
+        when: "一次镜像全部成功"
+        then: "系统 SHALL 自动清除该标记"
+        and:
+          - "清除 SHALL NOT 需要人工介入"
+      - id: SC-007
+        confidence: high
+        evidence: "解析日志文本判断故障态是脆弱的；标记必须是结构化事实"
+        given: "故障标记文件已写入"
+        when: "以程序方式读取该标记"
+        then: "标记内容 SHALL 可被结构化解析"
+        and:
+          - "解析 SHALL NOT 依赖正则匹配自然语言"
+
+  - id: REQ-004
+    description: "必须提供一条命令的镜像状态巡检，替代人工阅读日志"
+    scenarios:
+      - id: SC-008
+        confidence: high
+        evidence: "DISTRIBUTED_ACCESS.md 第 84 行把「查镜像日志」定义为人工 ssh + tail"
+        given: "存在镜像状态巡检命令"
+        when: "执行该命令"
+        then: "系统 SHALL 给出裸库与 GitHub 是否收敛的明确判定"
+        and:
+          - "已收敛 SHALL 返回退出码 0"
+          - "滞后 SHALL 返回非 0 退出码"
+      - id: SC-009
+        confidence: high
+        evidence: "仅比较 sha 无法区分「从未镜像」与「镜像失败」；需同时呈现标记状态"
+        given: "执行镜像状态巡检命令"
+        when: "检查其输出"
+        then: "输出 SHALL 同时报告裸库 sha、GitHub sha 与故障标记状态"
+        and:
+          - "输出 SHALL 可在无人工解读的情况下被判定"
+
+  - id: REQ-005
+    description: "镜像失败必须进入控制面消息流，且不因此产生对控制面的强依赖"
+    scenarios:
+      - id: SC-010
+        confidence: high
+        evidence: "实测 curl /nodes 返回 {\"nodes\": []}；而 POST /messages 要求 from_node_id 必须已注册"
+        given: "控制面 nodes 表为空"
+        when: "部署镜像告警能力"
+        then: "系统 SHALL 注册一个基础设施节点身份"
+        and:
+          - "该身份 SHALL 与 agent 节点身份区分"
+          - "注册 SHALL 幂等：重复执行不报错、不产生重复记录"
+      - id: SC-011
+        confidence: high
+        evidence: "MESSAGE_KINDS 已含 notice，无需扩展控制面契约即可承载告警"
+        given: "控制面可达且基础设施节点已注册"
+        when: "镜像失败"
+        then: "系统 SHALL 向控制面投递一条 notice 消息"
+        and:
+          - "消息 body SHALL 包含失败项与发生时间"
+          - "消息 SHALL 可在 GET /messages 中被检索到"
+      - id: SC-012
+        confidence: high
+        evidence: "控制面为单机自建服务；若告警强依赖它，控制面故障会导致告警整体失效"
+        given: "控制面不可达"
+        when: "镜像失败"
+        then: "回显与故障标记 SHALL 仍然生效"
+        and:
+          - "上报失败 SHALL NOT 改变钩子的退出码"
+          - "上报失败 SHALL NOT 阻断或延迟推送返回"
+
+  - id: REQ-006
+    description: "钩子必须保持「不阻塞流转」与「非强制推送」两条既有语义"
+    scenarios:
+      - id: SC-013
+        confidence: high
+        evidence: "架构硬规则「GitHub 不可达不阻塞任何流转」；真值源已更新即 push 语义上成功"
+        given: "镜像失败"
+        when: "钩子结束"
+        then: "钩子退出码 SHALL 为 0"
+        and:
+          - "git push SHALL 成功返回"
+          - "告警 SHALL 通过输出与标记表达，而非退出码"
+      - id: SC-014
+        confidence: high
+        evidence: "上一轮 design 决策：非强制推送使 GitHub 分叉浮出水面而非被静默覆盖"
+        given: "钩子的推送实现"
+        when: "审查推送命令"
+        then: "推送 SHALL NOT 包含 --force 或等价强制选项"
+        and:
+          - "GitHub 侧分叉时 SHALL 失败并告警，而非覆盖远端提交"
+
+  - id: REQ-007
+    description: "接入文档必须与新告警能力一致"
+    scenarios:
+      - id: SC-015
+        confidence: high
+        evidence: "文档第 84 行与第 113 行均以「有人主动去看日志」为前提"
+        given: "告警能力已落地"
+        when: "阅读 DISTRIBUTED_ACCESS.md"
+        then: "日常操作表 SHALL 包含「查镜像状态」的一条命令"
+        and:
+          - "故障处置表 SHALL 包含镜像失败的完整处置路径"
+          - "文档 SHALL NOT 存在「必须人工 tail 日志才知道镜像失败」的表述"
+
+  - id: REQ-008
+    description: "镜像告警不得破坏既有工程约束"
+    scenarios:
+      - id: SC-016
+        confidence: high
+        evidence: "宪法要求改动后全量测试保持绿；上一轮交付基线为 592 passed"
+        given: "镜像告警变更已完成"
+        when: "运行既有工程测试套件"
+        then: "测试 SHALL 保持全绿"
+        and:
+          - "基线为 592 passed"
+      - id: SC-017
+        confidence: high
+        evidence: "服务器为公网机器；本项目已发生过明文凭证进入配置的教训"
+        given: "告警能力部署完成"
+        when: "审查仓库内容"
+        then: "仓库中 SHALL NOT 出现任何凭证"
+        and:
+          - "控制面访问 SHALL NOT 依赖写入仓库的密钥"
+  - id: REQ-009
+    description: "巡检命令必须能被其他节点直接使用，而不是只在作者机器上可跑"
+    scenarios:
+      - id: SC-018
+        confidence: high
+        evidence: "经验库 EXP-20260915-B4（high，x2）：『自研产物没纳入分发入口……本地能跑，别人装不到/装了跑不起来』。本变更新增 tools/check_mirror.sh，其使用者是分布在 3 台机器上的 6 个 agent，而非作者本人"
+        given: "巡检命令已提交到仓库"
+        when: "另一节点 git pull 后直接执行该命令"
+        then: "命令 SHALL 在无额外安装步骤的情况下可直接执行"
+        and:
+          - "文件 SHALL 带可执行位（Windows 侧创建后须显式恢复 mode 755）"
+          - "依赖 SHALL 限于 bash 与 git（及 ssh 别名），SHALL NOT 依赖 jq 等非必需工具"
+          - "缺失前置条件（如 ssh 别名未配置）时 SHALL 给出明确提示，而非静默失败"

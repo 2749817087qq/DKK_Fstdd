@@ -1,0 +1,37 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+# 用途：端到端验证「隔离真的隔离了」——单测能证明参数解析与目录布局，
+#       只有真 CLI + 真 git 才能证明两处 ACTIVE_CHANGE 互不干扰。
+
+meta:
+  task_id: "isolate-e2e-two-worktrees"
+  change_id: "2026-09-25-new-isolate-flag"
+  created: "2026-09-25T12:38:52+00:00"
+  task_type: code
+  system: "stdd-repo（真 git 仓）+ 临时沙箱仓；经 C:/Python311/python.exe upstream/bin/fstdd 调用真 CLI"
+
+preconditions:
+  - "已提交本次改动（工作区干净），否则 worktree 会把未提交改动带偏，结论不可采信"
+  - "临时沙箱仓：在系统临时目录 `git init` 一个空仓并完成 `stdd init`，避免污染 stdd-repo"
+  - "沙箱仓的 .git 存在且 HEAD 至少有一次提交（worktree add 需要可解析的 HEAD）"
+
+steps:
+  - action: "在沙箱仓执行 `fstdd new alpha --isolate worktree`"
+    verify: "退出码 0；`git worktree list` 出现第二条；分支名为 fstdd/<dir_name>；沙箱仓 `git status --porcelain` 输出为空（主工作区未被污染）"
+  - action: "在沙箱仓执行 `fstdd new beta --isolate worktree`"
+    verify: "第二条 worktree 建出，两处 change 目录分别位于各自 worktree 内；主工作区 `.fstdd/changes/` 下不含 alpha/beta"
+  - action: "把 alpha 所在 worktree 的 .fstdd.yaml 置为只读相位（understand）并在其 proposal 声明 scope.paths 仅含 alpha.txt"
+    verify: "在该 worktree 内写 alpha.txt → exit 2；写 beta.txt（范围外）→ exit 0 且输出 warn-only"
+  - action: "在 beta 所在 worktree 内执行同一条 guard check（beta 处于 build 相位）"
+    verify: "exit 0 —— beta 的可编辑相位不受 alpha 只读相位影响（这正是主工作区单实例下做不到的）"
+  - action: "在沙箱仓（非 git 的普通临时目录）执行 `fstdd new gamma --isolate worktree`"
+    verify: "退出码非 0，stderr/输出说明「不在 git 工作树内」，且 .fstdd/changes/gamma 不存在"
+  - action: "在沙箱仓制造一个未跟踪文件后执行 `fstdd new delta --isolate branch`"
+    verify: "退出码非 0，提示改用 --isolate worktree，且 `git branch --show-current` 未变化"
+  - action: "执行 `fstdd new epsilon`（不带 --isolate）"
+    verify: "退出码 0；输出含一行隔离提示；无新 worktree、无新分支"
+
+expected_outcomes:
+  - "两处 ACTIVE_CHANGE 各自只冻结自己 scope 内的路径，跨 worktree 零干扰（REQ-001/REQ-004 的端到端证据）"
+  - "所有失败路径都在创建 change 目录**之前**退出，不留半成品（REQ-003）"
+  - "无 --isolate 且无 config 时行为与改动前一致（REQ-001 SC-002 零漂移）"
+  - "全程无 input() 阻塞（REQ-005 SC-012）"

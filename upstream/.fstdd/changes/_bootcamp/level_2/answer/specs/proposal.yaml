@@ -1,0 +1,7 @@
+meta:
+  change_id: api-rate-limit
+  title: API Rate Limiting
+success_criteria:
+- 100 req/min enforced
+why:
+  problem: API no rate limiting

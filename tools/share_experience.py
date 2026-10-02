@@ -113,6 +113,30 @@ FILE_EXTS = {
     "sock", "pid", "so", "dll", "dylib", "conf", "service", "socket",
 }
 
+# 已知域名后缀白名单 —— 域名脱敏采用「宁漏勿误」策略：TLD 不在本表中的一律保留原文。
+#
+# 原因：域名正则 `\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b` 会把「标识符.方法名」整类吃掉，
+# 实测被误杀的包括 sqlite3.connect / conn.execute / time.monotonic / re.compile /
+# rsplit / timezone 等公开技术标识符。这些内容被替换后，经验文档的技术内核会
+# 整段失效（曾经把两篇经验的根因代码块和唯一修复方案全吃成 <DOMAIN>）。
+#
+# 判据（见 EXP-20260915-B3）：**漏脱敏可补救，误脱敏不可逆**。
+# 内网域名由专门的规则（local/internal/corp/lan）先行处理，不依赖本表。
+KNOWN_TLDS = {
+    # 通用顶级域
+    "com", "net", "org", "edu", "gov", "mil", "int",
+    # 国别/地区
+    "cn", "hk", "tw", "mo", "jp", "kr", "sg", "uk", "us", "de", "fr", "ru",
+    "au", "ca", "in", "it", "es", "nl", "se", "ch",
+    # 常用新通用域
+    "io", "dev", "ai", "app", "co", "me", "info", "biz", "tech", "cloud",
+    "xyz", "online", "site", "top", "shop", "store", "wiki", "blog", "work",
+    # 组合国别域
+    "com.cn", "net.cn", "org.cn", "co.uk", "com.hk",
+    # 内网域（防御性保留，正常由内网域名规则先行命中）
+    "local", "internal", "corp", "lan", "intranet",
+}
+
 # 脱敏规则：(正则, 替换, 说明)
 SANITIZE_RULES: list[tuple[re.Pattern, str, str]] = [
     # 凭证类优先（避免被后续规则切碎）
@@ -155,6 +179,10 @@ def sanitize(text: str, enabled: bool = True) -> tuple[str, list[str]]:
         if tld in FILE_EXTS:          # 形如 README.md / design.yaml
             return raw
         if d in PUBLIC_DOMAINS:
+            return raw
+        # 宁漏勿误：TLD 不在已知后缀表里的（sqlite3.connect / conn.execute /
+        # time.monotonic 这类「标识符.方法名」）一律保留 —— 误脱敏不可逆。
+        if tld not in KNOWN_TLDS:
             return raw
         hits.append("域名")
         return "<DOMAIN>"
@@ -265,11 +293,34 @@ def inbox_url() -> str:
     思路对齐上游 STDD 的 _share_via_api，但服务器是我们自己的，
     数据不外发给第三方；提交进「待审核池」，由维护者审核后同步进仓库。
     可用 FSTDD_INBOX_URL 覆盖（自建实例）。
+
+    端点迁移（2026-09-23）：`http://43.134.236.80:8787` 的公网入口已永久关闭，
+    改为经 443 反代的 `https://quanthub.ccreits.cn/inbox/api/share-experience`。
+    切勿再直连 8787（公网不可达）。
     """
-    # 2026-09-23 K《FSTDD003收-inbox地址变更.md》：8787 公网入口关闭，
-    # 改走 443 反代 https://quanthub.ccreits.cn/inbox/* -> 127.0.0.1:8787。
     return os.environ.get(
-        "FSTDD_INBOX_URL", "https://quanthub.ccreits.cn/inbox").rstrip("/")
+        "FSTDD_INBOX_URL", "https://quanthub.ccreits.cn/inbox/api/share-experience"
+    ).rstrip("/")
+
+
+def inbox_token() -> str:
+    """回传凭证（2026-09-25 项②）：环境变量 > 约定文件。
+
+    服务端 fstdd-inbox-server 校验 `Authorization: Bearer <token>`（恒定时间比较）；
+    token 由服务端 tokens.json 按节点铸发（仅存 sha256），历史 P0 教训：
+    明文落盘到 0644 位置会导致全量吊销——本函数只读 env 与 0600 约定文件，
+    绝不打印、绝不写入任何日志或审计。
+    """
+    v = os.environ.get("FSTDD_INBOX_TOKEN", "").strip()
+    if v:
+        return v
+    cand = REPO_ROOT.parent / ".fstdd-inbox-token"
+    try:
+        if cand.exists():
+            return cand.read_text(encoding="utf-8").strip()
+    except OSError:  # noqa: BLE001
+        pass
+    return ""
 
 
 # 批量提交参数（可用环境变量覆盖）
@@ -312,7 +363,7 @@ def share_disabled() -> bool:
 # 可审计：项目内 append-only 的 .fstdd/share-audit.yaml
 # ---------------------------------------------------------------------------
 def _now() -> str:
-    return datetime.datetime.now().isoformat(timespec="seconds")
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 
 
 def _scrub(text: str, secrets=()) -> str:
@@ -438,6 +489,12 @@ def _post_experiences(endpoint: str, body: bytes,
         req = urllib.request.Request(endpoint, data=body, method="POST")
         req.add_header("Content-Type", "application/json")
         req.add_header("User-Agent", "fstdd-share-experience")
+        # 2026-09-25 项②：服务端（fstdd-inbox-server）已启用节点级鉴权——
+        # 401=未知/未携带，403=已吊销。token 由服务端 tokens.json 按节点铸发
+        # （sha256 存档，明文只交付节点），本工具只负责携带、不铸造。
+        tok = inbox_token()
+        if tok:
+            req.add_header("Authorization", "Bearer " + tok)
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
                 return True, json.loads(r.read().decode("utf-8") or "{}"), retried
@@ -494,7 +551,13 @@ def publish_via_inbox(out_dir: Path, url: str) -> tuple[bool, str]:
     if not files:
         return False, "没有可提交的经验文件"
 
-    endpoint = url.rstrip("/") + "/api/share-experience"
+    # 幂等拼接（2026-09-25 审计修复）：inbox_url() 的约定是返回**完整 endpoint**
+    # （含 /api/share-experience，见 upstream test_inbox_endpoint.py:748 的断言），
+    # 但历史实现按旧 8787 base 语义又拼了一次路径，导致 quanthub 端点双重拼接 → 404。
+    # 现兼容两种形态：base（如 https://host/inbox）或完整 endpoint 均可。
+    base = url.rstrip("/")
+    endpoint = (base if base.endswith("/api/share-experience")
+                else base + "/api/share-experience")
     chunks = _chunk_experiences(files, INBOX_BATCH_ITEMS, INBOX_BATCH_BYTES)
     print("      分批提交：%d 条 -> %d 批（每批 <= %d 条 / <= %d KB）"
           % (len(files), len(chunks), INBOX_BATCH_ITEMS, INBOX_BATCH_BYTES // 1024))
@@ -864,10 +927,12 @@ def main() -> int:
     # 索引
     idx = ["# 经验库（对外回传）", "",
            f"> 由 `tools/share_experience.py` 导出，共 {written} 条，"
-           f"导出时间 {datetime.datetime.now():%Y-%m-%d %H:%M}", "",
-           "| ID | 标题 | 来源 |", "|---|---|---|"]
+           f"导出时间 {datetime.datetime.now(datetime.timezone.utc):%Y-%m-%d %H:%M} UTC", "",
+           "| ID | 标题 | 文件 |", "|---|---|---|"]
     for e, _, _ in prepared:
-        idx.append(f"| {e['id']} | {e['fm'].get('title', '-')} | {e['source']} |")
+        # 链接必须指向**导出后的文件名**（{id}.md，可能带归属前缀），
+        # 不能用 e['source']（源文件名）—— 两者不一致会让索引链接全断。
+        idx.append(f"| {e['id']} | {e['fm'].get('title', '-')} | [{e['id']}.md](./{e['id']}.md) |")
     (OUT_DIR / "README.md").write_text("\n".join(idx) + "\n", encoding="utf-8", newline="\n")
 
     # 回传指引（面向 AI Agent）。

@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-16-inbox-review-sync: proposals/2026-09-16-inbox-review-sync.yaml
+specs:
+  agent:
+    2026-09-16-inbox-review-sync: specs/agent/2026-09-16-inbox-review-sync.yaml
+  code:
+    2026-09-16-inbox-review-sync: specs/code/2026-09-16-inbox-review-sync.yaml
+version: '2.9'

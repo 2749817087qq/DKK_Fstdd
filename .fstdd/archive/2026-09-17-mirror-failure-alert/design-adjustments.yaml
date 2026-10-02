@@ -1,0 +1,314 @@
+# design-adjustments.yaml — Phase 3 设计偏离汇总
+# 对照 Phase 2 的 design.md / test-plan.md，记录实际执行中的调整
+
+change_id: "2026-09-17-mirror-failure-alert"
+created: "2026-09-17T19:51:34+08:00"
+last_updated: "2026-09-17T21:05:00+08:00"
+# C1 评审（3 路并行）返回 20 条发现；修复产生的设计层面偏离见 ADJ-007..009
+summary: |
+  Phase 3 执行中有 9 项偏离原设计：
+
+  · 3 项来自 Part B 切片执行 —— 可测试性改造（ADJ-001）、标识措辞细化（ADJ-002）、
+    顺带补齐既有脚本执行位（ADJ-003）
+  · 3 项来自 Part C 质量验证 —— 验证脚本的零污染隔离设计（ADJ-004）、
+    控制面检索契约需带 node_id（ADJ-005）、以及**检查工具自身**的统计粒度缺陷（ADJ-006）
+  · 3 项来自 Part C 的 C1 多路并行技术评审（20 条发现）的修复 ——
+    输出标识语义拆分（ADJ-007）、巡检判定顺序（ADJ-008）、健壮性补强（ADJ-009）
+
+  其中四项值得单独说明：
+  · ADJ-001 是「为了让最重要的断言可自动化，反过来改造被测代码」——
+    本 change 的核心承诺是「推送方视角可见」，若测试只能做文本匹配，
+    这条承诺就永远没有自动验证。
+  · ADJ-006 是「用历史产物回归证明了工具误报」—— 10/10 已归档 change 全部触发同一判定。
+  · ADJ-007 是**自研代码里最严重的缺陷**：它不表现为报错，而表现为
+    「测试全绿 + 文档教人用会误读的方式判断成败」。20 条评审发现中 16 条
+    落在本 change 新写的约 1500 行代码里 —— 上游 STDD 工具只占 4 条。
+  · ADJ-008 是「判定顺序也是一种契约」：同样的三态退出码，
+    换个判断顺序就会把已知故障降级成工具故障。
+
+adjustments:
+  - id: ADJ-001
+    severity: medium
+    type: 可测试性改造
+    slice: A
+    original: |
+      design.md 未规定钩子的路径来源。既有钩子通过部署脚本的外层 heredoc 展开，
+      在服务器上落到字面路径 `BARE=/home/ubuntu/fstdd-git/stdd-repo.git`，
+      LOG / FLAG 同理。
+    actual: |
+      钩子的 BARE / LOG / FLAG 三个路径改为带默认值的环境变量形式：
+        BARE="${FSTDD_BARE_DIR:-/home/ubuntu/fstdd-git/stdd-repo.git}"
+        LOG="${FSTDD_MIRROR_LOG:-/home/ubuntu/fstdd-git/mirror.log}"
+        FLAG="${FSTDD_MIRROR_FLAG:-/home/ubuntu/fstdd-git/mirror-failed.flag}"
+    reason: |
+      钩子原本无法在非服务器环境执行（`/home/ubuntu/...` 在开发机不可写），
+      导致只能做文本匹配断言 —— 而文本匹配**无法证明「推送方真的看得到镜像结果」**，
+      只能证明「源码里有 tee 这个词」。本 change 的核心承诺恰是「推送方视角可见」，
+      若测试无法覆盖这一点，等于把最重要的断言交给了服务器手工验证。
+    impact: |
+      不改变接口与行为语义：post-receive 由 git 调用时不设这些变量，一律走默认值。
+      影响范围限于可测试性 —— 测试得以用 stub git / timeout **真实执行**钩子，
+      断言 stdout（回显）与 mirror.log（落盘），REQ-001 / REQ-002 的 7 个 TC 由此落地。
+    evidence: "test_mirror_alert_ops.py 的 hook_source / run_hook fixture；Slice A 7/7 通过"
+    exp_ref: null
+
+  - id: ADJ-002
+    severity: small
+    type: 措辞细化
+    slice: A
+    original: |
+      tasks.md 的 A.3 建议标识为「成功 `[OK]`、失败 `[ALERT]`」。
+    actual: |
+      实际实现采用 `[MIRROR-OK]` / `[MIRROR-FAILED]`。
+    reason: |
+      `[OK]` / `[ALERT]` 过于泛化：钩子输出会与 git 自身输出混在同一屏，
+      且 `[ALERT]` 不含「镜像」语义，读者需靠上下文推断。带 `MIRROR-` 前缀
+      使标识可被 grep 精确定位，且 `-FAILED` / `-OK` 的语义对立更直接。
+    impact: |
+      仅措辞差异，SC-002 的「不共用同一标识」要求两种方案均满足。测试按新标识断言。
+    evidence: "Slice A / F 的标识断言；文档同步改写为 [MIRROR-FAILED]"
+    exp_ref: null
+
+  - id: ADJ-003
+    severity: small
+    type: 顺带补齐既有缺陷
+    slice: F
+    original: |
+      `docs/DISTRIBUTED_ACCESS.md` 教人用 `./tools/deploy_server_bare_repo.sh` 重建数据面。
+    actual: |
+      给 `tools/deploy_server_bare_repo.sh` 补上 git 索引中的可执行位（100644 → 100755）。
+    reason: |
+      该脚本在 git 索引中一直是 `100644`（无执行位），而文档教人用 `./` 前缀调用 ——
+      即**文档教人做一件会失败的事**（Permission denied）。这正是 EXP-20260915-B4 的形态：
+      作者本机用 `bash tools/xxx.sh` 能跑，别人按文档 `./tools/xxx.sh` 跑不起来。
+      本 change 的 REQ-009 / SC-018 已在为新增的 `check_mirror.sh` 立这条规矩，
+      顺带把同一目录下被文档以 `./` 引用的既有脚本补齐，否则规矩只做了一半。
+    impact: |
+      仅 git 索引 mode 变化，脚本内容零改动。
+      `tools/deploy_hub.sh` 同为 100644，但文档未以 `./` 形式引用它，不在本次范围。
+    evidence: "git ls-files -s 显示 100755；TC-MFA-024 覆盖同类约束"
+    exp_ref: EXP-20260915-B4
+
+  - id: ADJ-004
+    severity: medium
+    type: 新增必要动作（验证脚本隔离）
+    slice: H
+    original: |
+      design.md / test-plan.md 要求「模拟失败后必须恢复现场」，
+      但未规定验证脚本如何隔离自身副作用。
+    actual: |
+      端到端脚本采用零污染设计：
+      · 日志与故障标记经 `FSTDD_MIRROR_LOG` / `FSTDD_MIRROR_FLAG` 指向 `/tmp/fstdd-e2e/`
+      · remote URL 经 `GIT_CONFIG_COUNT` / `GIT_CONFIG_KEY_0` / `GIT_CONFIG_VALUE_0`
+        环境变量注入，**不改裸库配置**
+      · 故障态指向 `http://127.0.0.1:9/`（端口 9 = discard，本地必拒、快速失败）
+      · 恢复态指向服务器上的临时裸库（本地路径，push 必成功）
+      · `trap cleanup EXIT INT TERM` 兜底还原，且恢复后**读回验证**结果
+    reason: |
+      两个必须解决的现实约束：
+      ① 若恢复依赖 GitHub 可达，则 GitHub 走内置代理的时段性 502（本项目已知现象）
+         会让「恢复」这一步本身失败 —— 服务器就**留在故障态**，比不验证更糟；
+      ② 本环境经 ssh 的命令**执行两次**，任何非幂等动作都会双发。
+      把故障注入目标换成**本地可控**对象后，「恢复」永远能成功。
+    impact: |
+      实测生产 `mirror.log` 与 `mirror-failed.flag` 零污染；
+      连续两次运行 PASS=38 / FAIL=0（幂等）。
+    evidence: "tools/e2e_mirror_alert.sh；实测输出 [OK] 现场已还原"
+    exp_ref: EXP-20260917-A3
+
+  - id: ADJ-005
+    severity: small
+    type: 契约细节修正
+    slice: H
+    original: |
+      design.md 假设「故障态下可查询控制面消息」，未记录检索方式。
+    actual: |
+      `GET /messages` 是**收件箱**语义：
+        WHERE acked_at IS NULL AND (to_node_id=? OR to_node_id IS NULL)
+      必须带 `node_id` 查询参数；不带会返回
+      `{"error": "node_id query parameter is required"}` 而非空列表。
+      钩子上报的 notice 不带 `to_node_id`（广播），任何已注册节点都能查到。
+    reason: |
+      首次端到端运行时该步骤被 SKIP（查询语句缺参数）。若按「SKIP 即通过」处理，
+      CP-008 就成了一条**从未真正验证过**的断言 —— 而它正是「控制面告警」的
+      唯一端到端证据。
+    impact: |
+      修正查询语句后 4 项断言全部 PASS，可在控制面检索到 body 含失败项与发生时间的 notice。
+    evidence: "实测返回：from_node_id=fstdd-hub-infra, to_node_id=null, kind=notice"
+    exp_ref: null
+
+  - id: ADJ-006
+    severity: medium
+    type: 工具缺陷（本 change 范围之外）
+    slice: C2
+    original: |
+      `fstdd ci check-failures` 被视为可用的自动化质量门。
+    actual: |
+      其中两项检查的**统计粒度**有误，对规范产物普遍误报：
+      · (d) `check_tcid_unique`（`upstream/fstdd/cli/commands/ci.py:310-324`）
+        统计 test-plan.md **全文**的 TC-ID 出现次数，`count > 1` 即判「重复」——
+        而规范 test-plan 必然在「案例定义表 / 执行矩阵 / 优先级清单」三处引用同一 ID
+      · (g) `check_and_count`（`ci.py:349-365`）统计**整个 spec 文件**的 `**AND**` 数，
+        阈值 5 —— 该阈值显然是为**单个 SC** 设计的
+    reason: |
+      用同一段判据跑**全部 10 个已归档 change**（均已通过 Gate 3 验收）：
+      **10/10 全部触发这两个判定** —— TC-ID 误报 1–17 个，spec AND 数 7–35。
+      一个对已验收产物 100% 报错的检查，问题在检查本身。
+    impact: |
+      本 change **不修改**该工具（超出范围，且属另一个 change 的输入）。建议后续：
+      ① 判定粒度与语义单位对齐（TC-ID 判「定义行」、AND 判「每个 SC 的 THEN 子句」）；
+      ② 新增检查必须用历史产物回归 —— 若全部报错，则是检查写错了；
+      ③ 工具自身故障与产物缺陷需可区分（不同标识 / 退出码）。
+    evidence: "10/10 归档 change 对照实测；详见 EXP-20260917-A1"
+    exp_ref: EXP-20260917-A1
+
+  - id: ADJ-007
+    severity: high
+    type: 输出契约细化（C1 评审驱动）
+    slice: C1
+    original: |
+      ADJ-002 定下两个标识：`[MIRROR-OK]`（成功）/ `[MIRROR-FAILED]`（失败），
+      逐项推送成功时同样打印 `[MIRROR-OK] <item> mirrored`。
+      这样既满足 SC-002（成功与失败不共用标识），也满足 SC-004（成功项仍被记录为成功）。
+    actual: |
+      标识由 2 个细化为 4 个，**语义互斥**：
+        [MIRROR-STEP]   逐项进度（branches / tags 各自的镜像结果）
+        [MIRROR-OK]     **整体**成功（branches 与 tags 均已同步）—— 仅此一处出现
+        [MIRROR-FAILED] 有任一项失败
+        [MIRROR-ALERT]  辅助通道失效（控制面未上报 / 故障标记写入失败）
+      成功项改打 `[MIRROR-STEP] <item> mirrored`（"mirrored" 即成功陈述）。
+    reason: |
+      原实现在**混合态**下会产生一条危险输出：
+        [MIRROR-OK] tags mirrored      ← tags 成功
+        [MIRROR-FAILED] branches ...   ← branches 失败
+      于是 `grep MIRROR-OK` 会把**整体失败**判成成功 —— 而分叉（GitHub 领先）
+      恰恰是最需要告警、最不能误判的场景。SC-003 要求「告警块 SHALL NOT 与成功输出
+      混淆」，原实现在这一条上只是**表面上**满足：字面确实不同，但判据不唯一。
+      修复后「整体成功」有且只有一个专属标识，判据重新变得唯一。
+    impact: |
+      输出契约变化，需同步：钩子注释、`docs/DISTRIBUTED_ACCESS.md`（标识对照表）、
+      E2E 断言、单元测试断言。
+      spec 的 SC-002 / SC-004 仍然满足（成功项仍被记录为成功；成功与失败不共用标识）。
+      **规格补强建议（需 D哥 决定）**：SC-002 建议增加一条 and-clause ——
+      「整体成功 SHALL 有独立且**仅在整体成功时**出现的标识」。
+      该条属 Gate 2 之后的规格变更，本次**不擅自改动已确认的 spec**，
+      仅在 test-report 与 Gate 3 确认项中列出。
+    evidence: |
+      E2E 混合态实测（branches 失败 / tags 成功）：含 [MIRROR-STEP] tags mirrored、
+      不含 [MIRROR-OK]；单元测试 test_hook_uses_distinct_markers_for_success_and_failure
+    exp_ref: null
+
+  - id: ADJ-008
+    severity: medium
+    type: 判定顺序（C1 评审驱动）
+    slice: C1
+    original: |
+      `tools/check_mirror.sh` 先判「可测性」（ssh 是否可达、sha 是否取得到），
+      再判故障标记 —— 即 `无法测量(3)` 优先于 `滞后(2)`。
+    actual: |
+      判定顺序反转为**先判故障标记，再判可测性**：
+        if flag_state = present        → exit 2（滞后）
+        elif 远端不可达 / sha 缺失      → exit 3（无法测量）
+        elif sha 不一致                → exit 2（滞后）
+        else                          → exit 0（已收敛）
+    reason: |
+      故障标记是上一次失败留下的**确定事实**，「可测性」只说明当前测不了。
+      按原顺序，「GitHub 不可达 + 已有故障标记」会被降级成 3（无法测量）——
+      把已知的失败项与发生时间从退出码里丢掉。而那一刻恰恰是最需要把故障
+      说清楚的时刻：镜像确实是坏的，只是此刻测不了它坏在哪里。
+    impact: |
+      退出码语义不变（仍是 0/2/3 三态），但**同一组端状态现在可能落到不同码上**。
+      E2E 相应从「三态」扩为四条判定分支，并新增「有标记 + 不可达 → 2」用例。
+      新增单元测试 test_check_mirror_flag_takes_priority_over_unmeasurable 直接守护该顺序。
+    evidence: "E2E 7b/7c 实测；单元测试 flag_takes_priority_over_unmeasurable"
+    exp_ref: null
+
+  - id: ADJ-009
+    severity: medium
+    type: 健壮性与验证纪律补强（C1 评审驱动）
+    slice: C1
+    original: |
+      钩子在正常路径末尾写 `exit 0`；故障标记直接 `> "$FLAG"`；
+      E2E 的巡检段真实改动裸库 remote 配置、临时库落在生产目录、
+      恢复态断言可能恒真。
+    actual: |
+      四项补强：
+      1. 钩子加 `trap ... EXIT` 兜底 —— **无论从哪条路径结束都恒以 0 退出**，
+         内部错误只报错不改退出码（原写法下死于 `set -u` 就是非零退出）
+      2. 故障标记改为**临时文件 + mv 原子写入**，并在写入失败时输出 [MIRROR-ALERT]
+         （原写法下并发巡检可能读到写了一半的标记，结构化解析失败）
+      3. E2E 巡检段改用 `FSTDD_MIRROR_URL` 注入，**全程不改裸库真实配置**；
+         收尾由「发还原命令」改为「读回真实配置做比对」；临时库移到 `/tmp/fstdd-e2e/`
+         （注入的**实现方式**后被 ADJ-010 修正为「直传目标」—— 此处原写的
+         「check_mirror.sh 转成远端 GIT_CONFIG_*」经实测证明**无效**）
+      4. 恢复态先**显式种下**故障标记并断言前置条件成立 ——
+         原断言可能恒真（标记本来就不存在时，"已清除" 无意义）
+    reason: |
+      1 是「契约必须靠机制保证，不能靠路径恰好走到」：`exit 0` 写在末尾，
+      只覆盖正常路径；而契约是「恒以 0 退出」，两者不是一回事。
+      2 是「可被程序读取」的前提是「读到的永远是完整内容」。
+      3 是「零污染」必须给出**证据**，且验证不得改动生产配置 ——
+      验证窗口内若有真实 agent 推送，钩子会把提交镜像到错误目标。
+      4 是「测试绿了 ≠ 断言有效」：恒真断言是本 change 反复踩到的形态（EXP-20260917-A2）。
+    impact: |
+      钩子行为语义不变（仍恒 exit 0、仍写同样的标记字段），
+      但「恒 exit 0」与「标记完整」从**依赖实现路径**变为**机制保证**。
+      E2E 对生产环境的副作用进一步降为零（不再有改动真实配置的窗口）。
+    evidence: |
+      单元测试 test_hook_exit_code_stays_zero_under_failure（5 组参数）、
+      test_e2e_script_verifies_server_state_on_any_exit、
+      test_e2e_script_has_no_destructive_remote_ops（含续行合并 / +refspec / rm -fr）
+    exp_ref: EXP-20260917-A2
+
+  - id: ADJ-010
+    severity: high
+    type: 可测试性注入机制失效（C1 修复后 E2E 实测暴露）
+    slice: C1
+    original: |
+      `FSTDD_MIRROR_URL` 的注入实现为「经 `GIT_CONFIG_COUNT` /
+      `GIT_CONFIG_KEY_0=remote.github.url` / `GIT_CONFIG_VALUE_0` 环境变量
+      覆盖镜像 remote 的 URL」，钩子与巡检命令都用它，并据此声明
+      「全程不改裸库真实配置 = 零污染」（ADJ-001 / ADJ-004 / ADJ-009 共同依赖该机制）。
+    actual: |
+      该机制**从根上无效**。`remote.<name>.url` 是 git 的**多值**键 ——
+      第一个值用于 fetch，全部值用于 push；环境注入只往列表末尾**追加**一项。
+      实测（服务器 git 2.43.0）注入 `http://127.0.0.1:9/nope.git`（端口 9 = discard）后：
+
+        · `git config --get remote.github.url` -> 返回注入值（**看起来生效**）
+        · `git remote -v` -> 注入值被列为**额外的 push URL**，真实 GitHub 仍是 fetch URL
+        · `git ls-remote github` -> 依旧返回真实 GitHub 的 sha `c11789a8…`
+
+      修法：把镜像目标**直接作为 git 参数**传递 ——
+        · 巡检：`TARGET="${MIRROR_URL:-github}"` -> `git ls-remote "$TARGET"`
+        · 钩子：`MIRROR_TARGET="${FSTDD_MIRROR_URL:-github}"` -> `git push "$MIRROR_TARGET"`
+        · E2E ：`run_hook` 改 `export FSTDD_MIRROR_URL='$1'`
+      默认值仍是 remote 名 `github`，生产行为完全不变。
+    reason: |
+      两条后果都严重：
+      1. **巡检判定测不出来**：CP-006 的「无法测量（3）/ 滞后（2）」两条分支依赖
+         「目标不可达」与「sha 不一致」两个场景，注入无效使两者都无法构造 ——
+         E2E Step 7 四条断言全红即此。这也说明**为什么单元测试没能发现**：
+         单测用 stub ssh 直接回放端状态，绕过了注入路径，所以一直是绿的。
+      2. **「零污染」声明不成立**：真实 GitHub 仍留在 push 目标里，
+         E2E 的 `run_hook` 实际会**真的推线上**。所幸裸库与 GitHub 内容本就一致，
+         推送为 no-op，未造成数据污染；但机制保证是假的 ——
+         而「声明必须靠机制保证」正是 ADJ-004 的全部要点。
+      教训：**「看起来生效」是最危险的一类失效** —— `config --get` 返回了注入值，
+      足以让人相信机制正常工作；只有真的构造一次不可达场景才会露馅。
+    impact: |
+      1. 巡检与钩子的注入路径改为直传目标，语义更简单（目标就是一个参数）
+      2. 此后**没有任何路径**会读或写裸库的真实 remote 配置 ——「零污染」这回是真的
+      3. 新增 3 个守护用例（2 个行为级 + 1 个静态），并以**变异测试**证明其有效
+      4. 文档补「镜像目标」说明与「为什么不用 GIT_CONFIG_*」的实测依据
+      5. 经验库 `EXP-20260917-A3` 中推荐 GIT_CONFIG_* 的段落被**修正** ——
+         它当时是在教人做一件已被证伪的事
+    evidence: |
+      变异测试 5/5 捕获（M1 钩子写死 push github / M2 默认值写成 origin /
+      M3 巡检加回 GIT_CONFIG_* / M4 巡检写死 ls-remote github /
+      M5 E2E 退回 GIT_CONFIG_*），且为**纯内存变异**（零文件改动）；
+      行为级 test_hook_passes_mirror_target_to_git（替身 git 记录**实际收到的 argv**）、
+      test_hook_defaults_mirror_target_to_github（默认回落 remote 名）、
+      静态 test_mirror_target_is_not_injected_via_git_config（扫非注释行）
+    exp_ref: EXP-20260917-A4
+
+not_adopted: []

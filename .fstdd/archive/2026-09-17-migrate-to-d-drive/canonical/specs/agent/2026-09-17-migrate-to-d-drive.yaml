@@ -1,0 +1,41 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+
+meta:
+  task_id: "migrate-to-d-drive-verify"
+  change_id: "2026-09-17-migrate-to-d-drive"
+  created: "2026-09-17T08:58:10.715222"
+  task_type: code
+  system: "C 盘工作区 → D:/tools/FSTDD（新法定源）；已安装 skill 路径随之重指"
+
+preconditions:
+  - "C 盘工作区完整且 git 干净（HEAD 已推送 GitHub）"
+  - "`D:/tools/FSTDD` 存在且为空（或仅有可安全覆盖的内容）"
+  - "D 盘可用空间充足（实测 55G 可用，待迁移 ≈5379 文件）"
+  - "`D:/Programs/DKK_Fstdd` 是另一程序的调试副本，**全程只读**"
+
+steps:
+  - action: "把 C 盘工作区整体复制到 `D:/tools/FSTDD/`"
+    verify: "目标目录结构为 stdd-repo/ + backups/ + .workbuddy-ai/ + 根文件"
+  - action: "逐文件比对 C 盘与 D 盘副本"
+    verify: "文件数一致；逐文件哈希一致"
+  - action: "检查 `D:/tools/FSTDD/stdd-repo` 的 git 状态"
+    verify: "HEAD / 分支 / tag fstdd-v1.0.0 / remote 与 C 盘一致；工作区干净"
+  - action: "从 D 盘运行三项校验"
+    verify: "verify_eol 7/7、verify_skill_standards 7/7、verify_rename 8/8"
+  - action: "从 D 盘运行全量测试"
+    verify: "543 passed，无回归"
+  - action: "从 D 盘执行安装脚本（不设 FSTDD_SRC）"
+    verify: "SRC 解析为 `D:/tools/FSTDD/stdd-repo/upstream`，7 个 skill 安装成功"
+  - action: "检查已安装 skill 的绝对路径"
+    verify: "指向 D 盘；不含 C 盘工作区路径；verify_workbuddy_skills 全绿"
+  - action: "核对文档第 0 节与项目记忆"
+    verify: "法定源写为 D 盘；C 盘工作区标注为历史归档；保留既有告警"
+  - action: "比对 `D:/Programs/DKK_Fstdd` 与 `~/.workbuddy-ai/Fstdd` 迁移前后状态"
+    verify: "二者未被修改"
+
+expected_outcomes:
+  - "FSTDD 全部资产落于 D 盘，不随 C 盘系统重装丢失"
+  - "D 盘副本与 C 盘逐文件一致（含 git 历史与 tag）"
+  - "D 盘环境自洽：三项校验全绿 + 全量 543 passed"
+  - "已安装 skill 指向 D 盘，不再依赖 C 盘"
+  - "C 盘工作区保留作历史归档；其它位置的资产未被改动"

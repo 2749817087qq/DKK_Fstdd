@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-25-guard-phase-path-scope: proposals/2026-09-25-guard-phase-path-scope.yaml
+specs:
+  agent:
+    2026-09-25-guard-phase-path-scope: specs/agent/2026-09-25-guard-phase-path-scope.yaml
+  code:
+    2026-09-25-guard-phase-path-scope: specs/code/2026-09-25-guard-phase-path-scope.yaml
+version: '2.9'

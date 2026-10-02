@@ -1,6 +1,0 @@
-GATE1_APPROVED — 2026-09-14
-Phase 1 提案确认通过。三项设计决策（经 AskUserQuestion 显式确认）：
-1) 合并语义=升级 disk_scan 行（web 为权威层：UPDATE source_url/pdf_url/category/confidence/exchange，保留 pdf_local_path）
-2) 关联回填=跑完 reconcile_pdf_local_path 把 web 行 pdf_local_path 指向 announcement_files.abs_path（目标覆盖≥80%）
-3) 范围=一并跑 sync_pre_listing（上市前材料）
-可行性实证：import 无 pipeline 依赖、FundRegistry 94 只、CNInfo 403/SSE 200 已探测。

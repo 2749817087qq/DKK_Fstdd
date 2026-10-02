@@ -1,0 +1,14 @@
+checks:
+  experience_record: 3
+  full_gate_chain: 2
+  knowledge_graph: 2
+  multi_capability: 3
+level: 5
+mission: Dashboard+Report双capability，含经验+图谱+Gate1-3全链路
+mode: thorough
+name: comprehensive
+tasks:
+- 双capability SPEC
+- Gate1->Gate2->长程->SLICE->BUILD->VERIFY->Gate3->DELIVER
+- Phase5记录失败模式到经验库
+- Phase6 knowledge merge同步图谱

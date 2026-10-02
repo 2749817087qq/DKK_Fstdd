@@ -1,0 +1,92 @@
+# 2026-09-26-finder-archive-fallback.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-09-26-finder-archive-fallback"
+  title: "change 目录解析增归档回退 —— 让 validate / status / canon verify / structure merge 归档后仍可用"
+  created: "2026-09-26T04:00:35+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    一个 change 被 `stdd archive` 归档后，一组 CLI 命令**必然**失败（exit 1），
+    因为它们解析 change 目录时只查 `.fstdd/changes/`，**没有 `.fstdd/archive/` 回退**。
+    而 DELIVER 流程把「归档」排在这些步骤之前 ⇒ **DELIVER 自身不可用**：
+    走完 Step 1（归档）之后，Step 2 起的 canon / structure / validate 全部报
+    「找不到 change」，只能靠「还原 → 执行 → 再归档」的人工往返绕开。
+
+    更关键的是：**解析器不止一处**。实测存在四个各自独立、都硬编码 `changes/` 的实现：
+
+      - upstream/fstdd/cli/finder.py:5            find_change_dir   （有校验、有后缀匹配）
+      - upstream/fstdd/cli/commands/canon.py:12   _get_canon_dir    （纯路径拼接）
+      - upstream/fstdd/cli/commands/gate.py:22    _find_change_dir  （纯路径拼接）
+      - upstream/fstdd/cli/commands/state.py:16   _find_change_dir  （纯路径拼接）
+
+    另有 canon.py:20 `_find_current_change` 与 structure.py 内的直接拼接。
+    ⇒ 只修 finder.py 一处**不足以**修好 `canon verify`（它根本不走 finder）。
+
+  evidence:
+    observed_at: "2026-09-26T04:00:45+00:00"
+    observed_base_git_sha: "f3b27139c0e6ee50778bd2878f4680a989f50e8a"
+    details: |
+      实测命令与结果（cwd = 仓库根；目标 = 已归档的 2026-09-25-new-isolate-flag，
+      实体位于 .fstdd/archive/2026-09-25-new-isolate-flag/）：
+
+        stdd validate        2026-09-25-new-isolate-flag  -> rc=1  「找不到 change: ...」
+        stdd status          2026-09-25-new-isolate-flag  -> rc=1  「找不到 change: ...」
+        stdd canon verify    2026-09-25-new-isolate-flag  -> rc=1  「Error: canonical/proposals/... not found」
+        stdd structure merge 2026-09-25-new-isolate-flag  -> rc=1  「Delta not found for ...」
+
+      对照（同一 change 未归档时）：canon verify 真实结果 2/2 通过
+      （DC-HASH 源哈希一致 + DC-FIELD 字段引用完整）。
+
+      另注 canon verify 的报错路径与实际探测路径**不符** —— 它打印
+      canonical/proposals/<name>.yaml not found，实际探测的是
+      .fstdd/changes/<name>/canonical/proposals/，会误导定位。
+
+      来源：2026-09-26 DELIVER 2026-09-25-new-isolate-flag 时发现并登记
+      （上线前检查报告缺陷 #5，定级 P0）。
+
+what_changes:
+  - description: |
+      finder.find_change_dir 新增**关键字参数** include_archive（bool，默认 False）；
+      为 True 时先在 .fstdd/changes/ 解析，未命中再回退 .fstdd/archive/。
+      默认 False ⇒ 所有未显式传参的既有调用点行为**零漂移**。
+  - description: |
+      canon._get_canon_dir 不再纯拼接 changes/<name>/canonical，改走统一解析（含归档回退）
+      —— 这是让 canon verify / canon generate 归档后可用的必要修复。
+  - description: |
+      structure.cmd_structure_merge 的 delta 路径改走统一解析（含归档回退）。
+  - description: |
+      validate / status / ci / diff / dependency_graph / extract_proposal 六处调用点
+      显式传 include_archive=True（语义都是「查询某个 change」，归档后查询合法）。
+  - description: |
+      archive / abort **保持** include_archive=False —— archive 必须只解析 changes/，
+      否则会把自己从 archive/ 再移动一次。
+  - description: |
+      新增测试：归档后四命令可用（正例）+ archive 不解析 archive/（零漂移反例）。
+
+capabilities:
+  new:
+    - name: "change-dir-resolution"
+      description: |
+        统一的 change 目录解析能力：可选归档回退、changes/ 优先、支持精确名与后缀匹配，
+        并区分「只查在办」与「含归档」两种语义。
+  modified:
+    - name: "validate"
+      description: "支持校验已归档的 change（原先归档后 rc=1 找不到 change）"
+    - name: "status"
+      description: "支持查询已归档的 change 状态"
+    - name: "canon verify"
+      description: "支持对已归档 change 做 canonical 校验（原先必然报 canonical/proposals 不存在）"
+    - name: "structure merge"
+      description: "支持读取已归档 change 的 code-structure-delta"
+
+success_criteria:
+  - "find_change_dir 默认行为逐字不变：不传 include_archive 时，只存在于 archive/ 的 change 仍返回 None"
+  - "传 include_archive=True 时，只存在于 archive/ 的 change 可被解析到；changes/ 与 archive/ 同名时取 changes/"
+  - "归档后 validate / status / canon verify / structure merge 四条命令不再因「找不到 change」失败"
+  - "archive 命令行为零漂移：不得解析到 archive/（否则自我移动）"
+  - "rollback 既有的 archive 搜索逻辑不被破坏"
+  - "全量测试 0 failed；新增用例覆盖上述正例与零漂移反例"

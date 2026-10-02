@@ -1,0 +1,82 @@
+audit_amendments:
+- amended_actor: user
+  amended_at: '2026-09-17T10:57:11'
+  amended_by: dialog
+  amended_by_tool_version: '3.0'
+  amended_evidence: D哥确认追认：整体迁移到 D:/tools/FSTDD 的 Phase 1 proposal 与原 Gate 1 结论有效，保留原始
+    AI 记录。
+  gate: 1
+  idempotency_key: 2026-09-17-migrate-to-d-drive:gate1:a9c897d00ee8c08c
+  original_confirmed_actor: ai
+  original_confirmed_at: '2026-09-17T08:59:09'
+  original_confirmed_by: dialog
+  original_confirmed_evidence: 确认，进入 SPEC（整体迁移到 D:/tools/FSTDD）
+- amended_actor: user
+  amended_at: '2026-09-17T10:57:11'
+  amended_by: dialog
+  amended_by_tool_version: '3.0'
+  amended_evidence: D哥确认追认：整体迁移到 D:/tools/FSTDD 的设计、规格与测试计划可执行，保留原始 AI 记录。
+  gate: 2
+  idempotency_key: 2026-09-17-migrate-to-d-drive:gate2:ea963baf27d6ff68
+  original_confirmed_actor: ai
+  original_confirmed_at: '2026-09-17T09:01:30'
+  original_confirmed_by: dialog
+  original_confirmed_evidence: 确认，进入 BUILD（6 项决策 + 15 TC 认可）
+change_id: 2026-09-17-migrate-to-d-drive
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 4
+last_modified: '2026-09-17T11:00:14.090851'
+mode: standard
+phases:
+  build:
+    confirmed_actor: user
+    confirmed_at: '2026-09-17T11:00:13'
+    confirmed_by: dialog
+    confirmed_evidence: D哥确认 Gate 3：已审阅迁移 test-report，562 passed/0 failed，三项校验与变异验证均通过，允许进入
+      DELIVER。
+    slices_completed:
+      S1:
+        new_tests: 8
+        tc_coverage: TC-MDD-001,TC-MDD-002,TC-MDD-003,TC-MDD-004,TC-MDD-005,TC-MDD-006
+        verified_at: '2026-09-17T10:00:00'
+      S2:
+        new_tests: 4
+        tc_coverage: TC-MDD-014
+        verified_at: '2026-09-17T10:00:00'
+      S3:
+        new_tests: 2
+        tc_coverage: TC-MDD-007,TC-MDD-008,TC-MDD-009,TC-MDD-010,TC-MDD-011
+        verified_at: '2026-09-17T10:00:00'
+      S4:
+        new_tests: 3
+        tc_coverage: TC-MDD-012,TC-MDD-013
+        verified_at: '2026-09-17T10:00:00'
+      S5:
+        new_tests: 2
+        tc_coverage: TC-MDD-014
+        verified_at: '2026-09-17T10:00:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T09:01:30'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 BUILD（6 项决策 + 15 TC 认可）
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-17T08:59:09'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 SPEC（整体迁移到 D:/tools/FSTDD）
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 10
+  tc_cases: 15
+  test_functions: 19
+version: '3.0'

@@ -1,0 +1,36 @@
+baseline:
+  at: '2026-09-30T06:47:44+00:00'
+  base_git_sha: fd388f701032a30255fbcc0e9c3a4a93d2833c24
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-09-30-multi-platform-adapters
+complexity_score: null
+current_phase: spec
+design_adjustments:
+  count: 0
+last_modified: '2026-09-30T08:01:15+00:00'
+mode: standard
+phases:
+  build:
+    status: pending
+  deliver:
+    status: pending
+  spec:
+    status: in_progress
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-30T06:47:44+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 2026-09-30 用户裁定多平台适配方向：产物=一套共享 skill 正文 + 每平台薄清单（安装路径+front-matter
+      规则）+ 参数化 installer（--platform 读 platforms.yaml）；禁止 N 份手写适配分支；铺平台顺序 Claude Code→Trae→Cursor→(Copilot/Aider
+      缓)；Qoder 暂不做。
+    status: completed
+score_confidence: null
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 12
+  tc_cases: 12
+  test_functions: 0
+version: '3.0'

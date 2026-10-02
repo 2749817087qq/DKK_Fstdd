@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fstdd"
+version = "3.0.5"
+description = "Specification-Driven Test-Driven Development — AI 编程流程管控框架"
+readme = "FSTDD.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "STDD Team"}
+]
+keywords = ["specification", "tdd", "ai-coding", "quality", "guard"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "pyyaml>=6.0",
+    "jinja2>=3.0",
+    "requests>=2.28",
+]
+
+[project.scripts]
+fstdd = "fstdd.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["fstdd*"]
+
+[tool.setuptools.package-data]
+fstdd = ["**/*.yaml", "**/*.md", "**/*.json"]

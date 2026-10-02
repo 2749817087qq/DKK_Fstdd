@@ -1,0 +1,46 @@
+edges: []
+graph_version: '1.0'
+last_merged: '2026-08-17T23:06:40'
+nodes:
+- category: instruction_decay
+  cross_project_count: 2
+  description: AI在长session中反复跳过STDD流程步骤(SPEC不完整/SLICE跳过/VERIFY造假)，流程纪律随session时长衰减
+  fix_template_refs:
+  - KG-001-FIX
+  id: KG-001
+  metrics:
+    last_seen: '2026-07-09'
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: 长session中AI倾向于快速产出，流程步骤被视为"阻碍"而非"保障"。STDD复杂度提升(29 CLI+5前置校验+3 Gate)加剧了这个问题
+  severity: high
+  tags:
+  - AI行为
+  - 流程衰减
+  - 长session
+  - STDD复杂度
+  title: AI在长session中反复跳过STDD流程步骤(SPEC不完整/SLICE跳过/VERIFY造假)，流程纪律随session时长衰减
+  type: failure_pattern
+- category: cascading_errors
+  cross_project_count: 2
+  description: 不完整的Change(如只建CLI壳子无训练内容)被归档后，后续开发基于不完整的基础进行，导致功能不可用
+  fix_template_refs:
+  - KG-002-FIX
+  id: KG-002
+  metrics:
+    last_seen: '2026-07-09'
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: BUILD阶段未执行TDD原则——没有为训练场景写测试就先建CLI。VERIFY阶段只跑pytest回归，没有实际测试新功能是否可用
+  severity: high
+  tags:
+  - TDD
+  - Slice规划
+  - 空壳功能
+  - 测试盲区
+  title: 不完整的Change(如只建CLI壳子无训练内容)被归档后，后续开发基于不完整的基础进行，导致功能不可用
+  type: failure_pattern

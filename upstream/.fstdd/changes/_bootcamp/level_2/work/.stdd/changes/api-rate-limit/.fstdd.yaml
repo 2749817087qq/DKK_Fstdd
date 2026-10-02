@@ -1,0 +1,10 @@
+change_id: api-rate-limit
+current_phase: understand
+mode: standard
+phases:
+  spec:
+    confirmed_at: '2026-07-09'
+    status: completed
+  understand:
+    confirmed_at: '2026-07-09'
+    status: completed

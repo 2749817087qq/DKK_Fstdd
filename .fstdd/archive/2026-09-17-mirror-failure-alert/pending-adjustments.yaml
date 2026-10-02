@@ -1,0 +1,68 @@
+# pending-adjustments.yaml - 实现过程中发现的设计偏离（Canonical YAML）
+meta:
+  change_id: "2026-09-17-mirror-failure-alert"
+  phase: build
+  created: "2026-09-17T16:58:55+08:00"
+
+adjustments:
+  - id: ADJ-001
+    slice: A
+    type: minor
+    discovered_at: "2026-09-17T16:58:55+08:00"
+    original_design: |
+      design.md 未规定钩子的路径来源。既有钩子通过部署脚本的外层 heredoc 展开，
+      在服务器上落到字面路径 `BARE=/home/ubuntu/fstdd-git/stdd-repo.git`，
+      LOG / FLAG 同理。
+    actual_change: |
+      钩子的 BARE / LOG / FLAG 三个路径改为带默认值的环境变量形式：
+        BARE="${FSTDD_BARE_DIR:-/home/ubuntu/fstdd-git/stdd-repo.git}"
+        LOG="${FSTDD_MIRROR_LOG:-/home/ubuntu/fstdd-git/mirror.log}"
+        FLAG="${FSTDD_MIRROR_FLAG:-/home/ubuntu/fstdd-git/mirror-failed.flag}"
+    reason: |
+      钩子原本无法在非服务器环境执行（`/home/ubuntu/...` 在开发机不可写），
+      导致只能做文本匹配断言 —— 而文本匹配**无法证明「推送方真的看得到镜像结果」**，
+      只能证明「源码里有 tee 这个词」。本 change 的核心承诺恰是「推送方视角可见」，
+      若测试无法覆盖这一点，等于把最重要的断言交给了服务器手工验证。
+      引入带默认值的环境变量后，测试可用 stub git / timeout 真实执行钩子，
+      断言 stdout（回显）与 mirror.log（落盘）——REQ-001 / REQ-002 的 7 个 TC 由此落地。
+    impact: |
+      不改变接口与行为语义：post-receive 由 git 调用时不设这些变量，一律走默认值。
+      影响范围限于可测试性。由 test_mirror_alert_ops.py 的 7 个 TC 覆盖。
+    exp_ref: null
+
+  - id: ADJ-002
+    slice: A
+    type: minor
+    discovered_at: "2026-09-17T16:58:55+08:00"
+    original_design: |
+      tasks.md 的 A.3 建议标识为「成功 `[OK]`、失败 `[ALERT]`」。
+    actual_change: |
+      实际实现采用 `[MIRROR-OK]` / `[MIRROR-FAILED]`。
+    reason: |
+      `[OK]` / `[ALERT]` 过于泛化：钩子输出会与 git 自身输出混在同一屏，
+      且 `[ALERT]` 不含「镜像」语义，读者需靠上下文推断。带 `MIRROR-` 前缀
+      使标识可被 grep 精确定位，且 `-FAILED` / `-OK` 的语义对立更直接。
+    impact: |
+      仅措辞差异，SC-002 的「不共用同一标识」要求两种方案均满足。
+      测试按新标识断言。
+    exp_ref: null
+
+  - id: ADJ-003
+    slice: F
+    type: minor
+    discovered_at: "2026-09-17T17:40:00+08:00"
+    original_design: |
+      `docs/DISTRIBUTED_ACCESS.md` 第 122-124 行教人用 `./tools/deploy_server_bare_repo.sh`
+      重建数据面。
+    actual_change: |
+      给 `tools/deploy_server_bare_repo.sh` 补上 git 索引中的可执行位（100644 -> 100755）。
+    reason: |
+      该脚本在 git 索引中一直是 `100644`（无执行位），而文档教人用 `./` 前缀调用 ——
+      即**文档教人做一件会失败的事**（Permission denied）。这正是 EXP-20260915-B4 的形态：
+      作者本机用 `bash tools/xxx.sh` 能跑，别人按文档 `./tools/xxx.sh` 跑不起来。
+      本 change 的 REQ-009 / SC-018 已在为新增的 `check_mirror.sh` 立这条规矩，
+      顺带把同一目录下被文档以 `./` 引用的既有脚本补齐，否则规矩只做了一半。
+    impact: |
+      仅 git 索引 mode 变化，脚本内容零改动。
+      `tools/deploy_hub.sh` 同为 100644，但文档未以 `./` 形式引用它，不在本次范围（记录为后续项）。
+    exp_ref: EXP-20260915-B4

@@ -9,10 +9,7 @@ paths:
   templates_dir: .fstdd/templates
 project:
   language: python
-  name: FSTDD003
-  task_id: FSTDD003
-  description: FSTDD 安装/运行工程测试与经验回传（分布式任务根）
-  node: WORKBUDDY-AI-WIN
-  python_version: '3.13'
+  name: stdd
+  python_version: '3.10'
   source_dir: app
-stdd_version: 3.0.5
+stdd_version: 3.1.0

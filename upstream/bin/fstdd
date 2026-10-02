@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Fstdd CLI 入口文件 — 委托到 fstdd/cli/ 包。"""
+import sys
+from pathlib import Path
+
+FSTDD_SOURCE = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(FSTDD_SOURCE))
+
+import fstdd.cli.utils as utils
+utils.STDD_SOURCE = FSTDD_SOURCE
+
+from fstdd.cli import main
+main()

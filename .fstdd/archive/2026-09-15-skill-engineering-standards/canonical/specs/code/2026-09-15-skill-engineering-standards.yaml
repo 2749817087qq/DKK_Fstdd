@@ -1,0 +1,86 @@
+meta:
+  capability: "skill-engineering-standards"
+  change_id: "2026-09-15-skill-engineering-standards"
+  created: "2026-09-15"
+  confidence: high
+
+requirements:
+  - id: REQ-001
+    description: "校验必须验证 CLI 真正可执行，而不只是文件存在"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "proposal why 第 1 条 / design Decisions 1（实测 subprocess 计数 0）"
+        given: "已改造的 verify_workbuddy_skills.py 与可用的 STDD CLI"
+        when: "执行该校验脚本"
+        then: "脚本 SHALL 在临时目录实际执行 stdd 的 init / new / status，并输出冒烟结果"
+        and:
+          - "脚本源码中 SHALL 存在 subprocess 调用（计数 > 0）"
+          - "临时目录 SHALL 在使用后被清理，不得残留"
+
+      - id: SC-002
+        confidence: high
+        evidence: "proposal success_criteria 第 2 条 / design Decisions 1"
+        given: "CLI 路径被临时替换为不可用（模拟故障）"
+        when: "执行校验脚本"
+        then: "脚本 SHALL 以非 0 退出码结束"
+        and:
+          - "输出 SHALL 明确指出是冒烟失败，而非静默通过"
+
+  - id: REQ-002
+    description: "元数据扫描必须如实反映现状，且默认不修改任何文件"
+    scenarios:
+      - id: SC-003
+        confidence: high
+        evidence: "proposal success_criteria 第 3 条（实测 license 缺 37、version 缺 23）"
+        given: "本机两个 skill 目录共 40 个 skill"
+        when: "执行 check_skill_metadata.py（不带 --fix）"
+        then: "输出 SHALL 显示 license 缺 37、version 缺 23，与实测一致"
+        and:
+          - "全部 40 个 SKILL.md 的内容哈希 SHALL 在运行前后保持一致"
+
+      - id: SC-004
+        confidence: high
+        evidence: "proposal success_criteria 第 4/5 条 / design Decisions 3"
+        given: "执行 check_skill_metadata.py --fix"
+        when: "检查备份目录与文件改动"
+        then: "备份目录中文件数 SHALL 等于待修改文件数，且全部 40 个 skill 四项元数据齐全"
+        and:
+          - "每个 SKILL.md 的正文部分（frontmatter 之后）哈希 SHALL 与备份一致"
+          - "缺失值 SHALL 写入 unknown，不得出现 MIT 等推测值"
+
+  - id: REQ-003
+    description: "安装器生成的 skill 天生满足元数据规范"
+    scenarios:
+      - id: SC-005
+        confidence: high
+        evidence: "proposal what_changes C3"
+        given: "执行 install_workbuddy_skills.py"
+        when: "检查生成的 6 个 SKILL.md 的 frontmatter"
+        then: "每个 SHALL 包含 name / description / version / license 四项"
+        and:
+          - "license SHALL 反映该 skill 的真实来源（上游 STDD 为 MIT）"
+
+  - id: REQ-004
+    description: "发布前清单必须可执行、可判据，而非原则性描述"
+    scenarios:
+      - id: SC-006
+        confidence: high
+        evidence: "proposal what_changes C4 / success_criteria 第 6 条"
+        given: "仓库根目录"
+        when: "查看 docs/SKILL_RELEASE_CHECKLIST.md"
+        then: "该文件 SHALL 存在，且含许可、凭证、路径、冒烟、元数据五项检查"
+        and:
+          - "每一项 SHALL 给出可执行命令与明确的通过判据（不得只写原则）"
+
+  - id: REQ-005
+    description: "强化校验不得引入假失败"
+    scenarios:
+      - id: SC-007
+        confidence: high
+        evidence: "proposal success_criteria 第 7 条 / design Risks"
+        given: "改造完成后的真实环境（CLI 可用、6 个 skill 已安装）"
+        when: "执行 verify_workbuddy_skills.py"
+        then: "脚本 SHALL 输出 PASS 且退出码为 0"
+        and:
+          - "输出 SHALL 包含冒烟通过的结果，证明强化项已生效而非被跳过"

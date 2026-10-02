@@ -1,0 +1,58 @@
+meta:
+  task_id: "2026-09-15-crlf-eol-governance"
+  change_id: "2026-09-15-crlf-eol-governance"
+  created: "2026-09-15"
+  task_type: code
+  system: "stdd-repo 仓库的 Git 行尾符（EOL）治理"
+
+preconditions:
+  - "当前工作目录为 stdd-repo 仓库根"
+  - "Git 可用，且本机 core.autocrlf=true（模拟目标用户环境）"
+  - "执行前用 git status --porcelain 确认 4 个目标文件无未暂存改动"
+
+steps:
+  - action: "CP-001：写入仓库根 .gitattributes，内容为 `* text=auto eol=lf`"
+    verify: "cat .gitattributes"
+    expect: "输出为 `* text=auto eol=lf`（SC-001）"
+
+  - action: "CP-002：在干净临时仓库（670 文件、core.autocrlf=true）执行 git add -A"
+    verify: "统计 stderr 中 'LF will be replaced by CRLF' 行数"
+    expect: "行数为 0（SC-002，对照无规则时 640 行）"
+
+  - action: "CP-003：对 stdd-repo 全库执行 git ls-files --eol 扫描，筛出 i/lf + w/crlf 混合态文件"
+    verify: "统计混合态文件数，确认清单与设计文档一致（预期 4 个）"
+    expect: "扫描覆盖全库 676 文件，清单可复现（裁决点：全库校验、定点修复）"
+
+  - action: "CP-004：对混合态文件执行 rm + git checkout -- 重建工作区"
+    verify: "再次执行 git ls-files --eol"
+    expect: "混合态文件数为 0，4 个文件均为 i/lf + w/lf（SC-003）"
+
+  - action: "CP-005：执行 git add --renormalize . 后检查 git diff --cached --stat"
+    verify: "统计索引相对 HEAD 的变更文件数"
+    expect: "变更文件数为 0（SC-004、SC-005）"
+
+  - action: "CP-006：统计索引中 i/crlf 状态的文件数"
+    verify: "git ls-files --eol | grep -c 'i/crlf'"
+    expect: "结果为 0（SC-004，拦截规则误用导致的行尾翻转）"
+
+  - action: "CP-007：检查 upstream/bin/stdd 行尾并执行 CLI 冒烟"
+    verify: "首行 shebang 是否以 \\r 结尾；执行 init / new / status"
+    expect: "行尾为 LF 且不含 \\r；三个子命令均正常返回（SC-006）"
+
+  - action: "CP-008：在 README「故障排除」章节补充 .gitattributes 说明与批量 add 建议"
+    verify: "grep README 对应章节"
+    expect: "章节包含规则作用说明与批量 add 建议做法（SC-007）"
+
+  - action: "CP-009：提交并推送，观察 commit 输出是否被告警淹没"
+    verify: "git log --oneline 是否显示新提交；commit 过程无 SIGTERM"
+    expect: "新提交可见，输出无 CRLF 告警风暴（对应 proposal 的问题后果）"
+
+expected_outcomes:
+  - "仓库根存在 .gitattributes 且规则为 `* text=auto eol=lf`"
+  - "670 文件干净复现仓库的 add 告警为 0 行"
+  - "真实仓库混合态文件数为 0"
+  - "真实仓库索引 i/crlf 文件数为 0"
+  - "索引 diff 为 0"
+  - "upstream/bin/stdd 保持 LF 且 CLI 可用"
+  - "README 故障排除章节包含 EOL 说明"
+  - "commit 与 push 均正常完成"

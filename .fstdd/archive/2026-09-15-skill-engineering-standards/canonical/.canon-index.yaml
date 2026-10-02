@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-15-skill-engineering-standards: proposals/2026-09-15-skill-engineering-standards.yaml
+specs:
+  agent:
+    2026-09-15-skill-engineering-standards: specs/agent/2026-09-15-skill-engineering-standards.yaml
+  code:
+    2026-09-15-skill-engineering-standards: specs/code/2026-09-15-skill-engineering-standards.yaml
+version: '2.9'

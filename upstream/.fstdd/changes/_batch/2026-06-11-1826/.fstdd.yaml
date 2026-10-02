@@ -1,0 +1,10 @@
+batch_id: 2026-06-11-1826
+batch_type: monthly
+closed_at: '2026-06-11T18:27:09.356297'
+created_at: '2026-06-11T18:26:29'
+description: 白皮书下载改为MD+自建服务器
+items:
+- added_at: '2026-06-11T18:27:09.137738'
+  description: 白皮书下载链接：PDF→MD + GitHub Releases→本站/download/
+max_items: 5
+mode: batch

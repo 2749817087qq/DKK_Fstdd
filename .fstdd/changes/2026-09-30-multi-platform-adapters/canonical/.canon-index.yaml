@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-09-30-multi-platform-adapters: proposals/2026-09-30-multi-platform-adapters.yaml
+specs:
+  agent:
+    2026-09-30-multi-platform-adapters: specs/agent/2026-09-30-multi-platform-adapters.yaml
+  code:
+    2026-09-30-multi-platform-adapters: specs/code/2026-09-30-multi-platform-adapters.yaml
+version: '2.9'

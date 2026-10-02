@@ -1,0 +1,40 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+
+meta:
+  task_id: "canonical-in-workspace-verify"
+  change_id: "2026-09-17-canonical-in-workspace"
+  created: "2026-09-17T08:26:31.913039"
+  task_type: code
+  system: "工作区内 stdd-repo（法定源）→ ~/.workbuddy/skills（安装产物）；区外 ~/.workbuddy-ai/Fstdd 转为归档副本"
+
+preconditions:
+  - "工作副本位于 `stdd-repo`；区外副本 `~/.workbuddy-ai/Fstdd` 仍存在（待归档）"
+  - "`D:/Programs/DKK_Fstdd` 是另一程序的调试副本，**全程只读**"
+  - "测试解释器为 C:/Python311/python.exe（托管 python 3.13.12 未安装 pytest）"
+
+steps:
+  - action: "按 git blob 哈希逐个比对区外副本与 stdd-repo"
+    verify: "每个文件的内容都能在 stdd-repo（含对象库）中找到；若发现仅存于区外的内容，先归并再继续"
+  - action: "把区外副本整体复制到 `backups/` 下"
+    verify: "归档副本与原目录文件数一致、逐文件哈希一致；原目录仍存在"
+  - action: "改校验脚本的安装位置解析为自定位优先"
+    verify: "`INSTALLED_TOOLS` 解析为 `stdd-repo/tools`；`FSTDD_INST_DIR` 仍可覆盖"
+  - action: "从 `stdd-repo` 执行安装脚本"
+    verify: "SRC 解析为 `stdd-repo/upstream`（无需设 FSTDD_SRC）；7 个 skill 全部安装成功"
+  - action: "检查已安装 skill 内的绝对路径"
+    verify: "指向工作区内的 `stdd-repo`；不含 `~/.workbuddy-ai/Fstdd`"
+  - action: "运行 `verify_workbuddy_skills.py` 与三项校验"
+    verify: "verify 全绿；verify_eol 7/7、verify_skill_standards 7/7、verify_rename 8/8"
+  - action: "用 `FSTDD_INST_DIR` 指向不存在路径后重跑校验"
+    verify: "SHALL 仍全绿（证明解析落到工作区仓库，不依赖区外副本）"
+  - action: "核对文档第 0 节与项目记忆"
+    verify: "法定源写为工作区内 stdd-repo；区外副本标注已归档；GitHub 仍为上传目标"
+  - action: "运行全量测试"
+    verify: "526 passed（基线不得回归）"
+
+expected_outcomes:
+  - "法定源位于工作区内，全部 FSTDD 开发产物集中在工作区文件夹"
+  - "skill 内固化路径指向工作区仓库"
+  - "三项校验从工作区运行全绿，且不依赖区外副本存在"
+  - "区外副本完整归档进 backups/（保留不删），归档前后哈希一致"
+  - "文档与记忆反映新架构；D 盘调试副本未被修改"

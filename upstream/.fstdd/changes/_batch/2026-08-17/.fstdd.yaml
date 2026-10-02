@@ -1,0 +1,10 @@
+batch_id: '2026-08-17'
+batch_type: monthly
+closed_at: '2026-08-17T14:10:06.580336'
+created_at: '2026-08-17T14:09:53'
+description: 同步README版本号到V3.0.4
+items:
+- added_at: '2026-08-17T14:10:06.282396'
+  description: README 版本号 V3.0.3 → V3.0.4 + 版本演进表补齐 V3.0.1-V3.0.4
+max_items: 5
+mode: batch

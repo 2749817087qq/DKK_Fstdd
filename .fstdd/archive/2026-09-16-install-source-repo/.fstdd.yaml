@@ -1,0 +1,53 @@
+change_id: 2026-09-16-install-source-repo
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 5
+last_modified: '2026-09-16T18:48:39.197649'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-16T18:48:38'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 DELIVER（503 passed / 三项全绿 / 三方对齐）
+    slices_completed:
+      S1:
+        new_tests: 0
+        tc_coverage: TC-ISR-001,TC-ISR-002,TC-ISR-003
+        verified_at: '2026-09-16T18:40:00'
+      S2:
+        new_tests: 6
+        tc_coverage: TC-ISR-010,TC-ISR-011,TC-ISR-014,TC-ISR-015
+        verified_at: '2026-09-16T18:40:00'
+      S3:
+        new_tests: 5
+        tc_coverage: TC-ISR-005,TC-ISR-006,TC-ISR-007,TC-ISR-008,TC-ISR-009
+        verified_at: '2026-09-16T18:40:00'
+      S4:
+        new_tests: 5
+        tc_coverage: TC-ISR-004,TC-ISR-012,TC-ISR-013,TC-ISR-016
+        verified_at: '2026-09-16T18:40:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-16T17:57:21'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，进入 BUILD（8 项决策 + 17 TC 认可）
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-16T17:53:30'
+    confirmed_by: dialog
+    confirmed_evidence: 确认，继续推进（法定源已就位）
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 15
+  tc_cases: 17
+  test_functions: 16
+version: '3.0'

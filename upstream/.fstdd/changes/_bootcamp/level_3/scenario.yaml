@@ -1,0 +1,18 @@
+checks:
+  anchoring: 2
+  failure_modes_14: 2
+  gate3: 1
+  long_range: 2
+  per_slice_evidence: 2
+  test_report: 1
+level: 3
+mission: '支付模块: 支付宝+微信，金融级PCI-DSS'
+mode: thorough
+name: thorough
+tasks:
+- anchoring.level=L2
+- 长程模式+预授权
+- per-slice tc_coverage/new_tests/verified_at
+- 14类失败检查a-n
+- test-report.md含per-slice证据
+- Gate 3确认

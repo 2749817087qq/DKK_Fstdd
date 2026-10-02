@@ -1,0 +1,57 @@
+# spec.yaml - 行为规格（Canonical YAML）
+meta:
+  capability: "silent-except-guard"
+  change_id: "2026-09-18-silent-failure-audit"
+  created: "2026-09-18T00:50:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-020
+    description: "audit_silent_except.py 枚举吞异常点位并报告清单外新增，只读、可入 CI"
+    scenarios:
+      - id: SC-020
+        confidence: high
+        evidence: "EXP-20260915-B2：模板双源漏改复发——人肉记得检查不可靠，工具才产生约束力"
+        given: "仓库任意状态"
+        when: "运行 python tools/audit_silent_except.py"
+        then: "输出全部吞异常点位及其豁免匹配结果"
+        and:
+          - "扫描口径与 Gate 1 盘点一致：upstream/fstdd + tools/ 的 .py；except [Exception] 块首语句为空操作"
+          - "全程只读：不得修改被审计文件（有测试断言）"
+          - "清单外点位存在时退出码非零"
+      - id: SC-021
+        confidence: high
+        evidence: "设计 D3：行号漂移是清单维护的固有麻烦"
+        given: "豁免清单条目与当前代码"
+        when: "匹配点位与条目"
+        then: "文件相同 + 行号 ±5 容差 + 锚点函数名一致 即视为同一处"
+        and:
+          - "清单条目七字段齐全（含 reason ≥10 字），字段缺失本身被报出"
+      - id: SC-022
+        confidence: high
+        evidence: "EXP-20260917-A1：工具自身故障要与产物缺陷可区分"
+        given: "审计工具自身异常（豁免清单 YAML 损坏等）"
+        when: "运行"
+        then: "以明确错误退出（区别于「发现清单外点位」），不静默成功"
+  - id: REQ-021
+    description: "豁免清单入仓且自证：当前全部点位有合法条目（工具对己零误报）"
+    scenarios:
+      - id: SC-023
+        confidence: high
+        evidence: "success_criteria：audit_silent_except 对当前 29 处全过（含自证）"
+        given: "本 change 完成后的仓库状态"
+        when: "运行审计工具"
+        then: "退出码 0，且无「字段缺失」「理由无效」类警告"
+        and:
+          - "此时若制造一个清单外的新增点位（临时文件），工具报出且非零退出（负向验证）"
+  - id: REQ-022
+    description: "检测语义文件中的新增裸 pass except 被单独标级"
+    scenarios:
+      - id: SC-024
+        confidence: medium
+        evidence: "设计 D4：让异常至少可见"
+        given: "检测语义文件（文件名含 check/verify/guard/validate/audit 等）中的裸 pass except"
+        when: "审计"
+        then: "该点位在报告中带 intentional-no-trace 标记（区别于普通 intentional）"
+        and:
+          - "存量已判 intentional 的不强制返工，但报告列出供后续渐进留痕"

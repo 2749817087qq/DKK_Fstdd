@@ -1,0 +1,34 @@
+meta:
+  capability: audit-errata
+  title: 审计勘误机制（guard.py:315 改判 + 表刷新 + 哨兵持续通过）
+  spec_version: '1.0'
+  change: 2026-09-18-detection-silence-fixes
+  status: draft
+
+overview: |
+  silent-failure-audit 将 guard.py:315 判为 P1「fail-open」，本 change
+  实现前实证推翻：except 路径 return False = 不放行 = fail-closed（安全
+  方向）。本能力规定勘误的留痕方式与审计表刷新后哨兵的持续合规。
+
+requirements:
+  - id: ERR-001
+    text: test-report 含 guard.py:315 勘误对照（原判 P1 fail-open /
+      实证依据 / 新判合理容错 / 勘误来源）
+    priority: P1
+  - id: ERR-002
+    text: 本 change 的代码修复落地后，同步刷新审计表（代码形态变化导致
+      吞异常点行号/形态变化），tools/audit_silent_except.py --check 通过
+    priority: P1
+  - id: ERR-003
+    text: 既有变异测试（test_mutation_alive.py 5 条）全量通过——
+      证明修复未收紧任何检测阈值
+    priority: P1
+
+invariants:
+  - 归档审计表不回改（哨兵只校验位置指纹不校验分类字段）
+  - 勘误结论沉淀为经验（K-EXP）回传经验库
+
+test_mapping:
+  ERR-001: ERR-001
+  ERR-002: ERR-002
+  ERR-003: ERR-003

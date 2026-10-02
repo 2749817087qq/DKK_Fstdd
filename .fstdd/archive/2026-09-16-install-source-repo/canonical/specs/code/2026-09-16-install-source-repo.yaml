@@ -1,0 +1,165 @@
+# spec.yaml — 行为规格（Canonical YAML）
+
+meta:
+  capability: "install-source-single"
+  change_id: "2026-09-16-install-source-repo"
+  created: "2026-09-16T17:32:28.036493"
+  confidence: high
+
+requirements:
+  - id: REQ-001
+    description: "必须存在唯一「法定源」且它是 git 仓库；工作区与 GitHub 均不是权威"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "proposal.yaml 五、决策；实测：`~/.workbuddy-ai/Fstdd` 已 git init，58 提交、HEAD 43a4744"
+        given: "本机环境"
+        when: "检查 `~/.workbuddy-ai/Fstdd` 的 git 状态并与工作区比对"
+        then: "该目录 SHALL 是 git 仓库，且其 HEAD SHALL 等于工作区 HEAD"
+        and:
+          - "其 tag `fstdd-v1.0.0` SHALL 存在且指向与工作区相同的提交"
+          - "其 `origin` SHALL 指向 GitHub `2749817087qq/DKK_Fstdd`（上传目标）"
+
+      - id: SC-002
+        confidence: high
+        evidence: "实测：提交探针 → push canonical → 法定源工作区文件更新 → 强制回滚 → 清除"
+        given: "法定源已设 `receive.denyCurrentBranch=updateInstead`；工作区已设 `canonical` remote"
+        when: "工作区执行 `git push canonical master`"
+        then: "法定源的**工作区文件** SHALL 被同步更新（而不只是 ref 更新）"
+        and:
+          - "反向 SHALL 可用：`git fetch canonical && git merge --ff-only FETCH_HEAD`"
+          - "同步 SHALL NOT 依赖手工 cp"
+
+      - id: SC-003
+        confidence: high
+        evidence: "proposal.yaml 五、决策：GitHub 是法定源的上传目标"
+        given: "契约文档（`docs/WORKBUDDY_INSTALL_NOTES.md`）"
+        when: "阅读其中关于位置与权威的说明"
+        then: "SHALL 写明「法定源唯一、GitHub 是上传目标、工作区是开发副本」三者关系"
+        and:
+          - "SHALL NOT 把 GitHub 或工作区表述为权威来源"
+
+  - id: REQ-002
+    description: "校验脚本的「安装位置」解析必须自定位，不得硬编码某一副本路径"
+    scenarios:
+      - id: SC-004
+        confidence: high
+        evidence: "proposal.yaml 二：`_installed_tools()` 把 D:/Programs/DKK_Fstdd 硬编码在首位"
+        given: "`tools/verify_skill_standards.py`"
+        when: "读取其安装位置解析逻辑"
+        then: "解析顺序 SHALL 为：`FSTDD_INST_DIR`（显式覆盖）→ 脚本自身所在仓库的 `tools/` → 法定源 → 历史位置兜底"
+        and:
+          - "SHALL NOT 把 `D:/Programs/DKK_Fstdd` 置于首位"
+
+      - id: SC-005
+        confidence: high
+        evidence: "proposal.yaml 二：同一处硬编码在 verify_rename.py 中重复"
+        given: "`tools/verify_rename.py`"
+        when: "读取其安装位置解析逻辑"
+        then: "SHALL 与 SC-004 采用同一自定位策略"
+
+      - id: SC-006
+        confidence: high
+        evidence: "proposal.yaml 二：从仓库运行却去校验另一份副本，必然 FAIL"
+        given: "本机（存在 D 盘调试副本、法定源、工作区）"
+        when: "从工作区运行 `verify_skill_standards.py` 与 `verify_rename.py`"
+        then: "二者 SHALL 全绿（当前 5/7、7/8）"
+        and:
+          - "校验结果 SHALL NOT 受 `D:/Programs/DKK_Fstdd` 是否存在影响"
+
+  - id: REQ-003
+    description: "「备份完整性」检查必须容忍「无备份」这一合法状态"
+    scenarios:
+      - id: SC-007
+        confidence: high
+        evidence: "proposal.yaml 二：--fix 幂等，树已合规时不留备份，导致恒定误报"
+        given: "一棵已符合行尾规则的树（`verify_eol --fix` 不需要做任何改动）"
+        when: "执行 `verify_skill_standards.py` 的备份完整性检查"
+        then: "该检查 SHALL 通过"
+        and:
+          - "对照：修正前该场景恒定 FAIL"
+          - "存在备份时，备份正文与当前文件一致性 SHALL 仍被校验"
+
+  - id: REQ-004
+    description: "经验与知识的流通必须完全收敛到自有仓库，不留上游第三方来源"
+    scenarios:
+      - id: SC-008
+        confidence: high
+        evidence: "调试副本独有工作（D哥 决定采纳）"
+        given: "`upstream/fstdd/cli/commands/knowledge.py`"
+        when: "读取其社区图谱拉取逻辑"
+        then: "SHALL NOT 存在硬编码的 `leonai42/stdd-experiences` 默认值"
+        and:
+          - "当配置中 `repo` 为空/未设时，函数 SHALL 提前返回 None（不落到 `gh clone`）"
+
+      - id: SC-009
+        confidence: high
+        evidence: "调试副本独有工作"
+        given: "`upstream/.fstdd/config.d/knowledge.yaml` 与 `experience.yaml`"
+        when: "读取其社区来源配置"
+        then: "`knowledge.community.repo` SHALL 为空；`experience.community.registries` SHALL 为空列表"
+        and:
+          - "两份配置中指向第三方仓库的默认值 SHALL 已移除"
+
+      - id: SC-010
+        confidence: high
+        evidence: "proposal.yaml 三：ALLOWED_REFS 的理由建立在「拉取源属既定策略」之上，采纳后即失效"
+        given: "`.fstdd/archive/2026-09-16-contract-auto-share/` 归档的测试与白名单"
+        when: "检查 `test_cross_cutting_verification.py` 的 `ALLOWED_REFS`"
+        then: "SHALL NOT 再包含以「拉取（只进）源」为由的条目"
+        and:
+          - "其 `test_a1_no_executable_third_party_path` 与 `test_a6_allowlist_is_not_rotten` SHALL 仍通过"
+
+  - id: REQ-005
+    description: "安装说明文档必须与实际事实一致"
+    scenarios:
+      - id: SC-011
+        confidence: high
+        evidence: "proposal.yaml 四：实测 4 处陈旧"
+        given: "`docs/WORKBUDDY_INSTALL_NOTES.md`"
+        when: "读取其安装位置、skill 数量与安全策略三节"
+        then: "全局 skill 目录 SHALL 写为 `~/.workbuddy/skills`（内核实际加载处）"
+        and:
+          - "skill 数量 SHALL 与实测一致（7 个）"
+          - "经验策略 SHALL 写为「静默回传到我方指定位置」，而非「默认禁用」"
+
+      - id: SC-012
+        confidence: high
+        evidence: "proposal.yaml 五、决策"
+        given: "同一文档"
+        when: "查找位置与权威的说明"
+        then: "SHALL 含法定源／开发副本／上传目标三者关系（同 SC-003）"
+
+  - id: REQ-006
+    description: "归并调试副本的独有工作，且不得修改该副本"
+    scenarios:
+      - id: SC-013
+        confidence: high
+        evidence: "分析结果：5 个独有文件中 3 份为实质工作、2 份为 verify 自定位修复"
+        given: "`D:/Programs/DKK_Fstdd` 的独有文件"
+        when: "归并完成后检查工作区"
+        then: "3 份实质工作（knowledge.py、两份 config）与 2 份 verify 修复 SHALL 已进入工作区"
+        and:
+          - "归并后 `knowledge.py` 的第三方默认值 SHALL 已移除"
+
+      - id: SC-014
+        confidence: high
+        evidence: "D哥：D 盘副本是另一程序在用的调试副本，不要动"
+        given: "`D:/Programs/DKK_Fstdd`"
+        when: "归并完成前后比对"
+        then: "该目录的文件内容 SHALL 未被本变更修改"
+        and:
+          - "不得对其执行任何写操作"
+
+  - id: REQ-007
+    description: "重装后 skill 内固化的路径必须指向法定源"
+    scenarios:
+      - id: SC-015
+        confidence: high
+        evidence: "proposal.yaml 二：上一轮从工作区重装，路径固化到会话目录"
+        given: "从法定源执行安装脚本后的 `~/.workbuddy/skills/fstdd*/SKILL.md`"
+        when: "检查其中的绝对路径"
+        then: "SHALL 指向 `~/.workbuddy-ai/Fstdd`"
+        and:
+          - "SHALL NOT 出现会话工作区路径（`WorkBuddy AI/2026-…`）"
+          - "`verify_workbuddy_skills.py` SHALL 全绿"

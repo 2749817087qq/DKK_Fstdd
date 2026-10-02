@@ -1,0 +1,78 @@
+# design-adjustments.yaml — Phase 3 设计偏离汇总
+# 对照 Phase 2 的 design.md / test-plan.md，记录实际执行中的调整
+
+change_id: "2026-09-15-rename-to-fstdd"
+created: "2026-09-15T23:45:00"
+summary: |
+  Phase 3 执行中有 4 项偏离原设计。其中 2 项是执行中发现原设计的缺口（测试覆盖不全、
+  承诺项未落到切片），2 项是原设计未预见的必要动作（安装位置同步、引擎幂等性）。
+
+adjustments:
+  - id: ADJ-1
+    severity: large
+    type: 新增测试用例
+    original: "test-plan.md 规划 6 个 TC（TC-RENAME-001 ~ 006）"
+    actual: "实际交付 8 个 TC（新增 007 状态文件名、008 文件名扫描）"
+    reason: |
+      Part C 多路评审发现测试盲区：所有断言只读**文件内容**，从不检查**文件名**。
+      结果 STDD.md、STDD_CONSTITUTION.md、.fstdd.yaml 这类「文件名旧、内容新」
+      的不一致完全逃过检测，且其中 .fstdd.yaml 会导致 CLI 找不到任何 change。
+    impact: |
+      TC-007/008 补齐后，改名覆盖面从「内容」扩展到「内容 + 文件名」。
+      这是原设计的真实缺口，不是过度设计 —— 缺陷已实际发生并被修复。
+    evidence: "commit e2ff9d5；47 个文件改名；TC-007/008 反向验证通过"
+
+  - id: ADJ-2
+    severity: large
+    type: 补做承诺项
+    original: "proposal.yaml 的 C8「移除上游同步机制」在 S1/S2/S3 切片规划中未单独成片"
+    actual: "在 Part C 补做：重写 upgrade.md，资源来源改为本仓库 upstream/.fstdd/"
+    reason: |
+      切片规划时按「改动对象耦合度」分组（标识层/CLI与包/数据目录），
+      C8 是内容重写而非机械替换，被遗漏。
+    impact: "upgrade skill 不再访问上游；独立发展的硬要求得到落实。"
+    evidence: "upgrade.md 重写；显式声明「全程未访问上游仓库」"
+
+  - id: ADJ-3
+    severity: medium
+    type: 新增必要动作
+    original: "design.md 未把「安装位置同步」列为独立步骤"
+    actual: "S3 后新增：~/.workbuddy-ai/DKKstdd → Fstdd、重装 6 个 skill、stdd-fin → fstdd-fin"
+    reason: |
+      改名涉及「仓库内标识」，但安装位置是**仓库之外**的实体。
+      改完仓库不同步安装位置，则 verify 报「缺少安装位置的 verify」、skill 仍是旧名。
+    impact: "安装位置与仓库一致；用户侧 skill 全部更名为 fstdd-*。"
+    evidence: "TC-006 由 FAIL 转 PASS；6 个 fstdd-* skill 生成"
+
+  - id: ADJ-4
+    severity: medium
+    type: 修正实现缺陷
+    original: "design.md 决策 1「单次扫描替换」认为已根除自匹配"
+    actual: "补充左边界 (?<![A-Za-z])，使引擎真正幂等"
+    reason: |
+      「单次扫描」只保证了「替换产物不回流到本次匹配」，但未防「规则匹配既有产物」。
+      实测重复执行：'FSTDD_SRC' → 'FFSTDD_SRC'、'fstdd-understand' → 'ffstdd-understand'。
+      这与上次失败成因同类，只是从「规则之间自匹配」变为「规则与既有产物自匹配」。
+    impact: "引擎幂等性 9/9、正向替换 5/5；脚本可安全重复执行。"
+    evidence: "commit e2ff9d5；幂等性测试"
+
+not_adopted:
+  - source: "C1 代码评审代理"
+    claim: "upstream/fstdd/ 内 diff.py / guard.py / ci.py 等仍有 stdd 残留"
+    verification: "grep -rn '\\bstdd\\b' upstream/fstdd/ --include='*.py' | grep -v fstdd → 返回空"
+    conclusion: "不成立（误报）"
+
+  - source: "C1 文档评审代理"
+    claim: "顶层文档仍含 /stdd-continue、/stdd-status 等旧斜杠命令"
+    verification: "grep -rn '/stdd-' 排除 .git/upstream/backups 后，命中项全部位于 .fstdd/archive/ 下"
+    conclusion: |
+      不成立。归档 change 的历史文档含旧名属**预期** ——
+      它们是当时的真实记录，改了会破坏历史真实性。刻意保留。
+
+deliberately_unchanged:
+  - target: ".fstdd/archive/**/*.md 中的旧标识"
+    reason: "归档文档是历史快照，保留原样以维持可追溯性"
+  - target: "upstream/.fstdd/backup/*/.stdd 目录名"
+    reason: "上游备份快照，改了会破坏备份语义"
+  - target: "NOTICE.md / LICENSE / UPSTREAM-LICENSE.txt 中的上游署名"
+    reason: "MIT 合规要求保留署名；上游项目名是 STDD（不是 FSTDD），已修正 8 处误伤"

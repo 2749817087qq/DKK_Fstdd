@@ -122,17 +122,15 @@ class Handler(BaseHTTPRequestHandler):
         return self.path.split("?", 1)[0].rstrip("/")
 
     def _store(self, eid: str, content: str, author: str, ip: str) -> str:
-        """落盘一条经验，返回文件名。"""
+        """落盘一条经验，返回文件名。
+
+        2026-09-17 起按 EXP-ID 覆盖写（D哥 决策）：同 ID = 同一条经验的
+        重复导出，时间戳副本零价值（待审核池 319 文件/50 唯一 ID 实证）。
+        received_at 头随每次提交更新；不同 ID 仍是不同文件。
+        """
         safe = re.sub(r"[^A-Za-z0-9_.-]", "_", eid)[:80] or "EXP-UNKNOWN"
-        ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        name = "%s-%s.md" % (safe, ts)
+        name = "%s.md" % safe
         dest = self.data_dir / name
-        # 同一秒重复提交同名时加序号，避免后一条覆盖前一条
-        n = 1
-        while dest.exists():
-            name = "%s-%s-%d.md" % (safe, ts, n)
-            dest = self.data_dir / name
-            n += 1
         header = (
             "<!-- fstdd-inbox\n"
             "experience_id: %s\n"

@@ -1,0 +1,65 @@
+# spec.yaml - 行为规格（Canonical YAML）
+# 修改型 capability：FSTDD 宪法（新增时间基线条款）
+meta:
+  capability: "constitution"
+  change_id: "2026-09-17-time-baseline"
+  created: "2026-09-17T15:26:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-013
+    description: "宪法必须含时间基线条款，且该条款被 Gate 检查引用"
+    scenarios:
+      - id: SC-031
+        confidence: high
+        evidence: "proposal.yaml → why：九个时间相关词在宪法里**全部零命中**（时间 0 / 时效 0 / 基线 0 / 新鲜 0 / 时钟 0 / 时间戳 0 / 时刻 0 / timestamp 0 / 过期 0）"
+        given: "宪法文件已更新"
+        when: "检索宪法中的时间基线条款"
+        then: "SHALL 存在编号连续的独立条款（`### 7. 时间基线`）"
+        and:
+          - "条款 SHALL 规定每个 change 必须建立基线"
+          - "条款 SHALL 规定证据须带观测时刻"
+          - "条款 SHALL 明确违规后果，而非仅描述性说明"
+      - id: SC-032
+        confidence: high
+        evidence: "success_criteria：『宪法中存在时间基线条款，**且至少 1 个 Gate 的检查引用它**』—— 只写条款不落地引用，等于「好习惯」而非「强制契约」（proposal.yaml → what_changes C6）"
+        given: "条款已写入宪法"
+        when: "检查 Gate 前自检清单与 `fstdd validate` 的检查项"
+        then: "至少 1 处 SHALL 引用基线字段作为检查项"
+        and:
+          - "被引用的检查项 SHALL 实际执行（可被测试触发）"
+          - "SHALL NOT 只以文字提及而无对应实现"
+
+  - id: REQ-014
+    description: "宪法的两份副本必须保持一致"
+    scenarios:
+      - id: SC-033
+        confidence: high
+        evidence: "实测 `diff FSTDD_CONSTITUTION.md .fstdd/memory/FSTDD_CONSTITUTION.md` 为空（两份当前一致）；项目历史上已发生过「宪法陈旧」导致的漂移事故（记忆：2026-09-16 两次漂移均由手工 cp 造成）"
+        given: "宪法条款已更新"
+        when: "比较仓根 `FSTDD_CONSTITUTION.md` 与 `.fstdd/memory/FSTDD_CONSTITUTION.md`"
+        then: "两份内容 SHALL 逐字节一致"
+        and:
+          - "一致性 SHALL 有测试断言覆盖"
+          - "SHALL NOT 只更新其中一份"
+
+  - id: REQ-015
+    description: "宪法条款必须与实现一致，不得教人做工具做不到的事"
+    scenarios:
+      - id: SC-034
+        confidence: high
+        evidence: "项目强制契约：『改动代码（尤其禁用/删除能力）时，必须同步检查：宪法 / skill 流程描述 / README。否则文档会教人做已被禁止的事，比没有文档更糟』"
+        given: "宪法中的时间基线条款已定稿"
+        when: "逐条核对条款中的每一项「必须」"
+        then: "每一项 SHALL 有对应的、可执行且已实现的检查"
+        and:
+          - "无法实现的条款 SHALL 从条款中移除或降级为建议"
+          - "核对结果 SHALL 记入 test-report 并留证"
+      - id: SC-035
+        confidence: high
+        evidence: "同上；宪法新增条款若与既有 skill 流程描述冲突，会让执行者在两个权威之间无所适从"
+        given: "宪法条款与 skill 流程描述均已存在"
+        when: "检查 skill 中与时间基线相关的要求"
+        then: "skill 的 Gate 前自检清单 SHALL 与宪法条款一致"
+        and:
+          - "SHALL NOT 出现「宪法要求、skill 未提」或「skill 要求、宪法禁止」的组合"
