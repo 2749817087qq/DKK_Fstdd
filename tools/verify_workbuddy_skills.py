@@ -1,35 +1,35 @@
 # -*- coding: utf-8 -*-
-"""校验 WorkBuddy 全局 FSTDD skill 的本机策略与路径适配是否仍然在位。
+"""校验指定平台全局 FSTDD skill 的本机策略与路径适配是否仍然在位。
 
 用途：升级 / 重装 / 手动覆盖 skill 文件之后必须运行。
-退出码：0 = 全部通过；1 = 存在 FAIL 项（此时禁止继续 DELIVER 相关操作）。
+退出码：0 = 全部通过；1 = 存在 FAIL 项；2 = 参数错误（未知平台等）。
 
-用法（本机解释器与路径见 docs/WORKBUDDY_INSTALL_NOTES.md §1）：
-    "<managed default env python>" "<workspace>/stdd-repo/tools/verify_workbuddy_skills.py"
+用法：
+    python verify_workbuddy_skills.py                 # 默认 workbuddy
+    python verify_workbuddy_skills.py --platform trae # 指定平台
 """
 from pathlib import Path
+import argparse
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+PLATFORMS_YAML = REPO_ROOT / ".fstdd" / "platforms.yaml"
+
 # 与安装脚本一致：默认自动定位，可用 FSTDD_SRC / FSTDD_OUT 覆盖
-SRC = Path(os.environ.get("FSTDD_SRC", Path(__file__).resolve().parent.parent / "upstream"))
-# 输出目录与安装脚本共用**同一个**解析器（_skill_install_env）。
-#
-# 历史教训：两处各自写死 `~/.workbuddy/skills` 并互相以「与对方保持一致」背书
-# ⇒ 一起错、一起绿，校验器恒定 PASS 而 skill 从未被加载。
-# **同一事实只允许有一处定义。**
+SRC = Path(os.environ.get("FSTDD_SRC", REPO_ROOT / "upstream"))
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _skill_install_env import (  # noqa: E402
-    STAMP_PREFIX, UPSTREAM_CLI, repo_stdd_version, resolve_skill_dir, shadow_installs,
+    STAMP_PREFIX, UPSTREAM_CLI, repo_stdd_version, shadow_installs,
 )
+from install_workbuddy_skills import _load_platform, _resolve_output_dir  # noqa: E402
 
-OUT, OUT_WHY = resolve_skill_dir()
-REPO_VERSION = repo_stdd_version(Path(__file__).resolve().parent.parent)
+REPO_VERSION = repo_stdd_version(REPO_ROOT)
 SHARED_ABS = (SRC / ".fstdd" / "skills" / "_shared").as_posix()
-# FSTDD_CLI 用于故障注入测试：指向不可用时校验必须 FAIL，不得静默通过
 CLI_ABS = Path(os.environ.get("FSTDD_CLI", str(SRC / "bin" / "fstdd")))
 PY = os.environ.get("FSTDD_PY", sys.executable)
 SENTINEL = "FSTDD_LOCAL_POLICY_NO_UPLOAD_V1"
@@ -77,7 +77,27 @@ def smoke_test() -> tuple[bool, str]:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="FSTDD skill 多平台校验器")
+    parser.add_argument(
+        "--platform",
+        default=None,
+        help="目标平台（默认 workbuddy）；未知平台 exit=2",
+    )
+    args = parser.parse_args()
+
+    # 加载平台配置 + 解析输出目录
+    try:
+        plat_cfg = _load_platform(args.platform) if args.platform else _load_platform("workbuddy")
+    except (FileNotFoundError, ValueError) as e:
+        print(f"[FAIL] {e}")
+        return 2
+
+    OUT, OUT_WHY = _resolve_output_dir(plat_cfg)
+    display_name = plat_cfg.get("display_name", args.platform or "workbuddy")
+
     fails, warns = [], []
+
+    print(f"\n平台: {display_name}  (--platform {args.platform or '(默认 workbuddy)'})")
 
     # 前置：本机依赖与 CLI 是否可用
     if not CLI_ABS.exists():
