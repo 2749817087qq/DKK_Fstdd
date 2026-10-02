@@ -53,6 +53,23 @@
   "failures": [],
   "audit": [
     {
+      "ts": "2026-10-02T13:29:24+08:00",
+      "shou_server": 43,
+      "fu_local": 86,
+      "shou_matched_reply_to": 26,
+      "shou_matched_exact": 16,
+      "missing": 0,
+      "new_receipts_written": 0,
+      "share_submit_result": "no_run_no_pending_tasks",
+      "health_8787": "200_received=270",
+      "notes": "server 43 FSTDD003收- (matches local 43, 1 extra root-owned K2FSTDD003-ISOLATION-MIGRATION-20260930.md is K-internal, correctly ignored per 00-DISCIPLINE §1); non-prefixed 收-隔离迁移指引-v2.md out of matching scope, already closed by FSTDD003复-隔离迁移完成.md; pending=[] via reply_to index + canonical phase1-窗口→phase1 + 工作量与资源规划要求→工作量与资源规划",
+      "pull_mode": "background+await",
+      "shou_local": 43,
+      "matched_total": 43,
+      "shou_matched_substring": 1,
+      "shou_matched_stripped": 0
+    },
+    {
       "ts": "2026-09-29T16:11:00+08:00",
       "shou_server": 42,
       "fu_local": 63,

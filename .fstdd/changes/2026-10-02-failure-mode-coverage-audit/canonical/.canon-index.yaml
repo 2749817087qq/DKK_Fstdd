@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-02-failure-mode-coverage-audit: proposals/2026-10-02-failure-mode-coverage-audit.yaml
+specs:
+  agent:
+    2026-10-02-failure-mode-coverage-audit: specs/agent/2026-10-02-failure-mode-coverage-audit.yaml
+  code:
+    2026-10-02-failure-mode-coverage-audit: specs/code/2026-10-02-failure-mode-coverage-audit.yaml
+version: '2.9'

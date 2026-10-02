@@ -4,7 +4,7 @@ baseline:
   clock_source: system
   established_by: gate1
   node_id: DESKTOP-TBJSBQ5
-change_id: 2026-09-26-guard-scope-unbound
+change_id: 2026-10-02-failure-mode-coverage-audit
 complexity_score: null
 current_phase: understand
 design_adjustments:
@@ -21,9 +21,9 @@ phases:
     confirmed_actor: ai
     confirmed_at: '2026-10-02T07:45:04+00:00'
     confirmed_by: cli
-    confirmed_evidence: 开发总工 self-confirm Gate 1。Guard 源码 L805-815 作用域变量 scope_patterns/scope_in
-      只在 if active_dir 嵌套内赋值，无活跃 change 时抛 UnboundLocalError，拦截路径 fail-open，Guard
-      形同虚设。另 Guard scope 边界：当前 change 本身在 understand 阶段就阻断编辑——循环依赖 bug。
+    confirmed_evidence: '开发总工 self-confirm Gate 1。14 类失败模式是 FSTDD V3.0 核心卖点，必须逐类审计确认实际落地（CLI
+      guard 是门禁不是检测；skill build.md 有检查表但需逐类验证；knowledge-graph 170 节点可用但未验证覆盖全部 14
+      类）。复杂度: 审计型变更，模式 standard。'
     status: completed
 score_confidence: null
 status: active

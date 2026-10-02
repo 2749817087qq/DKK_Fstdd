@@ -22,8 +22,8 @@ phases:
       hardcoded platform if/else。
     status: completed
   deliver:
-    status: in_progress
     started_at: '2026-10-02T12:30:00+08:00'
+    status: in_progress
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-10-02T04:03:06+00:00'
@@ -41,53 +41,53 @@ phases:
       缓)；Qoder 暂不做。
     status: completed
 score_confidence: null
-status: active
+slices:
+- id: S1-platforms-yaml
+  new_tests: true
+  status: passed
+  tc_coverage:
+  - TC-MPA-001
+  - TC-MPA-002
+  verified_at: '2026-10-02T12:30:00+08:00'
+- id: S2-param-installer
+  new_tests: true
+  status: passed
+  tc_coverage:
+  - TC-MPA-003
+  - TC-MPA-004
+  verified_at: '2026-10-02T12:30:00+08:00'
+- id: S3-workbuddy-regression
+  new_tests: true
+  status: passed
+  tc_coverage:
+  - TC-MPA-005
+  - TC-MPA-006
+  verified_at: '2026-10-02T12:30:00+08:00'
+- id: S4-no-hardcode
+  new_tests: true
+  status: passed
+  tc_coverage:
+  - TC-MPA-007
+  - TC-MPA-008
+  verified_at: '2026-10-02T12:30:00+08:00'
+- id: S5-entry-scripts
+  new_tests: true
+  status: passed
+  tc_coverage:
+  - TC-MPA-009
+  - TC-MPA-010
+  verified_at: '2026-10-02T12:30:00+08:00'
+- id: S6-platform-verify
+  new_tests: true
+  status: passed
+  tc_coverage:
+  - TC-MPA-011
+  - TC-MPA-012
+  verified_at: '2026-10-02T12:30:00+08:00'
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 12
   tc_cases: 12
   test_functions: 0
 version: '3.0'
-slices:
-- id: S1-platforms-yaml
-  tc_coverage:
-  - TC-MPA-001
-  - TC-MPA-002
-  new_tests: true
-  verified_at: '2026-10-02T12:30:00+08:00'
-  status: passed
-- id: S2-param-installer
-  tc_coverage:
-  - TC-MPA-003
-  - TC-MPA-004
-  new_tests: true
-  verified_at: '2026-10-02T12:30:00+08:00'
-  status: passed
-- id: S3-workbuddy-regression
-  tc_coverage:
-  - TC-MPA-005
-  - TC-MPA-006
-  new_tests: true
-  verified_at: '2026-10-02T12:30:00+08:00'
-  status: passed
-- id: S4-no-hardcode
-  tc_coverage:
-  - TC-MPA-007
-  - TC-MPA-008
-  new_tests: true
-  verified_at: '2026-10-02T12:30:00+08:00'
-  status: passed
-- id: S5-entry-scripts
-  tc_coverage:
-  - TC-MPA-009
-  - TC-MPA-010
-  new_tests: true
-  verified_at: '2026-10-02T12:30:00+08:00'
-  status: passed
-- id: S6-platform-verify
-  tc_coverage:
-  - TC-MPA-011
-  - TC-MPA-012
-  new_tests: true
-  verified_at: '2026-10-02T12:30:00+08:00'
-  status: passed

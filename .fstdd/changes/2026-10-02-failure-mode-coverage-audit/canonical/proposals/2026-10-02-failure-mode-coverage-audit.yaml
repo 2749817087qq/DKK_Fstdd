@@ -1,0 +1,74 @@
+# Canonical proposal — 2026-10-02-failure-mode-coverage-audit
+# FSTDD Phase 1: UNDERSTAND (YAML-First)
+
+meta:
+  change_id: "2026-10-02-failure-mode-coverage-audit"
+  title: "审计 14 类失败模式在 skill + CLI guard 里的实际落地"
+  created: "2026-10-02T15:45:00+08:00"
+  status: "draft"
+
+why:
+  problem: |
+    FSTDD V3.0 声称 14 类失败模式检查（幻觉调用/过度信任 LLM/prompt 注入/记忆污染/上下文窗溢出/工具参数漂移/凭证泄露/权限绕过/并发竞态/路径遍历/跨会话残留/输出截断/格式错/循环依赖等）是核心卖点。
+    但审计发现：
+    1. CLI guard 是门禁（阻断非 BUILD/DELIVER 阶段编辑），不是检测（扫描 14 类问题）
+    2. skill build.md 里有失败模式检查表，但需确认每一类是否都有对应检测手段
+    3. 部分类别可能只有文字引用、缺少实际可执行的检测脚本或 hook
+    4. knowledge-graph.yaml 有 failure_pattern 节点（KG-094 等），但未验证是否覆盖全部 14 类
+
+  motivation: |
+    在对外宣称"完整版 FSTDD"之前，必须实打实地证明 14 类失败模式检测每一类都有落地。
+    如果发现缺口，需立即补齐——要么写检测脚本，要么从 skill 引导 + hook 两端同时加固。
+
+  evidence:
+    observed_at: "2026-10-02T15:40:00+08:00"
+    observed_base_git_sha: "33c9199"
+    details: |
+      1. CLI guard 源码 1342 行（upstream/fstdd/cli/commands/guard.py）——有门禁、Phase 检查、Gate 硬阻断
+      2. fstdd agent verify 有实装——按检查点验证
+      3. fstdd experience stats 63 条 + knowledge merge 170 节点——知识图谱可用
+      4. skill build.md L294 引用 14 类失败模式——需逐类验证实际覆盖
+      5. git grep 'failure_mode\|幻觉调用\|prompt.inject' 上游——部分类别只有文字引用
+
+what_changes:
+  - id: C1
+    description: "逐类审计 14 类失败模式的实际覆盖（CLI 检测 / skill 引导 / hook 拦截）"
+    type: modified
+  - id: C2
+    description: "对审计发现的缺口补齐检测手段（优先 hook，其次 CLI detect 子命令）"
+    type: modified
+  - id: C3
+    description: "产出审计报告 coverage-report.md（每类的覆盖证据）"
+    type: new
+
+capabilities:
+  new:
+    - name: "failure-mode-coverage-report"
+      description: "14 类失败模式的实际覆盖审计报告，每类标注 CLI / skill / hook 覆盖状态 + 缺口"
+  modified:
+    - name: "fstdd-guard"
+      description: "审计后可能新增检测钩子到 guard（如果发现门禁覆盖不足）"
+    - name: "skills-build"
+      description: "审计后可能补全 skill build.md 的失败模式检查项（如果发现文字与实装不一致）"
+
+constraints:
+  - "审计先行：先审计再动代码；不可未经审计就宣称某类已覆盖"
+  - "不重写 guard 架构——guard 是门禁，不是检测，职责分离"
+  - "检测手段优先 hook（PreToolUse / PostToolUse），其次 CLI detect 子命令"
+
+stakeholders:
+  - "开发总工（FSTDD003）"
+  - "所有节点（审计结果作为完整版 FSTDD 的质量背书）"
+
+risk_areas:
+  - capability: "fstdd-guard"
+    risk: "在 guard 里加检测逻辑可能让门禁变重、性能下降"
+    mitigation: "hook 只做轻量正则/关键词匹配；重检测放 CLI detect 子命令按需调用"
+  - capability: "skills-build"
+    risk: "修改 skill 正文命令名/检查项可能影响已安装用户"
+    mitigation: "命令名已统一修复（bin/stdd→bin/fstdd）；增量补充不影响存量"
+
+success_criteria:
+  - "14 类失败模式每一类都有明确覆盖证据（CLI 检测 / skill 引导 / hook 拦截 至少一项）"
+  - "产出 coverage-report.md，每类标注覆盖状态 + 证据文件行号"
+  - "如果发现缺口，补齐后 re-audit，确保全部 PASS"
