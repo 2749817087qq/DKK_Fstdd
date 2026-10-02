@@ -44,3 +44,6 @@ tools/_quarantine/
 
 .fstdd/fstdd003-ssh-key
 .fstdd/fstdd003-ssh-key.pub
+
+# heartbeat token
+tools/.heartbeat.env

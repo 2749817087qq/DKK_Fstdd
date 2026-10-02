@@ -1,4 +1,4 @@
-"""
+﻿"""
 FSTDD003 → multihub 心跳脚本
 ============================
 主动 POST 心跳到 multihub（替代旧 WorkBuddy 轮询）。
@@ -8,10 +8,10 @@ FSTDD003 → multihub 心跳脚本
   python tools/heartbeat.py --loop --interval 60  # 每 60s 心跳一次（前台）
   python tools/heartbeat.py --loop --interval 60 --daemon  # 后台守护
 
-环境变量:
+环境变量 / .env 文件（优先读 tools/.heartbeat.env）:
   FSTDD_MULTIHUB_URL   默认 http://120.55.159.42:8788
-  FSTDD_TOKEN          节点 token（等 K 注册后填）
-  FSTDD_NODE_ID        默认 fstdd003
+  FSTDD_TOKEN          节点 token（必要）
+  FSTDD_NODE_ID        默认 FSTDD003
 
 返回:
   0 = 心跳成功
@@ -27,9 +27,30 @@ import argparse
 import urllib.request
 import urllib.error
 from datetime import datetime
+from pathlib import Path
 
-DEFAULT_URL = "http://120.55.159.42:8788"
-NODE_ID = os.environ.get("FSTDD_NODE_ID", "fstdd003")
+# ── .env 文件支持（tools/.heartbeat.env 或根 .env）──
+def _load_dotenv() -> None:
+    base = Path(__file__).resolve().parent
+    candidates = [
+        base / ".heartbeat.env",
+        base / ".env",
+        base.parent / ".env",
+    ]
+    for p in candidates:
+        if p.exists():
+            text = p.read_text(encoding="utf-8-sig")  # utf-8-sig 自动剥 BOM
+            for line in text.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+            break
+_load_dotenv()
+
+DEFAULT_URL = "http://127.0.0.1:8788"
+NODE_ID = os.environ.get("FSTDD_NODE_ID", "FSTDD003")
 TOKEN = os.environ.get("FSTDD_TOKEN", "")
 URL = os.environ.get("FSTDD_MULTIHUB_URL", DEFAULT_URL)
 LOG_FILE = os.path.join(os.path.dirname(__file__), "_heartbeat.log")
