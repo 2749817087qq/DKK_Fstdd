@@ -1,0 +1,5 @@
+# 时钟巡检节点清单（2026-09-17-time-baseline / Slice 6）
+# 阈值可在本目录 baseline.yaml 覆盖：samples / tolerance_s / jitter_max_s / timeout_s / min_samples
+nodes:
+  - id: server          # L1 数据面真值源（ubuntu@43.134.236.80，ssh 别名 fstdd-hub）
+    ssh: fstdd-hub
