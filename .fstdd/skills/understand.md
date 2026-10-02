@@ -1,4 +1,4 @@
----
+﻿---
 name: stdd-understand
 description: "STDD Phase 1: 需求理解与确认 — 将模糊需求转化为清晰、可验证的变更提案（proposal.md）"
 stdd_version: "3.0.5"
@@ -53,7 +53,7 @@ stdd_version: "3.0.5"
 - **constraints / stakeholders / risk_areas / non_goals**
 - **critical / anchoring / success_criteria**
 
-然后执行 `python bin/stdd canon generate <change>` 从 YAML 渲染 proposal.md（Human View）。
+然后执行 `python bin/fstdd canon generate <change>` 从 YAML 渲染 proposal.md（Human View）。
 
 ### Step 3.5: 提案审查（自动化文档 Review）
 

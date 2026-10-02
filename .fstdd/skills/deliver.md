@@ -1,4 +1,4 @@
----
+﻿---
 name: stdd-deliver
 description: "STDD Phase 4: 交付 — 归档变更、合并规范、创建版本标签"
 stdd_version: "3.0.5"
@@ -38,7 +38,7 @@ stdd_version: "3.0.5"
 
 1. 将 `changes/<change>/canonical/proposals/<change>.yaml` 合并到 `canonical/proposals/`
 2. 将各 capability 的 `agent_spec.yaml` 合并到 `canonical/specs/agent/`
-3. 执行 `python bin/stdd canon verify <change>` 验证双轨一致性
+3. 执行 `python bin/fstdd canon verify <change>` 验证双轨一致性
 4. 更新 `.canon-index.yaml` 索引
 
 **Human View 合并**：
@@ -78,9 +78,9 @@ python bin/fstdd structure merge <change>    # 归档后
 
 在完成归档和规范合并后，自动将本次 change 中沉淀的经验上传到社区 git 库。
 
-1. **扫描待上传经验**：执行 `python bin/stdd experience list --lifecycle deposited --format json`
+1. **扫描待上传经验**：执行 `python bin/fstdd experience list --lifecycle deposited --format json`
    - 筛选 `lifecycle_state == "deposited"` 且 `source_change` 包含当前 change 名称的经验
-2. **逐条上传**：对每条待上传经验执行 `python bin/stdd experience share <EXP-ID>`
+2. **逐条上传**：对每条待上传经验执行 `python bin/fstdd experience share <EXP-ID>`
    - 成功 → 经验 `lifecycle_state` 自动更新为 `shared`
    - 失败 → 记录错误原因，继续处理下一条
 3. **结果汇总**：
@@ -94,7 +94,7 @@ python bin/fstdd structure merge <change>    # 归档后
 
 经验上传完成后，自动同步到跨项目知识图谱。
 
-执行 `python bin/stdd knowledge merge`，将本地上传的经验合并到 `knowledge-graph.yaml`。
+执行 `python bin/fstdd knowledge merge`，将本地上传的经验合并到 `knowledge-graph.yaml`。
 
 - 成功 → `✅ 知识图谱已更新（+N 节点，~M 更新）`
 - 社区不可用 → `⚠️ 知识图谱更新失败（可稍后手动 retry: stdd knowledge merge）`

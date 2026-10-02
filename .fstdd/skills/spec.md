@@ -1,4 +1,4 @@
----
+﻿---
 name: stdd-spec
 description: "STDD Phase 2: 规格设计与测试方案 — 将 proposal 转化为精确的技术规格和可执行测试方案"
 stdd_version: "3.0.5"
@@ -27,7 +27,7 @@ stdd_version: "3.0.5"
 ### Step 1: 读取 Phase 1 产出 + CLI 结构化提取
 
 1. 读取 `proposal.md`，理解变更范围和边界
-2. **执行 CLI 结构化提取**：`python bin/stdd extract-proposal --format json`
+2. **执行 CLI 结构化提取**：`python bin/fstdd extract-proposal --format json`
    - 获取：`title`, `capabilities` (new + modified), `what_changes`, `success_criteria`, `impact`
    - 后续步骤直接引用提取的结构化数据，不再从 proposal 原文模糊解析
 3. 从输出中识别涉及的 Capabilities 列表和 Impact 范围
@@ -36,7 +36,7 @@ stdd_version: "3.0.5"
 
 在生成 specs 之前，从经验库加载可能相关的失败模式，用于交叉检查生成的 spec：
 
-1. 执行 `python bin/stdd experience list --language <project.language> --format json`
+1. 执行 `python bin/fstdd experience list --language <project.language> --format json`
 2. 从输出中筛选与当前 Capabilities 相关的经验（pattern/root_cause 中包含相似关键词）
 3. 对匹配的经验，提取 `detection_trigger` 和 `fix_template`，在生成 Scenario 时用作检查清单：
    - 如经验提示"(d) 上下文丢失"→ 确保每个 Scenario 的 GIVEN 与 proposal 明确对应
@@ -46,7 +46,7 @@ stdd_version: "3.0.5"
 
 在经验库交叉检查之后，可选调用知识图谱获取跨项目风险预警：
 
-1. 执行 `python bin/stdd knowledge predict <change> --format json`
+1. 执行 `python bin/fstdd knowledge predict <change> --format json`
 2. 如果 `knowledge-graph.yaml` 不存在或数据不足 → 跳过此步骤，不报错
 3. 如果返回预测结果 → 在 Gate 2 确认时展示风险预警（作为补充信息，不阻塞 Gate）
 

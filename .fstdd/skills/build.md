@@ -1,4 +1,4 @@
----
+﻿---
 name: stdd-build
 description: "STDD Phase 3: BUILD — 切片规划 + TDD 实现 + 质量验证（SLICE/BUILD/VERIFY 合并，V3.0.5）"
 stdd_version: "3.0.5"
@@ -76,7 +76,7 @@ stdd_version: "3.0.5"
 2. **优先读取 `specs/<capability>/spec.yaml`**（如存在），回退读取 `specs/<capability>/spec.md`
 3. 读取 `agent_spec.yaml`（验证规格）
 4. 读取 `test-plan.md`
-5. **执行 CLI 依赖图构建**：`python bin/stdd dependency-graph --format json`
+5. **执行 CLI 依赖图构建**：`python bin/fstdd dependency-graph --format json`
    - 获取 `nodes`, `edges`, `zero_dependency`, `cycles`
    - 如检测到循环依赖（exit code 1），先分析 cycles 输出再手动审查
 
@@ -89,7 +89,7 @@ stdd_version: "3.0.5"
 
 ### A2b: 风险评分
 对每个 capability 进行风险评分（1-5）：
-1. 经验库风险：`python bin/stdd experience list --format json`，有 `severity: high` 匹配经验 → +2
+1. 经验库风险：`python bin/fstdd experience list --format json`，有 `severity: high` 匹配经验 → +2
 2. 复杂度风险：Scenario > 5 → +1；跨模块交互 → +1
 3. 变更类型：MODIFIED 且接口变更 → +1
 
@@ -147,13 +147,13 @@ stdd_version: "3.0.5"
 1. 读取 `.fstdd/config.d/project.yaml` → 获取 `project.language`
 2. 读取 `.fstdd/standards/<language>.md`
 3. **加载 `.fstdd/rules/`**：读取 `.fstdd/rules/common/*.md` 和 `.fstdd/rules/<language>/*.md`
-4. **执行代码结构摘要**：`python bin/stdd structure delta <change>` 记录本 change 的代码结构变化
+4. **执行代码结构摘要**：`python bin/fstdd structure delta <change>` 记录本 change 的代码结构变化
 
 ## B2: 加载匹配经验
 
 从项目经验库加载与当前变更相关的经验，预防已知失败模式：
 
-1. 执行 `python bin/stdd experience list --language <project.language> --format json`
+1. 执行 `python bin/fstdd experience list --language <project.language> --format json`
 2. 筛选 `lifecycle_state` 为 `verified` 或 `settled` 的经验
 3. 按 `project_type` 过滤；选出最相关的经验（默认最多 10 条）
 4. 将匹配经验内容（pattern + root_cause + fix_template）注入编码上下文
@@ -278,7 +278,7 @@ stdd_version: "3.0.5"
 
 1. 运行全量测试：`pytest` → 确认全部通过
 2. 覆盖率检查：`pytest --cov` → 对照阈值
-3. **CI 检查**：执行 `python bin/stdd ci check-failures <change>` → 逐项处置
+3. **CI 检查**：执行 `python bin/fstdd ci check-failures <change>` → 逐项处置
 4. lint / 类型检查（如项目配置）
 
 ## C3: Diff 审查
