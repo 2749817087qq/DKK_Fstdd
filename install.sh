@@ -4,9 +4,10 @@
 # 把「装依赖 → 安装 skill → 校验」串成一条命令，避免漏掉中间步骤。
 #
 # 用法：
-#   ./install.sh                # 交互：缺依赖时询问是否安装
-#   ./install.sh --yes          # 非交互：自动补装缺失依赖
+#   ./install.sh                     # 交互：缺依赖时询问是否安装（默认 workbuddy 平台）
+#   ./install.sh --yes               # 非交互：自动补装缺失依赖
 #   ./install.sh --py /path/to/python
+#   ./install.sh --platform claude-code  # 指定目标平台
 #   FSTDD_OUT=/custom/skills ./install.sh
 #
 # 环境变量：
@@ -23,6 +24,7 @@ _winpath() {
 SCRIPT_DIR="$(_winpath "$(cd "$(dirname "$0")" && pwd)")"
 PY="${FSTDD_PY:-}"
 AUTO_YES=0
+PLATFORM=""
 
 # 参数解析：`--py` 的取值须按**当前位置**读取。原实现用 `for arg in "$@"` 配 `shift`，
 # 当 `--py` 不是首个参数时（如 `--yes --py /x/python`）会 shift 掉错误元素，
@@ -31,14 +33,18 @@ AUTO_YES=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --yes) AUTO_YES=1 ;;
-    --py) PY="${2:-}" ;;
+    --py) PY="${2:-}" ; shift ;;
     --py=*) PY="${1#*=}" ;;
+    --platform) PLATFORM="${2:-}" ; shift ;;
+    --platform=*) PLATFORM="${1#*=}" ;;
   esac
   shift
 done
 
+plat_display="${PLATFORM:-WorkBuddy}"
+
 echo "=============================================="
-echo " FSTDD for WorkBuddy —— 安装"
+echo " FSTDD for $plat_display —— 安装"
 echo "=============================================="
 echo
 
@@ -99,14 +105,18 @@ fi
 
 # ---------- 3. 安装 skill ----------
 echo "[3/4] 生成 skill"
-"$PY" "$SCRIPT_DIR/tools/install_workbuddy_skills.py" || {
+INSTALL_ARGS=("$PY" "$SCRIPT_DIR/tools/install_workbuddy_skills.py")
+[[ -n "$PLATFORM" ]] && INSTALL_ARGS+=(--platform "$PLATFORM")
+"${INSTALL_ARGS[@]}" || {
   echo "[FAIL] 安装脚本执行失败"
   exit 1
 }
 
 # ---------- 4. 校验 ----------
 echo "[4/4] 校验"
-if "$PY" "$SCRIPT_DIR/tools/verify_workbuddy_skills.py"; then
+VERIFY_ARGS=("$PY" "$SCRIPT_DIR/tools/verify_workbuddy_skills.py")
+[[ -n "$PLATFORM" ]] && VERIFY_ARGS+=(--platform "$PLATFORM")
+if "${VERIFY_ARGS[@]}"; then
   echo
   echo "=============================================="
   echo " 安装完成"
@@ -114,7 +124,7 @@ if "$PY" "$SCRIPT_DIR/tools/verify_workbuddy_skills.py"; then
   echo " skill 目录: ${FSTDD_OUT:-$HOME/.workbuddy-ai/skills}"
   echo " 上游资源  : ${FSTDD_SRC:-$SCRIPT_DIR/upstream}"
   echo
-  echo " 下一步：在 WorkBuddy 中重启或执行 /reload，然后运行 /fstdd-understand"
+  echo " 下一步：在 $plat_display 中重启或执行 /reload，然后运行 /fstdd-understand"
   exit 0
 else
   echo

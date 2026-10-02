@@ -1,17 +1,22 @@
 change_id: 2026-09-19-notices-authenticity-gate
 complexity_score: 10
-current_phase: spec
+current_phase: build
 design_adjustments:
   count: 5
   file: design-adjustments.md
 mode: thorough
 phases:
   build:
-    status: pending
+    entered_at: '2026-10-01T18:00:00'
+    status: in_progress
   deliver:
     status: pending
   spec:
-    status: in_progress
+    confirmed_actor: ai
+    confirmed_at: '2026-10-01T18:00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 2026-10-01 明确指令「推进 notices-authenticity-gate 变更从 spec 进入 build」
+    status: completed
   understand:
     confirmed_actor: ai
     confirmed_at: '2026-09-19T01:15:06'
@@ -26,5 +31,5 @@ traceability:
   spec_requirements: 6
   spec_scenarios: 18
   tc_cases: 21
-  test_functions: 0
+  test_functions: 21
 version: '3.0'

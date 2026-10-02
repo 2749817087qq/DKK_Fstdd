@@ -1,0 +1,13 @@
+{
+ "ts": "2026-09-30 00:14:44",
+ "server_收_count": 42,
+ "local_收_count": 42,
+ "local_复_count": 65,
+ "matched": 42,
+ "pending": [],
+ "match_type_counts": {
+  "exact": 26,
+  "substr": 6,
+  "canonical": 10
+ }
+}

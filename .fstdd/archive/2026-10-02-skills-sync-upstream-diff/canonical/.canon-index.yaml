@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-02-skills-sync-upstream-diff: proposals/2026-10-02-skills-sync-upstream-diff.yaml
+specs:
+  agent:
+    2026-10-02-skills-sync-upstream-diff: specs/agent/2026-10-02-skills-sync-upstream-diff.yaml
+  code:
+    2026-10-02-skills-sync-upstream-diff: specs/code/2026-10-02-skills-sync-upstream-diff.yaml
+version: '2.9'

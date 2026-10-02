@@ -1,0 +1,237 @@
+{
+ "server_total": 109,
+ "server_收": 40,
+ "server_复": 60,
+ "local_收": 40,
+ "local_复": 60,
+ "matched": 40,
+ "pending": [],
+ "matched_detail": [
+  {
+   "收": "FSTDD003收-FSTDD标准升级同步规程v1-回执催办.md",
+   "复": "FSTDD003复-FSTDD标准升级同步规程v1.md",
+   "type": "substr"
+  },
+  {
+   "收": "FSTDD003收-FSTDD标准升级同步规程v1.md",
+   "复": "FSTDD003复-FSTDD标准升级同步规程v1.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-Phase1执行方式增补-任务卡驱动.md",
+   "复": "FSTDD003复-Phase1执行方式增补-任务卡驱动.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-inbox地址变更.md",
+   "复": "FSTDD003复-inbox地址变更.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-inbox鉴权上线.md",
+   "复": "FSTDD003复-inbox鉴权上线.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-phase1-baseURL已确定.md",
+   "复": "FSTDD003复-phase1-baseURL已确定.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-phase1-launch.md",
+   "复": "FSTDD003复-phase1-launch.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-phase1-平台防护通告.md",
+   "复": "FSTDD003复-phase1-平台防护通告.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-phase1-更正8080不可用.md",
+   "复": "FSTDD003复-phase1-更正8080不可用.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-phase1-窗口-2026-09-24-14.md",
+   "复": "FSTDD003复-phase1-2026-09-24-14.md",
+   "type": "canonical"
+  },
+  {
+   "收": "FSTDD003收-phase1-窗口-2026-09-26-10.md",
+   "复": "FSTDD003复-phase1-2026-09-26-10.md",
+   "type": "canonical"
+  },
+  {
+   "收": "FSTDD003收-phase1-窗口-2026-09-26-20.md",
+   "复": "FSTDD003复-phase1-2026-09-26-20.md",
+   "type": "canonical"
+  },
+  {
+   "收": "FSTDD003收-phase1-窗口-2026-09-26-22.md",
+   "复": "FSTDD003复-phase1-2026-09-26-22.md",
+   "type": "canonical"
+  },
+  {
+   "收": "FSTDD003收-phase1-窗口-20260927-10.md",
+   "复": "FSTDD003复-phase1-2026-09-27-10.md",
+   "type": "canonical"
+  },
+  {
+   "收": "FSTDD003收-phase1-窗口-20260927-14.md",
+   "复": "FSTDD003复-phase1-2026-09-27-14.md",
+   "type": "canonical"
+  },
+  {
+   "收": "FSTDD003收-phase1-窗口-20260927-20.md",
+   "复": "FSTDD003复-phase1-2026-09-27-20.md",
+   "type": "canonical"
+  },
+  {
+   "收": "FSTDD003收-phase1-窗口-20260927-22.md",
+   "复": "FSTDD003复-phase1-2026-09-27-22.md",
+   "type": "canonical"
+  },
+  {
+   "收": "FSTDD003收-phase1-窗口-20260928-14.md",
+   "复": "FSTDD003复-phase1-2026-09-28-14.md",
+   "type": "canonical"
+  },
+  {
+   "收": "FSTDD003收-phase1-节奏变更-2小时小闭环.md",
+   "复": "FSTDD003复-phase1-节奏变更-2小时小闭环.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-phase1-访问限制已撤除.md",
+   "复": "FSTDD003复-phase1-访问限制已撤除.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-phase1-通告二-反爬检测与行为约束.md",
+   "复": "FSTDD003复-phase1-通告二-反爬检测与行为约束.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-seed口径申报.md",
+   "复": "FSTDD003复-seed口径申报.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-交付物已入仓.md",
+   "复": "FSTDD003复-交付物已入仓.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-凭证安装硬时限.md",
+   "复": "FSTDD003复-凭证安装.md",
+   "type": "substr"
+  },
+  {
+   "收": "FSTDD003收-凭证验证补充.md",
+   "复": "FSTDD003复-凭证验证补充.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-助001接入与SOP收尾.md",
+   "复": "FSTDD003复-SOP收尾.md",
+   "type": "substr"
+  },
+  {
+   "收": "FSTDD003收-升级路径修复方案.md",
+   "复": "FSTDD003复-升级路径修复.md",
+   "type": "substr"
+  },
+  {
+   "收": "FSTDD003收-升级验证.md",
+   "复": "FSTDD003复-升级验证.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-协作开发-S2S3.md",
+   "复": "FSTDD003复-协作开发-S2S3.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-口径更正-当前只做1个账号.md",
+   "复": "FSTDD003复-口径更正-当前只做1个账号.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-工作量与资源规划要求.md",
+   "复": "FSTDD003复-工作量与资源规划.md",
+   "type": "substr"
+  },
+  {
+   "收": "FSTDD003收-接入授权.md",
+   "复": "FSTDD003复-接入授权.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-撤回令-伪造署名指令.md",
+   "复": "FSTDD003复-撤回令-伪造署名指令.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-澄清问询-凭证验证补充.md",
+   "复": "FSTDD003复-凭证验证补充.md",
+   "type": "substr"
+  },
+  {
+   "收": "FSTDD003收-状态盘点.md",
+   "复": "FSTDD003复-状态盘点.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-经验回传要求.md",
+   "复": "FSTDD003复-经验回传要求.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-编写《per-node 接入 SOP》+ 跨平台验证.md",
+   "复": "FSTDD003复-编写《per-node 接入 SOP》+ 跨平台验证.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-自动化率提升.md",
+   "复": "FSTDD003复-自动化率提升.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-账号规模扩展预告.md",
+   "复": "FSTDD003复-账号规模扩展预告.md",
+   "type": "exact"
+  },
+  {
+   "收": "FSTDD003收-通道演练.md",
+   "复": "FSTDD003复-通道演练.md",
+   "type": "exact"
+  }
+ ],
+ "orphan_resp": [
+  "FSTDD003复-00-NOTICE领取确认.md",
+  "FSTDD003复-phase1-2026-09-22.md",
+  "FSTDD003复-phase1-2026-09-23-04.md",
+  "FSTDD003复-phase1-2026-09-23.md",
+  "FSTDD003复-phase1-2026-09-24-02.md",
+  "FSTDD003复-phase1-2026-09-24-04.md",
+  "FSTDD003复-phase1-2026-09-24-06.md",
+  "FSTDD003复-phase1-2026-09-24-08.md",
+  "FSTDD003复-phase1-2026-09-24-10.md",
+  "FSTDD003复-phase1-2026-09-24-12.md",
+  "FSTDD003复-伪造署名事件处置与开放问题协商.md",
+  "FSTDD003复-凭证下发.md",
+  "FSTDD003复-凭证安装硬时限.md",
+  "FSTDD003复-升级路径修复方案.md",
+  "FSTDD003复-当日复盘-20260921.md",
+  "FSTDD003复-当日复盘-20260922.md",
+  "FSTDD003复-当日复盘-20260923.md",
+  "FSTDD003复-当日计划-20260922.md",
+  "FSTDD003复-当日计划-20260924.md",
+  "FSTDD003复-澄清问询-凭证验证补充.md",
+  "FSTDD003复-给001的接入要点.md",
+  "FSTDD003复-轮询粒度与回执窗根因分析-SOP建议.md"
+ ],
+ "server_only": [],
+ "local_only": []
+}

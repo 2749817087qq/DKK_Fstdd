@@ -11,6 +11,9 @@
 .PARAMETER Python
     指定 Python 解释器路径（默认自动查找 python3 / python / py）。
 
+.PARAMETER Platform
+    目标平台名称（默认 workbuddy），透传给 install_workbuddy_skills.py 的 --platform。
+
 .PARAMETER Yes
     非交互模式：缺失依赖时自动安装，不询问。
 
@@ -18,6 +21,7 @@
     .\install.ps1
     .\install.ps1 -Yes
     .\install.ps1 -Python "C:\path\to\python.exe"
+    .\install.ps1 -Platform claude-code
     $env:FSTDD_OUT = "D:\skills"; .\install.ps1
 
 .NOTES
@@ -27,6 +31,7 @@
 #>
 param(
     [string]$Python,
+    [string]$Platform,
     [switch]$Yes
 )
 
@@ -35,8 +40,10 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 function Write-Step([string]$text) { Write-Host $text -ForegroundColor Cyan }
 
+$platDisplay = if ($Platform) { $Platform } else { "WorkBuddy" }
+
 Write-Host "==============================================" -ForegroundColor Cyan
-Write-Host " FSTDD for WorkBuddy —— 安装" -ForegroundColor Cyan
+Write-Host " FSTDD for $platDisplay —— 安装" -ForegroundColor Cyan
 Write-Host "==============================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -105,7 +112,12 @@ if ($depsOk) {
 
 # ---------- 3. 安装 skill ----------
 Write-Step "[3/4] 生成 skill"
-& $Python (Join-Path $ScriptDir "tools/install_workbuddy_skills.py")
+$installScript = Join-Path $ScriptDir "tools/install_workbuddy_skills.py"
+if ($Platform) {
+    & $Python $installScript --platform $Platform
+} else {
+    & $Python $installScript
+}
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] 安装脚本执行失败" -ForegroundColor Red
     exit 1
@@ -113,7 +125,12 @@ if ($LASTEXITCODE -ne 0) {
 
 # ---------- 4. 校验 ----------
 Write-Step "[4/4] 校验"
-& $Python (Join-Path $ScriptDir "tools/verify_workbuddy_skills.py")
+$verifyScript = Join-Path $ScriptDir "tools/verify_workbuddy_skills.py"
+if ($Platform) {
+    & $Python $verifyScript --platform $Platform
+} else {
+    & $Python $verifyScript
+}
 if ($LASTEXITCODE -eq 0) {
     $outDir = if ($env:FSTDD_OUT) { $env:FSTDD_OUT } else { Join-Path $HOME ".workbuddy-ai/skills" }
     Write-Host ""
@@ -122,7 +139,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "==============================================" -ForegroundColor Green
     Write-Host " skill 目录：$outDir"
     Write-Host ""
-    Write-Host " 下一步：在 WorkBuddy 中重启或执行 /reload，然后运行 /fstdd-understand"
+    Write-Host " 下一步：在 $platDisplay 中重启或执行 /reload，然后运行 /fstdd-understand"
     exit 0
 } else {
     Write-Host ""

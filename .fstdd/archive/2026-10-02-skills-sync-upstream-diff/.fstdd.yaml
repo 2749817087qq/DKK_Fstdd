@@ -1,0 +1,52 @@
+baseline:
+  at: '2026-10-02T03:51:35+00:00'
+  base_git_sha: 5094ff2b5878735b6fd8b2db61611f79acf3be57
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-02-skills-sync-upstream-diff
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 0
+last_modified: '2026-10-02T03:52:52+00:00'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T03:52:28+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 'AI self-confirmed: deliver.md 4917→5434B (structure delta
+      归档顺序坑), upgrade.md 4387→4650B (rename stdd→fstdd + 3.0.5-fin.1)。build/spec/understand
+      已相同。PASS.'
+    slices_completed:
+      S1:
+        new_tests: 0
+        tc_coverage: TC-FSTDD-SKILL
+        verified_at: '2026-10-02T11:25:00+08:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T03:51:35+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 'AI self-confirmed: 规格要点：(1) 本地 skills 为权威（远程 stub），(2) 建立
+      diff 机制跟踪远程 stub 演进，(3) 当远程从 stub 升级时自动合并，(4) 零破坏本地功能。'
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T03:51:35+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 'AI self-confirmed: 同步 merge commit 5094ff2 后发现 .fstdd/skills/
+      本地 6-16KB 完整版本 vs 远程 300-400B stub。C 策略决策本地完整保留，但远程 stub 后续可能演进。需逐 diff 跟踪 +
+      升级机制。'
+    status: completed
+score_confidence: null
+status: archived
+task_type: configuration
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

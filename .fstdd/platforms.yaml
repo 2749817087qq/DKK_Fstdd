@@ -1,0 +1,59 @@
+# FSTDD 多平台安装薄清单 — 唯一事实源
+# 所有平台差异在此声明，install_workbuddy_skills.py / verify_workbuddy_skills.py
+# 及上游 fstdd install 一律从此读取，禁止硬编码 if/else 按平台分支。
+#
+# 平台规则四要素:
+#   display_name     — 人类可读显示名
+#   skill_dir_rules  — skill 根目录解析规则（按顺序尝试）
+#   frontmatter      — front-matter 渲染字段 (workbuddy 独有 version/trigger_keywords)
+#   body_adaptations — 正文适配规则（路径替换/策略裁剪）
+#
+# 铺平台顺序: workbuddy(基线) → claude-code → trae → cursor/copilot(待补)
+
+default_platform: workbuddy
+
+platforms:
+
+  workbuddy:
+    display_name: WorkBuddy
+    skill_dir_rules:
+      - env: FSTDD_OUT
+      - env: WORKBUDDY_SKILLS_DIR
+      - windows: "%USERPROFILE%\\.workbuddy-ai\\skills"
+      - windows: "%USERPROFILE%\\.workbuddy\\skills"
+      - unix: "~/.workbuddy/skills"
+    frontmatter:
+      include_version: true
+      include_trigger_keywords: true
+      description_quotes: false
+    body_adaptations:
+      replace_fstdd_path: true
+      include_safety_policy: true
+
+  claude-code:
+    display_name: Claude Code
+    skill_dir_rules:
+      - env: FSTDD_OUT
+      - unix: "~/.claude/skills"
+      - windows: "%USERPROFILE%\\.claude\\skills"
+    frontmatter:
+      include_version: false
+      include_trigger_keywords: false
+      description_quotes: true
+    body_adaptations:
+      replace_fstdd_path: false
+      include_safety_policy: false
+
+  trae:
+    display_name: Trae
+    skill_dir_rules:
+      - env: FSTDD_OUT
+      - windows: "%USERPROFILE%\\.trae\\skills"
+      - unix: "~/.trae/skills"
+    frontmatter:
+      include_version: false
+      include_trigger_keywords: false
+      description_quotes: false
+    body_adaptations:
+      replace_fstdd_path: false
+      include_safety_policy: false

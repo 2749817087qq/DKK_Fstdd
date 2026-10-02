@@ -1,0 +1,53 @@
+baseline:
+  at: '2026-10-02T03:51:36+00:00'
+  base_git_sha: 5094ff2b5878735b6fd8b2db61611f79acf3be57
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-02-upstream-skills-canonicalize
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 0
+last_modified: '2026-10-02T03:52:53+00:00'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T03:52:29+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 'AI self-confirmed: upstream/.fstdd/skills/_shared/ 3 个独有文件合入本地
+      .fstdd/skills/_shared/ (confirm-gate/long-range-auth/mode-selection)。build/spec/understand/deliver/upgrade
+      全路径已对比。PASS.'
+    slices_completed:
+      S1:
+        new_tests: 0
+        tc_coverage: TC-FSTDD-SKILL
+        verified_at: '2026-10-02T11:25:00+08:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T03:51:36+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 'AI self-confirmed: 规格要点：(1) diff upstream/.fstdd/skills/
+      vs 本地 .fstdd/skills/，(2) 判定 upstream/ 各文件是否仍为 stub，(3) 若 upstream/ 出现非 stub
+      canonical skill，手动对齐本地版本，(4) deliver.md 和 _shared/ 需分别检查。'
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T03:51:36+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 'AI self-confirmed: 远程 merge commit 5094ff2 引入 upstream/.fstdd/skills/
+      新位置（4 个 stub: build/spec/understand/upgrade.md）。需验证本地 .fstdd/skills/ 完整版本是否覆盖
+      upstream/ stub，若 upstream/ 下开始出现非 stub canonical skills 需对齐。'
+    status: completed
+score_confidence: null
+status: archived
+task_type: configuration
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

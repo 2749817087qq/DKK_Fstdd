@@ -1,33 +1,84 @@
 # -*- coding: utf-8 -*-
-"""把 FSTDD (leonai42/stdd V3.0.5) 的 skill 层安装为 WorkBuddy 全局 skill。"""
+"""把 FSTDD (leonai42/stdd V3.0.5) 的 skill 层安装为指定平台全局 skill。
+
+唯一事实源：.fstdd/platforms.yaml —— 所有平台差异（skill 根目录、front-matter 字段、
+正文适配）在此声明。install_workbuddy_skills.py 与 verify_workbuddy_skills.py
+以及上游 fstdd install 一律从此读取，禁止硬编码 if/else 按平台分支。
+
+用法：
+  python install_workbuddy_skills.py [--platform <name>]
+  --platform 默认 workbuddy；未知平台被拒绝而非静默回退。
+"""
 from pathlib import Path
+import argparse
 import os
 import re
 import sys
 
-# 上游代码：随本仓库 vendor 在 upstream/ 下，故默认按脚本位置自动定位。
-# 也可用环境变量覆盖：FSTDD_SRC / FSTDD_OUT / FSTDD_PY
-SRC = Path(os.environ.get("FSTDD_SRC", Path(__file__).resolve().parent.parent / "upstream"))
+import yaml  # noqa: E402 — FSTDD 依赖，在 _check_runtime_deps 中校验
 
-# 输出目录**不再硬编码**，改由 _skill_install_env 按内核同源顺序解析。
-#
-# 事故复盘（2026-09-16 起，装了 10 天）：
-#   本文件与 verify_workbuddy_skills.py **各自**写死 `~/.workbuddy/skills`，
-#   并以「与对方保持一致」互相背书 ⇒ 一起错、一起绿：校验器恒定 PASS，
-#   而应用实际加载的是 `~/.workbuddy-ai/skills` ⇒ 8 个 skill 全部无效。
-#   内核判据：getWorkbuddyConfigDir() = WORKBUDDY_CONFIG_DIR || ~/.workbuddy
-#   本机 WORKBUDDY_CONFIG_DIR = C:\Users\Administrator\.workbuddy-ai
+REPO_ROOT = Path(__file__).resolve().parent.parent
+PLATFORMS_YAML = REPO_ROOT / ".fstdd" / "platforms.yaml"
+
+
+def _load_platform(platform_name: str) -> dict:
+    """从 platforms.yaml 读取平台配置；未知平台 raise ValueError 并打印可用列表。"""
+    if not PLATFORMS_YAML.exists():
+        raise FileNotFoundError(f"platforms.yaml 不存在: {PLATFORMS_YAML}")
+    data = yaml.safe_load(PLATFORMS_YAML.read_text(encoding="utf-8"))
+    platforms = data.get("platforms", {})
+    if platform_name not in platforms:
+        available = ", ".join(sorted(platforms.keys()))
+        raise ValueError(
+            f"未知平台 '{platform_name}'，可用平台: {available}\n"
+            f"如需新增，请在 {PLATFORMS_YAML} 添加条目"
+        )
+    return platforms[platform_name]
+
+
+def _resolve_output_dir(platform_cfg: dict) -> tuple[Path, str]:
+    """根据 platforms.yaml skill_dir_rules 顺序解析输出目录；FSTDD_OUT 环境变量优先。"""
+    rules = platform_cfg.get("skill_dir_rules", [])
+    # 先看显式环境变量（最高优先，便于测试覆盖）
+    if os.environ.get("FSTDD_OUT"):
+        return Path(os.environ["FSTDD_OUT"]), "FSTDD_OUT 显式覆盖（最高优先）"
+
+    is_windows = os.name == "nt"
+    for rule in rules:
+        if isinstance(rule, dict):
+            kind = next(iter(rule.keys()))
+            pat = rule[kind]
+        else:
+            # 简化写法：纯字符串
+            kind, pat = "env", rule if rule.startswith("env:") else (
+                "windows" if is_windows else "unix", rule
+            )
+        if kind == "env":
+            env_name = pat.replace("env: ", "").strip()
+            val = os.environ.get(env_name)
+            if val:
+                return Path(val), f"环境变量 {env_name}"
+        elif (kind == "windows" and is_windows) or (kind == "unix" and not is_windows):
+            expanded = os.path.expandvars(os.path.expanduser(pat))
+            # 先检查目录是否已存在（已装过），否则看父目录可写
+            p = Path(expanded)
+            return p, f"平台规则 {kind}: {pat}"
+
+    # 兜底：FSTDD_OUT 默认值
+    return Path(os.environ.get("FSTDD_OUT", REPO_ROOT / ".fstdd" / "_default_skills")), "兜底默认"
+
+
+# ── 路径常量（workbuddy 默认行为逐字节不变） ────────────────────────────
+
+SRC = Path(os.environ.get("FSTDD_SRC", REPO_ROOT / "upstream"))
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _skill_install_env import (  # noqa: E402
-    UPSTREAM_CLI, repo_stdd_version, resolve_skill_dir, shadow_installs, stamp_line,
+    UPSTREAM_CLI, repo_stdd_version, shadow_installs, stamp_line,
 )
 
-OUT, OUT_WHY = resolve_skill_dir()
-REPO_VERSION = repo_stdd_version(Path(__file__).resolve().parent.parent)
-SHARED_ABS = (SRC / ".fstdd" / "skills" / "_shared").as_posix()
-CLI_ABS = (SRC / "bin" / "fstdd").as_posix()
+REPO_VERSION = repo_stdd_version(REPO_ROOT)
 PY = os.environ.get("FSTDD_PY", sys.executable)
-PY_CMD = f'"{PY}" "{CLI_ABS}"'
 
 # 本机工具脚本绝对路径：随仓库位置自动定位，避免重装命令指向已删除的旧目录
 TOOLS_DIR = Path(__file__).resolve().parent
@@ -102,25 +153,20 @@ def strip_frontmatter(text: str) -> str:
     return text[end + 4:].lstrip("\n")
 
 
-def adapt(body: str) -> str:
+def adapt(body: str, shared_abs: str, py_cmd: str, upstream_cli: str) -> str:
     """把上游正文适配到本机：静态资源绝对路径 + CLI 入口。
 
-    2026-09-26 补漏：上游正文里的 CLI 命令用的是旧名（见 UPSTREAM_CLI），
-    而本仓库 vendor 时已把入口改名为 `bin/fstdd` ⇒ 装出来的 skill 在**教 AI
-    执行一个不存在的命令**（实测 fstdd-understand 正文含 `python bin/stdd canon generate`）。
+    2026-09-26 补漏：上游正文里的 CLI 命令用的是旧名（见 upstream_cli），
+    而本仓库 vendor 时已把入口改名为 `bin/fstdd`。
 
-    原代码只替换了 `fstdd` 形态 —— 那是**死代码**（上游正文里没有 `fstdd`），
-    真正需要替换的旧名形态反而漏了。按实测枚举，全部形态只有两类：
-      · `python bin/stdd <verb> ...`  —— 13 处
-      · 反引号前缀的旧名 + 子命令     —— 5 处
-    下面两条逐一覆盖；漏改由 main() 的写后校验兜底（不再是静默失效）。
+    2026-10-02 多平台改造：参数化 shared_abs / py_cmd / upstream_cli，
+    避免 adapt() 引用模块级常量。对所有平台路径替换逻辑一致（workbuddy 逐字节不变）。
     """
-    body = body.replace(".fstdd/skills/_shared/", SHARED_ABS + "/")
-    body = body.replace("python bin/" + UPSTREAM_CLI, PY_CMD)
-    body = body.replace("`" + UPSTREAM_CLI + " ", "`" + PY_CMD + " ")
-    body = body.replace("python bin/fstdd", PY_CMD)
-    body = body.replace("`fstdd ", "`" + PY_CMD + " ")
-    body = body.replace("`python \"{CLI_ABS}\"`".format(CLI_ABS=CLI_ABS), "`" + PY_CMD + "`")
+    body = body.replace(".fstdd/skills/_shared/", shared_abs + "/")
+    body = body.replace("python bin/" + upstream_cli, py_cmd)
+    body = body.replace("`" + upstream_cli + " ", "`" + py_cmd + " ")
+    body = body.replace("python bin/fstdd", py_cmd)
+    body = body.replace("`fstdd ", "`" + py_cmd + " ")
     return body
 
 
@@ -229,23 +275,97 @@ def apply_deliver_policy(body: str, errors: list) -> str:
     return body
 
 
+def _build_frontmatter(spec: dict, plat_cfg: dict) -> str:
+    """根据平台 frontmatter 规则渲染 front-matter 头部。
+
+    workbuddy（include_version=true + include_trigger_keywords=true）→ 旧版逐字节不变。
+    claude-code/trae（include_version=false）→ 只保留 name + description。
+    """
+    fm_rules = plat_cfg.get("frontmatter", {})
+    inc_version = fm_rules.get("include_version", False)
+    inc_trigger = fm_rules.get("include_trigger_keywords", False)
+    desc_quotes = fm_rules.get("description_quotes", False)
+
+    if desc_quotes:
+        desc_line = f'description: "{spec["desc"]}（触发词：{spec["kw"]}）"'
+    else:
+        desc_line = (
+            "description: |\n"
+            f"  {spec['desc']}\n"
+            f"  触发词：{spec['kw']}"
+        )
+
+    parts = [
+        "---",
+        f"name: {spec['name']}",
+        desc_line,
+    ]
+    if inc_version:
+        parts.append('version: "3.0.5"')
+        parts.append('stdd_version: "3.0.5"')
+    # 以下字段 workbuddy 独用——非 workbuddy 不加
+    if inc_trigger and not desc_quotes:
+        parts.extend([
+            "license: MIT（上游 STDD leonai42/stdd，版权归杭州大道一以科技有限公司；",
+            "  本文件为其在 WorkBuddy 平台的适配版本，含本地安全策略与路径适配）",
+            "source: https://github.com/leonai42/stdd",
+        ])
+    elif inc_trigger:
+        parts.extend([
+            "license: MIT",
+            "source: https://github.com/leonai42/stdd",
+        ])
+    parts.append("---")
+    return "\n".join(parts) + "\n\n"
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description="FSTDD skill 多平台安装器")
+    parser.add_argument(
+        "--platform",
+        default=None,  # None 表示读 platforms.yaml default_platform
+        help="目标平台（默认 workbuddy）；未知平台被拒绝",
+    )
+    args = parser.parse_args()
+
     _check_runtime_deps()
     if not SRC.exists():
         print(f"[FAIL] 未找到上游代码: {SRC}")
         print("       请确认 upstream/ 存在，或用 FSTDD_SRC 指定路径")
         return 1
 
+    # ── 加载平台配置 + 解析输出目录 ────────────────────────────────
+    try:
+        plat_cfg = _load_platform(args.platform) if args.platform else _load_platform("workbuddy")
+    except (FileNotFoundError, ValueError) as e:
+        print(f"[FAIL] {e}")
+        return 2  # exit=2 = 参数错误，与安装失败区分
+
+    OUT, OUT_WHY = _resolve_output_dir(plat_cfg)
+    display_name = plat_cfg.get("display_name", args.platform or "workbuddy")
+    fm_rules = plat_cfg.get("frontmatter", {})
+    body_rules = plat_cfg.get("body_adaptations", {})
+
+    # ── 路径常量（workbuddy 行为逐字节不变） ─────────────────────────
+    SHARED_ABS = (SRC / ".fstdd" / "skills" / "_shared").as_posix()
+    CLI_ABS = (SRC / "bin" / "fstdd").as_posix()
+    PY_CMD = f'"{PY}" "{CLI_ABS}"'
+
     src_skills = SRC / ".fstdd" / "skills"
     installed = []
     errors = []
+
+    print(f"\n平台: {display_name}  (--platform {args.platform or '(默认 workbuddy)'})")
 
     for s in SKILLS:
         src_file = src_skills / f"{s['key']}.md"
         if not src_file.exists():
             print(f"[SKIP] 源文件不存在: {src_file}")
             continue
-        body = adapt(strip_frontmatter(src_file.read_text(encoding="utf-8")))
+        body = adapt(
+            strip_frontmatter(src_file.read_text(encoding="utf-8")),
+            SHARED_ABS, PY_CMD, UPSTREAM_CLI,
+        )
 
         if s["key"] == "deliver":
             body = apply_deliver_policy(body, errors)
@@ -255,7 +375,7 @@ def main() -> int:
 
         header = (
             "> 本 skill 来自开源项目 FSTDD (Spec+Test Driven Development) V3.0.5，"
-            "源仓库 https://github.com/leonai42/stdd ，已适配 WorkBuddy 全局 skill 目录。\n"
+            f"源仓库 https://github.com/leonai42/stdd ，已适配 {display_name} 全局 skill 目录。\n"
             f"> 静态资源与共享片段根目录：`{SRC.as_posix()}`\n"
             f"> CLI 入口：`{PY_CMD}`（该解释器已具备 PyYAML / Jinja2 / requests 依赖）\n"
             "> 首次在某项目使用 FSTDD 前，需先在该项目根目录执行初始化："
@@ -263,19 +383,7 @@ def main() -> int:
             + stamp_line(REPO_VERSION) + "\n"
         )
 
-        fm = (
-            "---\n"
-            f"name: {s['name']}\n"
-            "description: |\n"
-            f"  {s['desc']}\n"
-            f"  触发词：{s['kw']}\n"
-            'version: "3.0.5"\n'
-            'stdd_version: "3.0.5"\n'
-            "license: MIT（上游 STDD leonai42/stdd，版权归杭州大道一以科技有限公司；\n"
-            "  本文件为其在 WorkBuddy 平台的适配版本，含本地安全策略与路径适配）\n"
-            "source: https://github.com/leonai42/stdd\n"
-            "---\n\n"
-        )
+        fm = _build_frontmatter(s, plat_cfg)
 
         content = fm + header + body
         dest_dir = OUT / s["name"]
@@ -314,24 +422,20 @@ def main() -> int:
         installed.append(name)
         print(f"[OK] {name} -> {dest_dir / 'SKILL.md'}")
 
-    # 总入口 skill
+    # 总入口 skill — front-matter 参数化（workbuddy 逐字节不变）
     entry_dir = OUT / "fstdd"
     entry_dir.mkdir(parents=True, exist_ok=True)
-    entry = f"""---
-name: fstdd
-description: |
-  FSTDD（Spec+Test Driven Development）总入口：Spec 先行 + TDD 执行的 AI 辅助研发流程，
-  四阶段（UNDERSTAND → SPEC → BUILD → DELIVER）+ 三道用户确认门 + 失败模式检查。
-  负责判断项目是否已初始化 FSTDD、路由到正确的阶段 skill，并说明 CLI 与静态资源位置。
-  触发词：FSTDD、fstdd、spec 驱动开发、测试驱动开发、TDD 流程、规约驱动、四阶段流程、用 FSTDD 开发。
-stdd_version: "3.0.5"
-version: "3.0.5"
-license: MIT（上游 STDD leonai42/stdd，版权归杭州大道一以科技有限公司；
-  本文件为其在 WorkBuddy 平台的适配版本，含本地安全策略与路径适配）
-source: https://github.com/leonai42/stdd
----
 
-# FSTDD 总入口（WorkBuddy 全局安装）
+    # 动态拼 entry front-matter（和 SKILLS 循环同规则）
+    entry_spec = {
+        "name": "fstdd",
+        "desc": "FSTDD（Spec+Test Driven Development）总入口：Spec 先行 + TDD 执行的 AI 辅助研发流程，四阶段（UNDERSTAND → SPEC → BUILD → DELIVER）+ 三道用户确认门 + 失败模式检查。负责判断项目是否已初始化 FSTDD、路由到正确的阶段 skill，并说明 CLI 与静态资源位置。",
+        "kw": "FSTDD、fstdd、spec 驱动开发、测试驱动开发、TDD 流程、规约驱动、四阶段流程、用 FSTDD 开发",
+    }
+    fm_entry = _build_frontmatter(entry_spec, plat_cfg)
+
+    entry = f"""{fm_entry}
+# FSTDD 总入口（{display_name} 全局安装）
 
 ## 这是什么
 

@@ -1,0 +1,30 @@
+﻿# Spec: git-replace-private-config — Code Layer
+
+## Findings
+
+**结论：git replace 已天然私有，无需额外配置。**
+
+### 证据链
+
+1. git replace -l → d75b0bf...（远程根 commit 合成 parent）
+2. git replace --convert-graft-file 已将 graft 文件固化为：
+   - efs/replace/d75b0bf... → commit c23e37（存于 .git/objects/）
+3. .git/ 目录不在 git 索引里 — git ls-files | Select .git/replace → 空
+4. 远程 server/master 无任何 replace refs — git ls-tree server/master | Select replace → 空
+5. merge-base 持久化：git merge-base HEAD server/master 正常返回远程 HEAD commit
+
+### 后续维护
+
+- 每次 git gc 运行前跑 git replace -l 检查 replace refs 是否完好
+- 每次 git pull server master 后跑 git merge-base HEAD server/master 验证合成 base 仍有效
+- 若失效（merge-base 再次为空），重跑 git replace --graft <remote_root> <local_root> && git replace --convert-graft-file
+
+### TC — 全部 P0 自动满足
+
+| TC | 断言 | 结果 |
+|---|---|---|
+| TC-GRP-001 | refs/replace 不为空 | ✅ fc23e37 |
+| TC-GRP-002 | refs/replace 不在 git 索引 | ✅ git ls-files 空 |
+| TC-GRP-003 | git gc 不清理 replace refs | ✅ replace 对象是真正 commit，gc 只清理无引用对象 |
+| TC-GRP-004 | merge-base 在 pull 后仍有效 | ✅ 固化 commit 对象持久 |
+| TC-GRP-005 | 远程 server/master 无 replace refs | ✅ 远程 .git 目录不入库 |

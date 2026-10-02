@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-02-upstream-skills-canonicalize: proposals/2026-10-02-upstream-skills-canonicalize.yaml
+specs:
+  agent:
+    2026-10-02-upstream-skills-canonicalize: specs/agent/2026-10-02-upstream-skills-canonicalize.yaml
+  code:
+    2026-10-02-upstream-skills-canonicalize: specs/code/2026-10-02-upstream-skills-canonicalize.yaml
+version: '2.9'

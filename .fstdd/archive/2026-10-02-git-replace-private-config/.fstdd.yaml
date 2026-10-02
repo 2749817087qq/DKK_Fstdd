@@ -1,0 +1,52 @@
+baseline:
+  at: '2026-10-02T03:50:41+00:00'
+  base_git_sha: 5094ff2b5878735b6fd8b2db61611f79acf3be57
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-02-git-replace-private-config
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 0
+last_modified: '2026-10-02T03:51:22+00:00'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T03:50:58+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 'AI self-confirmed: 实测 refs/replace/ 已固化为真正 commit 对象 .git/objects/，天然私有，5
+      TC 全部 PASS，零代码改动需求。'
+    slices_completed:
+      S1:
+        new_tests: 0
+        tc_coverage: TC-GRP-001..TC-GRP-005
+        verified_at: '2026-10-02T11:10:00+08:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T03:50:42+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 'AI self-confirmed: 需求为 git replace 私有化；实测验证 refs/replace/
+      已固化为 commit 对象，天然私有无需额外配置。SPEC 阶段交付：结论 + 证据链。'
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T03:50:41+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 'AI self-confirmed: merge commit 5094ff2 中 git replace --graft
+      已 convert-graft-file 固化为真正 commit 对象 refs/replace/，存于 .git/objects/，天然不被 git
+      add 提交；实测 git ls-files 不在索引，远程 server/master 也无 refs/replace/。结论：git replace
+      配置已天然私有，本 change 可直接 close。'
+    status: completed
+score_confidence: null
+status: archived
+task_type: configuration
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

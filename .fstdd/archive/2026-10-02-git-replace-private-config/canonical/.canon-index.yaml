@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-02-git-replace-private-config: proposals/2026-10-02-git-replace-private-config.yaml
+specs:
+  agent:
+    2026-10-02-git-replace-private-config: specs/agent/2026-10-02-git-replace-private-config.yaml
+  code:
+    2026-10-02-git-replace-private-config: specs/code/2026-10-02-git-replace-private-config.yaml
+version: '2.9'
