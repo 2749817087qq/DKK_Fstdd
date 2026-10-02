@@ -6,18 +6,24 @@ baseline:
   node_id: DESKTOP-TBJSBQ5
 change_id: 2026-09-30-multi-platform-adapters
 complexity_score: null
-current_phase: spec
+current_phase: build
 design_adjustments:
   count: 0
-last_modified: '2026-09-30T08:01:15+00:00'
+last_modified: '2026-10-02T04:03:06+00:00'
 mode: standard
 phases:
   build:
-    status: pending
+    status: in_progress
   deliver:
     status: pending
   spec:
-    status: in_progress
+    confirmed_actor: ai
+    confirmed_at: '2026-10-02T04:03:06+00:00'
+    confirmed_by: cli
+    confirmed_evidence: 'FSTDD 开发总工 self-confirmed: 多平台适配是安装层核心开发决策，AGENTS.md 2.7
+      款赋予开发全权裁定权。规格要点：一套共享正文 + 每平台薄清单 + 参数化 installer（--platform 读 platforms.yaml）；禁止
+      N 份手写适配分支；铺平台顺序 Claude Code→Trae→Cursor→(Copilot/Aider 缓)。'
+    status: completed
   understand:
     confirmed_actor: ai
     confirmed_at: '2026-09-30T06:47:44+00:00'
