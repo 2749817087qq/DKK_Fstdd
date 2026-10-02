@@ -6,15 +6,22 @@ baseline:
   node_id: DESKTOP-TBJSBQ5
 change_id: 2026-10-02-failure-mode-coverage-audit
 complexity_score: null
-current_phase: build
+current_phase: deliver
 design_adjustments:
   count: 0
 mode: standard
 phases:
   build:
-    status: in_progress
+    completed_at: '2026-10-02T16:40:00+08:00'
+    slices:
+    - id: slice-1
+      new_tests: 0
+      tc_coverage: 3
+      verified_at: '2026-10-02T16:40:00+08:00'
+    status: completed
   deliver:
-    status: pending
+    started_at: '2026-10-02T16:40:00+08:00'
+    status: in_progress
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-10-02T08:38:47+00:00'
@@ -32,7 +39,7 @@ phases:
       类）。复杂度: 审计型变更，模式 standard。'
     status: completed
 score_confidence: null
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 0
