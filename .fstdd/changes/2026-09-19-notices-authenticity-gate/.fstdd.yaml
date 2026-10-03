@@ -1,16 +1,48 @@
+baseline:
+  at: '2026-09-19T01:15:06+00:00'
+  base_git_sha: e7bfb45755f48387225a8ecb4da0a2dd38ec4603
+  clock_source: system
+  established_by: backfill
+  node_id: DESKTOP-TBJSBQ5
 change_id: 2026-09-19-notices-authenticity-gate
 complexity_score: 10
-current_phase: build
+current_phase: deliver
 design_adjustments:
   count: 5
   file: design-adjustments.md
+last_modified: '2026-10-04T06:30:00+08:00'
 mode: thorough
 phases:
   build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-04T06:30:00+08:00'
+    confirmed_by: dialog
+    confirmed_evidence: F-B 档 2026-10-04 04:38 心跳指令「若上一档刚做过某项且未收口，优先收口而不是新开」；实现已落地于
+      3493217，本次照实补齐 tasks.md / test-report.md 与 traceability 证据链，
+      单文件 pytest 20 passed / 1 skipped、upstream/tests 全量 887 passed / 54 skipped / 0 failed。
+      Gate 3 由 F-B 档代签（用户 B 档授权自动收口），非场景节点 TC-NEP-003 走 pytest.skip 已在 test-report.md
+      显式记录。
     entered_at: '2026-10-01T18:00:00+00:00'
-    status: in_progress
+    slices_completed:
+      S1:
+        new_tests: 8
+        tc_coverage: TC-NAV-001..005,016..018
+        verified_at: '2026-10-04T06:30:00+08:00'
+      S2:
+        new_tests: 6
+        tc_coverage: TC-NAV-006..011
+        verified_at: '2026-10-04T06:30:00+08:00'
+      S3:
+        new_tests: 4
+        tc_coverage: TC-NAV-012..015
+        verified_at: '2026-10-04T06:30:00+08:00'
+      S4:
+        new_tests: 3
+        tc_coverage: TC-NEP-001..003
+        verified_at: '2026-10-04T06:30:00+08:00'
+    status: completed
   deliver:
-    status: pending
+    status: in_progress
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-10-01T18:00:00+00:00'
@@ -34,9 +66,3 @@ traceability:
   tc_cases: 21
   test_functions: 21
 version: '3.0'
-baseline:
-  at: '2026-09-19T01:15:06+00:00'
-  base_git_sha: e7bfb45755f48387225a8ecb4da0a2dd38ec4603
-  node_id: DESKTOP-TBJSBQ5
-  clock_source: system
-  established_by: backfill

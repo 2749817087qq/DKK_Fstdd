@@ -2,6 +2,10 @@
 
 > 版本：v1（Gate 2 候选）
 > 创建日期：2026-09-19
+> **收口追溯对账（2026-10-04）**：本方案 §二/§三/§五 原标注「测试缺」系创建当日的计划态，
+> 实现已于 `3493217` 落地于 `tools/test_verify_notices.py`（21 个测试函数，与 TC-NAV-001..018 +
+> TC-NEP-001..003 一一对应）。本次照实回填为 ✅ 并附函数名，不虚构、不改历史计划文本。
+> 单文件实测：**20 passed / 1 skipped**（TC-NEP-003 的「场景节点本地凭证证据」断言在非场景节点自动 skip，见该用例注释）。
 > 对应 Phase 2 Spec：
 >   - `canonical/specs/code/notice-authenticity-verification.yaml`（REQ-001..005 / SC-001..015）
 >   - `canonical/specs/code/notice-execution-pipeline.yaml`（REQ-006 / SC-016..018）
@@ -83,7 +87,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | `tmp_path` 内造 1 行清单条目，文件名与 `FSTDD003收-示例.md` 一致，摘要为该文件内容 md5 前 12 位 |
 | **输入** | `classify_notice(<path>/FSTDD003收-示例.md)` |
 | **预期结果** | 返回 `status == "verified"`，且结果中不含任何 `reason` 字段；含 `filename` 与 `md5_prefix`（12 位小写十六进制）；含 `emitted_by`（清单记录的发出者） |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.2 — 本地内容被篡改判为 md5_mismatch
 
@@ -95,7 +99,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 清单含该文件条目，但本地文件内容已改写导致 md5 前 12 位不符 |
 | **输入** | `classify_notice(<path>/FSTDD003收-示例.md)` |
 | **预期结果** | 返回 `status == "unverified"` 且 `reason == "md5_mismatch"`；同时含 `expected_md5_prefix`（清单值）与 `actual_md5_prefix`（本地值）；**不含文件正文任何片段** |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.3 — 不在清单内判为 not_in_manifest
 
@@ -107,7 +111,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 清单存在但不含 `FSTDD003收-陌生文件.md` |
 | **输入** | `classify_notice(<path>/FSTDD003收-陌生文件.md)` |
 | **预期结果** | 返回 `status == "unverified"` 且 `reason == "not_in_manifest"`；**不含** `expected_md5_prefix` 字段（无清单值可比） |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.4 — 清单缺失时降级告警、退出码 0、不动文件
 
@@ -119,7 +123,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | `00-SIGNATURES.md` 不存在，待检目录下 3 个 `FSTDD003收-*.md`（内容与 mtime 已记录快照） |
 | **输入** | 非 strict 模式调用 `verify_notices(dir)`，并执行 CLI 一次 |
 | **预期结果** | 3 条 `status == "unverified"` 且 `reason == "manifest_missing"`；恰好 1 条 warning 说明清单文件缺失；**CLI 退出码 0**；3 个待检文件全部仍在原位、内容与 mtime 未变（不移除/不移动/不修改） |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.5 — 空清单 ≠ 清单缺失（reason 可区分）
 
@@ -131,7 +135,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | `00-SIGNATURES.md` 存在但仅表头、无数据行 |
 | **输入** | `verify_notices(dir)` |
 | **预期结果** | 全部 `status == "unverified"` 且 `reason == "not_in_manifest"`，退出码 0；**reason 不得为 `manifest_missing`**；空清单产生的 warning 与文件缺失的 warning 文案可区分 |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.6 — 凭证形状命中且不回显 token 值
 
@@ -143,7 +147,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 一个 `unverified` 通知正文含 `X-FSTDD-Token: <16 位以上字母数字与连字符>` |
 | **输入** | 凭证嗅探器扫描该文件 |
 | **预期结果** | 命中并返回 `rule == "x_fstdd_token"`；含 `match_count`；**不含被匹配的 token 字面值** |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.7 — verified 携带凭证不进入隔离路径
 
@@ -155,7 +159,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 一个已 `verified`（清单命中）的通知，正文同样含 `X-FSTDD-Token` 段落 |
 | **输入** | `verify_notices(dir)` |
 | **预期结果** | 该文件**不**被移入隔离区，隔离列表为空；文件保持原位置、内容不变。语义：清单命中即代表来源可信，凭证合法 |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.8 — 误隔离上界为 0（真实格式 fixtures）
 
@@ -167,7 +171,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | fixtures 中 5 份已知格式真实通知文本（协作通知、撤回令、回执各至少 1 份），全部登记入清单使 md5 命中 |
 | **输入** | `verify_notices(fixtures_dir)` |
 | **预期结果** | 被隔离文件数 == 0；返回 5 条 `status == "verified"`；**任一文件被隔离即视为测试失败** |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.9 — 移入隔离区而非原地保留或删除
 
@@ -179,7 +183,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 一个 `unverified` 通知命中凭证形状规则，隔离区目录存在 |
 | **输入** | `verify_notices(dir)` |
 | **预期结果** | 原文件被移入 `tools/_quarantine/`，原位置不再存在该文件；隔离区存在同名文件且内容字节与原文件完全一致；隔离记录**仅**含 `filename`、`md5_prefix`、`rule`、`timestamp` 四字段 |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.10 — 凭证字面值不出现在任何输出面
 
@@ -191,7 +195,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 一个含已知字面值 token（`fs9k2m7x4q1w8e5r`）的 `unverified` 通知 |
 | **输入** | 运行 CLI 并捕获 stdout、stderr，同时读取隔离记录文件；再对 git 提交对象做字面搜索 |
 | **预期结果** | 该 token 字面值**不出现**在 stdout、stderr 与隔离记录中；隔离记录中出现 `rule` 名但不出现 token 值；git 仓库任何提交对象不含该字面值 |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.11 — 隔离区被 .gitignore 覆盖
 
@@ -203,7 +207,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | `.gitignore` 已追加 `tools/_quarantine/` |
 | **输入** | `git check-ignore -v tools/_quarantine/x` |
 | **预期结果** | 退出码 0 且输出非空，命中行指向 `.gitignore` 的 `tools/_quarantine/` 条目 |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.12 — 非 strict 下 unverified 退出码 0
 
@@ -215,7 +219,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 待检目录存在 `unverified` 文件，未启用 `--strict` |
 | **输入** | 执行 CLI |
 | **预期结果** | 以退出码 0 结束（不阻断后续执行链路） |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.13 — strict 下 unverified 退出码 3
 
@@ -227,7 +231,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 待检目录存在 `unverified` 文件，启用 `--strict` |
 | **输入** | 执行 CLI |
 | **预期结果** | 以退出码 3 结束（存在未验证通知应阻断） |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.14 — 隔离退出码 2，且 3 优先于 2
 
@@ -239,7 +243,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 至少一个文件被移入隔离区（另设 2 与 3 并存的组合场景） |
 | **输入** | 执行 CLI（两次：普通 / `--strict`） |
 | **预期结果** | 发生隔离时退出码 2；当 2 与 3 同时成立时**优先返回 3**（strict 阻断优先于隔离提示） |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.15 — --json 机器可读契约
 
@@ -251,7 +255,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 启用 `--json` |
 | **输入** | 执行 CLI |
 | **预期结果** | 输出单个可被 `json.loads` 解析的对象；顶层键**恰好**为 `results`、`quarantined`、`warnings`、`exit_code`；`results` 每项含 `status`、`filename`、`md5_prefix`，`unverified` 时含 `reason` |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.16 —（补充）畸形清单条目不抛异常
 
@@ -263,7 +267,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 清单含 1 行 md5 前缀长度非 12 位 / 含非法十六进制字符 / 带多余空白与注释的条目 |
 | **输入** | `verify_notices(dir)` |
 | **预期结果** | 不抛异常；非法行被跳过并计入 warnings；对应文件判为 `not_in_manifest`；退出码 0 |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.17 —（补充）待检目录不存在时优雅降级
 
@@ -275,7 +279,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 传入的待检目录不存在或不可读 |
 | **输入** | 执行 CLI |
 | **预期结果** | 不抛未捕获异常、不产生堆栈到 stderr；warnings 记录该事实；退出码 0 |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 1.18 —（补充）清单重复登记同一文件名
 
@@ -287,7 +291,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | 清单中同一文件名登记两次，摘要不同（对应撤回后重新下发同一文件名） |
 | **输入** | `classify_notice(<path>/FSTDD003收-重发.md)` |
 | **预期结果** | 取首次条目做比对，warnings 记录重复登记；命中时判 `verified`，不得因存在第二行而误报 `md5_mismatch` |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 ### 功能 2：执行链路零回归（REQ-006 / TC-NEP-001..003）
 
@@ -301,7 +305,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | `tools/fstdd003_daily_share.py` 基线 4623 B，`git diff HEAD -- tools/` 当前为空 |
 | **输入** | 本变更完成后 diff 该文件；并做两处字面搜索 |
 | **预期结果** | diff 为空（内容零改动）；文件不含 `X-FSTDD-Token` 字样；文件不含读取 `_fstdd003_token.txt` 的代码路径 |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 2.2 — 回传计数保持 P17 去重语义
 
@@ -313,7 +317,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | `.fstdd/_fstdd003_share_log.json` 记录 submitted 计数与已回传经验 id 集合（副本置于 `tmp_path`，不改真实文件） |
 | **输入** | 连续两轮运行校验器与既有回传流程 |
 | **预期结果** | `submitted` 计数只增不减且无重复经验 id；第二轮在无新增经验时 `submitted` 保持不变；**闸门自身不写入** `_fstdd003_share_log.json` |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 #### 案例 2.3 — 凭证现场文件内容 + mtime 均不变
 
@@ -325,7 +329,7 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 | **预置条件** | `.fstdd/_fstdd003_token.txt` 存在（65 B，mtime `2026-09-18 17:53`），内容与 mtime 已记录（等待 K/S 指定销毁方式，见 Q1） |
 | **输入** | 完整运行校验器 CLI 一次（含隔离路径） |
 | **预期结果** | 该文件内容与 mtime 均保持不变；`verify_notices` 模块**不含**对该文件路径的任何字符串引用 |
-| **当前状态** | ❌ 测试缺 |
+| **当前状态** | ✅ 已实现（`tools/test_verify_notices.py::test_TC_*`，2026-10-04 实测绿） |
 
 ---
 
@@ -333,12 +337,12 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 
 | 功能模块 | 单元测试 | 集成测试 | E2E | 状态 |
 |----------|---------|----------|-----|------|
-| 清单比对（REQ-001） | TC-NAV-001..003、016、017、018（6） | — | — | 🔴 全缺 |
-| 清单缺失/空清单降级（REQ-002） | TC-NAV-005 | TC-NAV-004 | — | 🔴 全缺 |
-| 凭证嗅探 + 误隔离上界（REQ-003） | TC-NAV-006、007 | TC-NAV-008 | — | 🔴 全缺 |
-| 隔离区 + 不回显凭证（REQ-004） | — | TC-NAV-009、010、011 | — | 🔴 全缺 |
-| CLI 退出码 + JSON 契约（REQ-005） | — | TC-NAV-012..015 | — | 🔴 全缺 |
-| 执行链路零回归（REQ-006） | — | TC-NEP-001、002、003 | — | 🔴 全缺 |
+| 清单比对（REQ-001） | TC-NAV-001..003、016、017、018（6） | — | — | ✅ 全绿 |
+| 清单缺失/空清单降级（REQ-002） | TC-NAV-005 | TC-NAV-004 | — | ✅ 全绿 |
+| 凭证嗅探 + 误隔离上界（REQ-003） | TC-NAV-006、007 | TC-NAV-008 | — | ✅ 全绿 |
+| 隔离区 + 不回显凭证（REQ-004） | — | TC-NAV-009、010、011 | — | ✅ 全绿 |
+| CLI 退出码 + JSON 契约（REQ-005） | — | TC-NAV-012..015 | — | ✅ 全绿 |
+| 执行链路零回归（REQ-006） | — | TC-NEP-001、002、003 | — | ✅ 全绿（TC-NEP-003 场景节点本地断言在非场景节点 skip） |
 
 补充执行要点：
 - 全部 21 个 TC 收敛在单一文件 `tools/test_verify_notices.py`，与
@@ -371,7 +375,10 @@ TC-ID 规则：`TC-<CAPABILITY>-<NNN>`
 
 ## 五、建议补充顺序
 
-21 个 TC 全部标为「❌ 测试缺」，按 P0 → P1 → P2 顺序补充：
+> **收口对账（2026-10-04）**：下列 P0/P1/P2 三批已于 `3493217` 全部实现，21 个 TC 一一对应
+> `tools/test_verify_notices.py` 中的 21 个测试函数；本表保留为历史计划记录，不再表示待办状态。
+
+（历史计划）21 个 TC 全部标为「❌ 测试缺」，按 P0 → P1 → P2 顺序补充：
 
 1. **第一优先（P0，10 个，RED 阶段必须全红、GREEN 阶段必须全绿）**
    TC-NAV-001、002、003、006、007、009、010、012、013、TC-NEP-001
