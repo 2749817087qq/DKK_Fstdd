@@ -37,7 +37,7 @@ if [ -z "$NEW_TOKEN" ]; then
   cat >&2 <<EOF
 用法: $0 <new_github_pat>
 
-示例: $0 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
+示例: $0 ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 EOF
   exit 1
 fi
