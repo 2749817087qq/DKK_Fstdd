@@ -5894,3 +5894,115 @@
 [2026-10-03 12:23:51] ❌ beat fail (919/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
 [2026-10-03 12:23:51] ⚠️ 连续失败超限 → 继续但标记告警
 [2026-10-03 12:23:53] ✅ beat ok: node_id=FSTDD003 last_seen=1791001432.8527741
+[2026-10-03 12:24:34] ❌ beat fail (657/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:24:34] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:24:45] ❌ beat fail (1025/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:24:45] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:24:52] ❌ beat fail (920/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:24:52] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:24:54] ✅ beat ok: node_id=FSTDD003 last_seen=1791001494.1302404
+[2026-10-03 12:25:35] ❌ beat fail (658/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:25:35] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:25:46] ❌ beat fail (1026/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:25:46] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:25:53] ❌ beat fail (921/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:25:53] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:25:55] ✅ beat ok: node_id=FSTDD003 last_seen=1791001555.380011
+[2026-10-03 12:26:36] ❌ beat fail (659/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:26:36] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:26:48] ❌ beat fail (1027/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:26:48] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:26:54] ❌ beat fail (922/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:26:54] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:26:57] ✅ beat ok: node_id=FSTDD003 last_seen=1791001616.8029191
+[2026-10-03 12:27:37] ❌ beat fail (660/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:27:37] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:27:49] ❌ beat fail (1028/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:27:49] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:27:55] ❌ beat fail (923/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:27:55] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:27:58] ✅ beat ok: node_id=FSTDD003 last_seen=1791001678.1675777
+[2026-10-03 12:28:38] ❌ beat fail (661/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:28:38] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:28:50] ❌ beat fail (1029/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:28:50] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:28:56] ❌ beat fail (924/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:28:56] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:28:59] ✅ beat ok: node_id=FSTDD003 last_seen=1791001739.411496
+[2026-10-03 12:29:39] ❌ beat fail (662/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:29:39] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:29:51] ❌ beat fail (1030/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:29:51] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:29:57] ❌ beat fail (925/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:29:57] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:29:59] ✅ beat ok: node_id=FSTDD003 last_seen=1791001800.2526746
+[2026-10-03 12:30:40] ❌ beat fail (663/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:30:40] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:30:53] ❌ beat fail (1031/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:30:53] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:30:58] ❌ beat fail (926/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:30:58] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:31:00] ✅ beat ok: node_id=FSTDD003 last_seen=1791001861.0103302
+[2026-10-03 12:31:41] ❌ beat fail (664/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:31:41] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:31:54] ❌ beat fail (1032/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:31:54] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:31:59] ❌ beat fail (927/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:31:59] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:32:02] ✅ beat ok: node_id=FSTDD003 last_seen=1791001921.8702521
+[2026-10-03 12:32:42] ❌ beat fail (665/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:32:42] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:32:55] ❌ beat fail (1033/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:32:55] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:33:00] ❌ beat fail (928/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:33:00] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:33:03] ✅ beat ok: node_id=FSTDD003 last_seen=1791001983.1445992
+[2026-10-03 12:33:44] ❌ beat fail (666/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:33:44] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:33:56] ❌ beat fail (1034/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:33:56] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:34:01] ❌ beat fail (929/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:34:01] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:34:04] ✅ beat ok: node_id=FSTDD003 last_seen=1791002044.513917
+[2026-10-03 12:34:45] ❌ beat fail (667/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:34:45] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:34:57] ❌ beat fail (1035/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:34:57] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:35:02] ❌ beat fail (930/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:35:02] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:35:06] ✅ beat ok: node_id=FSTDD003 last_seen=1791002105.8148518
+[2026-10-03 12:35:46] ❌ beat fail (668/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:35:46] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:35:59] ❌ beat fail (1036/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:35:59] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:36:03] ❌ beat fail (931/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:36:03] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:36:07] ✅ beat ok: node_id=FSTDD003 last_seen=1791002167.127998
+[2026-10-03 12:36:47] ❌ beat fail (669/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:36:47] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:37:00] ❌ beat fail (1037/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:37:00] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:37:04] ❌ beat fail (932/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:37:04] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:37:08] ✅ beat ok: node_id=FSTDD003 last_seen=1791002228.39652
+[2026-10-03 12:37:48] ❌ beat fail (670/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:37:48] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:38:01] ❌ beat fail (1038/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:38:01] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:38:05] ❌ beat fail (933/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:38:05] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:38:08] ✅ beat ok: node_id=FSTDD003 last_seen=1791002289.1496956
+[2026-10-03 12:38:49] ❌ beat fail (671/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:38:49] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:39:02] ❌ beat fail (1039/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:39:02] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:39:07] ❌ beat fail (934/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:39:07] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:39:09] ✅ beat ok: node_id=FSTDD003 last_seen=1791002349.9331448
+[2026-10-03 12:39:50] ❌ beat fail (672/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:39:50] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:40:03] ❌ beat fail (1040/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:40:03] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:40:07] ❌ beat fail (935/30): HTTP 403: {"error": "credential rejected", "reason": "credential_revoked", "fix": "检查 X-FSTDD-Token 是否为有效且未吊销的节点凭据；若遗失请联系管理节点(K)重新签发"}
+[2026-10-03 12:40:07] ⚠️ 连续失败超限 → 继续但标记告警
+[2026-10-03 12:40:10] ✅ beat ok: node_id=FSTDD003 last_seen=1791002410.7020185

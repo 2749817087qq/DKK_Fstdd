@@ -50,7 +50,28 @@
     "FSTDD003-EXP-20260927-ANDLIMIT-1",
     "FSTDD003-EXP-20260927-SCPLEAK-1"
   ],
-  "failures": [],
+  "failures": [
+    {
+      "id": "FSTDD003-EXP-20261002-01",
+      "reason": "HTTP 404: not found",
+      "time": "2026-10-03T12:30:00.503571"
+    },
+    {
+      "id": "FSTDD003-EXP-20261002-02",
+      "reason": "HTTP 404: not found",
+      "time": "2026-10-03T12:30:01.831182"
+    },
+    {
+      "id": "FSTDD003-EXP-20261002-03",
+      "reason": "HTTP 404: not found",
+      "time": "2026-10-03T12:30:03.162860"
+    },
+    {
+      "id": "FSTDD003-EXP-20261002-04",
+      "reason": "HTTP 404: not found",
+      "time": "2026-10-03T12:30:04.530047"
+    }
+  ],
   "audit": [
     {
       "ts": "2026-10-02T13:29:24+08:00",

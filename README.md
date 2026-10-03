@@ -28,6 +28,21 @@
 
 Gate 2 之后可选「全自动长程模式」：一次性预授权，P3 连续自动执行，只在 Gate 3 停下。
 
+### 外部同行验证（2026-Q4 Skills 工程化浪潮）
+
+FSTDD 的设计方向**不是原创**（也不需要是）——2026 年 10 月 GitHub Trending 上连续多周有 4 个大热项目走同一条路：**把领域方法论 + 工程纪律封装成 Agent 可调用的 Skill / 强制流程**，解决"vibe-coding 烂尾"问题。FSTDD 是这个浪潮里的一个实例，覆盖金融领域与跨节点协作场景。
+
+| FSTDD 设计 | 外部同行 | 星数 | Trending | 对应点 |
+|-----------|---------|------|----------|--------|
+| 四阶段 UNDERSTAND→SPEC→BUILD→DELIVER + Gate 强制 | **obra/superpowers** | ⭐294k | #3（91 天连续） | 同构：把 Scrum/Agile 映射到 Agent 长时自治开发 |
+| Gate 1 "先对齐需求再动手" | **mattpocock/skills** | ⭐274k | #6（38 天） | 同构：TypeScript 工程师真实 Agent 工作流，需求对齐→TDD→重构 |
+| `skills/` + 多平台安装体系 | **google/skills** | ⭐20k | #11 新进榜 | 同范式：Google 官方下场做 Agent Skills 仓库，与 Anthropic/mattpocock 形成三大厂军备竞赛 |
+| `fstdd-fin` 金融方法论封装成 Skill | **coreyhaines31/marketingskills** | ⭐52k | #8 新进榜 | 同范式：marketingskills = 营销方法论封装成 Skill；FSTDD = 金融方法论封装成 Skill |
+| 知识图谱自动同步（`kg sync`，开发中） | **colbymchenry/codegraph** | ⭐73k | #13 新进榜 | 同思路：预建本地代码知识图谱 + 源码变更自动 re-index，跨 8 平台 |
+| 跨节点语体压缩（`caveman`，开发中） | **JuliusBrussee/caveman** | ⭐109k | #2 新进榜 | 同目标：跨 Agent 传讯砍 token 65% 不损完成率 |
+
+> 数据来源：[开源 AI 日报 · 2026-10-03](https://mp.weixin.qq.com/s/Z9hblbG57sJ7eRXE3resEQ) — GitHub Trending + 大牛 Star 快照 + 760+ 篇深度报告。
+
 ---
 
 ## 2. 本仓库提供什么

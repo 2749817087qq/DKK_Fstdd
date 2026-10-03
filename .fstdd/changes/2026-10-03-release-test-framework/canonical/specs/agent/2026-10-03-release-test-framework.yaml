@@ -2,8 +2,8 @@
 
 meta:
   task_id: "TODO: 任务标识"
-  change_id: "2026-10-03-release-validation-framework"
-  created: "2026-10-03T04:24:53+00:00"
+  change_id: "2026-10-03-release-test-framework"
+  created: "2026-10-03T04:23:43+00:00"
   task_type: code
   system: "TODO: 目标系统描述"
 
