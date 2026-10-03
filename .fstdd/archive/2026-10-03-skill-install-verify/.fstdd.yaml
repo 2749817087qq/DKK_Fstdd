@@ -1,0 +1,42 @@
+baseline:
+  at: '2026-10-03T02:15:25+00:00'
+  base_git_sha: 15ae6c7a080935f48c79d12120febe0f90cc1768
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-03-skill-install-verify
+complexity_score: null
+current_phase: understand
+design_adjustments:
+  count: 0
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T02:15:25+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 'Gate 3: verify PASS, installed skills 含 upstream 金融变更'
+    status: completed
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T02:15:25+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 'Gate 2: ops change, BUILD 证据已收集'
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T02:15:25+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 'Gate 1: ops change, 实测 verify 6 FAIL -> install 7 OK -> verify
+      6 PASS'
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

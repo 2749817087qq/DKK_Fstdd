@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-03-skill-install-verify: proposals/2026-10-03-skill-install-verify.yaml
+specs:
+  agent:
+    2026-10-03-skill-install-verify: specs/agent/2026-10-03-skill-install-verify.yaml
+  code:
+    2026-10-03-skill-install-verify: specs/code/2026-10-03-skill-install-verify.yaml
+version: '2.9'

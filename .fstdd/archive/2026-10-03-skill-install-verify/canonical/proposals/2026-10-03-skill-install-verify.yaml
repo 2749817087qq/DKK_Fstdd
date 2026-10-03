@@ -1,0 +1,85 @@
+meta:
+  change_id: "2026-10-03-skill-install-verify"
+  title: "首次跑 install_workbuddy_skills.py + verify — 从 6 FAIL 到 6 PASS"
+  created: "2026-10-03T11:00:00+08:00"
+  status: draft
+
+why:
+  problem: |
+    连续 5 个 commit 修改了 skill 文件（understand.md +build.md + SKILL.md），
+    但 .workbuddy-ai/skills 目录根本不存在 — 从来没跑过 install 脚本。
+    verify 第一次跑报 6 FAIL（所有 skill SKILL.md 不存在）。
+    install 脚本配了 LOCAL_SKILLS=["fstdd-fin"] + 7 个 skill 的 source 路径，
+    但没人触发过 mkdir + copy。
+  motivation: |
+    skills 改了但没装 = 白改。install + verify 是 upstream 每次升级后的
+    硬性规程（deliver.md 里的 "⛔ 升级/重装后必做"）。第一次跑通，
+    确认链路正确，作为后续 upstream sync 的基线验证。
+  evidence:
+    observed_at: "2026-10-03T10:55:00+08:00"
+    observed_base_git_sha: "15ae6c7"
+    details: |
+      verify 第一次跑:
+        [FAIL] 6 项未通过: fstdd/fstdd-understand/fstdd-spec/fstdd-build/fstdd-deliver/fstdd-upgrade SKILL.md 不存在
+        target dir: C:\Users\Administrator\.workbuddy-ai\skills -> Test-Path = False
+      install 跑:
+        [OK] fstdd-understand -> .../skills/fstdd-understand/SKILL.md
+        [OK] fstdd-spec -> .../skills/fstdd-spec/SKILL.md
+        [OK] fstdd-build -> .../skills/fstdd-build/SKILL.md
+        [OK] fstdd-deliver -> .../skills/fstdd-deliver/SKILL.md
+        [OK] fstdd-upgrade -> .../skills/fstdd-upgrade/SKILL.md
+        [OK] fstdd-fin -> .../skills/fstdd-fin/SKILL.md
+        [OK] fstdd -> .../skills/fstdd/SKILL.md
+        7/7 OK, exit code 0
+      verify 第二次跑:
+        [PASS] 6 个 skill 全部通过: 安全策略在位、路径适配完好
+        exit code 0
+
+what_changes:
+  - id: C1
+    description: "创建 .workbuddy-ai/skills 目录，首次安装 7 个 FSTDD skill"
+    type: new
+  - id: C2
+    description: "确认 installed skills 包含最新 upstream 变更（understand Step 0.5 + build C4 table）"
+    type: modified
+
+capabilities:
+  new:
+    - name: skill-install-verified
+      description: "install_workbuddy_skills.py + verify_workbuddy_skills.py 全链路跑通，作为后续 upstream sync 基线"
+
+constraints:
+  - "不改 install_workbuddy_skills.py 或 verify_workbuddy_skills.py（两者已正确配置）"
+  - "不清理 .workbuddy/skills 影子副本（WARN 非阻断，留给用户决策）"
+
+stakeholders:
+  - FSTDD003（实施者）
+  - 所有 FSTDD skill 使用者（拿到最新金融增强 skill）
+
+risk_areas:
+  - capability: skill-install-verified
+    risk: "后续 upstream 升级忘了重跑 install → 再次出现 skill/源文件漂移"
+    mitigation: "已写入 deliver.md 硬性规程；每次 upstream sync change 都必须包含 install+verify 步骤"
+
+non_goals:
+  - 不改 install 脚本任何代码
+  - 不清理影子副本
+  - 不创建 upstream sync 自动化脚本（留给后续 change）
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L1
+  reference_changes: ["2026-10-03-upstream-finance-sync"]
+  anchor_implementations: []
+
+success_criteria:
+  - ".workbuddy-ai/skills 目录存在，含 7 个子目录（fstdd + 4 阶段 + upgrade + fstdd-fin）"
+  - "verify_workbuddy_skills.py exit code 0"
+  - "installed fstdd-build SKILL.md 包含 22 行 C4 table（确认 upstream 变更同步）"
+  - "installed fstdd-understand SKILL.md 包含 Step 0.5 金融钩子（确认 upstream 变更同步）"
