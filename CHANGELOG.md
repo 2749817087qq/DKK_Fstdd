@@ -10,6 +10,24 @@
 
 ## [Unreleased]
 
+## [3.3.1] — 2026-10-04
+
+**主题**：**基线清零** —— 把长期常红的 **6 项预存基线 pytest 失败**一次性修绿（修代码/补齐，非 skip、非删除用例），使「全量 0 failed」重新成为可判定的硬门禁。
+**规模**：1 change（`2026-10-04-baseline-failures-zero`，归档 + 根 canonical 并入 + `canon verify` 2/2）；全量 `pytest upstream/tests` 由 `6 failed / 867 passed` → **`0 failed / 873 passed / 54 skipped`**。
+
+### 修复（4 类根因 / 5 个切片）
+- **模板双源对齐**：项目模板 `.fstdd/templates/` 的 finance 段（proposal 7 红线 / spec 10 维 / test-plan 第七章）同步下发到可分发镜像 `upstream/.fstdd/templates/`，`canonical/proposal.yaml`、`canonical/spec.yaml`、`test-plan.md` 三文件**逐字节一致**。修复 `test_tmpl_001` / `test_epr_003`。
+- **裸 except 审计活表刷新**：新建 change 级 `audit/except-points.yaml` 活表（`changes/` 优先于 `archive/`），承接归档 19 点 + 刷新 `guard.py` 5 处行号位移 + 新入册 6 点（`guard.py:535` / `fstdd003_daily_share.py` 65·90·119 / `heartbeat.py:66` / `v2_revocation_test.py:58`）= **25 点**，与实况扫描指纹集合零漂移。修复 `test_aud_002` / `test_grd_001`。
+- **显式 `--publish` 用例 hermetic 化**：`test_tc_cas_008b` 内 monkeypatch `publish_via_scp` 为失败，强制降级到死端口 inbox，验证「显式命令失败 → 返回非零」这一属性本身，不再受运行环境是否具备 scp 目标 SSH 别名影响；`publish()` 生产三档降级逻辑零改动。修复 `test_tc_cas_008b`。
+- **naive 时间戳清零**：8 处值层时间字段补 `+00:00`（仓库既有 UTC 约定）；`tools/heartbeat.py` 与 `tools/fstdd003_daily_share.py` 改 `.astimezone()`（保留本地墙钟 aware，不改变日志读取习惯）；`hub_client.py` / `share_experience.py` / `verify_notices.py` 3 处标识符日期片段入 `category=identifier` 豁免。修复 `test_tsn_007`。
+
+### 质量基线（发布门禁实测）
+- **全量测试**：`0 failed / 873 passed / 54 skipped`（6 项预存基线全部转绿，无新增 skip 掩盖失败）。
+- `tools/check_timestamps.py --repo .`：`0 违规 / 0 条失效豁免 / 0 个扫描失败`（L1 值层 + L2 源层）。
+- `tools/audit_silent_except.py --check`：哨兵通过（审计活表与实况零漂移）。
+- **四个自检脚本全绿**：`verify_rename.py` **8/8**、`verify_eol.py` **7/7**、`verify_skill_standards.py` **7/7**、`verify_workbuddy_skills` PASS。
+- **已知偏离（显式记录，不静默）**：《发布与文档规程》§二 要求「每个版本必须同时更新 CHANGELOG **+ 发 GitHub Release**」。本仓 `origin`（GitHub）**禁推**，本次已按规程更新 CHANGELOG 并推 tag 至 server+local，但 **Release 缺失**，待 GitHub 写权限恢复后补发。
+
 ## [3.3.0] — 2026-10-03
 
 **主题**：**版本归一 + 在办变更收口** —— 把碎片化的版本口径收敛为单一发行版号，并把该收的 change 全部归档交付。
@@ -56,7 +74,7 @@
   share 历史行为漂移（`test_tc_cas_008b`）、时间戳扫描环境项（`test_tsn_007`，
   `.fstdd/fstdd003-ssh-key` 权限）。**已知偏离（显式记录，不静默）**：规程 §三 要求
   「全量测试 0 failed」方可 tag，本版因上述预存基线未清零，tag 与「预存基线」并存，
-  已在此明示；基线修复另立 change。
+  已在此明示；**该欠账已于 [3.3.1] 一次性清零（`0 failed / 873 passed`）。**
 - **部署**：`tools/install_workbuddy_skills.py` 已按 `3.3.0` 重装 7 个 skill 至
   `%USERPROFILE%\.workbuddy-ai\skills`（安装戳版本与仓库一致，`verify_workbuddy_skills` 转绿）。
 - **在建 change（未在本版收口，非「该收」项）**：`changes/` 内仍有 3 个 change——

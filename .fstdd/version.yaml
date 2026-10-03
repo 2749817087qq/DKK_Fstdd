@@ -1,10 +1,27 @@
 # FSTDD 本地版本声明（F 仓 / stdd-repo）
 # 发行版口径：fstdd_version（须 = .fstdd/config.d/project.yaml 的 stdd_version）
 # vendored 上游内核口径：upstream_version（= upstream/ 内核，见 upstream/CHANGELOG.md 与 upstream/pyproject.toml）
-fstdd_version: "3.3.0"
+fstdd_version: "3.3.1"
 upstream_version: "3.1.0"
-released_at: "2026-10-03T23:30:00+08:00"
+released_at: "2026-10-04T01:15:00+08:00"
 changelog: |
+  v3.3.1 — 基线清零版（6 项预存基线 pytest 失败一次性修绿）
+
+  修复（4 类根因 / 5 切片，1 change：2026-10-04-baseline-failures-zero）：
+  - 模板双源对齐：项目模板 finance 段下发镜像，canonical/proposal.yaml、canonical/spec.yaml、
+    test-plan.md 三文件逐字节一致 —— 修 test_tmpl_001 / test_epr_003。
+  - 裸 except 审计活表刷新：新建 change 级 audit/except-points.yaml（changes 优先 archive），
+    承接 19 点 + 刷 guard.py 5 处行号 + 新入册 6 点 = 25 点，与实况零漂移 —— 修 test_aud_002 / test_grd_001。
+  - 显式 --publish 用例 hermetic 化：用例内 monkeypatch publish_via_scp 为失败，验证属性而非环境
+    —— 修 test_tc_cas_008b（生产三档降级逻辑零改动）。
+  - naive 时间戳清零：8 处值层补 +00:00；heartbeat.py / fstdd003_daily_share.py 改 .astimezone()；
+    3 处标识符日期片段入 category=identifier 豁免 —— 修 test_tsn_007。
+
+  质量：全量 pytest upstream/tests 由 6 failed / 867 passed → 0 failed / 873 passed / 54 skipped；
+  check_timestamps 0 违规 / 0 失效豁免 / 0 扫描失败；audit --check 哨兵通过；
+  四自检脚本全绿（rename 8/8、eol 7/7、skill_standards 7/7、workbuddy_skills PASS）。
+  已知偏离：origin 禁推 → GitHub Release 缺失（待写权限恢复补发）。
+
   v3.3.0 — 版本归一版（收口 3 个在办 change + 全仓版本口径归一为单一发行版号）
 
   版本归一（原碎片口径 → 单一发行版 3.3.0）：

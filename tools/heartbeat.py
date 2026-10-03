@@ -57,7 +57,7 @@ LOG_FILE = os.path.join(os.path.dirname(__file__), "_heartbeat.log")
 
 
 def log(msg: str) -> None:
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ts = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S%z")
     line = f"[{ts}] {msg}"
     print(line, flush=True)
     try:

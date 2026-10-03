@@ -191,7 +191,7 @@ def main() -> None:
         else:
             log.setdefault("failures", []).append({
                 "id": f.stem, "reason": str(res),
-                "time": datetime.datetime.now().isoformat()})
+                "time": datetime.datetime.now().astimezone().isoformat()})
             print("  [FAIL] %s: %s" % (f.stem, res))
     save_log(log)
     print("回传完成：成功 %d / 本次待回传 %d" % (ok, len(new)))

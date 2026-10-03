@@ -1,0 +1,293 @@
+meta:
+  title: 全仓裸 except 吞异常点审计表（活表）
+  change: 2026-10-04-baseline-failures-zero
+  refreshed_from: 2026-09-18-detection-silence-fixes
+  observed_at: '2026-10-04T00:20:00+00:00'
+  observed_base_git_sha: e7bfb45755f48387225a8ecb4da0a2dd38ec4603
+  scanner: tools/audit_silent_except.py
+  refreshed_at: '2026-10-04T08:20:00+08:00'
+  refreshed_reason: 2026-10-04 基线清零 —— 承接归档活表 19 点，刷新 guard.py 5 处行号位移
+    （310→317 / 374→381 / 447→454 / 466→473 / 1203→1265；均为既有代码插入导致的位移，指纹未变），
+    另新增 6 处此前未入册的吞异常点（guard.py:535 + tools/fstdd003_daily_share.py 65/90/119 +
+    tools/heartbeat.py:66 + tools/v2_revocation_test.py:58），合计 19+6=25，与实况扫描零漂移。
+  total: 25
+  by_classification:
+    合理容错: 24
+    意外吞错: 1
+  note: 活表：置于 active change 下由本 change 维护；归档表不动（D6 决策）。本 change 只做「表与实况对齐 +
+    新点分类」，不修改任何被扫描源码。零漂移校验以 (file, stmt, handler) 指纹为准（±5 行容差）。
+points:
+- id: EA-002
+  file: upstream/fstdd/cli/commands/baseline.py
+  line: 315
+  stmt: return []
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: true
+  justification: ssh 时钟探测失败返回空读数 → 三态「无法测量」，fail-safe 设计正确（TC-CAL-009 语义）
+- id: EA-004
+  file: upstream/fstdd/cli/commands/canon.py
+  line: 156
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 读取 change task_type 决定 spec 目录：失败按默认 code 处理，信息读取容错
+- id: EA-030
+  file: upstream/fstdd/cli/commands/guard.py
+  line: 317
+  refreshed_reason: 2026-10-04 行号 310→317（既有代码插入位移，指纹 pass/except Exception 未变）
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: _read_hook_input 兜底路径：stdin JSON 不可解析（大 payload 截断或未转义的
+    Windows 路径）时吞掉解析异常，改由正则提取 file_path；仍失败则维持原 fail-open 语义
+    返回 (None, None)。V3.0.6 agent 运行时目录豁免的配套改动。
+- id: EA-010
+  file: upstream/fstdd/cli/commands/guard.py
+  line: 381
+  refreshed_reason: 2026-10-04 行号 374→381（既有代码插入位移，指纹 return False/except Exception 未变）
+  stmt: return False
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 【ERR-001 勘误后新判】_is_workflow_artifact 语义为 True=放行白名单，False=非白名单→Guard
+    拒绝编辑；异常 return False ⇒ fail-closed，方向安全。原判（fail-open）方向说反，见归档 test-report ERR-001
+- id: EA-031
+  file: upstream/fstdd/cli/commands/guard.py
+  line: 454
+  refreshed_reason: 2026-10-04 行号 447→454（既有代码插入位移，指纹 return []/except Exception 未变）
+  stmt: return []
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: _load_excluded_dirs 加载配置失败返回空列表，exclude_dirs 无兜底等价于「不排除任何目录」，
+    语义安全（fail-open 到最严格模式），V3.0.8 新加的智能模式配置读取配套改动
+- id: EA-032
+  file: upstream/fstdd/cli/commands/guard.py
+  line: 473
+  refreshed_reason: 2026-10-04 行号 466→473（既有代码插入位移，指纹 return False/except Exception 未变）
+  stmt: return False
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: _is_under_excluded 路径判定异常 return False ⇒ 未命中排除区，Guard 继续后续检查（fail-closed
+    方向安全），V3.0.8 exclude_dirs 边界匹配的兜底容错
+- id: EA-034
+  file: upstream/fstdd/cli/commands/guard.py
+  line: 535
+  stmt: return False
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 【2026-10-04 新增入册】工作流产物判定中 Path.resolve() 抛异常（路径非法/权限）→ return False
+    ⇒ 视为非白名单产物，Guard 拒绝编辑（fail-closed 方向安全）。同 EA-010 家族，新增后首次入册。
+- id: EA-033
+  file: upstream/fstdd/cli/commands/guard.py
+  line: 1265
+  refreshed_reason: 2026-10-04 行号 1203→1265（既有代码插入位移，指纹 return False/except Exception 未变）
+  stmt: return False
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: _disable_guard_hook_in 解析 settings 失败返回 False ⇒ 视作未命中不修改，
+    dry-run 与非 dry-run 语义一致（fail-closed 不写盘），对齐 V3.0.8 guard --disable-hook
+    的预览/实际执行二分语义
+- id: EA-013
+  file: upstream/fstdd/cli/commands/index.py
+  line: 66
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 索引读取 change 状态失败 → phase 显示 unknown，信息展示容错
+- id: EA-014
+  file: upstream/fstdd/cli/commands/init.py
+  line: 200
+  stmt: continue
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 多平台守卫安装探测：单平台异常 continue 试下一平台，设计即探测式
+- id: EA-015
+  file: upstream/fstdd/cli/commands/init.py
+  line: 385
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 读取 IDE settings 探测守卫钩子：探测失败仅少一条状态提示
+- id: EA-016
+  file: upstream/fstdd/cli/commands/knowledge.py
+  line: 153
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 远端知识图谱拉取失败 → 降级本地/空图，多源降级设计
+- id: EA-017
+  file: upstream/fstdd/cli/commands/knowledge.py
+  line: 171
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 本地克隆图读取失败 → 空图兜底，同降级族
+- id: EA-018
+  file: upstream/fstdd/cli/commands/phase.py
+  line: 39
+  stmt: return None
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: batch 助手 import 失败 → 无打开批次，探测式调用
+- id: EA-019
+  file: upstream/fstdd/cli/commands/status.py
+  line: 150
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 意外吞错
+  severity: p2
+  response: 升级 change
+  detection_path: true
+  justification: 守卫激活状态展示（Claude 源）：配置解析失败静默 pass → 落到 OpenCode/Codex
+    源继续探测，最终以「未检测到」呈现。后果是 .claude/settings.local.json 损坏时
+    fstdd status 把「已安装但配置损坏」显示成「未激活」，诱导重装 —— 真静默失败，但属
+    展示假阴性而非覆盖缺口，故 severity p2。注：本条原理由（僵尸 TypeError 被吞）已勘误，
+    见归档 errata EA-019。
+- id: EA-020
+  file: upstream/fstdd/cli/commands/status.py
+  line: 160
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 守卫激活状态展示（Claude 源）：解析失败落到 OpenCode/Codex 源继续探测，有兜底
+- id: EA-023
+  file: upstream/fstdd/cli/commands/work.py
+  line: 35
+  stmt: return None
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 同 phase.py：_find_open_batch 探测容错
+- id: EA-024
+  file: upstream/fstdd/cli/utils.py
+  line: 106
+  stmt: return None
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 版本探测读取失败 → None 版本，信息展示容错
+- id: EA-025
+  file: upstream/fstdd/cli/utils.py
+  line: 119
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: version 文件 YAML 解析失败 → 继续其他探测路径
+- id: EA-026
+  file: tools/check_skill_metadata.py
+  line: 124
+  stmt: return False
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 无 yaml 库时跳过该校验：校验器显式降级并注释说明，可接受
+- id: EA-035
+  file: tools/fstdd003_daily_share.py
+  line: 65
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 【2026-10-04 新增入册】load_log 读取本地回传日志 JSON 解析失败 → 返回空日志
+    （submitted / failures 均为空列表）。日志损坏只导致「重复回传一次」，不阻断回传主流程；损坏内容
+    不会被当作有效记录消费，方向安全。
+- id: EA-036
+  file: tools/fstdd003_daily_share.py
+  line: 90
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 【2026-10-04 新增入册】load_credential 读取凭证文件失败 → 返回 None，调用方
+    _post_once 走白名单（不附带 X-FSTDD-Token）。失败方向是「降级为无凭证」，与文件不存在时的
+    灰度 baseline 行为一致，属显式降级而非静默吞错。
+- id: EA-037
+  file: tools/fstdd003_daily_share.py
+  line: 119
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 【2026-10-04 新增入册】HTTPError 错误体 JSON 解析失败 → detail 保持空串，仍以
+    带 HTTP 状态码的失败原因返回并计入 failures 日志。错误码不丢，仅错误详情降级为空。
+- id: EA-038
+  file: tools/heartbeat.py
+  line: 66
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 【2026-10-04 新增入册】log() 写本地日志文件失败（磁盘/权限）→ 吞掉异常，
+    心跳主流程与 stdout 输出不受影响。日志是旁路观测，写失败不应阻断心跳。
+- id: EA-039
+  file: tools/v2_revocation_test.py
+  line: 58
+  stmt: pass
+  handler: 'except Exception:'
+  classification: 合理容错
+  severity: null
+  response: 放行
+  detection_path: false
+  justification: 【2026-10-04 新增入册】HTTPError 错误体解码失败 → text 保持空串，仍返回
+    (e.code, "") 供调用方判定。错误码不丢，仅错误体文本降级为空。

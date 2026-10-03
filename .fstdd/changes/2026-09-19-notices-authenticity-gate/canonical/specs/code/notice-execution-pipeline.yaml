@@ -7,7 +7,7 @@
 meta:
   capability: "notice-execution-pipeline"
   change_id: "2026-09-19-notices-authenticity-gate"
-  created: "2026-09-19T01:30:00"
+  created: "2026-09-19T01:30:00+00:00"
   confidence: high
 
 requirements:

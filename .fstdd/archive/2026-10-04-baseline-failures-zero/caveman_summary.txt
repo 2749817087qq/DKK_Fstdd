@@ -1,0 +1,10 @@
+# 清零 6 项预存基线 pytest …
+
+<!-- source_hash: 0cb9…
+<!-- generated_: 2026-…
+<!-- canonical: canoni…yaml -->
+
+## What Changes
+
+- 模板双源对齐：把 `.fstdd/templates/cano…yaml`、`canonical/spec.yaml`、
+`test-plan.md` 三

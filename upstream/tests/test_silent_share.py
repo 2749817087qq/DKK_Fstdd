@@ -398,6 +398,13 @@ class TestZeroBlocking:
         monkeypatch.setenv("FSTDD_INBOX_URL",
                            "http://%s:%d" % (LOOPBACK, _dead_port()))
         monkeypatch.setattr(SHARE, "INBOX_RETRY", 0)
+        # 隔离 scp 优先通道：publish() 的优先级 1 是 scp 到 SSH 别名 fstdd-hub，
+        # 在具备该 SSH 别名/凭证的环境（如本仓所在的 F 侧）会真跑成功并返回 True，
+        # 使「显式 --publish 失败→非零」这条断言失去隔离性（假绿/假红取决于环境）。
+        # 这里把 scp 通道固定为失败，强制其降级到 inbox 死端口，从而真正验证
+        # 「显式路径失败仍返回非零」这一属性本身。
+        monkeypatch.setattr(SHARE, "publish_via_scp",
+                            lambda *a, **k: (False, "isolated-for-test"))
         # 显式路径会用 OUT_DIR.relative_to(REPO_ROOT) 打印相对路径，
         # 把 REPO_ROOT 一并搬到 tmp，避免测试环境与真实仓库布局不一致
         monkeypatch.setattr(SHARE, "REPO_ROOT", silent_env.tmp)

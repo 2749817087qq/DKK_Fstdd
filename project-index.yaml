@@ -1,6 +1,10 @@
 capabilities:
   artifact-templates:
     specs: specs/artifact-templates/spec.md
+  audit-errata:
+    specs: specs/audit-errata/spec.md
+  baseline-failures-zero:
+    specs: specs/baseline-failures-zero/spec.md
   build-phase-finance-test-dimensions:
     specs: specs/build-phase-finance-test-dimensions/spec.md
   build-quality-verification:
@@ -23,6 +27,8 @@ capabilities:
     specs: specs/constitution/spec.md
   contract-auto-share:
     specs: specs/contract-auto-share/spec.md
+  detection-voice:
+    specs: specs/detection-voice/spec.md
   distributed-task-coordination:
     specs: specs/distributed-task-coordination/spec.md
   eol-governance:
@@ -37,6 +43,8 @@ capabilities:
     specs: specs/finance-quality-failure-modes/spec.md
   fstdd-fin-skill-registration:
     specs: specs/fstdd-fin-skill-registration/spec.md
+  guard-hook-input-robustness:
+    specs: specs/guard-hook-input-robustness/spec.md
   guard-scope-default-binding:
     specs: specs/guard-scope-default-binding/spec.md
   inbox-review-sync:
@@ -51,8 +59,12 @@ capabilities:
     specs: specs/multi-platform-adapters/spec.md
   mutation-testing:
     specs: specs/mutation-testing/spec.md
+  scan-coverage:
+    specs: specs/scan-coverage/spec.md
   server-bare-repo-mirror:
     specs: specs/server-bare-repo-mirror/spec.md
+  share-outbound-sanitize:
+    specs: specs/share-outbound-sanitize/spec.md
   silent-except-guard:
     specs: specs/silent-except-guard/spec.md
   skill-engineering-standards:
@@ -68,26 +80,14 @@ capabilities:
   独立命名空间:
     specs: specs/独立命名空间/spec.md
 changes:
-  2026-09-18-detection-silence-fixes:
-    phase: understand
-    status: in_progress
   2026-09-18-inbox-api-only-write:
     phase: understand
     status: in_progress
   2026-09-19-notices-authenticity-gate:
     phase: build
     status: in_progress
-  2026-09-21-guard-hook-input-robustness:
-    phase: understand
-    status: in_progress
-  2026-09-23-poll-daemon-499-fix:
-    phase: deliver
-    status: completed
   2026-09-25-guard-phase-path-scope:
     phase: build
-    status: in_progress
-  2026-10-03-release-test-framework:
-    phase: understand
     status: in_progress
   _batch:
     phase: unknown
@@ -95,5 +95,5 @@ changes:
 module_index: {}
 project:
   language: unknown
-  name: FSTDD003
+  name: stdd-repo
   stdd_version: '2.7'

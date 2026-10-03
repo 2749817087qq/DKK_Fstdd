@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-04-baseline-failures-zero: proposals/2026-10-04-baseline-failures-zero.yaml
+specs:
+  agent:
+    2026-10-04-baseline-failures-zero: specs/agent/2026-10-04-baseline-failures-zero.yaml
+  code:
+    2026-10-04-baseline-failures-zero: specs/code/2026-10-04-baseline-failures-zero.yaml
+version: '2.9'

@@ -7,19 +7,20 @@ design_adjustments:
 mode: thorough
 phases:
   build:
-    entered_at: '2026-10-01T18:00:00'
+    entered_at: '2026-10-01T18:00:00+00:00'
     status: in_progress
   deliver:
     status: pending
   spec:
     confirmed_actor: ai
-    confirmed_at: '2026-10-01T18:00:00'
+    confirmed_at: '2026-10-01T18:00:00+00:00'
     confirmed_by: dialog
-    confirmed_evidence: D哥 2026-10-01 明确指令「推进 notices-authenticity-gate 变更从 spec 进入 build」
+    confirmed_evidence: D哥 2026-10-01 明确指令「推进 notices-authenticity-gate 变更从 spec 进入
+      build」
     status: completed
   understand:
     confirmed_actor: ai
-    confirmed_at: '2026-09-19T01:15:06'
+    confirmed_at: '2026-09-19T01:15:06+00:00'
     confirmed_by: dialog
     confirmed_evidence: D哥 2026-09-19 01:14 回复 Please continue. 确认提案范围/8条成功标准/thorough
       模式，批准进入 Phase 2
@@ -33,3 +34,9 @@ traceability:
   tc_cases: 21
   test_functions: 21
 version: '3.0'
+baseline:
+  at: '2026-09-19T01:15:06+00:00'
+  base_git_sha: e7bfb45755f48387225a8ecb4da0a2dd38ec4603
+  node_id: DESKTOP-TBJSBQ5
+  clock_source: system
+  established_by: backfill

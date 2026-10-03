@@ -1,0 +1,119 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-04-baseline-failures-zero
+# capability: baseline-failures-zero（REQ-001..004 / SC-001..008）
+# 说明：本 change 为纯基线治理，4 组修复一一对应 4 条需求。
+
+meta:
+  capability: "baseline-failures-zero"
+  change_id: "2026-10-04-baseline-failures-zero"
+  created: "2026-10-03T16:16:43+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    capability: "baseline-failures-zero"
+    description: |
+      项目模板（`.fstdd/templates/**`）与可分发镜像（`upstream/.fstdd/templates/**`）
+      SHALL 逐文件字节一致，文件集合亦须相等。
+
+    scenarios:
+      - id: "SC-001"
+        confidence: high
+        evidence: "proposal.yaml what_changes C1；test_tmpl_001 / test_epr_003"
+        given: "`.fstdd/templates/` 已含 finance 段，`upstream/.fstdd/templates/` 尚未同步"
+        when: "逐文件比较两处 templates 目录的字节内容"
+        then: "SHALL 使 canonical/proposal.yaml、canonical/spec.yaml、test-plan.md 三文件字节相等"
+        and:
+          - "两处目录的文件集合 SHALL 相等（无「仅源」「仅镜像」差异）"
+          - "SHALL 不修改模板的语义内容，仅补齐镜像侧缺失段落"
+
+  - id: "REQ-002"
+    capability: "baseline-failures-zero"
+    description: |
+      裸 except 吞异常审计活表 SHALL 与扫描器实况零漂移：指纹集合
+      (file, stmt, handler) 完全相等，同行号偏差 ≤ ±5。
+
+    scenarios:
+      - id: "SC-002"
+        confidence: high
+        evidence: "proposal.yaml what_changes C2；test_aud_002"
+        given: "实况扫描得 25 点；归档表 19 点且 guard.py 5 处行号位移超容差"
+        when: "以活表路径执行指纹集合比较与行号容差校验"
+        then: "SHALL 使活表 points 与实况扫描的指纹多重集合完全相等"
+        and:
+          - "每条表记录的行号与同指纹实况点偏差 SHALL ≤ 5"
+          - "guard.py 5 处行号 SHALL 刷新为 317/381/454/473/1265"
+
+      - id: "SC-003"
+        confidence: high
+        evidence: "proposal.yaml what_changes C2；test_aud_003/004/005"
+        given: "活表共 25 点，含 1 条 意外吞错（EA-019）"
+        when: "校验分类合法性、理由覆盖率与严重度/响应一致性"
+        then: "SHALL 使每点 classification ∈ {合理容错, 意外吞错, 收窄建议} 且 justification 非空"
+        and:
+          - "合理容错点 SHALL response=放行；意外吞错点 SHALL severity∈{p1,p2} 且 response≠放行"
+          - "SHALL 保留至少 1 条「意外吞错 + detection_path=true」"
+          - "SHALL 不改动任何被扫描源码的 except 行为"
+
+  - id: "REQ-003"
+    capability: "baseline-failures-zero"
+    description: |
+      显式 `--publish` 失败语义的测试 SHALL 自隔离（hermetic），不依赖运行环境是否
+      具备 scp 目标的 SSH 别名/凭证。
+
+    scenarios:
+      - id: "SC-004"
+        confidence: high
+        evidence: "proposal.yaml what_changes C3；test_tc_cas_008b"
+        given: "publish() 的优先级 1 为 scp 通道，在具备 fstdd-hub 别名的环境可成功"
+        when: "在用例内 monkeypatch publish_via_scp 为失败并令 inbox 指向死端口后调用 main()"
+        then: "SHALL 使 main() 返回 1（显式命令失败→非零）"
+        and:
+          - "隔离 SHALL 只作用于测试，不改变 publish() 的生产三档降级逻辑"
+          - "静默路径（silent_share）零阻塞语义 SHALL 不受影响"
+
+  - id: "REQ-004"
+    capability: "baseline-failures-zero"
+    description: |
+      全仓 naive 时间戳 SHALL 清零：L1 值层无「含时刻却无时区」的值，L2 源层无未豁免的
+      无参 naive 调用，且豁免清单每条可在源码定位。
+
+    scenarios:
+      - id: "SC-005"
+        confidence: high
+        evidence: "proposal.yaml what_changes C4；test_tsn_007"
+        given: "notices-authenticity-gate 的 8 处时间值缺时区后缀"
+        when: "执行 `tools/check_timestamps.py --repo .` 全仓扫描"
+        then: "SHALL 使 naive 计数为 0"
+        and:
+          - "扫描 SHALL 为只读（前后文件哈希不变）"
+          - "扫描范围 SHALL 显式列出且含 changes / canonical / templates"
+
+      - id: "SC-006"
+        confidence: high
+        evidence: "proposal.yaml what_changes C4；test_tsn_005/006"
+        given: "新增 3 条 category=identifier 豁免（hub_client / share_experience / verify_notices）"
+        when: "执行豁免清单自检 find_stale_exemptions"
+        then: "SHALL 使失效豁免数为 0（每条豁免均可定位）"
+        and:
+          - "每条豁免 SHALL 附非空理由"
+          - "豁免类别 SHALL 覆盖 pure_date/identifier/year_extract/comparison 四类"
+
+      - id: "SC-007"
+        confidence: high
+        evidence: "proposal.yaml what_changes C4"
+        given: "tools/heartbeat.py 与 tools/fstdd003_daily_share.py 产出的时间戳原为 naive"
+        when: "扫描这两个文件的 L2 源层"
+        then: "SHALL 使其代码行不再被判为 naive 产出（含 timezone 感知标记）"
+        and:
+          - "改动 SHALL 保留原墙钟显示语义（本地时区 aware），不改变日志读取习惯"
+
+      - id: "SC-008"
+        confidence: high
+        evidence: "proposal.yaml success_criteria；发布规程 §三"
+        given: "4 组修复全部落地"
+        when: "执行全量 pytest 与四个自检脚本"
+        then: "SHALL 得到 pytest 0 failed 与四个自检脚本全绿"
+        and:
+          - "基线失败数 SHALL 由 6 降为 0"
+          - "SHALL 不产生新的 skip 以掩盖失败"

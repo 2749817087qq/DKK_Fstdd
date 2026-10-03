@@ -1,0 +1,145 @@
+# 2026-10-04-baseline-failures-zero.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `fstdd canon generate` 生成。
+
+meta:
+  change_id: "2026-10-04-baseline-failures-zero"
+  title: "清零 6 项预存基线 pytest 失败：模板双源 / 审计表漂移 / 显式 publish 非零 / naive 时间戳"
+  created: "2026-10-03T16:16:43+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    发布规程《release-and-docs.md》§三 要求「全量测试 0 failed」方可打 tag，但本仓
+    基线长期带 6 项 pytest 失败，分属 4 类根因（模板双源不一致 / 吞异常审计表与实况
+    漂移 / 显式 --publish 失败退出码测试非 hermetic / naive 时间戳未清零）。后果有二：
+    (1) 3.3.0 发布时检查清单只能在 CHANGELOG 里带「6 项预存基线偏离」发布，「缺件不得
+    tag」的纪律被软化；(2) 6 项常红构成固定噪声，真实回归被淹没。必须一次性把基线清零，
+    使「0 failed」重新成为可判定的硬门禁。
+  evidence:
+    observed_at: "2026-10-04T00:20:00+00:00"
+    observed_base_git_sha: "e7bfb45755f48387225a8ecb4da0a2dd38ec4603"
+    details: |
+      在 HEAD=e7bfb45、工作树干净的前提下执行
+      `python -m pytest upstream/tests -q` → `6 failed, 867 passed, 54 skipped`。
+      6 项失败与根因（逐条已实测定位）：
+      1) test_constitution_ops.py::test_tmpl_001_dual_source_templates_identical
+         与 2) test_evidence_ops.py::test_epr_003_templates_consistent_with_examples：
+         `.fstdd/templates/` 已含 finance 段，`upstream/.fstdd/templates/` 未同步，
+         三文件（canonical/proposal.yaml、canonical/spec.yaml、test-plan.md）字节不等。
+      3) test_except_audit.py::test_aud_002_table_matches_live_scan
+         与 4) test_guard_silent_except.py::test_grd_001_check_passes_on_current_repo：
+         生效审计表回退到归档表（19 点），而实况扫描 25 点；guard.py 5 处行号位移超
+         ±5 容差（310→317 / 374→381 / 447→454 / 466→473 / 1203→1265），另有 6 点未入册。
+      5) test_silent_share.py::TestZeroBlocking::test_tc_cas_008b_explicit_publish_still_nonzero：
+         该用例只隔离 inbox 死端口，未隔离 scp 优先通道；在具备 SSH 别名 fstdd-hub 的
+         环境（本机 F 侧）scp 真跑成功 → main() 返回 0，断言 `== 1` 失败。属测试非 hermetic。
+      6) test_timestamp_ops.py::test_tsn_007_full_scan_zero_naive_and_readonly：
+         full_scan 报 13 个 naive：L1 值 8 处（notices-authenticity-gate 的 .fstdd.yaml 3 +
+         canonical proposal/spec ×4 + proposal.md 头部 1）、L2 源 3 处（heartbeat.py /
+         fstdd003_daily_share.py 产出的真时间戳 2 + 标识符日期片段 3 未豁免）。
+
+what_changes:
+  - id: C1
+    description: |
+      模板双源对齐：把 `.fstdd/templates/canonical/proposal.yaml`、`canonical/spec.yaml`、
+      `test-plan.md` 三文件同步到 `upstream/.fstdd/templates/` 同相对路径，使两处模板
+      逐文件字节一致（finance 段随之下发到可分发镜像）。纯缺失补齐，不改模板语义。
+    type: modified
+  - id: C2
+    description: |
+      吞异常审计活表刷新：在 `.fstdd/changes/2026-10-04-baseline-failures-zero/audit/
+      except-points.yaml` 新建活表（changes 优先于 archive），承接归档表 19 点并刷新
+      guard.py 5 处行号位移（指纹不变），另将此前未入册的 6 处吞异常点分类入册
+      （guard.py:535 + tools/fstdd003_daily_share.py 65/90/119 + tools/heartbeat.py:66 +
+      tools/v2_revocation_test.py:58），合计 25 点，与实况扫描零漂移。
+    type: modified
+  - id: C3
+    description: |
+      显式 --publish 退出码用例 hermetic 化：在 test_tc_cas_008b 中把 scp 优先通道
+      （publish_via_scp）显式 monkeypatch 为失败，强制降级到 inbox 死端口，从而真正
+      验证「显式命令失败 → 返回非零」这一属性本身，不再受运行环境是否具备该 SSH 别名影响。
+    type: modified
+  - id: C4
+    description: |
+      naive 时间戳清零：L1 值层为 notices-authenticity-gate 的 8 处时间字段补 `+00:00`
+      时区后缀（仓库既有 UTC 约定）；L2 源层把 tools/heartbeat.py 与
+      tools/fstdd003_daily_share.py 产出的真时间戳改为 aware（.astimezone()，保留本地墙钟）；
+      并为 tools/hub_client.py / tools/share_experience.py / tools/verify_notices.py 的
+      3 处标识符日期片段补 EXEMPTIONS 豁免（category=identifier）。
+    type: modified
+
+capabilities:
+  new: []
+  modified:
+    - name: dual-source-templates
+      description: |
+        项目模板（.fstdd/templates）与可分发镜像（upstream/.fstdd/templates）逐文件
+        字节一致；新增模板段落（如 finance）必须同步下发，否则分发出去的是残次模板。
+    - name: except-points-audit-table
+      description: |
+        裸 except 吞异常审计活表与扫描器实况零漂移（指纹集合相等 + 行号 ±5 容差），
+        随代码位移刷新行号、随新增吞异常点分类入册。
+    - name: timestamp-naive-zero
+      description: |
+        全仓扫描（L1 值层 + L2 源层）naive 时间戳计数为 0，且豁免清单每条均可定位。
+
+success_criteria:
+  - "`python -m pytest upstream/tests -q` 结果为 0 failed（基线 6 项全部转绿，非 skip）。"
+  - "`python tools/check_timestamps.py --repo .` 输出 0 违规 / 0 条失效豁免 / 0 个扫描失败。"
+  - "`python tools/audit_silent_except.py --check` 哨兵通过（表与实况零漂移）。"
+  - "`test_tmpl_001_dual_source_templates_identical` 与 `test_epr_003_...` 通过：两处模板逐字节一致。"
+  - "`test_tc_cas_008b_explicit_publish_still_nonzero` 在隔离 scp 通道后仍通过（属性非环境依赖）。"
+  - "四个自检脚本（verify_rename / verify_eol / verify_skill_standards / verify_workbuddy_skills）全绿。"
+  - "本次修复不修改任何被扫描源码的吞异常行为，审计表与代码指纹集合保持相等。"
+
+constraints:
+  - 不改被扫描源码的 except 语义（只治理表与实况的对齐），避免为过测试而删点。
+  - 不改 `.fstdd/archive/**` 归档表（活表置于 active change 下，归档表不动）。
+  - naive 值层补时区按仓库既有 UTC 约定（`+00:00`），不引入本地偏移造成口径分裂。
+  - 显式 --publish 的失败语义（失败→非零、静默路径→零阻塞）不得被改动，只修测试隔离性。
+  - 不 push GitHub（origin）；tag 仅推 server + local 双端。
+
+risk_areas:
+  - capability: except-points-audit-table
+    risk: |
+      若把「行号位移」误判为「新增吞异常点」，会重复计数导致表与实况指纹集合不等（TC-AUD-002 红）。
+    mitigation: |
+      逐点核对指纹 (file, stmt, handler) 后再刷新行号；新点仅限实况扫描中确无对应表项的 6 处。
+  - capability: timestamp-naive-zero
+    risk: |
+      把标识符日期片段误当时间字段修复，会改变文件名/ID 形态；反之豁免过宽会掩盖真 naive 产出。
+    mitigation: |
+      仅对「源码行含 timezone 标记」的 2 处真时间戳做 aware 改造；3 处标识符逐条附理由入豁免清单，
+      且由 TC-TSN-006 保证每条豁免可在源码定位。
+
+non_goals:
+  - 不新增/修改任何面向用户的 CLI 能力（纯基线治理，semver=PATCH）。
+  - 不清理归档目录、不重写历史 tag。
+  - 不处理 3.3.0 CHANGELOG 中的 GitHub Release 缺失项（另立流程）。
+
+stakeholders:
+  - FSTDD 开发总工（D哥）—— 本变更的裁定与确认人
+  - K/S 侧协助 agent —— 提供 3.3.0 发布基线实测口径
+  - FSTDD003 节点 —— notices-authenticity-gate 变更维护方（其时间字段由本变更补时区）
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L2
+  reference_changes:
+    - "2026-09-18-detection-silence-fixes：吞异常审计表机制与活表/归档表分离(D6)的来源；
+      本变更承接其归档表 19 点为活表基线"
+    - "2026-09-17-time-baseline：naive 时间戳清零的 L1/L2 双轨检测器与豁免清单(TC-TSN-005/006)来源"
+    - "2026-09-15-example-templates（EXP-20260915-B2）：模板双源一致性要求的历史来源"
+  anchor_implementations: []
+
+success_metrics:
+  - "基线失败数：6 → 0（全量 pytest 0 failed）"
+  - "审计表点数：归档 19 → 活表 25（与实况扫描指纹集合相等）"
+  - "naive 时间戳：13 → 0；失效豁免：0"

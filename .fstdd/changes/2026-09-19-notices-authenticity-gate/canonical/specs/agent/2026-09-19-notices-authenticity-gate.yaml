@@ -8,7 +8,7 @@
 meta:
   task_id: "notices-authenticity-gate"
   change_id: "2026-09-19-notices-authenticity-gate"
-  created: "2026-09-19T01:30:00"
+  created: "2026-09-19T01:30:00+00:00"
   task_type: code
   system: |
     FSTDD003 节点协作通知处理链路（tools/ 域）。新增 tools/verify_notices.py

@@ -1,0 +1,35 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+# change: 2026-10-04-baseline-failures-zero
+# coding 任务：CP 检查点对应 spec.yaml 的 Scenario，assertions 对应 THEN。
+# 对应行为规格：specs/code/2026-10-04-baseline-failures-zero.yaml（REQ-001..004 / SC-001..008）
+
+meta:
+  task_id: "baseline-failures-zero"
+  change_id: "2026-10-04-baseline-failures-zero"
+  created: "2026-10-03T16:16:43+00:00"
+  task_type: code
+  system: |
+    本仓（stdd-repo）的 FSTDD 基线治理面：项目模板双源、裸 except 审计活表、
+    显式 publish 退出码测试、全仓 naive 时间戳检测器。验证手段为实测命令退代码与
+    结构化断言，不以「阅读代码」代替执行。
+
+preconditions:
+  - "HEAD 与观测基线一致（e7bfb45），工作树除本变更外干净"
+  - "解释器为 F 侧 default env python（3.13.14，含 PyYAML）"
+
+steps:
+  - action: "同步三处模板到 upstream 镜像并逐文件比较字节"
+    verify: "pytest test_tmpl_001 / test_epr_003 通过；两处目录文件集合与字节均相等"
+  - action: "新建审计活表并刷新 guard.py 行号、入册 6 新点"
+    verify: "pytest test_except_audit / test_guard_silent_except 通过；audit --check 哨兵通过"
+  - action: "在显式 publish 用例内隔离 scp 通道"
+    verify: "pytest test_tc_cas_008b_explicit_publish_still_nonzero 通过且不依赖环境"
+  - action: "补时区后缀 / 改 aware / 补豁免清单"
+    verify: "check_timestamps 报 0 违规 0 失效豁免；pytest test_timestamp_ops 通过"
+  - action: "全量回归与四自检脚本"
+    verify: "pytest upstream/tests -q 0 failed；verify_rename/verify_eol/verify_skill_standards/verify_workbuddy_skills 全绿"
+
+expected_outcomes:
+  - "6 项预存基线失败全部转绿（非 skip、非删除用例）"
+  - "审计活表与实况扫描零漂移；naive 时间戳计数 0"
+  - "显式 --publish 失败仍返回非零，且用例在任意环境下结论一致"

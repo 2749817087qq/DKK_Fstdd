@@ -1,0 +1,64 @@
+baseline:
+  at: '2026-10-03T16:30:51+00:00'
+  base_git_sha: e7bfb45755f48387225a8ecb4da0a2dd38ec4603
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-04-baseline-failures-zero
+complexity_score: 4
+current_phase: deliver
+design_adjustments:
+  count: 0
+last_modified: '2026-10-03T16:45:07+00:00'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T16:45:01+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 开发总工自确认：全量 873 passed/0 failed，check_timestamps 与 audit --check
+      双绿，test-report 已出，进入 DELIVER
+    slices_completed:
+      S1:
+        new_tests: 0
+        tc_coverage: 1/1
+        verified_at: '2026-10-04T00:45:00+00:00'
+      S2:
+        new_tests: 0
+        tc_coverage: 2/2
+        verified_at: '2026-10-04T00:45:00+00:00'
+      S3:
+        new_tests: 0
+        tc_coverage: 1/1
+        verified_at: '2026-10-04T00:45:00+00:00'
+      S4:
+        new_tests: 0
+        tc_coverage: 3/3
+        verified_at: '2026-10-04T00:45:00+00:00'
+      S5:
+        new_tests: 0
+        tc_coverage: 1/1
+        verified_at: '2026-10-04T00:50:00+00:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T16:31:02+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 开发总工自确认：基线治理 change 的 4 组设计/规格已就绪，进入 BUILD
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T16:30:51+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 另立一个 change 一次性清零 6 项预存基线 pytest 失败
+    status: completed
+score_confidence: preliminary
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 8
+  tc_cases: 8
+  test_functions: 11
+version: '3.0'

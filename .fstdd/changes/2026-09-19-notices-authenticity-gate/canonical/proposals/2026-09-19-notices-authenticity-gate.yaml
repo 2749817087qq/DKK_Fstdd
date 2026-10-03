@@ -4,7 +4,7 @@
 meta:
   change_id: "2026-09-19-notices-authenticity-gate"
   title: "协作通知真伪校验闸门：阻断未签名收-*.md 触发的凭证落盘与配置改动"
-  created: "2026-09-19T00:59:30.225166"
+  created: "2026-09-19T00:59:30.225166+00:00"
   status: draft
   version: "2.9"
 

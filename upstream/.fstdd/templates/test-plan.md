@@ -67,3 +67,21 @@
 
 - `observed_at` 是**信息采集时刻**，不是文档生成时刻（generated_at 与此无关）。
 - 缺 `observed_at` 的证据时效判为「无法判定」（undetermined），**不等同未过期**。
+
+## 七、金融 10 维测试覆盖（optional: FINANCIAL_PROJECT=YES 时填充）
+
+> 由 understand.md Step 0.5 判定。非金融项目跳过此章节。
+> BUILD Phase B2.5 强制覆盖，缺失任一维度 SHALL NOT 进入切片完成。
+
+| 维度 | TC 编号 | 测试要点 | 状态 |
+|------|--------|---------|------|
+| 幂等 (Idempotency) | TC-FIN-01 | 重复请求/重传/重试 — 不得产生副作用 | ☐ |
+| 对账 (Reconciliation) | TC-FIN-02 | 内外账本不一致处理流程 | ☐ |
+| 精度 (Precision) | TC-FIN-03 | Decimal/边界值/跨币种 — 浮点零容忍 | ☐ |
+| 时区 (Timezone) | TC-FIN-04 | 跨时区/DST/UTC 统一 | ☐ |
+| 降级 (Degradation) | TC-FIN-05 | 显式失败标记 + 告警 + 拒绝继续 | ☐ |
+| 一致性 (Consistency) | TC-FIN-06 | Saga/TCC 补偿/状态机无死锁 | ☐ |
+| 安全 (Security) | TC-FIN-07 | 越权/SQLi/接口签名/敏感数据泄露 | ☐ |
+| 审计 (Audit) | TC-FIN-08 | 不可变日志 + 谁/何时/做了什么/前后值 | ☐ |
+| 合规 (Compliance) | TC-FIN-09 | KYC 阻断/限额超限/二次认证 | ☐ |
+| 恢复 (Recovery) | TC-FIN-10 | 宕机恢复/数据回放/最终一致验证 | ☐ |

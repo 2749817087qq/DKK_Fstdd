@@ -52,6 +52,12 @@ EXEMPTIONS: list[dict] = [
      "category": "identifier", "reason": "归档目录名时刻片段，标识符非时间字段"},
     {"file": "fstdd/cli/commands/batch.py", "pattern": "now.strftime('%m%d')",
      "category": "identifier", "reason": "batch_id 日期片段（周批次标识符）"},
+    {"file": "tools/hub_client.py", "pattern": "strftime('%Y%m%d')",
+     "category": "identifier", "reason": "parent_change_id 的日期片段（任务标识符），非时间字段"},
+    {"file": "tools/share_experience.py", "pattern": 'strftime("%Y%m%d-%H%M%S")',
+     "category": "identifier", "reason": "scp 批次子目录名 <node>-experiences-YYYYMMDD-HHMMSS，标识符非时间字段"},
+    {"file": "tools/verify_notices.py", "pattern": "strftime('%H%M%S')",
+     "category": "identifier", "reason": "隔离区同名覆盖的时间戳后缀，标识符非时间字段"},
     # ── year_extract：仅取年份/周 ──
     {"file": "fstdd/cli/commands/experience.py", "pattern": "datetime.now().year",
      "category": "year_extract", "reason": "EXP-ID 年份片段，非时间戳产出"},
