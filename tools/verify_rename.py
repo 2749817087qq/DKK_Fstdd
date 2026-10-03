@@ -47,12 +47,23 @@ EXCLUDE_DIRS = {"upstream", ".git", ".fstdd", ".stdd", "__pycache__",
                 # 生成的 skill 快照 —— 非交付物；见 change 2026-09-19-notices-authenticity-gate
                 # 的设计约束「禁 git add -A，会连带暂存 _scratch/stdd-dev/」）。
                 # 与 .workbuddy-ai 同属「运行时/草稿目录」，不应参与改名残留扫描。
-                "_scratch"}
+                "_scratch",
+                # 节点 FSTDD003 的**技能归档快照**（带 FSTDD003- 前缀，含改名前的旧
+                # 「STDD Phase N」命名快照）。属外部节点的历史留存件，与 experiences/、
+                # inbox/ 同族（外部导入/留存），非 F 侧交付物，不应参与改名残留扫描。
+                "skills-archive"}
 
-# 预期保留旧名的文件（工具自身，不是被改的产物）
+# 预期保留旧名的文件（工具自身 / 恒久历史快照，不是被改的产物）
 EXCLUDE_FILES = {
     "rename_to_fstdd.py",   # 替换引擎：其规则表就是由旧名构成的
     "verify_rename.py",     # 断言脚本：内含检测用字面量
+    # 带日期的历史快照报告：逐字引用了**改名前**的 CLI 输出/命令名与「旧 stdd」字样。
+    # 改写即篡改历史记录（与「上游 STDD」同理，属必须保留的事实）；且报告为冻结件，
+    # 不再生新内容，按文件整体豁免比放宽短语白名单更精确（避免掩盖他处的真实残留）。
+    "CI_DIFF_2026-09-23_工作台.md",
+    "RUN_ISSUES_2026-09-17_reits-writer.md",
+    "FSTDD003-weekly-report-2026-W38.md",
+    "FSTDD003-weekly-report-2026-W39.md",
 }
 # 允许出现的旧名例外。
 #
