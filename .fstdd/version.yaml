@@ -1,0 +1,42 @@
+# FSTDD003 本地版本声明
+# upstream: stdd-repo@3.1.0
+# FSTDD003: 基于 upstream + 金融领域融合
+fstdd_version: "3.1.1"
+upstream_version: "3.1.0"
+released_at: "2026-10-03T11:30:00+08:00"
+changelog: |
+  v3.1.1 — FSTDD × 金融融合版
+
+  核心变更（6 change / 4 commit）：
+  - finance-integration: fstdd-fin SKILL.md 回归主目录 + understand Step 0.5 金融判定 + build B2.5 10 维测试
+  - finance-failure-modes: build C4 失败模式清单 14 → 22 行（+8 金融特有模式）
+  - upstream-finance-sync: upstream 内核同步，所有平台安装自动带金融增强
+  - cli-template-finance-fields: CLI canonical 模板加 finance domain/redlines/threads/test_dimensions 可选字段
+  - kg-finance-four-threads: knowledge-graph 注册 4 条金融主线 + 8 类金融失败模式（nodes 170→182, version 1.0→1.1）
+  - skill-install-verify: install + verify 全链路跑通，7 skills 安装到 .workbuddy-ai/skills
+
+  金融知识覆盖完整度：
+  7 红线 → 7 条 Gate 1 强制检查
+  10 维测试 → 10 维 BUILD 强制覆盖
+  8 类失败模式 → 8 条 C4 强制勾选 + KG severity=high
+  4 条主线 → 4 条 KG domain_thread 节点
+
+breaking_changes: []
+install:
+  multi_platform: true
+  platforms_supported: [workbuddy, claude-code, trae]
+  install_script: "tools/install_workbuddy_skills.py --platform <name>"
+  update_cmd_per_platform:
+    workbuddy:
+      - "git pull origin master --tags"
+      - "python tools/install_workbuddy_skills.py --platform workbuddy"
+    "claude-code":
+      - "git pull origin master --tags"
+      - "python tools/install_workbuddy_skills.py --platform claude-code"
+    trae:
+      - "git pull origin master --tags"
+      - "python tools/install_workbuddy_skills.py --platform trae"
+notes: |
+  upstream 未变，本 release 是 FSTDD003 项目侧 enhancement。
+  platforms.yaml 声明 3 平台（workbuddy/claude-code/trae），install 脚本统一入口。
+  所有平台 agents 按自身平台跑 --platform <name> 即可安装金融增强。
