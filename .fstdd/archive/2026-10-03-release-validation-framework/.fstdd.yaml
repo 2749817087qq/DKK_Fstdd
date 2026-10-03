@@ -6,7 +6,7 @@ baseline:
   node_id: DESKTOP-TBJSBQ5
 change_id: 2026-10-03-release-validation-framework
 complexity_score: null
-current_phase: understand
+current_phase: deliver
 design_adjustments:
   count: 0
 mode: standard
@@ -19,7 +19,10 @@ phases:
       L2/L3/L5/L6 设计 SKIP). 8 个 RED→GREEN 修复全部落地.'
     status: completed
   deliver:
-    status: pending
+    completed_at: '2026-10-03T23:40:00+08:00'
+    confirmed_by: operator-delegation
+    confirmed_evidence: "由开发总工 2026-10-03 指令「把该收的 change 全部收完」授权收口；本 change 归档时 DELIVER 未闭环，本次据目录内既有 .fstdd.yaml 记录的 Gate 3 证据如实回填 test-report.md 并关闭 deliver。"
+    status: completed
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-10-03T04:31:30+00:00'

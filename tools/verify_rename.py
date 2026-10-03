@@ -42,7 +42,12 @@ CLI = REPO / "upstream" / "bin" / "fstdd"
 EXCLUDE_DIRS = {"upstream", ".git", ".fstdd", ".stdd", "__pycache__",
                 "backups", ".claude", "experiences", "inbox",
                 # agent 运行时目录（gitignored，内含临时脚本，非交付物）
-                ".workbuddy-ai"}
+                ".workbuddy-ai",
+                # 草稿/临时产物区（内含 25MB 基线 tar.gz、内嵌 git 仓库、raw pytest 日志、
+                # 生成的 skill 快照 —— 非交付物；见 change 2026-09-19-notices-authenticity-gate
+                # 的设计约束「禁 git add -A，会连带暂存 _scratch/stdd-dev/」）。
+                # 与 .workbuddy-ai 同属「运行时/草稿目录」，不应参与改名残留扫描。
+                "_scratch"}
 
 # 预期保留旧名的文件（工具自身，不是被改的产物）
 EXCLUDE_FILES = {
@@ -312,7 +317,7 @@ def tc_008() -> tuple[bool, str]:
     「文件名旧、内容新」的不一致完全逃过检测。
     """
     old = "st" + "dd"
-    skip_dirs = {"upstream", ".git", "backups", "__pycache__", "archive"}
+    skip_dirs = {"upstream", ".git", "backups", "__pycache__", "archive", "_scratch"}
     hits = []
     for p in REPO.rglob("*"):
         if not p.is_file():
