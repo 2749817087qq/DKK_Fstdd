@@ -43,6 +43,8 @@ capabilities:
     specs: specs/finance-quality-failure-modes/spec.md
   fstdd-fin-skill-registration:
     specs: specs/fstdd-fin-skill-registration/spec.md
+  github-mirror-secret-remediation:
+    specs: specs/github-mirror-secret-remediation/spec.md
   guard-hook-input-robustness:
     specs: specs/guard-hook-input-robustness/spec.md
   guard-scope-default-binding:
@@ -59,6 +61,8 @@ capabilities:
     specs: specs/multi-platform-adapters/spec.md
   mutation-testing:
     specs: specs/mutation-testing/spec.md
+  phase-gate-path-scope:
+    specs: specs/phase-gate-path-scope/spec.md
   scan-coverage:
     specs: specs/scan-coverage/spec.md
   server-bare-repo-mirror:
@@ -84,9 +88,6 @@ changes:
     phase: understand
     status: in_progress
   2026-09-19-notices-authenticity-gate:
-    phase: build
-    status: in_progress
-  2026-09-25-guard-phase-path-scope:
     phase: build
     status: in_progress
   _batch:

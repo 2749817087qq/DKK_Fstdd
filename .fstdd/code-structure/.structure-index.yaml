@@ -1,7 +1,7 @@
 meta:
-  last_updated: '2026-10-03T16:47:48+00:00'
+  last_updated: '2026-10-03T18:48:04+00:00'
   modules: {}
-  total_changes: 12
+  total_changes: 14
 modules:
   caveman_summary.txt:
     changes:
@@ -10,3 +10,10 @@ modules:
     - 2026-10-03-share-publish-sanitize
     - 2026-09-21-guard-hook-input-robustness
     - 2026-10-04-baseline-failures-zero
+    - 2026-10-04-github-mirror-secret-remediation
+  upstream/fstdd/cli/commands/guard.py:
+    changes:
+    - 2026-09-25-guard-phase-path-scope
+  upstream/tests/commands/test_guard.py:
+    changes:
+    - 2026-09-25-guard-phase-path-scope

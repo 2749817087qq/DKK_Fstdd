@@ -61,7 +61,7 @@ phases:
       链接）」；并长期授权自行裁定推进
     status: completed
 score_confidence: preliminary
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 8
