@@ -1,0 +1,36 @@
+meta:
+  capability: fstdd-fin-skill-registration
+  change_id: "2026-10-03-finance-integration"
+  created: "2026-10-03T02:00:00+08:00"
+  confidence: high
+
+requirements:
+  - id: REQ-001
+    description: "fstdd-fin SKILL.md 从 _scratch 游离位置回归主 skills/ 目录"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "observed_at=2026-10-03T01:30:00+08:00 Test-Path skills/ → False"
+        given: "_scratch/stdd-dev/stdd-repo/skills/fstdd-fin/SKILL.md 存在且 sha256=已知"
+        when: "执行资产回归：复制到 skills/fstdd-fin/SKILL.md"
+        then: "skills/fstdd-fin/SKILL.md SHALL 存在且与源文件 sha256 完全匹配"
+        and: ["源文件在 _scratch/ 保留（作为备份）"]
+  - id: REQ-002
+    description: "install_workbuddy_skills.py 注册 fstdd-fin 的 source 路径和 install 输出"
+    scenarios:
+      - id: SC-002
+        confidence: high
+        evidence: "observed_at=2026-10-03T01:30:00+08:00 Select-String install_workbuddy_skills.py 'fin' → 0 hits"
+        given: "install_workbuddy_skills.py 含 source_paths 列表和 install 输出循环"
+        when: "在 source_paths 列表追加 fstdd-fin 条目"
+        then: "install_workbuddy_skills.py SHALL 包含 fstdd-fin 的 source 路径声明"
+        and: ["fstdd-fin 与 fstdd/understand/spec/build/deliver/upgrade 并列，同级安装"]
+  - id: REQ-003
+    description: "platforms.yaml 注册 fstdd-fin 为第 7 个 skill"
+    scenarios:
+      - id: SC-003
+        confidence: high
+        evidence: "observed_at=2026-10-03T01:30:00+08:00 platforms.yaml 零 fin 条目"
+        given: "platforms.yaml 当前注册 6 个 skill"
+        when: "追加 fstdd-fin skill 条目"
+        then: "platforms.yaml SHALL 包含 fstdd-fin 条目，name=skills/fstdd-fin, path=skills/fstdd-fin"

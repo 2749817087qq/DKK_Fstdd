@@ -1,0 +1,26 @@
+meta:
+  capability: build-phase-finance-test-dimensions
+  change_id: "2026-10-03-finance-integration"
+  created: "2026-10-03T02:00:00+08:00"
+  confidence: high
+
+requirements:
+  - id: REQ-020
+    description: "build.md 注入 10 维金融特有测试维度"
+    scenarios:
+      - id: SC-020
+        confidence: high
+        evidence: "fstdd-fin SKILL.md 10 维：幂等/对账/精度/时区/降级/一致性/安全/审计/合规/恢复"
+        given: "UNDERSTAND 阶段判定 FINANCIAL_PROJECT=YES"
+        when: "进入 BUILD 阶段"
+        then: "build.md SHALL 提示 Agent 覆盖 10 维金融测试"
+        and: ["10 维 SHALL 逐项对应具体测试思路（如精度=Decimal 测试、幂等=重复请求无副作用）"]
+  - id: REQ-021
+    description: "非金融项目 BUILD 阶段不触发金融测试"
+    scenarios:
+      - id: SC-021
+        confidence: high
+        evidence: "回归约束"
+        given: "FINANCIAL_PROJECT=NO"
+        when: "进入 BUILD 阶段"
+        then: "build.md 的金融条件段落 SHALL 不要求 10 维金融测试"

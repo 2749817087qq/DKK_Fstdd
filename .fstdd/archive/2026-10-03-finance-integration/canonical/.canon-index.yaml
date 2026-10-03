@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-03-finance-integration: proposals/2026-10-03-finance-integration.yaml
+specs:
+  agent:
+    2026-10-03-finance-integration: specs/agent/2026-10-03-finance-integration.yaml
+  code:
+    2026-10-03-finance-integration: specs/code/2026-10-03-finance-integration.yaml
+version: '2.9'

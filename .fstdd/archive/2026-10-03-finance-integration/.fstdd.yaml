@@ -1,0 +1,44 @@
+baseline:
+  at: '2026-10-03T01:52:45+00:00'
+  base_git_sha: 0a053d0615ecf9d58c7d38e2cdfe5e2a9b6a1043
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-03-finance-integration
+complexity_score: null
+current_phase: understand
+design_adjustments:
+  count: 0
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T01:58:18+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: Gate 3 确认：3 文件 / 5 PASS / 3 设计偏离（spec 过度设计正确收缩）/ fstdd validate
+      PASS。进 Phase 4。
+    status: completed
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T01:55:59+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 用户确认 Phase 2：4 capability / 10 scenario / 10 TC，置信度全 high，锚定
+      L2<L4 但属配置层可接受。选择长程模式进 Phase 3。
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T01:52:45+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 用户确认：proposal.yaml + proposal.md 已就绪，范围是 fstdd-fin 资产回归 +
+      核心四阶段融合，复杂度 12/17 thorough 模式。确认进入 Phase 2。
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

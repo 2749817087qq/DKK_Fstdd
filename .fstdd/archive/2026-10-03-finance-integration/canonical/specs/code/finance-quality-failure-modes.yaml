@@ -1,0 +1,26 @@
+meta:
+  capability: finance-quality-failure-modes
+  change_id: "2026-10-03-finance-integration"
+  created: "2026-10-03T02:00:00+08:00"
+  confidence: high
+
+requirements:
+  - id: REQ-030
+    description: "quality.yaml 失败模式库追加 8 类金融特有模式"
+    scenarios:
+      - id: SC-030
+        confidence: high
+        evidence: "observed_at=2026-10-03T01:30:00+08:00 quality.yaml 14 类零金融条目"
+        given: "quality.yaml 已有 14 类通用失败模式"
+        when: "追加金融特有失败模式"
+        then: "quality.yaml SHALL 包含 8 类金融特有模式：重复扣款/账实不符/静默降级/精度丢失/审计缺口/状态机漏洞/额度穿透/合规遗漏"
+        and: ["每类 SHALL 含 failure_pattern + detection_trigger + fix_template 三字段，与现有 14 类 schema 一致"]
+  - id: REQ-031
+    description: "追加不破坏现有 14 类模式"
+    scenarios:
+      - id: SC-031
+        confidence: high
+        evidence: "向后兼容约束"
+        given: "quality.yaml 原有 14 类"
+        when: "追加 8 类"
+        then: "原有 14 类条目 SHALL 一字不改"

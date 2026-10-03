@@ -1,0 +1,112 @@
+meta:
+  change_id: "2026-10-03-finance-integration"
+  title: "FSTDD × 金融：修复 fstdd-fin 资产 + 核心四阶段融合"
+  created: "2026-10-03T01:45:00+08:00"
+  status: draft
+
+why:
+  problem: |
+    FSTDD 宣称集成了金融领域增强层（fstdd-fin），但自审计发现融合度仅 0.6/5：
+    (1) fstdd-fin SKILL.md 源文件丢失，主目录 skills/ 不存在，只在 _scratch/ 有孤立副本；
+    (2) install_workbuddy_skills.py 零 fin 条目，安装链路不接 fstdd-fin；
+    (3) 核心四阶段 skill（understand/spec/build/deliver）零金融钩子 — 金融红线、
+        金融特有测试维度、金融失败模式均未注入通用流程；
+    (4) config.d/quality.yaml 失败模式库 14 类里零金融条目；
+    (5) platforms.yaml 未注册 fstdd-fin；
+    结果：写了一本好手册，但没人读、没人分发、流程里没插。金融项目用通用 skill 走流程 = 裸奔。
+  motivation: |
+    FSTDD 名字含 Finance（FinSpecDD），金融融合是产品身份的一部分。当前半吊子状态
+    既对外误导（README 宣称有 fstdd-fin，实际没有），对内危险（金融项目缺乏红线守护）。
+    一次性修完 P0（资产回归 + 安装链路）+ P1（核心流程融合 + 失败模式注入），
+    让金融红线从孤立 SKILL.md 进入四阶段强制检查。
+  evidence:
+    observed_at: "2026-10-03T01:30:00+08:00"
+    observed_base_git_sha: "80ddd9c7a351"
+    details: |
+      审计实测：
+      - Test-Path skills/ → False（主目录 skills/ 不存在）
+      - Select-String install_workbuddy_skills.py "fin" → 0 hits
+      - 核心四阶段 skill Select-String "finance|金融|Decimal|幂等|KYC|AML|precision|silent-degradation" → 零业务条目
+      - quality.yaml 失败模式 14 类里零金融条目
+      - fstdd-fin SKILL.md 仅存在于 _scratch/stdd-dev/ 和 _scratch/upstream-cli-sync/
+
+what_changes:
+  - id: C1
+    description: "恢复 fstdd-fin SKILL.md 到 skills/fstdd-fin/SKILL.md（从 _scratch 副本拷）"
+    type: new
+  - id: C2
+    description: "install_workbuddy_skills.py 注册 fstdd-fin source 路径 + install 输出"
+    type: modified
+  - id: C3
+    description: ".fstdd/skills/understand.md 前置钩子：金融系统判定 → 7 红线强制检查（缺失 = Gate 1 不通过）"
+    type: modified
+  - id: C4
+    description: ".fstdd/skills/build.md 注入金融特有测试维度提示（幂等/精度/对账/降级等 10 维）"
+    type: modified
+  - id: C5
+    description: ".fstdd/config.d/quality.yaml 失败模式库新增 8 类金融特有模式"
+    type: modified
+  - id: C6
+    description: ".fstdd/platforms.yaml 注册 fstdd-fin 为第 7 个 skill"
+    type: modified
+
+capabilities:
+  new:
+    - name: fstdd-fin-skill-registration
+      description: "fstdd-fin 从孤立 scratch 回归主 skills/ 目录，安装链路打通，与通用层同级安装"
+    - name: finance-quality-failure-modes
+      description: "8 类金融特有失败模式（重复扣款/账实不符/静默降级/精度丢失/审计缺口/状态机漏洞/额度穿透/合规遗漏）进入 quality.yaml"
+  modified:
+    - name: understand-phase-finance-redlines
+      description: "UNDERSTAND 阶段前置金融红线判定钩子，7 红线缺失 = Gate 1 不通过"
+    - name: build-phase-finance-test-dimensions
+      description: "BUILD 阶段注入 10 维金融特有测试维度强制覆盖"
+
+constraints:
+  - 不修改 upstream/ 内核（纯 skill + 配置层变更）
+  - 保持非金融项目的四阶段流程不变（金融钩子只在判定为金融系统时触发）
+  - fstdd-fin SKILL.md 内容本身不做改写（质量已由审计确认）
+
+stakeholders:
+  - FSTDD003（实施者）
+  - FinFSTDD 使用者（金融系统研发者，受益方）
+
+risk_areas:
+  - capability: understand-phase-finance-redlines
+    risk: "金融判定规则写得太宽 → 非金融项目被误触发"
+    mitigation: "判定规则限定关键词：支付/银行/交易/撮合/风控/KYC/AML/DeFi/结算/对账/资金/金额/Decimal/幂等/账户"
+  - capability: build-phase-finance-test-dimensions
+    risk: "强制 10 维测试让非金融项目 BUILD 阶段膨胀"
+    mitigation: "同样仅在金融判定通过时注入，非金融项目 BUILD 阶段无变化"
+  - capability: fstdd-fin-skill-registration
+    risk: "安装脚本路径写错导致 fstdd-fin 装不到位"
+    mitigation: "安装后验证：workbuddy_skills.py 装完后检查 ~/.workbuddy-ai/skills/fstdd-fin/SKILL.md 存在"
+
+non_goals:
+  - 不重写 fstdd-fin SKILL.md 内容（266 行质量合格）
+  - 不改 CLI 生成模板（proposal/design/test-plan 模板无金融字段）— 留给 P2
+  - 不改 knowledge-graph（不注册金融四条主线）— 留给 P2
+  - 不处理第三方市场 skill fintech-engineer（仅做可选补充，非本仓资产）
+  - 不改 NOTCIE.md / LICENSE（合规声明已完备）
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: true
+    financial: true
+    cross_system: false
+
+anchoring:
+  level: L2
+  reference_changes: []
+  anchor_implementations: []
+
+success_criteria:
+  - "skills/fstdd-fin/SKILL.md 存在且内容与 _scratch 副本一致（sha256 匹配）"
+  - "install_workbuddy_skills.py 包含 fstdd-fin source + install 路径"
+  - ".fstdd/skills/understand.md 含金融系统判定 + 7 红线强制检查段落"
+  - ".fstdd/skills/build.md 含 10 维金融测试维度段落"
+  - ".fstdd/config.d/quality.yaml 失败模式库新增 8 类金融条目"
+  - ".fstdd/platforms.yaml 注册 fstdd-fin 为第 7 个 skill"
+  - "非金融项目四阶段 skill 行为不变（回归验证：用通用项目触发 understand，不出现金融钩子）"
+  - "fstdd validate 通过（skill 文件格式、platforms.yaml 注册、quality.yaml 结构）"
