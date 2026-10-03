@@ -32,14 +32,17 @@
 
 | 命令 | 期望 | 用途 |
 |---|---|---|
-| `git grep -nIE -e 'gh[pousr]_[A-Za-z0-9]{20,}' -e 'github_pat_[A-Za-z0-9_]{20,}' -e 'sk-[A-Za-z0-9]{20,}' -e 'AKIA[0-9A-Z]{16}' -e '-----BEGIN [A-Z ]*PRIVATE KEY-----'` | 退出码 1（无命中） | 全仓 tracked 零命中（TC-CRED-003 的独立复核） |
-| `git ls-files | grep _fstdd003_key_new` | 无输出 | 私钥已脱离跟踪（TC-CRED-008） |
-| `python -m pytest upstream/tests -q` | `0 failed` | 发布门禁 §三 第一项 |
-| `python tools/verify_rename.py` / `verify_eol.py` / `verify_skill_standards.py` / `verify_workbuddy_skills.py` | 全绿 | 发布门禁 §三 第二项 |
+| `git grep -nIE -e 'gh[pousr]_[A-Za-z0-9]{20,}' -e 'github_pat_[A-Za-z0-9_]{20,}' -e 'sk-[A-Za-z0-9]{20,}' -e 'AKIA[0-9A-Z]{16}' -e '-----BEGIN [A-Z ]*PRIVATE KEY-----'` | 退出码 1（无命中） | 全仓 tracked 零命中（TC 表第 3 行的独立复核） |
+| `git ls-files | grep _fstdd003_key_new` | 无输出 | 私钥已脱离跟踪（TC 表第 8 行） |
+| `python -m pytest upstream/tests -q` | `0 failed` | 发布门禁 §三 第一项（TC 表第 9 行） |
+| `python tools/verify_rename.py` / `verify_eol.py` / `verify_skill_standards.py` / `verify_workbuddy_skills.py` | 全绿 | 发布门禁 §三 第二项（TC 表第 9 行） |
 
 ## 四、退出准则
 
-- 必备：TC-CRED-001..009 全绿；全量 pytest `0 failed`；四自检脚本全绿；工作树提交后干净。
+- 必备：TC 表 9 项全绿；全量 pytest `0 failed`；四自检脚本全绿；工作树提交后干净。
 - 禁止：以 skip 掩盖失败；以白名单豁免 fixture；删除用例。
+- 说明：TC 表第 2 / 6 / 9 行的「实现载体」为集合命令与既有文件（非新增测试函数），
+  其 TC-ID 不出现在源码中，故 `fstdd ci check-failures` 的实现覆盖检查
+  （只扫仓库根 `tests/`）会报缺失 —— 属工具级用例的固有形态，非覆盖缺口。
 - 不覆盖（显式声明）：GitHub unblock、PAT/私钥轮换、镜像收敛与 Release 补发 —— 人工步骤，
   由 `docs/DISTRIBUTED_ACCESS.md` §五 手册承载，结果在变更说明与 CHANGELOG 中记录为偏离/待办。

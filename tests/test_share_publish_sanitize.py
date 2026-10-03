@@ -36,7 +36,7 @@ se = _load_se()
 BAD_NAME = "BAD-EXP-001.md"
 OK_NAME = "OK-EXP-002.md"
 # 凭证形态字面量不入库（由 upstream/tests/test_no_plaintext_credentials.py 门禁保障）：
-# 运行值与原先逐字节相同，但源码不再含连续凭证形态。
+# 运行值与去形态化前逐字节相同，但源码不再含连续凭证形态（TC-CRED-006）。
 BAD_TOKEN = "ghp_" + "ABCDEFGHIJKLMNOPQRSTUVWX"
 
 SAMPLES = {

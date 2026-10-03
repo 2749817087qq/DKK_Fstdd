@@ -80,7 +80,7 @@ def _git_grep(pattern: str) -> list[str]:
 # 门禁自身的可判定性：正/负样本（防「恒真」假门禁）
 # ===========================================================================
 def test_scan_detects_injected_pat():
-    """SC-004 正样本：运行时拼接出的 PAT 形态须被报出，且带行号。"""
+    """TC-CRED-004 / SC-004 正样本：运行时拼接出的 PAT 形态须被报出，且带行号。"""
     text = "prefix\ntoken=" + "ghp_" + "A" * 30 + "\n"
     hits = scan_text_for_credentials(text)
     assert hits, "注入的 PAT 形态未被检出 —— 门禁形同虚设"
@@ -89,16 +89,25 @@ def test_scan_detects_injected_pat():
 
 
 def test_scan_ignores_regex_literals():
-    """SC-004 负样本：仅含正则字面量（前缀后紧跟 `[`）不得误报。"""
+    """TC-CRED-005 / SC-004 负样本：仅含正则字面量（前缀后紧跟 `[`）不得误报。"""
     text = r"pattern: ghp_[A-Za-z0-9]{20,}" + "\n"
     assert scan_text_for_credentials(text) == []
 
 
 def test_scan_detects_private_key_header():
-    """SC-004 补充：PEM 私钥头须被检出。"""
+    """TC-CRED-004 / SC-004 补充：PEM 私钥头须被检出。"""
     text = "x\n" + "-----BEGIN " + "RSA PRIVATE KEY-----" + "\n"
     hits = scan_text_for_credentials(text)
     assert hits and hits[0][1] == "pem_private_key_header"
+
+
+def test_gate_is_collected_by_release_command():
+    """TC-CRED-002 / SC-002：门禁须落在发布门禁的收集目录 `upstream/tests/`。
+
+    `python -m pytest upstream/tests -q` 只收集该目录；门禁若落在别处，
+    发布门禁不会执行它 —— 这是「门禁随发布门禁自动执行」的机制本身。
+    """
+    assert Path(__file__).resolve().parent == REPO_ROOT / "upstream" / "tests"
 
 
 # ===========================================================================

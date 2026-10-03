@@ -400,7 +400,11 @@ class TestAEndpointProtocol:
         assert server.files() == []
 
     def test_a17_private_key_content_rejected(self, server):
-        """内容含 PEM 私钥头 → 422，且不落盘。"""
+        """内容含 PEM 私钥头 → 422，且不落盘。
+
+        私钥头以运行时拼接构造（TC-CRED-006）：运行值与字面量写法逐字节相同，
+        源码不含连续凭证形态 —— 由 test_no_plaintext_credentials 门禁保障。
+        """
         r = server.post_single("EXP-SEC2",
                                "-----BEGIN " + "RSA PRIVATE KEY-----" + "\nMIIEabc\n")
         assert r.status == 422
