@@ -3,9 +3,14 @@ name: fstdd-deliver
 description: |
   FSTDD Phase 4 交付：归档 change、合并 specs 与项目索引、更新文档、Git commit/tag，完成变更闭环。
   触发词：fstdd-deliver、交付、归档 change、合并 specs、发布变更、FSTDD Phase 4
+version: "3.0.5"
+stdd_version: "3.0.5"
+license: MIT（上游 STDD leonai42/stdd，版权归杭州大道一以科技有限公司；
+  本文件为其在 WorkBuddy 平台的适配版本，含本地安全策略与路径适配）
+source: https://github.com/leonai42/stdd
 ---
 
-> 本 skill 来自开源项目 FSTDD (Spec+Test Driven Development) V3.0.5，源仓库 https://github.com/leonai42/stdd ，已适配 Trae 全局 skill 目录。
+> 本 skill 来自开源项目 FSTDD (Spec+Test Driven Development) V3.0.5，源仓库 https://github.com/leonai42/stdd ，已适配 WorkBuddy 全局 skill 目录。
 > 静态资源与共享片段根目录：`D:/FSTDD003/upstream`
 > CLI 入口：`"C:\Users\Administrator\.workbuddy-ai\binaries\python\envs\default\Scripts\python.exe" "D:/FSTDD003/upstream/bin/fstdd"`（该解释器已具备 PyYAML / Jinja2 / requests 依赖）
 > 首次在某项目使用 FSTDD 前，需先在该项目根目录执行初始化：`"C:\Users\Administrator\.workbuddy-ai\binaries\python\envs\default\Scripts\python.exe" "D:/FSTDD003/upstream/bin/fstdd" init` —— 生成 `.fstdd/` 骨架、模板与项目状态文件。

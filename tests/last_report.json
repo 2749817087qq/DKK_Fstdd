@@ -1,12 +1,12 @@
 {
   "node_id": "FSTDD003",
-  "platform": "trae",
-  "timestamp": "2026-10-03T04:37:27.206828+00:00",
+  "platform": "workbuddy",
+  "timestamp": "2026-10-03T09:53:59.646332+00:00",
   "overall": "PASS",
   "classes": {
     "L0": {
       "status": "PASS",
-      "duration_ms": 7118,
+      "duration_ms": 7725,
       "tcs": [
         {
           "id": "test_L0_01_git_pull_to_tag",
@@ -37,72 +37,92 @@
     },
     "L1": {
       "status": "PASS",
-      "duration_ms": 651,
+      "duration_ms": 608,
       "tcs": [
         {
           "id": "test_L1_01_skill_fin_exists",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_01_skill_fin_exists PASSED        [  7%]"
+          "evidence": "tests/test_finance_content.py::test_L1_01_skill_fin_exists PASSED        [  5%]"
         },
         {
           "id": "test_L1_02_skill_fin_has_7_redlines",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_02_skill_fin_has_7_redlines PASSED [ 15%]"
+          "evidence": "tests/test_finance_content.py::test_L1_02_skill_fin_has_7_redlines PASSED [ 11%]"
         },
         {
           "id": "test_L1_03_understand_local_has_step_05",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_03_understand_local_has_step_05 PASSED [ 23%]"
+          "evidence": "tests/test_finance_content.py::test_L1_03_understand_local_has_step_05 PASSED [ 17%]"
         },
         {
           "id": "test_L1_04_understand_upstream_synced",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_04_understand_upstream_synced PASSED [ 30%]"
+          "evidence": "tests/test_finance_content.py::test_L1_04_understand_upstream_synced PASSED [ 23%]"
         },
         {
-          "id": "test_L1_05_build_local_c4_exact_22",
+          "id": "test_L1_05_build_local_c4_exact_23",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_05_build_local_c4_exact_22 PASSED [ 38%]"
+          "evidence": "tests/test_finance_content.py::test_L1_05_build_local_c4_exact_23 PASSED [ 29%]"
         },
         {
-          "id": "test_L1_06_build_upstream_c4_exact_22",
+          "id": "test_L1_06_build_upstream_c4_exact_23",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_06_build_upstream_c4_exact_22 PASSED [ 46%]"
+          "evidence": "tests/test_finance_content.py::test_L1_06_build_upstream_c4_exact_23 PASSED [ 35%]"
         },
         {
           "id": "test_L1_07_b25_has_10_test_dims",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_07_b25_has_10_test_dims PASSED    [ 53%]"
+          "evidence": "tests/test_finance_content.py::test_L1_07_b25_has_10_test_dims PASSED    [ 41%]"
         },
         {
           "id": "test_L1_08_has_8_finance_failure_modes",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_08_has_8_finance_failure_modes PASSED [ 61%]"
+          "evidence": "tests/test_finance_content.py::test_L1_08_has_8_finance_failure_modes PASSED [ 47%]"
         },
         {
           "id": "test_L1_09_kg_fin_nodes_ge_12",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_09_kg_fin_nodes_ge_12 PASSED      [ 69%]"
+          "evidence": "tests/test_finance_content.py::test_L1_09_kg_fin_nodes_ge_12 PASSED      [ 52%]"
         },
         {
           "id": "test_L1_10_kg_version_ge_1_1",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_10_kg_version_ge_1_1 PASSED       [ 76%]"
+          "evidence": "tests/test_finance_content.py::test_L1_10_kg_version_ge_1_1 PASSED       [ 58%]"
         },
         {
           "id": "test_L1_11_version_yaml_fstdd_version",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_11_version_yaml_fstdd_version PASSED [ 84%]"
+          "evidence": "tests/test_finance_content.py::test_L1_11_version_yaml_fstdd_version PASSED [ 64%]"
         },
         {
           "id": "test_L1_12_version_yaml_feedback_mandatory",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_12_version_yaml_feedback_mandatory PASSED [ 92%]"
+          "evidence": "tests/test_finance_content.py::test_L1_12_version_yaml_feedback_mandatory PASSED [ 70%]"
         },
         {
           "id": "test_L1_13_version_yaml_3_platform_install",
           "status": "PASS",
-          "evidence": "tests/test_finance_content.py::test_L1_13_version_yaml_3_platform_install PASSED [100%]"
+          "evidence": "tests/test_finance_content.py::test_L1_13_version_yaml_3_platform_install PASSED [ 76%]"
+        },
+        {
+          "id": "test_L1_14_c4_row_23_has_yagni",
+          "status": "PASS",
+          "evidence": "tests/test_finance_content.py::test_L1_14_c4_row_23_has_yagni PASSED     [ 82%]"
+        },
+        {
+          "id": "test_L1_15_c4_title_is_23",
+          "status": "PASS",
+          "evidence": "tests/test_finance_content.py::test_L1_15_c4_title_is_23 PASSED          [ 88%]"
+        },
+        {
+          "id": "test_L1_16_yagni_template_dual_consistent",
+          "status": "PASS",
+          "evidence": "tests/test_finance_content.py::test_L1_16_yagni_template_dual_consistent PASSED [ 94%]"
+        },
+        {
+          "id": "test_L1_17_yagni_template_carve_out",
+          "status": "PASS",
+          "evidence": "tests/test_finance_content.py::test_L1_17_yagni_template_carve_out PASSED [100%]"
         }
       ]
     },
@@ -111,9 +131,9 @@
       "duration_ms": 0,
       "tcs": [
         {
-          "id": "L2",
+          "id": "L2-skip",
           "status": "SKIP",
-          "evidence": "manual/UI test — run by agent directly"
+          "evidence": "--skip"
         }
       ]
     },
@@ -122,20 +142,20 @@
       "duration_ms": 0,
       "tcs": [
         {
-          "id": "L3",
+          "id": "L3-skip",
           "status": "SKIP",
-          "evidence": "manual/UI test — run by agent directly"
+          "evidence": "--skip"
         }
       ]
     },
     "L4": {
-      "status": "PASS",
-      "duration_ms": 144,
+      "status": "SKIP",
+      "duration_ms": 0,
       "tcs": [
         {
-          "id": "L4-01",
-          "status": "PASS",
-          "evidence": "fstdd CLI --help works"
+          "id": "L4-skip",
+          "status": "SKIP",
+          "evidence": "--skip"
         }
       ]
     },
@@ -144,9 +164,9 @@
       "duration_ms": 0,
       "tcs": [
         {
-          "id": "L5",
+          "id": "L5-skip",
           "status": "SKIP",
-          "evidence": "--e2e not set"
+          "evidence": "--skip"
         }
       ]
     },
@@ -155,9 +175,9 @@
       "duration_ms": 0,
       "tcs": [
         {
-          "id": "L6",
+          "id": "L6-skip",
           "status": "SKIP",
-          "evidence": "--skip-report"
+          "evidence": "--skip"
         }
       ]
     }
@@ -191,92 +211,112 @@
     {
       "id": "test_L1_01_skill_fin_exists",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_01_skill_fin_exists PASSED        [  7%]"
+      "evidence": "tests/test_finance_content.py::test_L1_01_skill_fin_exists PASSED        [  5%]"
     },
     {
       "id": "test_L1_02_skill_fin_has_7_redlines",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_02_skill_fin_has_7_redlines PASSED [ 15%]"
+      "evidence": "tests/test_finance_content.py::test_L1_02_skill_fin_has_7_redlines PASSED [ 11%]"
     },
     {
       "id": "test_L1_03_understand_local_has_step_05",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_03_understand_local_has_step_05 PASSED [ 23%]"
+      "evidence": "tests/test_finance_content.py::test_L1_03_understand_local_has_step_05 PASSED [ 17%]"
     },
     {
       "id": "test_L1_04_understand_upstream_synced",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_04_understand_upstream_synced PASSED [ 30%]"
+      "evidence": "tests/test_finance_content.py::test_L1_04_understand_upstream_synced PASSED [ 23%]"
     },
     {
-      "id": "test_L1_05_build_local_c4_exact_22",
+      "id": "test_L1_05_build_local_c4_exact_23",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_05_build_local_c4_exact_22 PASSED [ 38%]"
+      "evidence": "tests/test_finance_content.py::test_L1_05_build_local_c4_exact_23 PASSED [ 29%]"
     },
     {
-      "id": "test_L1_06_build_upstream_c4_exact_22",
+      "id": "test_L1_06_build_upstream_c4_exact_23",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_06_build_upstream_c4_exact_22 PASSED [ 46%]"
+      "evidence": "tests/test_finance_content.py::test_L1_06_build_upstream_c4_exact_23 PASSED [ 35%]"
     },
     {
       "id": "test_L1_07_b25_has_10_test_dims",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_07_b25_has_10_test_dims PASSED    [ 53%]"
+      "evidence": "tests/test_finance_content.py::test_L1_07_b25_has_10_test_dims PASSED    [ 41%]"
     },
     {
       "id": "test_L1_08_has_8_finance_failure_modes",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_08_has_8_finance_failure_modes PASSED [ 61%]"
+      "evidence": "tests/test_finance_content.py::test_L1_08_has_8_finance_failure_modes PASSED [ 47%]"
     },
     {
       "id": "test_L1_09_kg_fin_nodes_ge_12",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_09_kg_fin_nodes_ge_12 PASSED      [ 69%]"
+      "evidence": "tests/test_finance_content.py::test_L1_09_kg_fin_nodes_ge_12 PASSED      [ 52%]"
     },
     {
       "id": "test_L1_10_kg_version_ge_1_1",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_10_kg_version_ge_1_1 PASSED       [ 76%]"
+      "evidence": "tests/test_finance_content.py::test_L1_10_kg_version_ge_1_1 PASSED       [ 58%]"
     },
     {
       "id": "test_L1_11_version_yaml_fstdd_version",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_11_version_yaml_fstdd_version PASSED [ 84%]"
+      "evidence": "tests/test_finance_content.py::test_L1_11_version_yaml_fstdd_version PASSED [ 64%]"
     },
     {
       "id": "test_L1_12_version_yaml_feedback_mandatory",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_12_version_yaml_feedback_mandatory PASSED [ 92%]"
+      "evidence": "tests/test_finance_content.py::test_L1_12_version_yaml_feedback_mandatory PASSED [ 70%]"
     },
     {
       "id": "test_L1_13_version_yaml_3_platform_install",
       "status": "PASS",
-      "evidence": "tests/test_finance_content.py::test_L1_13_version_yaml_3_platform_install PASSED [100%]"
+      "evidence": "tests/test_finance_content.py::test_L1_13_version_yaml_3_platform_install PASSED [ 76%]"
     },
     {
-      "id": "L2",
-      "status": "SKIP",
-      "evidence": "manual/UI test — run by agent directly"
-    },
-    {
-      "id": "L3",
-      "status": "SKIP",
-      "evidence": "manual/UI test — run by agent directly"
-    },
-    {
-      "id": "L4-01",
+      "id": "test_L1_14_c4_row_23_has_yagni",
       "status": "PASS",
-      "evidence": "fstdd CLI --help works"
+      "evidence": "tests/test_finance_content.py::test_L1_14_c4_row_23_has_yagni PASSED     [ 82%]"
     },
     {
-      "id": "L5",
-      "status": "SKIP",
-      "evidence": "--e2e not set"
+      "id": "test_L1_15_c4_title_is_23",
+      "status": "PASS",
+      "evidence": "tests/test_finance_content.py::test_L1_15_c4_title_is_23 PASSED          [ 88%]"
     },
     {
-      "id": "L6",
+      "id": "test_L1_16_yagni_template_dual_consistent",
+      "status": "PASS",
+      "evidence": "tests/test_finance_content.py::test_L1_16_yagni_template_dual_consistent PASSED [ 94%]"
+    },
+    {
+      "id": "test_L1_17_yagni_template_carve_out",
+      "status": "PASS",
+      "evidence": "tests/test_finance_content.py::test_L1_17_yagni_template_carve_out PASSED [100%]"
+    },
+    {
+      "id": "L2-skip",
       "status": "SKIP",
-      "evidence": "--skip-report"
+      "evidence": "--skip"
+    },
+    {
+      "id": "L3-skip",
+      "status": "SKIP",
+      "evidence": "--skip"
+    },
+    {
+      "id": "L4-skip",
+      "status": "SKIP",
+      "evidence": "--skip"
+    },
+    {
+      "id": "L5-skip",
+      "status": "SKIP",
+      "evidence": "--skip"
+    },
+    {
+      "id": "L6-skip",
+      "status": "SKIP",
+      "evidence": "--skip"
     }
   ]
 }
