@@ -144,7 +144,7 @@ def test_L1_11_version_yaml_fstdd_version():
     content = read_file(VERSION_YAML)
     m = re.search(r'fstdd_version:\s*["\']?([\d.]+)["\']?', content)
     assert m, "fstdd_version not found in version.yaml"
-    assert m.group(1) == "3.2.0", f"fstdd_version = {m.group(1)}, expected 3.2.0"
+    assert m.group(1) == "3.3.0", f"fstdd_version = {m.group(1)}, expected 3.3.0"
 
 def test_L1_12_version_yaml_feedback_mandatory():
     content = read_file(VERSION_YAML)

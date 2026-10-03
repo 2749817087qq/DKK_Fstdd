@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fstdd"
-version = "3.0.5"
+version = "3.1.0"
 description = "Specification-Driven Test-Driven Development — AI 编程流程管控框架"
 readme = "FSTDD.md"
 license = {text = "MIT"}

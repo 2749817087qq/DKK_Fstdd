@@ -10,6 +10,39 @@
 
 ## [Unreleased]
 
+## [3.3.0] — 2026-10-03
+
+**主题**：**版本归一 + 在办变更收口** —— 把碎片化的版本口径收敛为单一发行版号，并把该收的 change 全部归档交付。
+**规模**：收口 3 个 change（归档 + 根 canonical 并入 + `canon verify` 2/2）；全仓发行版版本口径归一为 `3.3.0`。
+
+### 版本归一（口径说明）
+- **发行版 FSTDD 只有一个版本号：`3.3.0`**。此前同一发行版出现五个互不一致的口径 ——
+  `.fstdd/version.yaml` 的 `fstdd_version=3.2.0`、`.fstdd/config.d/project.yaml` 的
+  `stdd_version=3.1.0`、根 `CHANGELOG.md` 最新版本段停在上游 `3.1.0`、服务器真值源 tag 只到
+  `fstdd-v3.1.1`、内核包 `upstream/pyproject.toml=3.0.5`。使用者问「最新版是哪个」无法得到唯一答案。
+  本次统一为 **`3.3.0`**：`project.yaml(stdd_version)` / `version.yaml(fstdd_version)` /
+  本文件 `[3.3.0]` 段 / 发布 tag `fstdd-v3.3.0` **四处同号**，且由 `TC-ISO-018` 自动锚定
+  （`CHANGELOG` 必须含 `project.yaml` 声明的 `stdd_version` 段）。
+  **帮助**：问「fstdd 最新版」得到唯一答案；版本自检不再在多个号之间摇摆。
+- **vendored 上游内核是独立命名空间 = `3.1.0`**，不随发行版号漂移：`upstream/CHANGELOG.md`
+  的 `V3.1.0` 与 `upstream/pyproject.toml` 对齐（后者原滞后为 `3.0.5`，属既有欠账，本次一并对齐）。
+  `upstream/` 是持续维护的适配内核，其内部历史 `V3.0.5` 等表述是**上游来源身份**，按 MIT 署名义务保留原样。
+  **帮助**：发行版号与来源身份各归其位，不再互相污染。
+- **已知偏离（显式记录，不静默）**：《发布与文档规程》§二要求「每个版本必须同时更新
+  CHANGELOG **+ 发 GitHub Release**，否则不得打 tag」。本仓 `origin`（GitHub）**禁推**，
+  无法创建 Release —— 本次 tag 已按规程更新 CHANGELOG，但 **Release 缺失**，属规程偏离，
+  已在交付说明中明示；待 GitHub 写权限恢复后补发。
+
+### 变更收口（DELIVER）
+- **收口 3 个已完成 BUILD 的在办 change**（归档 + 根 canonical 并入 + 索引登记 + `canon verify` 2/2 + `structure merge`）：
+  - `2026-09-18-detection-silence-fixes`：检测静默修复（`audit-errata` / `detection-voice` / `scan-coverage` 三能力并入根 canonical）。
+  - `2026-09-21-guard-hook-input-robustness`：guard 钩子 stdin 尾逗号致 1 元组 `ValueError`、fail-open 静默失效 —— 以 2 元组契约修复；canonical 由真实 `design.md`/`test-plan.md`/`test-report.md` 转写（原为纯 TODO 模板）。
+  - `2026-09-23-poll-daemon-499-fix`：轮询守护 `scp/ssh` 前台长阻塞改用后台 + `TaskOutput` await，消除网关 `499 canceled` 噪声；补齐缺失的 Gate 3 `test-report.md` 并修复 canonical proposal 块标量缩进、重生成 Human View（`DC-HASH` 一致）。
+  **帮助**：`fstdd status` 不再有「已完成却悬空」的僵尸 change；规范资产（proposal/spec）可被 `canon verify` 复核。
+- **退役 2 个重复 / 空壳 change 目录**：`2026-09-26-guard-scope-unbound`（空目录，已被归档版取代）、
+  `2026-10-03-release-test-framework`（全 TODO 占位空壳，已被归档的 `2026-10-03-release-validation-framework` 取代）。
+  **帮助**：在办清单只剩真正进行中的 change，不再被空壳稀释。
+
 ### 安全
 - **经验出站强制脱敏收口（share-outbound-sanitize）**：`tools/share_experience.py` 此前把脱敏
   只做在「导出写盘」一步，而四条出站通道（scp / GitHub 直推 / GitHub fork+PR / inbox POST）
@@ -317,6 +350,43 @@
 
 ---
 
+## [3.2.0] — 2026-10-03
+
+> 回填（本次发布时补齐历史版本段；原仅记于 `.fstdd/version.yaml`）。
+
+**主题**：**失败模式完备版** —— C4 第 23 类「过度工程」+ YAGNI-7 决策梯子模板。
+
+### 新增
+- **build-yagni-ladder**：BUILD Part C 的 C4 失败模式清单由 22 类扩展至 23 类，新增
+  `#23 过度工程`，覆盖方式 = YAGNI-7 决策梯子（真需要→本仓已有→标准库→平台原生→已装依赖→一行→最小实现）；
+  新增 `.fstdd/templates/yagni-ladder.md`（含 carve-out 豁免：安全 / 信任边界校验 / 防数据丢失的错误处理 / 无障碍）。
+  **帮助**：AI 不再为「未来可能的需求」过度设计 —— 每项实现先逐级收敛到最小可行形态。
+
+---
+
+## [3.1.2] — 2026-10-03
+
+> 回填（本次发布时补齐历史版本段）。
+
+**主题**：**跨节点效率增强版** —— caveman 语体压缩器 + KG 自动同步器。
+
+### 新增
+- **caveman-compressor**：`upstream/fstdd/caveman.py`（`compress` / `compress_dict`）+ `fstdd caveman` CLI；实测 scope 543→230 字（降幅 57.6%）。
+- **kg-autosync**：`upstream/fstdd/kg_sync.py` + `fstdd kg sync`；scan → ID 提取 → ADD / UPDATE / DEPRECATE / BUILD_EDGES，幂等。
+  **帮助**：跨节点投递与知识图谱同步自动化，减少人工搬运。
+
+---
+
+## [3.1.1] — 2026-10-03
+
+> 回填（本次发布时补齐历史版本段）。
+
+**主题**：**FSTDD × 金融融合版**。
+**规模**：6 change / 7 红线 / 10 维测试 / 22 行 C4 / 4 主线 KG；nodes 170→182。
+  **帮助**：把金融领域能力（支付 / 合规 / 风控）转化为流程中的强制规格项与验收项。
+
+---
+
 ## [3.1.0] — 2026-09-26
 
 **主题**：**让 change 可以活在隔离环境里** —— 一个 change 不再必然劫持整个工作区。
@@ -422,6 +492,10 @@
 
 ---
 
+[3.3.0]: 对比 v3.2.0 —— 版本归一（单一发行版号）+ DELIVER 收口 3 个 change
+[3.2.0]: 对比 v3.1.2 —— 失败模式 23 类 + YAGNI-7 决策梯子模板
+[3.1.2]: 对比 v3.1.1 —— caveman 语体压缩器 + KG 自动同步器
+[3.1.1]: 对比 v3.1.0 —— FSTDD × 金融融合（6 change / 7 红线）
 [3.1.0]: 对比 v3.0.6 —— change 隔离形态 + 迭代 02 全部条目
 [3.0.6]: 对比 v1.1.0 —— 79 files / +4934 行
 [1.1.0]: 对比 v1.0.0 —— time-baseline 8 Slice
