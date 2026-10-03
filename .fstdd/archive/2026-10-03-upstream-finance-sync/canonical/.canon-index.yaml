@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-03-upstream-finance-sync: proposals/2026-10-03-upstream-finance-sync.yaml
+specs:
+  agent:
+    2026-10-03-upstream-finance-sync: specs/agent/2026-10-03-upstream-finance-sync.yaml
+  code:
+    2026-10-03-upstream-finance-sync: specs/code/2026-10-03-upstream-finance-sync.yaml
+version: '2.9'

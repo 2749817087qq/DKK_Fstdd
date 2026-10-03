@@ -1,0 +1,81 @@
+meta:
+  change_id: "2026-10-03-upstream-finance-sync"
+  title: "upstream 内核同步: understand.md Step 0.5 + build.md C4 22 行 table"
+  created: "2026-10-03T10:00:00+08:00"
+  status: draft
+
+why:
+  problem: |
+    上两个 change (2026-10-03-finance-integration + 2026-10-03-finance-failure-modes)
+    在本地 .fstdd/skills/understand.md 加了 Step 0.5 金融钩子，在 build.md C4 加了
+    22 行失败模式 table (14 通用 + 8 金融)。但 upstream 内核的 .fstdd/skills/
+    understand.md 和 build.md 里这两处变更都没有，形成 fork 漂移。
+    下次 upstream sync 时本地改动会被覆盖，或者 upstream 用户拿不到金融钩子。
+  motivation: |
+    upstream 是所有 FSTDD 安装的源头。金融钩子 (7 红线 + 10 维测试 + 22 失败模式)
+    必须在 upstream 里，所有平台（workbuddy/trae/claude-code）安装的 skill 才
+    能自动带上金融增强。
+  evidence:
+    observed_at: "2026-10-03T09:45:00+08:00"
+    observed_base_git_sha: "HEAD"
+    details: |
+      本地 .fstdd/skills/build.md L317-340 = 22 行 table
+      upstream .fstdd/skills/build.md L288-290 = 只有 3 行"对照经验库"通用描述
+      本地 .fstdd/skills/understand.md L18-36 = Step 0.5 金融判定 + 7 红线
+      upstream .fstdd/skills/understand.md = 无 Step 0.5 / 无金融关键词
+
+what_changes:
+  - id: C1
+    description: "upstream .fstdd/skills/build.md C4 section 追加 22 行失败模式 table（14 通用 + 8 金融）+ 检查结果说明"
+    type: modified
+  - id: C2
+    description: "upstream .fstdd/skills/understand.md Step 0 之后追加 Step 0.5 金融系统判定 + 7 红线强制检查"
+    type: modified
+
+capabilities:
+  new:
+    - name: upstream-finance-hooks-synced
+      description: "upstream skills/understand.md 和 build.md 同步了本地金融钩子，所有平台安装自带金融增强"
+  modified:
+    - name: upstream-build-c4-checklist
+      description: "upstream build.md C4 从 3 行通用描述扩展为 22 行可执行 table"
+
+constraints:
+  - "只改 upstream/.fstdd/skills/understand.md 和 upstream/.fstdd/skills/build.md 两个文件"
+  - "upstream 其他文件一字不动"
+  - "本地 .fstdd/skills/understand.md 和 build.md 保持不变（它们已经和本地同步）"
+
+stakeholders:
+  - FSTDD003（实施者）
+  - upstream stdd 仓库（接收同步）
+
+risk_areas:
+  - capability: upstream-finance-hooks-synced
+    risk: "upstream 后续 upstream 升级覆盖本次改动"
+    mitigation: "同步前 git branch/merge 显式记录；install_workbuddy_skills.py 重新生成本机 skill 时不会回退（从 upstream 读）"
+  - capability: upstream-build-c4-checklist
+    risk: "22 行 table 格式破坏 upstream 原有 Markdown 渲染"
+    mitigation: "直接复用本地已验证格式；4 列对齐保持一致"
+
+non_goals:
+  - 不改 CLI 任何逻辑（canon.py/validate.py 不动）
+  - 不改 upstream templates/
+  - 不改 upstream AGENTS.md README
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: true
+    financial: true
+    cross_system: false
+
+anchoring:
+  level: L1
+  reference_changes: ["2026-10-03-finance-integration", "2026-10-03-finance-failure-modes"]
+  anchor_implementations: []
+
+success_criteria:
+  - "upstream/.fstdd/skills/build.md C4 section 包含标题 + 22 行 table + 检查结果说明"
+  - "upstream/.fstdd/skills/understand.md Step 0 之后包含 Step 0.5 金融判定 + 7 红线"
+  - "原有 upstream build.md C4 标题和 understand.md Step 0-1 一字不变"
+  - "本地 .fstdd/skills/understand.md 和 build.md 内容与 upstream 一致"

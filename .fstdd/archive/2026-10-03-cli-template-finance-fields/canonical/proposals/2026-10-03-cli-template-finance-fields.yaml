@@ -1,0 +1,77 @@
+meta:
+  change_id: "2026-10-03-cli-template-finance-fields"
+  title: "CLI canonical 模板加金融领域字段: proposal.yaml / spec.yaml / design.md / test-plan.md"
+  created: "2026-10-03T10:10:00+08:00"
+  status: draft
+
+why:
+  problem: |
+    FSTDD CLI 的 canonical 模板 (proposal.yaml / spec.yaml / test-plan.md)
+    是通用模板，没有金融领域专属字段。金融项目起草 proposal/spec 时，
+    critical.risk_assessment.financial=true 是唯一金融标记 —
+    7 红线覆盖、金融领域标签、4 主线自查、10 维测试等金融专属信息
+    没有结构化字段承载，只能散落在 constraints/risk_areas 的自由文本里。
+  motivation: |
+    给 canonical 模板加金融专属字段后：
+    (1) CLI canon generate 能自动识别 financial=true 的项目并注入金融章节
+    (2) 7 红线覆盖状态 / 10 维测试覆盖能被结构化读取，而不是文本扫描
+    (3) 未来 knowledge-graph 可以直接从 YAML 节点提取金融项目特征
+  evidence:
+    observed_at: "2026-10-03T10:00:00+08:00"
+    observed_base_git_sha: "HEAD"
+    details: |
+      模板文件位置:
+      - .fstdd/templates/canonical/proposal.yaml (现有 critical.risk_assessment.financial)
+      - .fstdd/templates/canonical/spec.yaml (无金融字段)
+      - .fstdd/templates/test-plan.md (无金融章节)
+
+what_changes:
+  - id: C1
+    description: "canonical proposal.yaml 模板追加 finance section (domain + redlines + threads)"
+    type: modified
+  - id: C2
+    description: "canonical spec.yaml 模板追加 finance section (test_dimensions + failure_modes)"
+    type: modified
+  - id: C3
+    description: "test-plan.md 模板追加金融 10 维测试覆盖章节"
+    type: modified
+
+capabilities:
+  new:
+    - name: canonical-finance-fields
+      description: "proposal/spec/test-plan 模板包含金融领域专属结构化字段"
+
+constraints:
+  - "追加字段必须用 optional: true 注释，非金融项目 proposal 不出现 finance section"
+  - "只改模板 .fstdd/templates/，不改 CLI 代码 (canon.py) — 模板字段是纯数据"
+  - "字段命名与 fstdd-fin SKILL.md 术语一致 (redlines/threads/test_dimensions)"
+
+stakeholders:
+  - FSTDD003（实施者）
+  - FinFSTDD 使用者（金融项目 proposal 自动注入金融字段）
+
+risk_areas:
+  - capability: canonical-finance-fields
+    risk: "canon.py 不识别新字段 → 渲染时丢失"
+    mitigation: "只加 optional: true 的模板字段，canon.py 用 yaml.safe_load 自动忽略未知字段"
+
+non_goals:
+  - 不改 upstream CLI 代码（canon.py / validate.py）
+  - 不加 CLI 参数 --domain finance
+  - 不改 knowledge-graph
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: true
+    cross_system: false
+
+anchoring:
+  level: L1
+
+success_criteria:
+  - "proposal.yaml 模板追加 finance section (domain/redlines/threads) 带 optional 注释"
+  - "spec.yaml 模板追加 finance section (test_dimensions/failure_modes)"
+  - "test-plan.md 模板追加金融 10 维测试覆盖章节"
+  - "追加字段与 fstdd-fin SKILL.md 术语一致"

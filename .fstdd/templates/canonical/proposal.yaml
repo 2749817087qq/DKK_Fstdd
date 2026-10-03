@@ -56,3 +56,21 @@ anchoring:
 
 success_criteria:
   - ""
+
+# ===== 金融领域专属字段（optional: financial=true 时填充）=====
+# 由 understand.md Step 0.5 判定 FINANCIAL_PROJECT=YES 时启用
+finance:                          # optional: true
+  domain: ""                      # fintech | banking | payments | trading | defi | quant | other
+  redlines:                       # 7 红线覆盖 — 全部 true 才能过 Gate 1
+    transaction_accuracy: false    # 交易准确性: Decimal / 零浮点 / 币种统一
+    idempotency: false            # 幂等性: 所有写操作幂等
+    audit_immutability: false     # 审计不可篡改: 不可变日志
+    books_match_reality: false    # 账实相符: reconciliation 机制
+    no_silent_degradation: false  # 降级不静默: 显式标记 + 告警 + 拒绝
+    data_compliance: false        # 数据合规: KYC/AML/脱敏/跨境
+    no_hardcode: false            # 无硬编码: 阈值/费率配置化
+  threads:                        # 四条主线自查（至少 1 条为 true）
+    capital_flow: false           # 资金流: 支付/转账/清算
+    trading_matching: false       # 交易撮合: 订单簿/撮合引擎
+    risk_compliance: false        # 风险合规: 风控/KYC/AML
+    tech_infra: false             # 技术底座: 消息队列/分布式/可观测性

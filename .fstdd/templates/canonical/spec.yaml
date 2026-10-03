@@ -20,3 +20,26 @@ requirements:
         when: ""              # 触发动作
         then: ""              # 预期结果（SHALL 强制行为）
         and: []               # 附加条件（最多 5 条）
+
+# ===== 金融领域专属字段（optional: 金融项目 spec 追加）=====
+finance:                          # optional: true
+  test_dimensions:                # 10 维金融测试 — 每项至少 1 TC
+    idempotency: false            # 幂等测试: 重复请求/重传/重试无副作用
+    reconciliation: false         # 对账测试: 内外账本不一致处理
+    precision: false              # 精度测试: Decimal/边界值/跨币种
+    timezone: false               # 时区测试: 跨时区/DST/UTC
+    degradation: false            # 降级测试: 显式失败 + 告警 + 拒绝
+    consistency: false            # 一致性测试: Saga/TCC/状态机
+    security: false               # 安全测试: 越权/SQLi/签名
+    audit: false                  # 审计测试: 不可变日志 + 前后值
+    compliance: false             # 合规测试: KYC/限额/二次认证
+    recovery: false               # 恢复测试: 宕机/回放/最终一致
+  failure_modes:                  # 8 类金融失败模式 — BUILD C4 强制勾选
+    double_charge: false          # 重复扣款
+    reconciliation_gap: false     # 账实不符
+    silent_degradation: false     # 静默降级
+    precision_loss: false         # 精度丢失
+    audit_gap: false              # 审计缺口
+    state_machine_gap: false      # 状态机漏洞
+    limit_bypass: false           # 额度穿透
+    compliance_gap: false         # 合规遗漏

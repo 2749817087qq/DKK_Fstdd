@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-03-cli-template-finance-fields: proposals/2026-10-03-cli-template-finance-fields.yaml
+specs:
+  agent:
+    2026-10-03-cli-template-finance-fields: specs/agent/2026-10-03-cli-template-finance-fields.yaml
+  code:
+    2026-10-03-cli-template-finance-fields: specs/code/2026-10-03-cli-template-finance-fields.yaml
+version: '2.9'

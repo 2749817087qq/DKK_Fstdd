@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-03-kg-finance-four-threads: proposals/2026-10-03-kg-finance-four-threads.yaml
+specs:
+  agent:
+    2026-10-03-kg-finance-four-threads: specs/agent/2026-10-03-kg-finance-four-threads.yaml
+  code:
+    2026-10-03-kg-finance-four-threads: specs/code/2026-10-03-kg-finance-four-threads.yaml
+version: '2.9'

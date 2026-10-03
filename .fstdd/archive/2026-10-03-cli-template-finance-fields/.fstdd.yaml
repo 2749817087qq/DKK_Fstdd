@@ -1,0 +1,41 @@
+baseline:
+  at: '2026-10-03T02:06:20+00:00'
+  base_git_sha: 88c4ddb5f6b67af540910c1efdda88d443847eca
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-03-cli-template-finance-fields
+complexity_score: null
+current_phase: understand
+design_adjustments:
+  count: 0
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T02:09:44+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: '批量 Gate 3: BUILD 完成'
+    status: completed
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T02:09:36+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: '批量 Gate 2: Phase 2 快速确认'
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T02:06:20+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 'Gate 1 批量确认: 3 个追加 change 连续执行'
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'
