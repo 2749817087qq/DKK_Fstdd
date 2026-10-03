@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-03-release-validation-framework: proposals/2026-10-03-release-validation-framework.yaml
+specs:
+  agent:
+    2026-10-03-release-validation-framework: specs/agent/2026-10-03-release-validation-framework.yaml
+  code:
+    2026-10-03-release-validation-framework: specs/code/2026-10-03-release-validation-framework.yaml
+version: '2.9'
