@@ -1,5 +1,5 @@
 # 2026-09-25-guard-phase-path-scope.yaml — Canonical Proposal (YAML-first, V2.9)
-# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+# AI 起草、AI 修改、AI 消费。Human View 由 `fstdd canon generate` 生成。
 
 meta:
   change_id: "2026-09-25-guard-phase-path-scope"
@@ -10,7 +10,7 @@ meta:
 
 why:
   problem: |
-    STDD Guard 的相位门是全项目粒度：当 ACTIVE_CHANGE 指向处于 understand/spec
+    FSTDD Guard 的相位门是全项目粒度：当 ACTIVE_CHANGE 指向处于 understand/spec
     相位的 change 时，该工作区内一切 Edit/Write（包括与该 change 无关的文件、
     agent 自身 memory 日志）全部被拦截（exit 2）。这导致「ACTIVE_CHANGE 漂移
     = 阶段劫持」：一个停在只读相位的 change 会冻结整个工作区的其它工作。
