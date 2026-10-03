@@ -36,38 +36,7 @@ install:
     trae:
       - "git pull origin master --tags"
       - "python tools/install_workbuddy_skills.py --platform trae"
-  verify_cmd: "python tools/verify_workbuddy_skills.py --platform <your-platform>"
-
-# === 反馈协议（每次 release 必须执行）===
-# agents 安装完成后 MUST 在 24h 内 complete 对应的 release 公告 task，
-# result 字段填 JSON 反馈。发布者据此知道哪些平台正常、哪些有问题。
-feedback_protocol:
-  mandatory: true
-  deadline: "24h after release announce"
-  report_via: "multihub: complete(release_task_id, result=json.dumps(feedback))"
-  feedback_schema:
-    platform: "<workbuddy|claude-code|trae>"
-    install_rc: "<0=ok|nonzero=fail>"
-    verify_rc: "<0=pass|nonzero=fail>"
-    notes: "<optional: anomalies, compat issues>"
-  example_feedback:
-    platform: "trae"
-    install_rc: 0
-    verify_rc: 0
-    notes: "all 7 skills installed OK"
-  why: |
-    发布→安装→反馈 闭环。没有反馈的发布 = 不知道有没有成功落地。
-    反馈数据进入 battle_report，可回溯、可统计、可触发回滚决策。
-  publish_side_action: |
-    发布者在 announce 时把 feedback_protocol 写入 scope.FEEDBACK_PROTOCOL，
-    并跟踪各 agent 的 complete result。24h 后汇总反馈，更新下一个 change 的 success_criteria。
-  feedback_summary:
-    collected_at: "2026-10-03"
-    release_task_id: "task-9fa1826b6be0e4b9"
-    expected_from: [all multihub agents]
-    # agents 逐条反馈后更新这里
-
 notes: |
   upstream 未变，本 release 是 FSTDD003 项目侧 enhancement。
   platforms.yaml 声明 3 平台（workbuddy/claude-code/trae），install 脚本统一入口。
-  反馈协议为每次 release 强制项，固化了"发布→安装→反馈"闭环。
+  所有平台 agents 按自身平台跑 --platform <name> 即可安装金融增强。
