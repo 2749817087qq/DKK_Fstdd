@@ -32,7 +32,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 # 注意：这些模式串本身**不构成**凭证形态（前缀后紧跟 `[`，非连续字母数字），
 # 故本文件不会自命中 —— 见 test_scan_ignores_regex_literals。
 CREDENTIAL_PATTERNS: tuple[tuple[str, str], ...] = (
-    ("github_pat_classic", r"ghp_[A-Za-z0-9]{20,}"),
+    ("github_pat_classic", r"gh[pousr]_[A-Za-z0-9]{20,}"),
     ("github_pat_fine", r"github_pat_[A-Za-z0-9_]{20,}"),
     ("openai_style_key", r"sk-[A-Za-z0-9]{20,}"),
     ("aws_access_key_id", r"AKIA[0-9A-Z]{16}"),
@@ -54,17 +54,25 @@ def scan_text_for_credentials(text: str) -> list[tuple[int, str]]:
 
 
 def _git_grep(pattern: str) -> list[str]:
-    """对 tracked 文件执行只读 git grep；git 缺失/非仓库时 skip。"""
-    proc = subprocess.run(
-        ["git", "grep", "-nIE", "--", pattern],
-        cwd=str(REPO_ROOT),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-    if proc.returncode not in (0, 1):
-        pytest.skip("git 不可用或不在 git 仓库：%s" % proc.stderr.strip())
+    """对 tracked 文件执行只读 git grep。
+
+    git grep 退出码：0 = 命中，1 = 无命中，其它 = 执行错误。
+    仅「git 未安装」允许 skip；执行错误必须**硬失败** —— 否则门禁会 fail-open
+    （扫描压根没跑成却判通过），正是本门禁要防的静默失效。
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "grep", "-nIE", "--", pattern],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except FileNotFoundError:  # git 未安装：门禁无判据，skip 而非假绿
+        pytest.skip("git 不可用，无法执行 tracked 文件凭证扫描")
+    assert proc.returncode in (0, 1), (
+        "git grep 执行失败（退出码 %d）：%s" % (proc.returncode, proc.stderr.strip()))
     return [ln for ln in proc.stdout.splitlines() if ln]
 
 
@@ -117,7 +125,7 @@ def test_no_plaintext_credentials_in_tracked_files(name, pattern):
 # REQ-004：镜像故障处置手册覆盖 push protection 类
 # ===========================================================================
 def test_mirror_runbook_present():
-    """SC-006：§五 处置表须含 push protection / secret scanning 的可执行解除路径。"""
+    """TC-CRED-007 / SC-006：§五 处置表须含 push protection / secret scanning 的可执行解除路径。"""
     doc = (REPO_ROOT / "docs" / "DISTRIBUTED_ACCESS.md").read_text(encoding="utf-8")
     low = doc.lower()
     assert "push protection" in low or "secret scanning" in low, \
@@ -125,3 +133,23 @@ def test_mirror_runbook_present():
     assert "unblock-secret" in doc, "未给出一性 unblock 链接指引"
     assert "rotate_github_token.sh" in doc, "未给出凭证轮换命令"
     assert "check_mirror.sh" in doc, "未给出恢复验证手段"
+    assert "Release" in doc, "未给出 Release 补发指引"
+
+
+# ===========================================================================
+# REQ-005：孤儿私钥撤销跟踪（SC-007）
+# ===========================================================================
+def test_orphan_private_key_untracked_and_ignored():
+    """TC-CRED-008 / SC-007：私钥脱离跟踪、.gitignore 覆盖，且磁盘文件保留。"""
+    key_rel = ".fstdd/_fstdd003_key_new.txt"
+
+    tracked = subprocess.run(["git", "ls-files", "--", key_rel], cwd=str(REPO_ROOT),
+                             capture_output=True, text=True, encoding="utf-8")
+    assert tracked.stdout.strip() == "", "孤儿私钥仍被 tracked：%s" % tracked.stdout.strip()
+
+    ignored = subprocess.run(["git", "check-ignore", "-v", key_rel], cwd=str(REPO_ROOT),
+                             capture_output=True, text=True, encoding="utf-8")
+    assert ignored.returncode == 0 and key_rel in ignored.stdout, \
+        ".gitignore 未覆盖 %s" % key_rel
+
+    assert (REPO_ROOT / key_rel).exists(), "磁盘私钥文件被误删（应保留数据）"
