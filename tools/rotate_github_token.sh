@@ -17,8 +17,8 @@
 #
 # 用法 / Usage
 # ───────────
-#   bash rotate_github_token.sh ghp_xxxxx
-#   FSTDD_BARE_STDD=/custom/path bash rotate_github_token.sh ghp_xxxxx
+#   bash rotate_github_token.sh ghp_<YOUR_PAT>
+#   FSTDD_BARE_STDD=/custom/path bash rotate_github_token.sh ghp_<YOUR_PAT>
 #
 # 幂等 / Idempotent: yes（重复跑同一 token 不会坏；先备份再替换）
 set -euo pipefail
@@ -37,7 +37,7 @@ if [ -z "$NEW_TOKEN" ]; then
   cat >&2 <<EOF
 用法: $0 <new_github_pat>
 
-示例: $0 ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+示例: $0 ghp_<YOUR_PAT>
 EOF
   exit 1
 fi

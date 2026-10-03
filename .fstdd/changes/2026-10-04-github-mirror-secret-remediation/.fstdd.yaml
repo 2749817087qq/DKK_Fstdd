@@ -1,0 +1,34 @@
+baseline:
+  at: '2026-10-03T17:26:00+00:00'
+  base_git_sha: 8ce867bb9e1399d5e80c17437a864f64070b106d
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-04-github-mirror-secret-remediation
+complexity_score: 7
+current_phase: understand
+mode: standard
+phases:
+  build:
+    status: pending
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T17:31:41+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 2026-10-04 指令「另立 change 处置」并长期授权自行裁定推进（user_profile：无需询问，仅在发现问题时干预）；SPEC
+      产物 design.md + canonical spec(code/agent) + test-plan.md 齐全，canon verify 2/2
+      通过
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T17:25:12+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 2026-10-04 明确指令「建议 另立 change 处置（脱敏占位串 + 走 GitHub unblock
+      链接）」；并长期授权自行裁定推进
+    status: completed
+score_confidence: preliminary
+status: active
+task_type: code
+version: '3.0'

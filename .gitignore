@@ -50,3 +50,6 @@ tools/.heartbeat.env
 
 # SSH 私钥绝不入库（仅保留工作区文件）
 .fstdd/_notices/FSTDD003/FSTDD003-ssh-key
+# 孤儿私钥：曾被 tracked（2026-10-04-github-mirror-secret-remediation 处置），
+# 现已 git rm --cached 撤销跟踪；保留磁盘文件，杜绝同类误提交
+.fstdd/_fstdd003_key_new.txt

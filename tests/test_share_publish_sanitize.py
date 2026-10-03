@@ -35,7 +35,9 @@ se = _load_se()
 
 BAD_NAME = "BAD-EXP-001.md"
 OK_NAME = "OK-EXP-002.md"
-BAD_TOKEN = "ghp_ABCDEFGHIJKLMNOPQRSTUVWX"
+# 凭证形态字面量不入库（由 upstream/tests/test_no_plaintext_credentials.py 门禁保障）：
+# 运行值与原先逐字节相同，但源码不再含连续凭证形态。
+BAD_TOKEN = "ghp_" + "ABCDEFGHIJKLMNOPQRSTUVWX"
 
 SAMPLES = {
     BAD_NAME: (
@@ -95,9 +97,9 @@ def test_stage_posix_home_path_removed(stage, tmp_path):
 
 
 @pytest.mark.parametrize("secret", [
-    "ghp_ABCDEFGHIJKLMNOPQRSTUVWX",
-    "github_pat_ABCDEFGHIJKLMNOPQRSTUVWX123456",
-    "sk-ABCDEFGHIJKLMNOPQRSTUVWX1234",
+    "ghp_" + "ABCDEFGHIJKLMNOPQRSTUVWX",
+    "github_pat_" + "ABCDEFGHIJKLMNOPQRSTUVWX123456",
+    "sk-" + "ABCDEFGHIJKLMNOPQRSTUVWX1234",
     "Bearer abcdefghijklmnopqrstuvwx",
 ])
 def test_stage_credentials_replaced(stage, tmp_path, secret):

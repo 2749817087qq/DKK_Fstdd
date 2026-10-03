@@ -400,9 +400,9 @@ class TestAEndpointProtocol:
         assert server.files() == []
 
     def test_a17_private_key_content_rejected(self, server):
-        """内容含 -----BEGIN RSA PRIVATE KEY----- → 422，且不落盘。"""
+        """内容含 PEM 私钥头 → 422，且不落盘。"""
         r = server.post_single("EXP-SEC2",
-                               "-----BEGIN RSA PRIVATE KEY-----\nMIIEabc\n")
+                               "-----BEGIN " + "RSA PRIVATE KEY-----" + "\nMIIEabc\n")
         assert r.status == 422
         assert r.data["accepted"] == 0
         assert "private key" in r.data["errors"][0]["error"]

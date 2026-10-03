@@ -162,6 +162,7 @@ FSTDD_MIRROR_URL=/tmp/other.git ./tools/check_mirror.sh   # 巡检另一个目�
 | 推送被拒（非快进） | 先 `git fetch server && git rebase server/master`，不要强推 |
 | 推送输出出现 `[MIRROR-FAILED]` | 镜像未完成（**真值源已更新，数据安全**）。处置：① 执行 `./tools/check_mirror.sh` 判断是「滞后」（2）还是「无法测量」（3）；② 若是 GitHub 侧分叉，**不要**在服务器上手动 `--force`，先确认那几个提交的来源；③ 恢复镜像目标后**再次 push** 即自动重试，故障标记 `mirror-failed.flag` 会被自动清除 |
 | GitHub 不可达 | 无需处置。裸库与各机流转不受影响，镜像会在下次推送时重试 |
+| 被 **push protection / secret scanning** 拦截（**非网络类**） | 现象：push 输出含 `GH013` 或 `push rejected ... secret`，且 `mirror-failed.flag` 的 `failed_items` 含 `branches tags`。根因是**凭证形态字面量入库**（历史提交混入 PAT / 私钥头），与写权限、网络无关。处置：① 打开 push 输出里的 `https://github.com/<owner>/<repo>/security/secret-scanning/unblock-secret/<id>` 做**一次性 unblock**（需仓库管理员在浏览器操作，每条命中各有一个链接，历史 tag 需逐一 unblock 或重推）；② 轮换受影响凭证 —— 服务器端 `bash tools/rotate_github_token.sh ghp_<YOUR_PAT>`；③ 恢复后**再次 push** 即自动重试并清除故障标记；④ 用 `./tools/check_mirror.sh` 复核是否收敛（退出码 0）；⑤ GitHub Release 按 CHANGELOG 记录补发 |
 | 主机密钥告警 | **不要**用 `StrictHostKeyChecking=no` 绕过。先 `ssh-keyscan <host> \| ssh-keygen -lf -` 取指纹，与告警中服务器声称的指纹核对，一致才更新 `known_hosts` |
 | 服务器磁盘水位高 | `df -h /`；裸库本身仅 MB 级，水位主要来自其他服务 |
 
