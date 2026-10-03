@@ -10,6 +10,22 @@
 
 ## [Unreleased]
 
+## [3.3.2] — 2026-10-04
+
+**主题**：**在办 change 收口 + 凭证泄露防线** —— 把一个长期卡死（"僵尸"）的 change 如实补全并交付，同时把「服务器 GitHub 镜像被 push protection 拦截」的根因（脚本里的 PAT 占位示例被扫描器误判）处置为**仓库侧可执行门禁**。
+**规模**：收口 2 change（归档 + 根 canonical 并入 + `canon verify` 2/2 + `structure merge`）；全量 `pytest upstream/tests` **`0 failed / 887 passed / 54 skipped`**。
+
+### 变更收口（DELIVER）
+- **`2026-09-25-guard-phase-path-scope`（僵尸 change 收口，非"BUILD 未完成"）**：Guard 相位门增加**路径作用域** —— 非可编辑相位下只拦截 change 声明 `scope` 内的文件，范围外降级放行，消除「ACTIVE_CHANGE 漂移 = 全工作区冻结」。代码实为 V3.0.7（`4eec636`）已上线，但 change 记录侧长期停留在陈旧「测试缺」标记、无 Gate 3。本次**如实补全** tasks / test-report / design-adjustments，回填 test-plan 的逐条对账，并补齐 `SC-005` / `SC-010` 两处「已声明 scope」P0 变体测试（`TestGuardChangeScope` 14/14）。**帮助**：`fstdd status` 不再报一个"已完成却悬空"的僵尸；不会因误判而用 `abort` 抹掉已交付成果。
+- **`2026-10-04-github-mirror-secret-remediation`**：`rotate_github_token.sh` 的用法占位示例 `ghp_xxxx…`（自 `6253533` 起在库）被 GitHub 扫描器误判为 PAT，导致 `master` 与 `v3.1.2/v3.2.0/v3.3.0/v3.3.1` 全部 tag 的镜像被 push protection 拦截。处置：**脱敏占位串**、新增 **`test_no_plaintext_credentials.py` 凭证明文门禁**（8 函数 / 12 用例，含反向断言）、测试 fixture 去形态化、更新 `DISTRIBUTED_ACCESS.md` 处置手册。**帮助**：同类占位串误报由「事后人工排查」变为「提交即拦截」。
+  > **外部人工待办（显式记录，非仓库可自动完成）**：GitHub 一次性 unblock → PAT 轮换 + 旧 SSH 私钥撤销 → 重推恢复镜像 → 补发 Release。
+
+### 质量基线（发布门禁实测）
+- **全量测试**：`0 failed / 887 passed / 54 skipped`（较 [3.3.1] 的 873 增加 14，来自上述 2 guard 变体 + 镜像凭证门禁 12 用例）。
+- **四个自检脚本全绿**：`verify_rename.py` **8/8**、`verify_eol.py` **7/7**、`verify_skill_standards.py` **7/7**、`verify_workbuddy_skills` PASS。
+- **根 canonical 并入**：两 change 的 proposal / specs(agent,code) 共 6 文件并入根 `canonical/`，`.canon-index.yaml` 同步；`canon verify` 各 **2/2**；并入后按改名规程清零 proposal 内的旧标识（`verify_rename TC-RENAME-002`）。
+- **已知偏离（显式记录，不静默）**：《发布与文档规程》§二 要求「每个版本必须同时更新 CHANGELOG **+ 发 GitHub Release**」。本仓 `origin`（GitHub）**禁推**，本次已按规程更新 CHANGELOG 并推 tag 至 server+local，但 **Release 缺失**；且镜像恢复依赖 GitHub 端 unblock（见上），待写权限恢复后补发。
+
 ## [3.3.1] — 2026-10-04
 
 **主题**：**基线清零** —— 把长期常红的 **6 项预存基线 pytest 失败**一次性修绿（修代码/补齐，非 skip、非删除用例），使「全量 0 failed」重新成为可判定的硬门禁。
@@ -82,6 +98,9 @@
   `2026-09-19-notices-authenticity-gate`、`2026-09-25-guard-phase-path-scope`（后者
   `test-plan.md` 明记「测试缺」，BUILD 未完成）。三者**均无 Gate 3 证据**，
   归档即编造验收记录，故按纪律保留在建，待其 BUILD 完成后各自 DELIVER。
+  **（后续更正）** 其中 `2026-09-25-guard-phase-path-scope` 的「BUILD 未完成」是**记录侧陈旧标记**所致，
+  并不反映代码状态：其 Guard 相位门作用域能力实为 V3.0.7（`4eec636`）已上线，只是 change 记录未同步。
+  该 change 已于 **[3.3.2] 如实补全记录后收口**（非按 zombie 建议 `abort`，避免抹掉已交付成果）。
 
 ### 安全
 - **经验出站强制脱敏收口（share-outbound-sanitize）**：`tools/share_experience.py` 此前把脱敏

@@ -1,10 +1,26 @@
 # FSTDD 本地版本声明（F 仓 / stdd-repo）
 # 发行版口径：fstdd_version（须 = .fstdd/config.d/project.yaml 的 stdd_version）
 # vendored 上游内核口径：upstream_version（= upstream/ 内核，见 upstream/CHANGELOG.md 与 upstream/pyproject.toml）
-fstdd_version: "3.3.1"
+fstdd_version: "3.3.2"
 upstream_version: "3.1.0"
-released_at: "2026-10-04T01:15:00+08:00"
+released_at: "2026-10-04T19:00:00+08:00"
 changelog: |
+  v3.3.2 — 在办 change 收口 + 凭证泄露防线版
+
+  收口（2 change，归档 + 根 canonical 并入 + canon verify 2/2 + structure merge）：
+  - 2026-09-25-guard-phase-path-scope：Guard 相位门路径作用域（消僵尸 change）。
+    代码实为 V3.0.7（4eec636）已上线，本次如实补全 tasks/test-report/design-adjustments，
+    回填 test-plan 逐条对账，补齐 SC-005/SC-010 两处 P0 变体测试（TestGuardChangeScope 14/14）。
+  - 2026-10-04-github-mirror-secret-remediation：GitHub 镜像 push protection 拦截处置。
+    根因 = rotate_github_token.sh 的 ghp_xxxx… 占位示例被扫描器误判为 PAT（自 6253533 在库）。
+    处置：脱敏占位串 + 新增 test_no_plaintext_credentials.py 凭证明文门禁（8 函数/12 用例，含反向断言）
+    + fixture 去形态化 + 更新 DISTRIBUTED_ACCESS.md 处置手册。
+    外部人工待办：GitHub 一次性 unblock → PAT 轮换 + 旧 SSH 私钥撤销 → 重推恢复镜像 → 补发 Release。
+
+  质量：全量 pytest upstream/tests 0 failed / 887 passed / 54 skipped；
+  四自检脚本全绿（rename 8/8、eol 7/7、skill_standards 7/7、workbuddy_skills PASS）。
+  已知偏离：origin 禁推 → GitHub Release 缺失（待写权限恢复补发）。
+
   v3.3.1 — 基线清零版（6 项预存基线 pytest 失败一次性修绿）
 
   修复（4 类根因 / 5 切片，1 change：2026-10-04-baseline-failures-zero）：
