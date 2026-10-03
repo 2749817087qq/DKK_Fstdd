@@ -1,6 +1,6 @@
 # Test Plan — 2026-10-03-caveman-kg-sync
 
-> Gate 2: 2026-10-03 | 10 REQ / 32 SC / 32 TC
+> Gate 2: 2026-10-03 | 18 REQ / 46 SC / 46 TC
 
 ---
 
@@ -77,7 +77,7 @@
 ## 3. BUILD Step 分配
 
 ```
-BUILD Step B2.1 — Unit Test (CAVE 全部 22 TC, KG 全部 24 TC)
+BUILD Step B3.1 — RED 单元测试 (CAVE 全部 22 TC, KG 全部 24 TC)
   ├── python -m pytest upstream/tests/test_caveman.py -v
   └── python -m pytest upstream/tests/test_kg_sync.py -v
 

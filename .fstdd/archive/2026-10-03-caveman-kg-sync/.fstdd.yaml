@@ -1,0 +1,56 @@
+baseline:
+  at: '2026-10-03T08:31:56+00:00'
+  base_git_sha: 158b23634debf1496c92f56a1879c986f10fe3a7
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-03-caveman-kg-sync
+complexity_score: null
+current_phase: build
+design_adjustments:
+  count: 8
+  file: design-adjustments.md
+last_modified: '2026-10-03T08:32:19+00:00'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T08:56:32+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 用户会话确认 Gate 3：审查 TC 覆盖率 46/46 + 3 切片全绿 + 失败模式 22/22 + test-report.md
+      后下达「确认 Gate 3，放行」
+    slices_completed:
+      '1':
+        new_tests: 22
+        tc_coverage: CAVE-TC-001~022
+        verified_at: '2026-10-03T08:32:18+00:00'
+      '2':
+        new_tests: 24
+        tc_coverage: KG-TC-001~024
+        verified_at: '2026-10-03T08:32:18+00:00'
+    status: completed
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T08:32:02+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 用户会话确认 Gate 2：Phase 2 产出 caveman.yaml(8 REQ/22 TC) + kg-sync.yaml(10
+      REQ/24 TC) + test-plan.md 后下达「好的，执行吧」进入 Phase 3 BUILD
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T08:31:56+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 用户会话确认 Gate 1：审查 proposal（caveman 语体压缩器 + KG 自动同步器）后确认，进入
+      Phase 2 SPEC
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_requirements: 18
+  spec_scenarios: 46
+  tc_cases: 46
+  test_functions: 46
+version: '3.0'

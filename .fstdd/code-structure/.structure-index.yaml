@@ -1,5 +1,8 @@
 meta:
-  last_updated: '2026-10-03T01:58:39+00:00'
+  last_updated: '2026-10-03T08:58:40+00:00'
   modules: {}
-  total_changes: 5
-modules: {}
+  total_changes: 6
+modules:
+  caveman_summary.txt:
+    changes:
+    - 2026-10-03-caveman-kg-sync

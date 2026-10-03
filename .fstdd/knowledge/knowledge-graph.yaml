@@ -1,12 +1,15 @@
 edges: []
-graph_version: '1.1'
-last_merged: '2026-10-03T02:09:27.695667+00:00'
+graph_version: '1.2'
+last_merged: '2026-10-03T09:00:30+00:00'
 nodes:
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-001
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -15,14 +18,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-002
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -31,14 +38,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: pipeline_break
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-003
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -47,14 +58,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: pipeline_break
   type: failure_pattern
 - category: tool_misuse
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-004
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -63,14 +78,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tool_misuse
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-005
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -79,14 +98,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-006
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -95,14 +118,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-007
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 3
@@ -111,14 +138,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: quality
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-008
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -127,14 +158,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: quality
   type: failure_pattern
 - category: quality
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-009
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -143,14 +178,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: quality
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-010
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -159,14 +198,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-011
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -175,14 +218,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-012
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -191,14 +238,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: quality
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-013
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 3
@@ -207,14 +258,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: quality
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-014
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -223,14 +278,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-015
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -239,14 +298,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-016
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -255,14 +318,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-017
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -271,14 +338,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-018
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -287,14 +358,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-019
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -303,14 +378,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-020
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -319,14 +398,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-021
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -335,14 +418,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: runtime
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-022
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -351,14 +438,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: runtime
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-023
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -367,14 +458,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-024
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -383,14 +478,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-025
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -399,14 +498,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-026
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -415,14 +518,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-027
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 3
@@ -431,14 +538,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-028
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -447,14 +558,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-029
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -463,14 +578,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-030
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -479,14 +598,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-031
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -495,14 +618,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-032
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -511,14 +638,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-033
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -527,14 +658,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-034
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -543,14 +678,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: testing
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-035
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -559,14 +698,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: testing
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-036
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -575,14 +718,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-037
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -591,14 +738,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: security
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-038
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -607,14 +758,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: security
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-039
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -623,14 +778,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-040
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -639,14 +798,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-041
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -655,14 +818,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-042
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -671,14 +838,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-043
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -687,14 +858,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-044
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -703,14 +878,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-045
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -719,14 +898,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-046
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -735,14 +918,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: pipeline_break
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-047
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -751,14 +938,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: pipeline_break
   type: failure_pattern
 - category: tool_misuse
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-048
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -767,14 +958,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tool_misuse
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-049
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -783,14 +978,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-050
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -799,14 +998,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-051
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 3
@@ -815,14 +1018,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: quality
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-052
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -831,14 +1038,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: quality
   type: failure_pattern
 - category: quality
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-053
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -847,14 +1058,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: quality
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-054
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -863,14 +1078,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-055
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -879,14 +1098,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-056
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -895,14 +1118,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: quality
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-057
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 3
@@ -911,14 +1138,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: quality
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-058
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -927,14 +1158,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-059
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -943,14 +1178,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-060
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -959,14 +1198,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-061
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -975,14 +1218,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-062
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -991,14 +1238,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-063
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1007,14 +1258,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-064
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1023,14 +1278,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-065
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1039,14 +1298,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: runtime
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-066
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1055,14 +1318,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: runtime
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-067
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1071,15 +1338,19 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: 质量检查工具用「文本出现次数」代替「语义单位」做判定，导致规范产物被普遍误报 —— 误报累积后使用者会养成忽略红叉的习惯，真正的失败反而被漏掉
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-068-FIX
   id: KG-068
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1101,6 +1372,7 @@ nodes:
 
     '
   severity: high
+  source_files: []
   tags:
   - tooling
   - false-positive
@@ -1110,10 +1382,13 @@ nodes:
   type: failure_pattern
 - category: test
   cross_project_count: 1
+  deprecated: false
   description: 用「文本里是否出现某字符串」判定「行为是否违规」，而检测代码本身必须提及该字符串 —— 断言命中了检测规则自己
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-069-FIX
   id: KG-069
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1130,6 +1405,7 @@ nodes:
 
     '
   severity: medium
+  source_files: []
   tags:
   - testing
   - self-match
@@ -1139,10 +1415,13 @@ nodes:
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: 验证脚本为制造故障而修改生产环境，却把「恢复现场」写成正常路径的最后一步 —— 中途任何异常都会把环境留在故障态，比不验证更糟
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-070-FIX
   id: KG-070
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1168,6 +1447,7 @@ nodes:
 
     '
   severity: high
+  source_files: []
   tags:
   - verification
   - side-effect
@@ -1179,11 +1459,14 @@ nodes:
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: 用 GIT_CONFIG_KEY_n=remote.<name>.url 注入镜像目标 —— 看起来生效（config --get 返回注入值），实际
     fetch 仍走第一个 URL，注入形同虚设
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-071-FIX
   id: KG-071
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1196,6 +1479,7 @@ nodes:
     \  · `git remote -v` -> 注入值被标成**额外的 push URL**\n  · `git ls-remote github` ->\
     \ 依旧走**第一个** URL（真实远端）\n\n「查询接口」与「实际行为」给出相反的答案，而人只会去查前者。\n"
   severity: high
+  source_files: []
   tags:
   - git
   - environment-injection
@@ -1207,10 +1491,13 @@ nodes:
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: 误差上界公式写成 err = |offset| + rtt/2，使「err ≤ 容差 且 |offset| > 容差」永假 —— 三态判定里的「超限」态不可达，成为假三态
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-072-FIX
   id: KG-072
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1231,6 +1518,7 @@ nodes:
 
     '
   severity: high
+  source_files: []
   tags:
   - design
   - state-machine
@@ -1241,11 +1529,14 @@ nodes:
   type: failure_pattern
 - category: testing
   cross_project_count: 1
+  deprecated: false
   description: 偏移测量用 time.monotonic() 当本地中点去减远端 date +%s（epoch），offset 输出 1.79e9 荒谬值
     —— 注入式单测全部通过，真实环境一跑就露馅
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-073-FIX
   id: KG-073
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1266,6 +1557,7 @@ nodes:
 
     '
   severity: high
+  source_files: []
   tags:
   - testing
   - injection-limit
@@ -1277,11 +1569,14 @@ nodes:
   type: failure_pattern
 - category: code
   cross_project_count: 1
+  deprecated: false
   description: naive→aware 改造时写成 _dt.now(_dt.timezone.utc) —— _dt 是 datetime 类、timezone
     是模块属性 → 必抛 AttributeError，被外层 except Exception 吞掉 → 检测逻辑静默全哑
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-074-FIX
   id: KG-074
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 3
@@ -1312,6 +1607,7 @@ nodes:
 
     '
   severity: high
+  source_files: []
   tags:
   - code
   - datetime
@@ -1323,10 +1619,13 @@ nodes:
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: 多副本/多源文件改了 N-1 份：宪法两份副本加了第 7 节，但 init.py 内嵌生成模板（单一真源）没加 —— 新生成项目与仓库产物逐字节分叉
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-075-FIX
   id: KG-075
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -1347,6 +1646,7 @@ nodes:
 
     '
   severity: medium
+  source_files: []
   tags:
   - process
   - single-source-of-truth
@@ -1357,9 +1657,12 @@ nodes:
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-076
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1368,14 +1671,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-077
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1384,14 +1691,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-078
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -1400,14 +1711,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-079
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 3
@@ -1416,14 +1731,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-080
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1432,14 +1751,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-081
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1448,14 +1771,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-082
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1464,14 +1791,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-083
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1480,14 +1811,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-084
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1496,14 +1831,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-085
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1512,14 +1851,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-086
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -1528,14 +1871,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: testing
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-087
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1544,14 +1891,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: testing
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-088
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1560,14 +1911,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-089
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1576,14 +1931,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: security
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-090
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1592,14 +1951,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: security
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-091
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1608,18 +1971,22 @@ nodes:
   - stdd
   root_cause: ''
   severity: low
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: operations
-  cross_project_count: 6
+  cross_project_count: 7
+  deprecated: false
   description: 同步/镜像类钩子失败时 exit 0 且不上报告警 —— push 报成功，失败静默腐烂，直到有人偶然查看日志才发现
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-092-FIX
   id: KG-092
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
-    occurrence_count: 6
+    occurrence_count: 7
     severity_trend: stable
   projects:
   - stdd
@@ -1628,6 +1995,7 @@ nodes:
 
     '
   severity: high
+  source_files: []
   tags:
   - operations
   - hook
@@ -1637,14 +2005,17 @@ nodes:
   title: 同步/镜像类钩子失败时 exit 0 且不上报告警 —— push 报成功，失败静默腐烂，直到有人偶然查看日志才发现
   type: failure_pattern
 - category: database
-  cross_project_count: 6
+  cross_project_count: 7
+  deprecated: false
   description: SCHEMA 里声明了 FOREIGN KEY，但连接从未开启 PRAGMA foreign_keys —— 约束形同虚设，脏数据静默写入
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-093-FIX
   id: KG-093
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
-    occurrence_count: 6
+    occurrence_count: 7
     severity_trend: stable
   projects:
   - stdd
@@ -1653,6 +2024,7 @@ nodes:
     \ foreign_keys。\n  结果：建表时的那次执行确实开了，但**之后所有业务连接都没开** —— 声明与运行时行为不一致。\n  实测：向不存在的父记录插入子行返回\
     \ 201，生成孤儿数据。\n"
   severity: high
+  source_files: []
   tags:
   - database
   - sqlite
@@ -1662,14 +2034,17 @@ nodes:
   title: SCHEMA 里声明了 FOREIGN KEY，但连接从未开启 PRAGMA foreign_keys —— 约束形同虚设，脏数据静默写入
   type: failure_pattern
 - category: database
-  cross_project_count: 6
+  cross_project_count: 7
+  deprecated: false
   description: 多列 INSERT 的列与占位符错位一格，两个字段的值互换 —— 测试全绿，因为断言只覆盖了其中少数几个字段
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-094-FIX
   id: KG-094
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
-    occurrence_count: 6
+    occurrence_count: 7
     severity_trend: stable
   projects:
   - stdd
@@ -1678,6 +2053,7 @@ nodes:
     \ DO UPDATE SET status=online，\n  **第二次注册时 status 会被兜回正常值**，于是问题变成「只在首次注册时出现」——\
     \ 更难发现。\n"
   severity: critical
+  source_files: []
   tags:
   - database
   - sql
@@ -1687,20 +2063,24 @@ nodes:
   title: 多列 INSERT 的列与占位符错位一格，两个字段的值互换 —— 测试全绿，因为断言只覆盖了其中少数几个字段
   type: failure_pattern
 - category: testing
-  cross_project_count: 6
+  cross_project_count: 7
+  deprecated: false
   description: defense in depth 的第二层防线天然不可观测 —— 上层校验拦住后，底层的开关开没开，变异测试也测不出来
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-095-FIX
   id: KG-095
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
-    occurrence_count: 6
+    occurrence_count: 7
     severity_trend: stable
   projects:
   - stdd
   root_cause: "为修一个数据完整性问题同时加了两道防线：底层开启数据库外键约束，\n  上层加显式存在性校验。\n  做变异测试时注入「去掉底层开关」这个缺陷，测试**仍然全绿**\
     \ —— \n  因为上层校验先拦住了非法输入，底层根本没机会触发。\n  于是变异测试报告「该缺陷存活」，但真实情况是「该缺陷不可观测」，两者含义完全不同。\n"
   severity: medium
+  source_files: []
   tags:
   - testing
   - mutation-testing
@@ -1709,14 +2089,17 @@ nodes:
   title: defense in depth 的第二层防线天然不可观测 —— 上层校验拦住后，底层的开关开没开，变异测试也测不出来
   type: failure_pattern
 - category: design
-  cross_project_count: 6
+  cross_project_count: 7
+  deprecated: false
   description: 收紧权限时一刀切禁止，摧毁了数据形态完全相同、无法区分的既有合法工作流
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-096-FIX
   id: KG-096
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
-    occurrence_count: 6
+    occurrence_count: 7
     severity_trend: stable
   projects:
   - stdd
@@ -1724,6 +2107,7 @@ nodes:
     \ 求助流程就是\n  「自己发求助 -> 自己 ack 表示已处理」，\n  其数据形态（task_id 非空 + 收件人为空）与公共讨论**逐字节相同**，无法区分。\n\
     \  禁止它等于摧毁该工作流。\n"
   severity: medium
+  source_files: []
   tags:
   - design
   - permissions
@@ -1732,20 +2116,24 @@ nodes:
   title: 收紧权限时一刀切禁止，摧毁了数据形态完全相同、无法区分的既有合法工作流
   type: failure_pattern
 - category: security
-  cross_project_count: 6
+  cross_project_count: 7
+  deprecated: false
   description: 流程框架把运行期凭据写在要入库的目录里，导致令牌随过程产物被推到公开仓库
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-097-FIX
   id: KG-097
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
-    occurrence_count: 6
+    occurrence_count: 7
     severity_trend: stable
   projects:
   - stdd
   root_cause: "流程框架规定会话状态写在 change 目录下（便于追溯），而该目录属于 .fstdd/ **是要进版本库的**。\n  会话文件里含明文租约令牌。本轮该令牌被推到了**公开**仓库。\n\
     \  缓解事实：该任务已完成、令牌已失效，且服务只监听回环地址，实际不可被利用。\n  但**下一次执行会把一个仍在有效期内的令牌推上去**，在租约窗口内可被冒用。\n"
   severity: high
+  source_files: []
   tags:
   - security
   - credential-leak
@@ -1755,10 +2143,13 @@ nodes:
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: 巡检/检测逻辑豁免「当前对象」（active/current exemption），导致单对象场景下检测恒零命中 —— 最常见的失效形态恰恰是它唯一管不了的那个
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-098-FIX
   id: KG-098
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1784,6 +2175,7 @@ nodes:
 
     '
   severity: high
+  source_files: []
   tags:
   - detection-gap
   - exemption
@@ -1793,10 +2185,13 @@ nodes:
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: 检测/告警函数写完从未被调用（零调用方死代码）——「长期零命中」不是系统健康，是检测根本没通电
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-099-FIX
   id: KG-099
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1822,6 +2217,7 @@ nodes:
 
     '
   severity: high
+  source_files: []
   tags:
   - dead-code
   - detection
@@ -1831,11 +2227,14 @@ nodes:
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: 审计表/白名单用 (文件, 语句内容) 做定位指纹，遇同文件重复语句（pass×N）互相顶替 —— 零漂移校验把 A 处的记录错配到
     B 处，漂移检测本身失真
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - KG-100-FIX
   id: KG-100
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1859,6 +2258,7 @@ nodes:
 
     '
   severity: medium
+  source_files: []
   tags:
   - fingerprint
   - audit-table
@@ -1868,9 +2268,12 @@ nodes:
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-101
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1879,14 +2282,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-102
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1895,14 +2302,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-103
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1911,14 +2322,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-104
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1927,14 +2342,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: process_deviation
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-105
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1943,14 +2362,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process_deviation
   type: failure_pattern
 - category: ''
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-106
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1959,14 +2382,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: ''
   type: failure_pattern
 - category: runtime_pitfall
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-107
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1975,14 +2402,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: runtime_pitfall
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-108
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -1991,14 +2422,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: test
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-109
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2007,14 +2442,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: test
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-110
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2023,14 +2462,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-111
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2039,14 +2482,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-112
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2055,14 +2502,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: testing
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-113
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2071,14 +2522,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: testing
   type: failure_pattern
 - category: code
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-114
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 3
@@ -2087,14 +2542,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: code
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-115
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -2103,14 +2562,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-116
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2119,14 +2582,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-117
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2135,14 +2602,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-118
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2151,14 +2622,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: ''
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-119
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2167,14 +2642,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: ''
   type: failure_pattern
 - category: runtime_pitfall
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-120
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2183,14 +2662,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: runtime_pitfall
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-121
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2199,14 +2682,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: test
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-122
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2215,14 +2702,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: test
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-123
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2231,14 +2722,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-124
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2247,14 +2742,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-125
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2263,14 +2762,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: testing
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-126
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2279,14 +2782,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: testing
   type: failure_pattern
 - category: code
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-127
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 3
@@ -2295,14 +2802,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: code
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-128
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -2311,14 +2822,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-129
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2327,14 +2842,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-130
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2343,14 +2862,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-131
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2359,14 +2882,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: ''
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-132
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2375,14 +2902,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: ''
   type: failure_pattern
 - category: runtime_pitfall
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-133
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2391,14 +2922,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: runtime_pitfall
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-134
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2407,14 +2942,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: test
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-135
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2423,14 +2962,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: test
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-136
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2439,14 +2982,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-137
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2455,14 +3002,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-138
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2471,14 +3022,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: testing
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-139
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2487,14 +3042,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: testing
   type: failure_pattern
 - category: code
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-140
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 3
@@ -2503,14 +3062,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: code
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-141
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -2519,14 +3082,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-142
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2535,14 +3102,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-143
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2551,14 +3122,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-144
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2567,14 +3142,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: ''
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-145
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2583,14 +3162,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: ''
   type: failure_pattern
 - category: runtime_pitfall
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-146
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2599,14 +3182,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: runtime_pitfall
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-147
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2615,14 +3202,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: test
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-148
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2631,14 +3222,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: test
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-149
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2647,14 +3242,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-150
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2663,14 +3262,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-151
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2679,14 +3282,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: testing
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-152
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2695,14 +3302,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: testing
   type: failure_pattern
 - category: code
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-153
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 3
@@ -2711,14 +3322,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: code
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-154
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -2727,14 +3342,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-155
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2743,14 +3362,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-156
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2759,14 +3382,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-157
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2775,14 +3402,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: ''
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-158
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2791,14 +3422,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: ''
   type: failure_pattern
 - category: runtime_pitfall
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-159
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2807,14 +3442,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: runtime_pitfall
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-160
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2823,14 +3462,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: test
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-161
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2839,14 +3482,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: test
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-162
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2855,14 +3502,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-163
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2871,14 +3522,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-164
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2887,14 +3542,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: testing
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-165
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2903,14 +3562,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: testing
   type: failure_pattern
 - category: code
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-166
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 3
@@ -2919,14 +3582,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: code
   type: failure_pattern
 - category: process
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-167
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 2
@@ -2935,14 +3602,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: process
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-168
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2951,14 +3622,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: design
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-169
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2967,14 +3642,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: high
+  source_files: []
   tags: []
   title: design
   type: failure_pattern
 - category: tooling
   cross_project_count: 1
+  deprecated: false
   description: ''
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: KG-170
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: ''
     occurrence_count: 1
@@ -2983,14 +3662,18 @@ nodes:
   - stdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags: []
   title: tooling
   type: failure_pattern
 - category: domain_thread
   cross_project_count: 1
+  deprecated: false
   description: 支付/转账/清算 — 金融系统核心资金流转路径
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: FIN-THR-001
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: '2026-10-03T10:20:00+08:00'
     occurrence_count: 1
@@ -2999,6 +3682,7 @@ nodes:
   - fstdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags:
   - finance
   - capital_flow
@@ -3007,9 +3691,12 @@ nodes:
   type: domain
 - category: domain_thread
   cross_project_count: 1
+  deprecated: false
   description: 订单簿/撮合引擎 — 交易类金融系统核心
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: FIN-THR-002
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: '2026-10-03T10:20:00+08:00'
     occurrence_count: 1
@@ -3018,6 +3705,7 @@ nodes:
   - fstdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags:
   - finance
   - trading
@@ -3027,9 +3715,12 @@ nodes:
   type: domain
 - category: domain_thread
   cross_project_count: 1
+  deprecated: false
   description: 风控/KYC/AML — 合规与安全交叉领域
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: FIN-THR-003
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: '2026-10-03T10:20:00+08:00'
     occurrence_count: 1
@@ -3038,6 +3729,7 @@ nodes:
   - fstdd
   root_cause: ''
   severity: high
+  source_files: []
   tags:
   - finance
   - risk
@@ -3048,9 +3740,12 @@ nodes:
   type: domain
 - category: domain_thread
   cross_project_count: 1
+  deprecated: false
   description: 消息队列/分布式事务/可观测性 — 金融系统技术底座
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs: []
   id: FIN-THR-004
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: '2026-10-03T10:20:00+08:00'
     occurrence_count: 1
@@ -3059,6 +3754,7 @@ nodes:
   - fstdd
   root_cause: ''
   severity: medium
+  source_files: []
   tags:
   - finance
   - tech_infra
@@ -3068,10 +3764,13 @@ nodes:
   type: domain
 - category: double_charge
   cross_project_count: 1
+  deprecated: false
   description: 重复扣款 — 幂等 key 缺失/消息重试未去重
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - fstdd-fin-SKILL-MD
   id: FIN-FAIL-001
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: '2026-10-03T10:20:00+08:00'
     occurrence_count: 1
@@ -3080,6 +3779,7 @@ nodes:
   - fstdd
   root_cause: 幂等性未实现或不完整
   severity: high
+  source_files: []
   tags:
   - finance
   - payment
@@ -3088,10 +3788,13 @@ nodes:
   type: failure_pattern
 - category: reconciliation_gap
   cross_project_count: 1
+  deprecated: false
   description: 账实不符 — 内部账本与外部对账源不一致无处理流程
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - fstdd-fin-SKILL-MD
   id: FIN-FAIL-002
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: '2026-10-03T10:20:00+08:00'
     occurrence_count: 1
@@ -3100,6 +3803,7 @@ nodes:
   - fstdd
   root_cause: reconciliation 机制缺失
   severity: high
+  source_files: []
   tags:
   - finance
   - reconciliation
@@ -3108,10 +3812,13 @@ nodes:
   type: failure_pattern
 - category: silent_degradation
   cross_project_count: 1
+  deprecated: false
   description: 静默降级 — 支付/风控/对账组件降级时未显式标记和告警
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - fstdd-fin-SKILL-MD
   id: FIN-FAIL-003
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: '2026-10-03T10:20:00+08:00'
     occurrence_count: 1
@@ -3120,6 +3827,7 @@ nodes:
   - fstdd
   root_cause: 降级处理只打日志不阻断
   severity: high
+  source_files: []
   tags:
   - finance
   - degradation
@@ -3128,10 +3836,13 @@ nodes:
   type: failure_pattern
 - category: precision_loss
   cross_project_count: 1
+  deprecated: false
   description: 精度丢失 — 用 float 处理金额导致精度丢失
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - fstdd-fin-SKILL-MD
   id: FIN-FAIL-004
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: '2026-10-03T10:20:00+08:00'
     occurrence_count: 1
@@ -3140,6 +3851,7 @@ nodes:
   - fstdd
   root_cause: 金额字段未用 Decimal / BigDecimal
   severity: high
+  source_files: []
   tags:
   - finance
   - decimal
@@ -3149,10 +3861,13 @@ nodes:
   type: failure_pattern
 - category: audit_gap
   cross_project_count: 1
+  deprecated: false
   description: 审计缺口 — 关键操作无不可变日志
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - fstdd-fin-SKILL-MD
   id: FIN-FAIL-005
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: '2026-10-03T10:20:00+08:00'
     occurrence_count: 1
@@ -3161,6 +3876,7 @@ nodes:
   - fstdd
   root_cause: 日志非结构化/可修改
   severity: high
+  source_files: []
   tags:
   - finance
   - audit
@@ -3170,10 +3886,13 @@ nodes:
   type: failure_pattern
 - category: state_machine_gap
   cross_project_count: 1
+  deprecated: false
   description: 状态机漏洞 — 非法状态转换/死锁/无补偿
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - fstdd-fin-SKILL-MD
   id: FIN-FAIL-006
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: '2026-10-03T10:20:00+08:00'
     occurrence_count: 1
@@ -3182,6 +3901,7 @@ nodes:
   - fstdd
   root_cause: 交易状态机未覆盖所有路径
   severity: high
+  source_files: []
   tags:
   - finance
   - state_machine
@@ -3191,10 +3911,13 @@ nodes:
   type: failure_pattern
 - category: limit_bypass
   cross_project_count: 1
+  deprecated: false
   description: 额度穿透 — 限额只在客户端检查/并发竞态
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - fstdd-fin-SKILL-MD
   id: FIN-FAIL-007
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: '2026-10-03T10:20:00+08:00'
     occurrence_count: 1
@@ -3203,6 +3926,7 @@ nodes:
   - fstdd
   root_cause: 限额未在服务端原子检查
   severity: high
+  source_files: []
   tags:
   - finance
   - limit
@@ -3212,10 +3936,13 @@ nodes:
   type: failure_pattern
 - category: compliance_gap
   cross_project_count: 1
+  deprecated: false
   description: 合规遗漏 — KYC/AML/跨境数据传输覆盖不全
+  first_seen_at: '2026-10-03T08:33:04+00:00'
   fix_template_refs:
   - fstdd-fin-SKILL-MD
   id: FIN-FAIL-008
+  last_synced_at: '2026-10-03T08:33:04+00:00'
   metrics:
     last_seen: '2026-10-03T10:20:00+08:00'
     occurrence_count: 1
@@ -3224,6 +3951,7 @@ nodes:
   - fstdd
   root_cause: 合规流程未嵌入主交易路径
   severity: high
+  source_files: []
   tags:
   - finance
   - compliance
@@ -3231,4 +3959,212 @@ nodes:
   - aml
   - gdpr
   title: compliance_gap
+  type: failure_pattern
+- category: ''
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-171
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: ''
+  type: failure_pattern
+- category: runtime_pitfall
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-172
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: runtime_pitfall
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-173
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: test
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-174
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: test
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-175
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: process
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-176
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: tooling
+  type: failure_pattern
+- category: design
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-177
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: design
+  type: failure_pattern
+- category: testing
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-178
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: testing
+  type: failure_pattern
+- category: code
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-179
+  metrics:
+    last_seen: ''
+    occurrence_count: 3
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: code
+  type: failure_pattern
+- category: process
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-180
+  metrics:
+    last_seen: ''
+    occurrence_count: 2
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: process
+  type: failure_pattern
+- category: design
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-181
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: design
+  type: failure_pattern
+- category: design
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-182
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: high
+  tags: []
+  title: design
+  type: failure_pattern
+- category: tooling
+  cross_project_count: 1
+  description: ''
+  fix_template_refs: []
+  id: KG-183
+  metrics:
+    last_seen: ''
+    occurrence_count: 1
+    severity_trend: stable
+  projects:
+  - stdd
+  root_cause: ''
+  severity: medium
+  tags: []
+  title: tooling
   type: failure_pattern

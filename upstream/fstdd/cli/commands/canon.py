@@ -384,6 +384,16 @@ def _generate_one(project_root: Path, change_id: str, gen_type: str,
     output_file.write_text("\n".join(lines), encoding="utf-8")
     print(f"  Generated changes/{change_id}/proposal.md (source_hash: {yaml_hash})")
 
+    # V3.1.1: caveman 精简版（跨节点传讯省 token；2026-10-03-caveman-kg-sync）
+    # 仅降级「模块不存在」（老版本安装）——不吞其它异常，避免掩盖真实故障。
+    try:
+        from ...caveman import compress
+    except ImportError:
+        compress = None
+    if compress is not None:
+        summary = compress("\n".join(lines), max_chars=200)
+        (change_dir / "caveman_summary.txt").write_text(summary, encoding="utf-8")
+
 
 def cmd_canon_verify(args):
     """Verify consistency between Canonical YAML and Human View MD."""

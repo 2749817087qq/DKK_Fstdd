@@ -21,8 +21,8 @@ COMMAND_GROUPS = [
               "trace", "diff", "archive", "rollback", "abort"]),
     ("管控", ["guard", "ci", "bootcamp", "upgrade", "install"]),
     ("工具", ["canon", "proposal", "extract-proposal", "dependency-graph",
-              "structure", "index", "agent", "hooks", "skill"]),
-    ("维护", ["experience", "knowledge", "fix", "init", "baseline"]),
+              "structure", "index", "agent", "hooks", "skill", "caveman"]),
+    ("维护", ["experience", "knowledge", "kg", "fix", "init", "baseline"]),
     ("批量", ["batch"]),
 ]
 
@@ -56,6 +56,8 @@ _CMD_HELP = {
     "phase": "变更阶段管理 (4-phase)",
     "work": "关联工作记录",
     "knowledge": "跨项目知识图谱",
+    "kg": "知识图谱自动同步器 (sync)",
+    "caveman": "跨节点传讯语体压缩器",
     "bootcamp": "AI 训练营 (5 关卡)",
     "install": "安装 STDD 到指定平台",
     "baseline": "时间基线管理 (establish/show/check)",
@@ -439,6 +441,21 @@ def main() -> None:
     p_bootcamp.add_argument("--module", dest="module", default=None,
                             help="start: 指定关卡编号")
 
+    # V3.1.1: caveman — 跨节点传讯语体压缩器（2026-10-03-caveman-kg-sync）
+    p_caveman = subparsers.add_parser("caveman", help="跨节点传讯语体压缩器 (V3.1.1)", parents=[parent])
+    p_caveman.add_argument("source", help="源文件路径（- 表示 stdin）")
+    p_caveman.add_argument("--max", type=int, default=200, help="最大字符数 (默认 200)")
+    p_caveman.add_argument("--out", default="", help="输出文件路径 (默认 stdout)")
+
+    # V3.1.1: kg — 知识图谱自动同步器（2026-10-03-caveman-kg-sync）
+    p_kg = subparsers.add_parser("kg", help="知识图谱自动同步器 (V3.1.1)", parents=[parent])
+    kg_subs = p_kg.add_subparsers(dest="subcommand", help="子命令")
+    p_kg_sync = kg_subs.add_parser("sync", help="扫描源码变更 → re-index 知识图谱", parents=[parent])
+    p_kg_sync.add_argument("--deep", action="store_true", help="递归扫描子目录 (默认只扫一层)")
+    p_kg_sync.add_argument("--edge-threshold", dest="edge_threshold", type=int, default=2,
+                           help="同文档共现建 edge 的阈值 (默认 2)")
+    p_kg_sync.add_argument("--full", action="store_true", help="强制全量扫描 (默认首次后走增量)")
+
     # V3.1: baseline — 时间基线管理（2026-09-17-time-baseline / Slice 1）
     p_baseline = subparsers.add_parser("baseline", help="时间基线管理 (V3.1)", parents=[parent])
     p_baseline.add_argument("subcommand", nargs="?",
@@ -507,6 +524,9 @@ def main() -> None:
         "work": "fstdd.cli.commands.work.cmd_work",
         # V3.0 new commands
         "knowledge": "fstdd.cli.commands.knowledge.cmd_knowledge",
+        # V3.1.1 new commands (2026-10-03-caveman-kg-sync)
+        "caveman": "fstdd.cli.commands.caveman._dispatch",
+        "kg": "fstdd.cli.commands.kg._dispatch",
         # V3.0.x new commands
         "bootcamp": "fstdd.cli.commands.bootcamp.cmd_bootcamp",
         # V3.1: baseline — 时间基线管理

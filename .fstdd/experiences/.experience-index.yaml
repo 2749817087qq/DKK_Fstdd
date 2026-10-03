@@ -1,6 +1,8 @@
 by_category:
   code:
   - EXP-20260917-B3
+  contract_gap:
+  - EXP-2026-0013
   database:
   - FSTDD005-EXP-20260918-C2
   - FSTDD005-EXP-20260918-C3
@@ -14,6 +16,8 @@ by_category:
   process:
   - EXP-20260917-A3
   - EXP-20260917-B4
+  runtime_deviation:
+  - EXP-2026-0014
   runtime_pitfall:
   - EXP-2026-0012
   security:
@@ -75,12 +79,14 @@ by_category:
   - EXP-D4587CAE
 by_language:
   python:
+  - EXP-2026-0013
   - FSTDD005-EXP-20260918-C1
   - FSTDD005-EXP-20260918-C2
   - FSTDD005-EXP-20260918-C3
   - FSTDD005-EXP-20260918-C4
   - FSTDD005-EXP-20260918-C5
   - FSTDD005-EXP-20260918-C6
+  - EXP-2026-0014
   unknown:
   - EXP-009-20260924-SSH-KEYPERM
   - EXP-00C0412F
@@ -205,11 +211,15 @@ by_lifecycle:
   - EXP-C4213ACA
   - EXP-C6A698A8
   - EXP-D4587CAE
+  verified:
+  - EXP-2026-0013
+  - EXP-2026-0014
 by_severity:
   critical:
   - FSTDD005-EXP-20260918-C3
   high:
   - EXP-2026-0012
+  - EXP-2026-0013
   - EXP-20260917-A1
   - EXP-20260917-A3
   - EXP-20260917-A4
@@ -272,5 +282,6 @@ by_severity:
   - EXP-C4213ACA
   - EXP-C6A698A8
   - EXP-D4587CAE
-last_id: 12
-total: 63
+  - EXP-2026-0014
+last_id: 14
+total: 65

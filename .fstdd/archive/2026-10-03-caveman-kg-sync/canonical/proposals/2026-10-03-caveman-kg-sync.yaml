@@ -1,0 +1,259 @@
+meta:
+  change_id: "2026-10-03-caveman-kg-sync"
+  title: "caveman 语体压缩（跨节点传讯砍 token 60%）+ KG 自动同步器（源码变更→自动 re-index）"
+  created: "2026-10-03T13:30:00+08:00"
+  status: draft
+  inspiration_source: |
+    https://mp.weixin.qq.com/s/Z9hblbG57sJ7eRXE3resEQ (开源 AI 日报 2026-10-03)
+    - JuliusBrussee/caveman ⭐109k #2: 穴居人语体砍 65% token
+    - colbymchenry/codegraph ⭐73k #13: 预建本地代码知识图谱 + 自动同步
+
+why:
+  problem: |
+    FSTDD 当前两个 token/效率痛点：
+    1. multihub 任务 scope / release announcement / 跨节点通知 → 长 JSON 或 Markdown，
+       每个节点完整拉取 → token 浪费。实际 FSTDD 四阶段里 Phase 1 proposal.yaml 动辄
+       几百行，跨节点同步时没必要把"为什么这么设计"的完整论证传过去，只要"做什么 +
+       怎么做 + 约束"的最小集合。
+    2. knowledge-graph.yaml 当前是纯静态 YAML（182 nodes）。今天加了 12 个金融节点，
+       但后续每次源码变（比如改 build.md C4、改 understand.md Step 0.5），KG 不会
+       自动同步。节点与源码脱节 → Agent 查 KG 拿到过期节点 → 经验库噪声。
+  motivation: |
+    caveman (⭐109k) 实测砍 65% token 不损完成率 → FSTDD multihub 传讯做同构的
+    "语体压缩器"（FSTDD-Caveman），把 Phase 1/2 产出自动压缩成 ≤200 字跨节点版本。
+    codegraph (⭐73k) 预建知识图谱 + 自动同步 → FSTDD KG 做同构的 "re-index on change"
+    钩子：commit 触发或手动 `fstdd kg sync` 命令 → 扫描 skills/ + .fstdd/ 源码变更 →
+    自动追加/更新 KG node。
+  evidence:
+    observed_at: "2026-10-03T13:20:00+08:00"
+    source: "开源 AI 日报 2026-10-03 Trending 数据"
+    external_refs:
+      - repo: "JuliusBrussee/caveman"
+        stars: 108948
+        trending: "#2 新进榜"
+        claim: "穴居人语体砍 65% token 不损完成率"
+        applicability: "FSTDD multihub 传讯 / Gate 审批通知"
+      - repo: "colbymchenry/codegraph"
+        stars: 72872
+        trending: "#13 新进榜"
+        claim: "预建本地代码知识图谱 + 自动同步"
+        applicability: "FSTDD KG 从静态 YAML 变成活的索引"
+
+# ================================================================
+# Change A: caveman 语体压缩器（FSTDD-Caveman）
+# ================================================================
+caveman_compressor:
+  description: |
+    为 FSTDD 所有"跨节点传讯"产出自动生成 caveman 精简版：
+    目标 ≤200 字（约原长 30%），保留所有关键信息，砍去论证/背景/重复。
+  input_types:
+    - "Phase 1 proposal.yaml → caveman_summary.txt"
+    - "Phase 2 spec YAML → caveman_spec_diff.txt"
+    - "release announcement (version.yaml) → caveman_release.txt"
+    - "multihub task scope (dict) → scope_min (dict, 只留 runner_cmd/约束/deadline)"
+  output_contract:
+    max_chars: 200
+    mandatory_fields:
+      - "做什么 (10 字以内)"
+      - "怎么做 (命令 / 关键路径)"
+      - "约束 (最多 3 条)"
+      - "deadline (如果有)"
+    forbidden:
+      - "背景故事 / motivation / why"
+      - "完整 spec scenario 展开"
+      - "代码块 / 完整 YAML 片段"
+  implementation:
+    cli_command: "fstdd caveman <source_path> [--max 200]"
+    python_api: |
+      # 独立库，任何模块可直接 import，不绑死在 hub_client
+      from fstdd.caveman import compress
+      
+      # 纯文本/Markdown
+      summary = compress(text, max_chars=200)
+      
+      # dict（如 multihub task scope）→ dict，只保留关键 key
+      scope_min = compress_dict(scope, keep_keys=["runner_cmd", "constraints", "deadline"])
+    algorithm:
+      field_weights:
+        - {field: "summary", weight: 10, max_chars: 60}
+        - {field: "runner_cmd", weight: 8, max_chars: 80}
+        - {field: "constraints", weight: 5, max_chars: 40}
+        - {field: "scope", weight: 3, max_chars: 20}
+        - {field: "motivation", weight: 1, max_chars: 0}  # 直接砍
+      trim_rules:
+        - "中文修饰词 regex: r'[\\u4e00-\\u9fff]{0,4}的[\\u4e00-\\u9fff]{0,4}' → 去掉'的'前后各 2 字"
+        - "英文停用词: 固定列表（the/a/an/is/are/was/were/in/on/at/for/with/to/of/and/or/but）"
+        - "长句砍: 超过 30 字的句子保留前 20 字 + '…'"
+        - "重复关键词合并: 同一命令出现多次 → 只保留一次"
+      budget_allocation: |
+        1. motivation 直接砍（weight=1, max_chars=0）
+        2. 剩余 4 个字段按 weight 比例分配剩余 budget
+        3. 单字段超限 → trim_rules 砍；还超 → 砍最低 weight 字段
+        4. 最终校验 mandatory_fields（做什么/怎么做/约束/deadline）全部存在 → PASS；缺失 → 截断优先级倒转（先砍 summary 让 constraints 进来）
+    integration_points:
+      - "Phase 1 canon generate → 自动追加 caveman_summary.txt（同目录）"
+      - "Phase 2 spec generate → 自动追加 caveman_spec_diff.txt"
+      - "multihub hub_client.issue(scope) → scope 自动附带 scope_min 字段（hub_client.py 调 caveman.compress_dict）"
+      - "multihub hub_client.complete(result) → result 自动附带 result_min（如果 result 是长文本）"
+      - "Gate approve / 通知消息 → 直接调 fstdd caveman <source> 生成精简版贴进消息"
+
+# ================================================================
+# Change B: KG 自动同步器（fstdd kg sync）
+# ================================================================
+kg_autosync:
+  description: |
+    knowledge-graph.yaml 从静态 YAML 变成活索引：
+    源码变更 → 触发 re-index → 自动追加/更新/标记废弃节点。
+  sync_triggers:
+    - "手动: fstdd kg sync"
+    - "自动: git post-commit hook (可选)"
+    - "自动: install_workbuddy_skills.py 完成后（每次 release）"
+  scan_targets:
+    paths:
+      - ".fstdd/skills/*.md"           # 四阶段 skill 正文
+      - "skills/fstdd-fin/SKILL.md"     # fstdd-fin
+      - ".fstdd/templates/**/*.yaml"   # CLI 模板
+      - "upstream/.fstdd/skills/*.md"   # upstream 同步后
+      - "upstream/.fstdd/templates/**/*.yaml"  # upstream 模板（双语）
+    extractables:
+      - id_pattern: '"?([A-Z]+-[A-Z]+-\\d+)"?'  # 如 FIN-THR-001, FAIL-004
+      - type_keywords:
+          domain_thread: "主线|domain|thread|domain thread"
+          failure_pattern: "失败模式|failure pattern|FAIL-|failure mode"
+          redline: "红线|redline|red line"
+          test_dimension: "维|dimension|TC-|test dimension"
+      - severity_keywords:
+          high: "禁止|强制|必须|MUST|forbid|required|红线|redline"
+          medium: "应该|应该 SHOULD|建议|SHOULD|should"
+          low: "可选|optional|YAGNI|optional"
+  sync_operations:
+    - "ADD: 新源码里出现的新 ID → append node，同时写 first_seen_at: now"
+    - "UPDATE: 同 ID 但字段（description/tags/severity）变了 → update node，同时更新 last_synced_at: now"
+    - "DEPRECATE: 源码扫描后不在结果里的现有节点 → 写 last_removed_at: now；下次 kg sync 时如果 last_removed_at 距今 >30 天 → 加 deprecated:true 标记（不物理删除，也不删 id/type）"
+    - "BUILD_EDGES:
+       Step 1 — 收集：扫描所有 spec.yaml + proposal.yaml 文本 → regex 匹配所有 '[A-Z]+-[A-Z]+-\\d+' 格式 ID
+       Step 2 — 配对：同一文档内共现的任意两个 ID 之间建 edge (node_a → node_b, type='co-occurrence')
+       Step 3 — 去重：已存在的 edge 不重复建，只更新 last_synced_at"
+  node_metadata_fields_added:
+    - "first_seen_at: ISO8601 首次发现时间（ADD 时写入）"
+    - "last_synced_at: ISO8601 最后一次 re-index 时间（ADD/UPDATE/BUILD_EDGES 时写入）"
+    - "last_removed_at: ISO8601 节点从源码消失时间（扫描后不在结果里则写入，已存在则保留第一次值）"
+    - "deprecated: bool（默认 false；last_removed_at 距今 >30 天 → 置 true）"
+    - "source_files: list[str]（命中该 ID 的源码文件相对路径列表）"
+  cli_command: "fstdd kg sync [--dry-run] [--deep]"
+  output:
+    - "stdout: ADD N / UPDATE N / DEPRECATE N / SKIP N"
+    - "diff_kg.yaml: 本次变更前后的 diff（用于 commit message）"
+    - ".fstdd/knowledge/knowledge-graph.yaml: 原地更新"
+
+# ================================================================
+# What Changes
+# ================================================================
+what_changes:
+  - id: CAVE-A
+    description: "fstdd CLI 新增 `caveman` 子命令 + 独立 Python 库 (fstdd/caveman.py) — compress() + compress_dict() — 任何模块可 import"
+    type: new
+    files: 2  # upstream/bin/fstdd + upstream/fstdd/caveman.py
+  - id: CAVE-B
+    description: "Phase 1/2 canon/spec generate 自动追加 caveman 精简版输出"
+    type: modified
+    files: 1  # upstream/fstdd/cli/canon.py (+ spec.py if exists)
+  - id: CAVE-C
+    description: "hub_client.py issue() + complete() 自动附带 scope_min / result_min（调 caveman.compress_dict / compress）"
+    type: modified
+    files: 1  # tools/hub_client.py
+  - id: CAVE-D
+    description: "Gate approve / release announcement 通知消息用 caveman 精简版"
+    type: modified
+    files: 1  # fstdd-understand / fstdd-deliver skill 文件里的通知模板（已内嵌，无需改代码）
+  - id: KG-A
+    description: "fstdd CLI 新增 `kg sync` 子命令 + KG 扫描/提取/同步模块"
+    type: new
+    files: 2  # upstream/bin/fstdd + upstream/fstdd/kg_sync.py
+  - id: KG-B
+    description: "post-commit hook 可选触发 kg sync（.git/hooks/post-commit.fstdd.sample）"
+    type: new
+    files: 1
+  - id: KG-C
+    description: "knowledge-graph.yaml node schema 新增 5 个 metadata 字段：first_seen_at / last_synced_at / last_removed_at / deprecated / source_files；edge schema 加 type='co-occurrence' / last_synced_at"
+    type: modified
+    files: 1  # .fstdd/knowledge/knowledge-graph.yaml
+  - id: KG-D
+    description: "KG re-index 首次全量跑 → dry-run → 验证所有能被正则匹配到的 KG nodes 全部命中（不硬卡 182 全命中）"
+    type: ops
+    files: 0
+
+capabilities:
+  new:
+    - name: "caveman-compressor"
+      description: "FSTDD 跨节点传讯语体压缩器 — ≤200 字 / 砍 token ~60% / 保留关键信息"
+    - name: "kg-autosync"
+      description: "FSTDD 知识图谱自动同步器 — 源码变更 → re-index → ADD/UPDATE/DEPRECATE"
+
+constraints:
+  - "不改 hub_client.py 的 claim/ping/register 子命令行为（只改 issue/complete 的 scope/result）"
+  - "caveman 压缩必须 deterministic（同输入 = 同输出），用于 diff"
+  - "kg sync 必须幂等（跑多次结果一样）"
+  - "post-commit hook 是可选的 sample 文件，不自动 install"
+  - "不改现有 KG 节点的 id 或 type（只加 metadata 字段）"
+  - "BUILD_EDGES 只加 type='co-occurrence' 的 edge，不自动推断因果或领域归属（避免噪声）"
+
+stakeholders:
+  - 所有 multihub 节点（caveman 压缩让他们省 token）
+  - 未来每次 release 的发布者（kg sync 让 KG 保持同步）
+  - FSTDD003（设计 + 实现 + 首次 re-index）
+
+risk_areas:
+  - capability: "caveman-compressor"
+    risk: "过度压缩导致关键信息丢失 → 节点误解任务"
+    mitigation: "output_contract 强制字段校验（做什么/怎么做/约束/deadline 必须存在）；缺失时截断优先级倒转（先砍 summary 让 constraints 进来）"
+  - capability: "caveman-compressor"
+    risk: "dict 压缩时 keep_keys 不完整 → 漏了 multihub 需要的 idempotency_key 等关键字段"
+    mitigation: "compress_dict 有 default_keep_keys = ['runner_cmd', 'constraints', 'deadline', 'task_id', 'idempotency_key']；调用方可 append"
+  - capability: "kg-autosync"
+    risk: "正则误匹配 → 产生噪声节点（如普通文本里的 FIN-THR-001 不是真 KG 引用）"
+    mitigation: "--dry-run 先预览；ADD 新节点默认 severity=medium，需手动 review 才升 high；只接受源码中带 markdown/yaml 引用格式的（如反引号或冒号后的 ID）"
+  - capability: "kg-autosync"
+    risk: "BUILD_EDGES 噪声过多（spec 里偶然同时出现两个 ID 就建 edge）→ KG 膨胀"
+    mitigation: "只对同一文档内共现 ≥2 次的 ID pairs 建 edge（阈值可配 --edge-threshold 2）；新 edge 默认不写 KG 主文件，只存在 diff_kg.yaml 等手动确认"
+  - capability: "kg-autosync"
+    risk: "大仓库扫描慢 → kg sync 阻塞 git commit"
+    mitigation: "首次全量后用 git diff 做增量；post-commit hook 默认关，用户 opt-in"
+
+non_goals:
+  - "不做跨会话上下文恢复（那是 context-mode 项目，非当前 change 范围）"
+  - "不做 7 红线形式化校验（OpenShell 风格，另开 change）"
+  - "不做 YAGNI 决策梯子（ponytail 风格，另开 change）"
+
+critical:
+  is_critical: false
+  reason: "效率增强，不影响四阶段核心流程"
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: true  # caveman 影响所有节点 multihub 传讯
+
+anchoring:
+  level: L2
+  reference_changes:
+    - "2026-10-03-release-validation-framework (runner 跨节点传讯 — caveman 应用场景)"
+    - "2026-10-03-kg-finance-four-threads (KG 初始构建 — kg sync 的起点)"
+  external_refs:
+    - "JuliusBrussee/caveman (⭐109k): 穴居人语体砍 65% token"
+    - "colbymchenry/codegraph (⭐73k): 本地代码知识图谱 + 自动同步"
+
+success_criteria:
+  caveman:
+    - "proposal.yaml → caveman_summary.txt ≤200 字，包含 mandatory_fields（做什么/怎么做/约束/deadline）"
+    - "hub_client issue(scope) → scope 自动附带 scope_min，multihub UI 可读"
+    - "hub_client complete(result) → result 自动附带 result_min（如果 result 是长文本 >200 字）"
+    - "同输入 → 同输出（deterministic）"
+    - "multihub 实测：scope_min vs full scope，token 差 ≥ 50%"
+    - "任何模块 `from fstdd.caveman import compress` 能跑通，无循环 import"
+  kg_sync:
+    - "fstdd kg sync --dry-run → 列出 ADD/UPDATE/DEPRECATE/EDGE_BUILD 不实际修改"
+    - "fstdd kg sync → KG 原地更新，所有 node 新增 last_synced_at + first_seen_at（首次）"
+    - "首次全量 re-index --dry-run → 能被正则匹配到的 KG nodes 全部命中（不硬卡 182 全命中，以 dry-run 输出为准）"
+    - "改 build.md C4 某条 description → 跑 kg sync → 对应 KG node UPDATE（last_synced_at 变）"
+    - "幂等性：连续跑 2 次 kg sync → 第二次 0 ADD / 0 UPDATE / 0 EDGE_BUILD"
+    - "BUILD_EDGES: 同文档内 ≥2 次共现的 ID pairs → edge 入 diff_kg.yaml（默认不入主文件）"
