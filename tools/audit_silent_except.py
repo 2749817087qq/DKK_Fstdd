@@ -61,13 +61,19 @@ def scan(roots=DEFAULT_ROOTS, repo: Path = REPO) -> list[dict]:
 
 
 def _default_table(repo: Path) -> Path | None:
-    """默认审计表：changes|archive 下任意 audit/except-points.yaml，changes 优先。"""
-    hits = []
+    """默认审计表：changes|archive 下任意 audit/except-points.yaml，changes 优先。
+
+    同一层级内取**最近**（字典序末个）—— change 目录名为 `YYYY-MM-DD-` 前缀，
+    字典序即时间序。取首个会回退到最早的旧表：维护表随 change 归档后，
+    哨兵会拿 2026-09-18 的旧表比对实况，误报「白名单外新增 / 失效条目」。
+    """
     for base in ("changes", "archive"):
         d = repo / ".fstdd" / base
         if d.is_dir():
-            hits.extend(sorted(d.glob("*/audit/except-points.yaml")))
-    return hits[0] if hits else None
+            hits = sorted(d.glob("*/audit/except-points.yaml"))
+            if hits:
+                return hits[-1]
+    return None
 
 
 def check(repo: Path = REPO, table_path: Path | None = None,

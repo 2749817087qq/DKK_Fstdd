@@ -29,12 +29,13 @@ def _load_audit_module():
 
 
 def _audit_table_path() -> Path:
-    """活表优先：changes 下任一 change 的 audit/except-points.yaml（字典序首个），
-    其次 archive 兜底。表随维护 change 迁移，不硬编码 change id。"""
+    """活表优先：changes 下最近维护的 audit/except-points.yaml，其次 archive 兜底（同样取最近）。
+    目录名为 `YYYY-MM-DD-` 前缀，字典序即时间序；须取**末个**，
+    否则维护表随 change 归档后会回退到更早的旧表。表随维护 change 迁移，不硬编码 change id。"""
     for base in ("changes", "archive"):
         hits = sorted((REPO / ".fstdd" / base).glob("*/audit/except-points.yaml"))
         if hits:
-            return hits[0]
+            return hits[-1]
     raise FileNotFoundError("changes/ 与 archive/ 均找不到审计表")
 
 
