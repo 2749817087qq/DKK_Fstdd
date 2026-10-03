@@ -1,0 +1,63 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+# task_type: documentation — CP 检查点即「规格」本身
+
+meta:
+  task_id: "2026-10-03-build-yagni-ladder-verify"
+  change_id: "2026-10-03-build-yagni-ladder"
+  created: "2026-10-03T22:10:00+08:00"
+  task_type: documentation
+  system: "FSTDD BUILD skill 文本 + 模板 + 静态内容断言（零运行时代码路径）"
+
+preconditions:
+  - "Phase 2（spec + test-plan）经用户确认（Gate 2）"
+  - "base_git_sha = e869dc8dab892db3a97d9de627dbc799773d8815"
+
+steps:
+  - id: CP-1
+    description: "本地 build.md C4 精确 23 data row 且标题为 23 类"
+    action: "读取 .fstdd/skills/build.md 的 C4 section"
+    assertions:
+      - type: stdout_contains
+        expected: "23 类失败模式检查清单"
+  - id: CP-2
+    description: "upstream build.md C4 与本地逐行一致（23 行）"
+    action: "比对 upstream/.fstdd/skills/build.md 与 .fstdd/skills/build.md 的 C4 表"
+    assertions:
+      - type: diff_empty
+        expected: true
+  - id: CP-3
+    description: "C4 第 23 行含 YAGNI 关键词"
+    action: "检索 build.md C4 表行 /^\\|\\s*23\\s*\\|/ 是否含 'YAGNI'"
+    assertions:
+      - type: stdout_contains
+        expected: "YAGNI"
+  - id: CP-4
+    description: "YAGNI 模板双份存在且含 7 级 + carve-out"
+    action: "读取 .fstdd/templates/yagni-ladder.md 与 upstream 同名文件"
+    assertions:
+      - type: file_exists
+        expected: true
+  - id: CP-5
+    description: "L1 静态断言全绿（无回归）"
+    action: "pytest tests/test_finance_content.py --platform workbuddy"
+    assertions:
+      - type: exit_code
+        expected: 0
+  - id: CP-6
+    description: "三平台安装后 SKILL.md C4 含 #23 与 YAGNI"
+    action: "install_workbuddy_skills.py --platform <p> 后 grep fstdd-build SKILL.md"
+    assertions:
+      - type: stdout_contains
+        expected: "YAGNI"
+
+expected_outcomes:
+  - "C4 失败模式检查 = 23 类，第 23 行为「过度工程」并绑定 YAGNI-7 梯子"
+  - "yagni-ladder.md 模板在本地与 upstream 均可用，含 7 级判定 + carve-out 豁免"
+  - "release validation L1（test_finance_content.py）全绿，无回归"
+  - "三平台安装后均可见 #23 YAGNI 检查项"
+
+rollback:
+  steps:
+    - "git checkout -- .fstdd/skills/build.md upstream/.fstdd/skills/build.md tests/test_finance_content.py"
+    - "删除 .fstdd/templates/yagni-ladder.md 与 upstream/.fstdd/templates/yagni-ladder.md"
+    - "重跑 install + verify 恢复三平台安装内容"

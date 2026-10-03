@@ -1,0 +1,10 @@
+designs: {}
+proposals:
+  2026-10-03-build-yagni-ladder: proposals/2026-10-03-build-yagni-ladder.yaml
+specs:
+  agent:
+    2026-10-03-build-yagni-ladder: specs/agent/2026-10-03-build-yagni-ladder.yaml
+  code:
+    build-quality-verification: specs/code/build-quality-verification.yaml
+    yagni-ladder-gate: specs/code/yagni-ladder-gate.yaml
+version: '2.9'

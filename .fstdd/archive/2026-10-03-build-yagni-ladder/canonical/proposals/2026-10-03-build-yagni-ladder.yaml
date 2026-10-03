@@ -1,0 +1,120 @@
+# 2026-10-03-build-yagni-ladder.yaml — Canonical Proposal (YAML-first, V2.9)
+
+meta:
+  change_id: "2026-10-03-build-yagni-ladder"
+  title: "BUILD C4 #23 过度工程检查（YAGNI-7 决策梯子）+ 模板"
+  created: "2026-10-03T21:40:00+08:00"
+  status: draft
+  version: "2.9"
+  inspiration_source: |
+    DietrichGebert/ponytail (⭐95k+, MIT) — 懒人工程师 7 级决策梯子（The Ladder），
+    强制 Agent 在写任何代码前逐级自问，首个成立级别即为答案；实测砍 54%–80% 代码、降 20%–47% token。
+
+why:
+  problem: |
+    BUILD 阶段 C4 现有 22 类失败模式（14 通用 + 8 金融）全部属于「做错了什么」：
+    幻觉调用 / 注入 / 精度丢失 / 合规遗漏…。缺「做多了什么」这一整类。
+
+    AI Agent（含 FSTDD 自身执行编码时）系统性偏向过度工程：用户要一个小功能，
+    Agent 默认新增文件 + 抽象层 + 第三方依赖，而不是先问「真的需要写吗」。
+    FSTDD 四阶段目前只有隐式「别过度工程化」这类软要求，BUILD C4 无显式检查项
+    → 无法逐项打勾、无法在 test-report.md 留证、无客观通过/不通过判据。
+  motivation: |
+    ponytail 的价值在于把 YAGNI 从「人类开发者的自我约束」变成「Agent 的强制思维流程」：
+    7 级阶梯 + 首个成立即停。FSTDD 做同构落点最省：C4 加一行检查 #23（零代码路径），
+    配一份填表模板，即可让每个 change 的新增功能点都被强制过一遍阶梯，并留证。
+    编排纪律：本 change（A）必须先于 formalize-finance-redlines（C）合入，二者同争 build.md C4，
+    预留编号 #23(YAGNI) / #24(formal)。
+  evidence:
+    observed_at: "2026-10-03T21:30:00+08:00"
+    observed_base_git_sha: "e869dc8dab892db3a97d9de627dbc799773d8815"
+    details: |
+      1. `.fstdd/skills/build.md` 与 `upstream/.fstdd/skills/build.md` C4 section 当前均为 22 行 data row
+         （本地 L317-340，upstream 同步）；小节标题仍写「14 类」，与 22 行不符（既有不一致）。
+      2. 回归面：`tests/test_finance_content.py` 的 L1-05 / L1-06 断言 C4 精确 22 行
+         （`test_L1_05_build_local_c4_exact_22` / `test_L1_06_build_upstream_c4_exact_22`），
+         本 change 改动 C4 表行数 MUST 同步更新这两个断言，否则 release validation L1 FAIL。
+      3. 外部参照：ponytail 原始 7 级阶梯（rung1 YAGNI → rung2 repo 已有 → rung3 标准库 →
+         rung4 平台原生 → rung5 已装依赖 → rung6 一行 → rung7 最小实现），carve-out 明确
+         安全 / 信任边界校验 / 防数据丢失错误处理 / 无障碍 永不在砍除范围。
+
+what_changes:
+  - id: C1
+    description: "build.md C4 新增第 23 行「过度工程（Over-Engineering）」，覆盖方式标 `YAGNI-7 梯子`，检查动作 = 每个新增功能点/新文件/新依赖逐级回答 7 阶梯子，首个成立级别即答案；同时把 C4 小节标题「14 类失败模式检查清单」修正为「23 类失败模式检查清单」"
+    type: modified
+    files: 2  # .fstdd/skills/build.md + upstream/.fstdd/skills/build.md（双份保持一致）
+  - id: C2
+    description: "新增 YAGNI-7 梯子填表模板 `yagni-ladder.md`（7 级判定表 + 逐级填写说明 + carve-out 豁免清单），供 change 在 BUILD 时对每个新增功能点填答并写入 test-report.md"
+    type: new
+    files: 2  # .fstdd/templates/yagni-ladder.md + upstream/.fstdd/templates/yagni-ladder.md
+  - id: C3
+    description: "同步静态内容断言：tests/test_finance_content.py L1-05 / L1-06 由「精确 22 行」改为「精确 23 行」；新增 1 条断言确认 build.md C4 #23 含 YAGNI 关键词"
+    type: modified
+    files: 1  # tests/test_finance_content.py
+  - id: C4
+    description: "上游变更后重跑 install + verify（platforms.yaml 三平台 workbuddy/claude-code/trae），确认安装后的 SKILL.md C4 含 #23"
+    type: ops
+    files: 0
+
+capabilities:
+  new:
+    - name: "yagni-ladder-gate"
+      description: "BUILD C4 强制对每个新增功能点执行 YAGNI-7 决策梯子判定，首个成立级别即答案，并留证于 test-report.md"
+  modified:
+    - name: "build-quality-verification"
+      description: "C4 失败模式检查从 22 类扩展为 23 类（新增「过度工程」类）"
+
+constraints:
+  - "零代码路径：只改 skill 文本 + 模板 + 测试断言，不改任何 CLI / 运行时 Python 逻辑"
+  - "C4 data row 数 MUST = 23，`.fstdd/skills/build.md` 与 `upstream/.fstdd/skills/build.md` 两份 MUST 完全一致"
+  - "7 阶梯子顺序 MUST 与 ponytail 原始语义一致（需要吗→本仓已有→标准库→平台原生→已装依赖→一行→最小实现）"
+  - "MUST 保留 carve-out：安全 / 信任边界校验 / 防数据丢失的错误处理 / 无障碍 永不因 YAGNI 跳过"
+  - "MUST 同步更新 tests/test_finance_content.py 的 C4 行数断言，保证 L1 全绿、无回归"
+  - "编号 #23 预留 YAGNI；#24 留给后续 formalize-finance-redlines，本 change 不占用 #24"
+
+stakeholders:
+  - "FSTDD003（设计 + 实现 + 发布）"
+  - "所有 FSTDD 使用者（每个 change 的 BUILD 阶段多一道显式 YAGNI 检查）"
+  - "三平台 agents（workbuddy / claude-code / trae，安装后即可见 #23）"
+
+risk_areas:
+  - capability: "build-quality-verification"
+    risk: "C4 行数 22→23 导致 release validation L1-05/L1-06 静态断言失败"
+    mitigation: "本 change 同步更新 tests/test_finance_content.py 断言为 23，并在 C2/C3 跑 L1 验证全绿"
+  - capability: "yagni-ladder-gate"
+    risk: "梯子被滥用为「跳过必要实现」的借口（如省掉安全校验）"
+    mitigation: "模板与 C4 行内显式 carve-out：安全 / 信任边界 / 防数据丢失 / 无障碍 永不跳过"
+  - capability: "build-quality-verification"
+    risk: "本地与 upstream build.md 双份不同步，install 后各平台拿到不一致内容"
+    mitigation: "同改两份 + install 后 verify_workbuddy_skills.py 校验 + 断言两份都含 #23"
+
+non_goals:
+  - "不做 CLI 自动化 YAGNI 校验器（本 change 纯 skill/模板引导，无代码路径）"
+  - "不做 ponytail 的 diff 扫描（/ponytail-review）与 `ponytail:` 注释债台账（/ponytail-debt）—如需要另开 change"
+  - "不改 C4 既有 22 类的任何语义或编号"
+  - "不实现事件流 Session 恢复（B）/ 金融红线形式化（C）/ multihub 声明式拓扑（D）—其他 Wave 项"
+
+critical:
+  is_critical: false
+  reason: "流程与文档增强，不触碰运行时逻辑；但影响所有平台安装内容（cross_system）"
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: true
+
+anchoring:
+  level: L2
+  reference_changes:
+    - "2026-10-03-finance-failure-modes (C4 从 14 行扩展到 22 行的先例)"
+    - "2026-10-03-release-validation-framework (L1 静态内容断言 — 本 change 需同步 22→23)"
+    - "2026-10-03-skill-install-verify (upstream 变更 → install/verify 同步链路)"
+  external_refs:
+    - "DietrichGebert/ponytail (⭐95k, MIT): YAGNI 7 级决策梯子 + carve-out + 首个成立即停"
+
+success_criteria:
+  - "`upstream/.fstdd/skills/build.md` C4 section 精确 23 data row，编号含 #23 且该行关键词含 'YAGNI'"
+  - "`.fstdd/skills/build.md` C4 section 精确 23 data row，内容与 upstream 一致"
+  - "`upstream/.fstdd/templates/yagni-ladder.md` 与 `.fstdd/templates/yagni-ladder.md` 均存在，包含 7 级全部问题文本与 carve-out 清单"
+  - "`tests/test_finance_content.py` L1-05/L1-06 断言 23；`pytest tests/test_finance_content.py` L1 全绿（无回归）"
+  - "install 后三平台（workbuddy/claude-code/trae）SKILL.md 的 C4 含 '#23' 与 'YAGNI'"
+  - "本 change git diff 不含任何运行时 Python/CLI 逻辑变更（仅 .md 模板/skill 文本 + tests 断言）"

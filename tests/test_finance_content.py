@@ -1,5 +1,5 @@
 """
-test_finance_content.py — L1 静态内容校验（13 TC）
+test_finance_content.py — L1 静态内容校验（17 TC）
 纯静态，不依赖 install，任何平台都能跑
 """
 import re
@@ -59,7 +59,8 @@ def test_L1_04_understand_upstream_synced():
 
 
 # ============================================================
-# L1-05 / L1-06: build.md C4 section 精确 22 行
+# L1-05 / L1-06: build.md C4 section 精确 23 行
+# TC-BQV-001 / TC-BQV-002
 # ============================================================
 def _count_c4_table_rows(content: str) -> int:
     """
@@ -79,19 +80,20 @@ def _count_c4_table_rows(content: str) -> int:
     return len(rows)
 
 
-def test_L1_05_build_local_c4_exact_22():
+def test_L1_05_build_local_c4_exact_23():
     content = read_file(BUILD_LOCAL)
     rows = _count_c4_table_rows(content)
-    assert rows == 22, f"build.md C4 rows = {rows}, expected 22"
+    assert rows == 23, f"build.md C4 rows = {rows}, expected 23"
 
-def test_L1_06_build_upstream_c4_exact_22():
+def test_L1_06_build_upstream_c4_exact_23():
     content = read_file(BUILD_UPSTREAM)
     rows = _count_c4_table_rows(content)
-    assert rows == 22, f"upstream build.md C4 rows = {rows}, expected 22"
+    assert rows == 23, f"upstream build.md C4 rows = {rows}, expected 23"
 
 
 # ============================================================
 # L1-07: B2.5 含 10 维金融测试关键词
+# TC-BQV-005（既有 22 类失败模式无回归护栏）
 # ============================================================
 TEN_TEST_DIMS = [
     "幂等", "对账", "精度", "时区", "降级",
@@ -142,7 +144,7 @@ def test_L1_11_version_yaml_fstdd_version():
     content = read_file(VERSION_YAML)
     m = re.search(r'fstdd_version:\s*["\']?([\d.]+)["\']?', content)
     assert m, "fstdd_version not found in version.yaml"
-    assert m.group(1) == "3.1.1", f"fstdd_version = {m.group(1)}, expected 3.1.1"
+    assert m.group(1) == "3.2.0", f"fstdd_version = {m.group(1)}, expected 3.2.0"
 
 def test_L1_12_version_yaml_feedback_mandatory():
     content = read_file(VERSION_YAML)
@@ -157,3 +159,64 @@ def test_L1_13_version_yaml_3_platform_install():
         assert platform in content, f"version.yaml missing platform: {platform}"
     # 确认 install 命令块存在
     assert "install_workbuddy_skills.py" in content
+
+
+# ============================================================
+# L1-14: C4 第 23 行「过度工程」含 YAGNI（双份）
+# TC-BQV-003 / TC-YLG-004
+# ============================================================
+def _c4_row_23(content: str) -> str:
+    """提取 C4 表中编号为 23 的 data row 全文"""
+    m = re.search(r"^\|\s*23\s*\|.*$", content, re.MULTILINE)
+    return m.group(0) if m else ""
+
+def test_L1_14_c4_row_23_has_yagni():
+    for name, path in (("local", BUILD_LOCAL), ("upstream", BUILD_UPSTREAM)):
+        row = _c4_row_23(read_file(path))
+        assert "YAGNI" in row, f"{name} build.md C4 #23 missing 'YAGNI': {row!r}"
+        assert "YAGNI-7" in row, f"{name} build.md C4 #23 missing 'YAGNI-7': {row!r}"
+        assert "新增功能点" in row, f"{name} build.md C4 #23 missing '新增功能点': {row!r}"
+        assert "逐级" in row, f"{name} build.md C4 #23 missing '逐级': {row!r}"
+
+
+# ============================================================
+# L1-15: C4 小节标题为「23 类失败模式检查清单」（双份）
+# TC-BQV-004
+# ============================================================
+def test_L1_15_c4_title_is_23():
+    for name, path in (("local", BUILD_LOCAL), ("upstream", BUILD_UPSTREAM)):
+        content = read_file(path)
+        assert "23 类失败模式检查清单" in content, f"{name} build.md missing '23 类失败模式检查清单'"
+        assert "14 类失败模式检查清单" not in content, f"{name} build.md still has old '14 类失败模式检查清单'"
+
+
+# ============================================================
+# L1-16: yagni-ladder.md 双份存在 + 7 级 token + 内容一致
+# TC-YLG-001 / TC-YLG-002
+# ============================================================
+YAGNI_TEMPLATE_LOCAL = ROOT / ".fstdd" / "templates" / "yagni-ladder.md"
+YAGNI_TEMPLATE_UPSTREAM = ROOT / "upstream" / ".fstdd" / "templates" / "yagni-ladder.md"
+
+SEVEN_YAGNI_LEVELS = ["真需要", "本仓已有", "标准库", "平台原生", "已装依赖", "一行", "最小实现"]
+
+def test_L1_16_yagni_template_dual_consistent():
+    assert YAGNI_TEMPLATE_LOCAL.exists(), "local yagni-ladder.md not found"
+    assert YAGNI_TEMPLATE_UPSTREAM.exists(), "upstream yagni-ladder.md not found"
+    local = read_file(YAGNI_TEMPLATE_LOCAL)
+    upstream = read_file(YAGNI_TEMPLATE_UPSTREAM)
+    assert local == upstream, "yagni-ladder.md local vs upstream content mismatch"
+    missing = [lv for lv in SEVEN_YAGNI_LEVELS if lv not in local]
+    assert not missing, f"yagni-ladder.md missing levels: {missing}"
+
+
+# ============================================================
+# L1-17: yagni-ladder.md carve-out 豁免清单
+# TC-YLG-003
+# ============================================================
+CARVE_OUT_TOKENS = ["安全", "信任边界", "数据丢失", "无障碍"]
+
+def test_L1_17_yagni_template_carve_out():
+    content = read_file(YAGNI_TEMPLATE_LOCAL)
+    missing = [kw for kw in CARVE_OUT_TOKENS if kw not in content]
+    assert not missing, f"yagni-ladder.md missing carve-out tokens: {missing}"
+    assert "永不" in content, "yagni-ladder.md missing '永不' (never-skip) declaration"

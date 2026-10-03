@@ -1,10 +1,25 @@
 # FSTDD003 本地版本声明
 # upstream: stdd-repo@3.1.0
 # FSTDD003: 基于 upstream + 金融领域融合
-fstdd_version: "3.1.2"
+fstdd_version: "3.2.0"
 upstream_version: "3.1.0"
-released_at: "2026-10-03T17:01:00+08:00"
+released_at: "2026-10-03T18:40:00+08:00"
 changelog: |
+  v3.2.0 — 失败模式完备版（C4 第 23 类「过度工程」+ YAGNI-7 决策梯子模板）
+
+  核心变更（1 change / 2 能力 / 11 TC）：
+  - build-yagni-ladder: BUILD Part C 的 C4 失败模式清单由 22 类扩展至 23 类，新增
+    #23「过度工程（Over-Engineering）」，覆盖方式 = YAGNI-7 决策梯子
+    （1 真需要→2 本仓已有→3 标准库→4 平台原生→5 已装依赖→6 一行→7 最小实现），
+    首个成立级别即为答案；小节标题「14 类」→「23 类」。
+    + 新增 .fstdd/templates/yagni-ladder.md（7 级判定表 + 逐级填写说明 + carve-out 豁免清单：
+      安全 / 信任边界校验 / 防数据丢失的错误处理 / 无障碍 —— 永不跳过），双份一致。
+    + tests/test_finance_content.py：L1-05/L1-06 断言 22→23，新增 L1-14..L1-17（共 17 TC）。
+
+  质量：L1 17/17 全绿；全量 pytest 32 passed·2 skipped；runner L0+L1 🟢 PASS；
+  失败模式 23/23 逐项执行（17 ✅ / 6 SKIPPED 非金融 / 0 ❌）；design-adjustments 2 条（DA-09/DA-10）。
+  已知承接：build.md 本地/upstream 全文件既存漂移（DA-10）另立 change 对齐。
+
   v3.1.2 — 跨节点效率增强版（caveman 语体压缩器 + KG 自动同步器）
 
   核心变更（1 change / 2 能力 / 46 TC）：

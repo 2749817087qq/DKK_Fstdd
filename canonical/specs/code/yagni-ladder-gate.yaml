@@ -1,0 +1,59 @@
+# spec.yaml — 行为规格（Canonical YAML）
+# Capability: yagni-ladder-gate（new）— YAGNI-7 决策梯子 + carve-out 豁免
+
+meta:
+  capability: "yagni-ladder-gate"
+  change_id: "2026-10-03-build-yagni-ladder"
+  created: "2026-10-03T22:10:00+08:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-YLG-001"
+    description: "新增 YAGNI-7 梯子填表模板 SHALL 存在，且含 7 级全部判定问题文本（顺序不可乱）"
+    scenarios:
+      - id: "SC-YLG-001"
+        confidence: high
+        evidence: "proposal.yaml#what_changes[C2]; ponytail 原始 7 级阶梯语义"
+        given: "`.fstdd/templates/yagni-ladder.md`"
+        when: "读取模板内容"
+        then: "SHALL 依次含 7 级关键词：真需要 / 本仓已有 / 标准库 / 平台原生 / 已装依赖 / 一行 / 最小实现"
+        and:
+          - "SHALL 说明「首个成立的级别即为答案，逐级自问」"
+      - id: "SC-YLG-002"
+        confidence: high
+        evidence: "proposal.yaml#success_criteria[3]"
+        given: "`upstream/.fstdd/templates/yagni-ladder.md` 与 `.fstdd/templates/yagni-ladder.md`"
+        when: "比对两份模板"
+        then: "SHALL 均存在且内容一致"
+
+  - id: "REQ-YLG-002"
+    description: "模板 SHALL 含 carve-out 豁免清单，明确安全类事项永不因 YAGNI 跳过"
+    scenarios:
+      - id: "SC-YLG-003"
+        confidence: high
+        evidence: "proposal.yaml#constraints[4]; ponytail carve-out"
+        given: "yagni-ladder.md 模板"
+        when: "读取 carve-out 章节"
+        then: "SHALL 含 4 项豁免：安全 / 信任边界校验 / 防数据丢失的错误处理 / 无障碍"
+        and:
+          - "SHALL 显式声明这 4 项永不跳过（永不因 YAGNI 删减）"
+
+  - id: "REQ-YLG-003"
+    description: "BUILD C4 #23 的检查动作 SHALL 强制对每个新增功能点逐级回答 7 阶梯子"
+    scenarios:
+      - id: "SC-YLG-004"
+        confidence: high
+        evidence: "proposal.yaml#what_changes[C1]"
+        given: "build.md 的 C4 表第 23 行「BUILD 检查动作」列"
+        when: "读取检查动作文本"
+        then: "SHALL 描述：对每个新增功能点/新文件/新依赖逐级回答 7 阶梯子，首个成立级别即答案"
+
+  - id: "REQ-YLG-004"
+    description: "上游变更安装后，三平台 SKILL.md 的 C4 SHALL 含 #23 与 YAGNI"
+    scenarios:
+      - id: "SC-YLG-005"
+        confidence: medium
+        evidence: "proposal.yaml#success_criteria[5]; platforms.yaml 三平台 workbuddy/claude-code/trae"
+        given: "install_workbuddy_skills.py --platform <p>（p ∈ workbuddy/claude-code/trae）"
+        when: "安装并读取目标平台 fstdd-build SKILL.md"
+        then: "SHALL 含 '#23' 与 'YAGNI'"

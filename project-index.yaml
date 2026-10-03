@@ -1,0 +1,99 @@
+capabilities:
+  artifact-templates:
+    specs: specs/artifact-templates/spec.md
+  build-phase-finance-test-dimensions:
+    specs: specs/build-phase-finance-test-dimensions/spec.md
+  build-quality-verification:
+    specs: specs/build-quality-verification/spec.md
+  canon-dual-track:
+    specs: specs/canon-dual-track/spec.md
+  canonical-in-workspace:
+    specs: specs/canonical-in-workspace/spec.md
+  caveman-compressor:
+    specs: specs/caveman-compressor/spec.md
+  change-dir-resolution:
+    specs: specs/change-dir-resolution/spec.md
+  change-isolation:
+    specs: specs/change-isolation/spec.md
+  clock-alignment:
+    specs: specs/clock-alignment/spec.md
+  code:
+    specs: specs/code/spec.md
+  constitution:
+    specs: specs/constitution/spec.md
+  contract-auto-share:
+    specs: specs/contract-auto-share/spec.md
+  distributed-task-coordination:
+    specs: specs/distributed-task-coordination/spec.md
+  eol-governance:
+    specs: specs/eol-governance/spec.md
+  evidence-provenance:
+    specs: specs/evidence-provenance/spec.md
+  except-audit:
+    specs: specs/except-audit/spec.md
+  finance-failure-modes-c4:
+    specs: specs/finance-failure-modes-c4/spec.md
+  finance-quality-failure-modes:
+    specs: specs/finance-quality-failure-modes/spec.md
+  fstdd-fin-skill-registration:
+    specs: specs/fstdd-fin-skill-registration/spec.md
+  guard-scope-default-binding:
+    specs: specs/guard-scope-default-binding/spec.md
+  inbox-review-sync:
+    specs: specs/inbox-review-sync/spec.md
+  install-source-single:
+    specs: specs/install-source-single/spec.md
+  kg-autosync:
+    specs: specs/kg-autosync/spec.md
+  mirror-failure-alert:
+    specs: specs/mirror-failure-alert/spec.md
+  multi-platform-adapters:
+    specs: specs/multi-platform-adapters/spec.md
+  mutation-testing:
+    specs: specs/mutation-testing/spec.md
+  server-bare-repo-mirror:
+    specs: specs/server-bare-repo-mirror/spec.md
+  silent-except-guard:
+    specs: specs/silent-except-guard/spec.md
+  skill-engineering-standards:
+    specs: specs/skill-engineering-standards/spec.md
+  time-baseline:
+    specs: specs/time-baseline/spec.md
+  timestamp-normalization:
+    specs: specs/timestamp-normalization/spec.md
+  understand-phase-finance-redlines:
+    specs: specs/understand-phase-finance-redlines/spec.md
+  yagni-ladder-gate:
+    specs: specs/yagni-ladder-gate/spec.md
+  独立命名空间:
+    specs: specs/独立命名空间/spec.md
+changes:
+  2026-09-18-detection-silence-fixes:
+    phase: understand
+    status: in_progress
+  2026-09-18-inbox-api-only-write:
+    phase: understand
+    status: in_progress
+  2026-09-19-notices-authenticity-gate:
+    phase: build
+    status: in_progress
+  2026-09-21-guard-hook-input-robustness:
+    phase: understand
+    status: in_progress
+  2026-09-23-poll-daemon-499-fix:
+    phase: deliver
+    status: completed
+  2026-09-25-guard-phase-path-scope:
+    phase: build
+    status: in_progress
+  2026-10-03-release-test-framework:
+    phase: understand
+    status: in_progress
+  _batch:
+    phase: unknown
+    status: in_progress
+module_index: {}
+project:
+  language: unknown
+  name: FSTDD003
+  stdd_version: '2.7'
