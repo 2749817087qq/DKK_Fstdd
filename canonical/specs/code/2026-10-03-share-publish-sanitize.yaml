@@ -1,0 +1,108 @@
+# spec.yaml — 行为规格（Canonical YAML）
+# change: 2026-10-03-share-publish-sanitize
+# capability: share-outbound-sanitize
+
+meta:
+  capability: "share-outbound-sanitize"
+  change_id: "2026-10-03-share-publish-sanitize"
+  created: "2026-10-03T11:05:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    description: "出站强制脱敏：任何经 share_experience 出站的经验文件，其内容在离开本机前 MUST 经 sanitize(text, True) 处理"
+    scenarios:
+      - id: "SC-001"
+        confidence: high
+        evidence: "observed_at=2026-10-03T18:50:00+08:00 source=066b9f6 只读实测：对 experiences/FSTDD003-EXP-20261002-03.md 调用 sanitize() 可清除全部 /home/... 匹配"
+        given: "一个含 POSIX 家目录路径 `/home/ubuntu/fstdd-skills/inbox/` 的经验文件位于 out_dir"
+        when: "调用 stage_sanitized(out_dir) 并读取 staged 目录中该文件的内容"
+        then: "staged 内容 SHALL NOT 匹配 `/(?:home|Users)/`"
+        and:
+          - "原 out_dir 中该文件保持原样（未被原地改写）"
+      - id: "SC-002"
+        confidence: high
+        evidence: "proposal.yaml what_changes C1；SANITIZE_RULES L143-149 凭证模式"
+        given: "一个正文含 `ghp_` / `github_pat_` / `sk-` / `Bearer <长串>` 片段之一的经验文件位于 out_dir"
+        when: "调用 stage_sanitized(out_dir) 并读取 staged 内容"
+        then: "staged 内容 SHALL 将凭证片段替换为 `<TOKEN>`，且 SHALL NOT 残留原始凭证串"
+      - id: "SC-003"
+        confidence: high
+        evidence: "proposal.yaml constraints『保持宁漏勿误』；SANITIZE_RULES L174-188 白名单实现"
+        given: "一个正文含 `README.md`、`sqlite3.connect`、`https://github.com/x/y` 的正常经验文件位于 out_dir"
+        when: "调用 stage_sanitized(out_dir) 并读取 staged 内容"
+        then: "上述标识符 SHALL 原样保留（不被替换为 `<DOMAIN>`/`<PATH>`）"
+      - id: "SC-004"
+        confidence: high
+        evidence: "proposal.yaml constraints『MUST NOT 原地改写/删除 experiences/ 下的用户文件』"
+        given: "out_dir 内含 N 个经验文件（含一个未脱敏样本）"
+        when: "调用 stage_sanitized(out_dir)"
+        then: "out_dir 内文件 SHALL 数量不变、内容逐字节不变"
+        and:
+          - "staged 内容写入独立临时目录，SHALL NOT 位于 out_dir 之内"
+      - id: "SC-005"
+        confidence: medium
+        evidence: "design.md Decision 4；prepare_entries L427-428 同手法"
+        given: "一个 frontmatter 声明 `sanitized: false` 的经验文件位于 out_dir"
+        when: "调用 stage_sanitized(out_dir) 并读取 staged 内容"
+        then: "staged 内容 frontmatter SHALL 改写为 `sanitized: true`"
+        and:
+          - "正文部分 SHALL NOT 被改写（除脱敏替换外）"
+
+  - id: "REQ-002"
+    description: "出站残余自检：stage 后 MUST 以与服务端一致的判据自检，命中残余的条目 MUST 被剔除并可观测"
+    scenarios:
+      - id: "SC-006"
+        confidence: medium
+        evidence: "design.md Decision 2；inbox_server.py L288 服务端判据"
+        given: "构造文本在 sanitize 后仍含 `/home/` 形态残留（模拟规则漏网）"
+        when: "调用 stage_sanitized(out_dir)"
+        then: "该文件 SHALL NOT 出现在 staged 目录中，且返回值 skipped SHALL 含该文件名与原因"
+      - id: "SC-007"
+        confidence: high
+        evidence: "经验 FSTDD005-EXP-20260918-C4『第二层防线天然不可观测』；design.md Decision 2"
+        given: "模块级常量 OUTBOUND_RESIDUAL_RE 已定义（复刻服务端判据）"
+        when: "对常量本身（而非仅其行为结果）做直接断言"
+        then: "OUTBOUND_RESIDUAL_RE SHALL 能命中 `x /home/u y` 且 SHALL 不命中 `/homework/x`"
+
+  - id: "REQ-003"
+    description: "四条出站路径收口：inbox / scp / GitHub 直推 / GitHub fork+PR 的发送或拷贝源 MUST 为 stage 内容"
+    scenarios:
+      - id: "SC-008"
+        confidence: high
+        evidence: "observed_at=2026-10-03T18:50:00+08:00 实测：未脱敏样本被服务端拒收 contains POSIX home path"
+        given: "out_dir 内含含 `/home/ubuntu/...` 与 token 片段的样本"
+        when: "调用 publish_via_inbox(out_dir, url) 指向本地 stub 端点并检查收到的 body"
+        then: "POST body SHALL NOT 含 `/(?:home|Users)/` 与原始凭证串"
+        and:
+          - "stub 端点 SHALL 返回成功（模拟 accepted，非 4xx 拒收）"
+      - id: "SC-009"
+        confidence: medium
+        evidence: "share_experience.py L582-584 现为 scp 整个 out_dir；design.md Architecture"
+        given: "out_dir 内含未脱敏样本，且 scp 可用性被替换为可观测桩"
+        when: "调用 publish_via_scp(out_dir, ...)"
+        then: "被传输的源 SHALL 为 stage 目录（脱敏后），SHALL NOT 为原始 out_dir"
+      - id: "SC-010"
+        confidence: medium
+        evidence: "share_experience.py L834-835 现为 shutil.copy2 原文件；design.md Architecture"
+        given: "out_dir 内含未脱敏样本，token 路径可达"
+        when: "触发 publish() 的 GitHub 分支拷贝"
+        then: "拷贝到目标 repo 的经验文件 SHALL 来自 stage 内容（无残留）"
+      - id: "SC-011"
+        confidence: medium
+        evidence: "proposal.yaml non_goals『GitHub fork+PR 仅把拷贝源换成 stage 目录』；share_experience.py L747-748"
+        given: "out_dir 内含未脱敏样本"
+        when: "触发 publish_via_pr(out_dir, ...) 的拷贝步骤"
+        then: "复制进 PR 分支的经验文件 SHALL 来自 stage 内容（无残留）"
+
+  - id: "REQ-004"
+    description: "零阻塞与留痕：出站类型为附加价值，MUST NOT 因脱敏/自检异常改变既有返回语义，且失败 MUST 留可查询痕迹"
+    scenarios:
+      - id: "SC-012"
+        confidence: medium
+        evidence: "经验 FSTDD005-EXP-20260918-C1『静默失败 exit 0 无消费者』；silent_share L870-875 零阻塞语义"
+        given: "stage 剔除发生或出站发送失败"
+        when: "调用 silent_share / publish"
+        then: "SHALL NOT 抛出未捕获异常，静默入口 SHALL 返回 0（零阻塞）"
+        and:
+          - "失败/剔除原因 SHALL 写入 .fstdd/share-audit.yaml（可查询痕迹）"

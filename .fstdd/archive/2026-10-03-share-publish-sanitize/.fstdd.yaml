@@ -1,0 +1,61 @@
+baseline:
+  at: '2026-10-03T10:53:45+00:00'
+  base_git_sha: 066b9f629d21547670a38a375e28e815794e17bd
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-03-share-publish-sanitize
+complexity_score: 6
+current_phase: deliver
+design_adjustments:
+  count: 0
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-10-03T11:27:30+00:00'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T13:32:00+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认 Gate 3
+    slices_completed:
+      '1':
+        new_tests: 7
+        status: done
+        tc_coverage: 7/7
+        verified_at: '2026-10-03T11:40:00+00:00'
+      '2':
+        new_tests: 6
+        status: done
+        tc_coverage: 5/5
+        verified_at: '2026-10-03T11:40:00+00:00'
+    status: completed
+  deliver:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T22:05:00+08:00'
+    confirmed_by: dialog
+    confirmed_evidence: 'F 侧接管 DELIVER（用户授权自行推进）；归档+canonical 合并+索引+经验回传+知识图谱+提交推送'
+    status: completed
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T11:27:01+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认 Gate 2
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T10:53:45+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认 Gate 1
+    status: completed
+score_confidence: preliminary
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 12
+  tc_cases: 12
+  test_functions: 13
+version: '3.0'

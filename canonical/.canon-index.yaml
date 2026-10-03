@@ -4,14 +4,17 @@ proposals:
   2026-09-25-new-isolate-flag: proposals/2026-09-25-new-isolate-flag.yaml
   2026-10-03-build-yagni-ladder: proposals/2026-10-03-build-yagni-ladder.yaml
   2026-10-03-caveman-kg-sync: proposals/2026-10-03-caveman-kg-sync.yaml
+  2026-10-03-share-publish-sanitize: proposals/2026-10-03-share-publish-sanitize.yaml
 specs:
   agent:
     2026-09-25-new-isolate-flag: specs/agent/2026-09-25-new-isolate-flag.yaml
     2026-10-03-build-yagni-ladder: specs/agent/2026-10-03-build-yagni-ladder.yaml
+    2026-10-03-share-publish-sanitize: specs/agent/2026-10-03-share-publish-sanitize.yaml
   code:
     2026-09-25-new-isolate-flag: specs/code/2026-09-25-new-isolate-flag.yaml
     2026-10-03-caveman-kg-sync-caveman-compressor: specs/code/2026-10-03-caveman-kg-sync-caveman-compressor.yaml
     2026-10-03-caveman-kg-sync-kg-autosync: specs/code/2026-10-03-caveman-kg-sync-kg-autosync.yaml
+    2026-10-03-share-publish-sanitize: specs/code/2026-10-03-share-publish-sanitize.yaml
     build-quality-verification: specs/code/build-quality-verification.yaml
     yagni-ladder-gate: specs/code/yagni-ladder-gate.yaml
 version: '2.9'

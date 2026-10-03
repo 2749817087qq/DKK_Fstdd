@@ -162,6 +162,22 @@ SANITIZE_RULES: list[tuple[re.Pattern, str, str]] = [
 ]
 
 
+# 出站残余自检判据（第二道防线）——逐字复刻服务端拒收判据，并叠加凭证模式。
+#
+# 服务端（fstdd-inbox-server）判据：re.compile(r"/(?:home|Users)/[^\s/]+")，命中即拒。
+# 上层 sanitize() 拦住之后，第二层「开没开」天然不可观测（EXP FSTDD005-EXP-20260918-C4），
+# 故把判据抽为本模块常量，供测试**直接断言常量本身**。
+OUTBOUND_RESIDUAL_RE = re.compile(
+    r"/(?:home|Users)/[^\s/]+"
+    r"|\bgh[pousr]_[A-Za-z0-9]{16,}\b"
+    r"|\bgithub_pat_[A-Za-z0-9_]{20,}\b"
+    r"|\bsk-[A-Za-z0-9]{20,}\b"
+    r"|\bAKIA[0-9A-Z]{16}\b"
+    r"|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+    r"|\bBearer\s+[A-Za-z0-9._\-]{20,}"
+)
+
+
 def sanitize(text: str, enabled: bool = True) -> tuple[str, list[str]]:
     """返回 (脱敏后文本, 命中的规则说明)。"""
     if not enabled:
@@ -442,6 +458,45 @@ def export_files(out_dir: Path) -> list[Path]:
     return sorted(p for p in out_dir.glob("*.md") if p.name not in skip)
 
 
+def stage_sanitized(out_dir: Path) -> tuple[Path, list[str]]:
+    """把 out_dir 下的经验文件强制脱敏后写入**独立临时目录**（出站唯一拷贝源）。
+
+    这是「出站不变量」：无论 out_dir 里是流水线产物还是手工放入的文件，
+    离开本机前都必须经此收口。`--no-sanitize` 对出站无效（恒 True）——
+    它是离开本机的动作，而导出脱敏只作用于本地可读产物。
+
+    第二道防线：stage 后以 OUTBOUND_RESIDUAL_RE 自检，命中残余的条目**不进入 stage**，
+    文件名与原因计入 skipped 并留审计痕迹（EXP FSTDD005-EXP-20260918-C1）。
+
+    返回 (staged_dir, skipped)；调用方负责 `finally` 清理 staged_dir。
+    """
+    staged_dir = Path(tempfile.mkdtemp(prefix="exp_stage_"))
+    skipped: list[str] = []
+    for f in export_files(out_dir):
+        try:
+            raw = f.read_text(encoding="utf-8", errors="replace")
+        except OSError as exc:
+            skipped.append("%s：读取失败 %s" % (f.name, exc))
+            continue
+        clean, _hits = sanitize(raw, True)
+        # 声明与实现一致（EXP-2026-0013）：出站内容确已脱敏，frontmatter 不得再自称 false
+        clean = re.sub(r"^sanitized: .*$", "sanitized: true", clean, flags=re.M)
+        m = OUTBOUND_RESIDUAL_RE.search(clean)
+        if m:
+            skipped.append("%s：残余敏感内容 %s" % (f.name, m.group(0)[:40]))
+            continue
+        (staged_dir / f.name).write_text(clean, encoding="utf-8", newline="\n")
+
+    if skipped:
+        for s in skipped:
+            print("      [skip] %s" % s)
+        record_audit(
+            [{"time": _now(), "experience_id": s.split("：", 1)[0],
+              "target": "stage", "result": "skipped", "reason": s}
+             for s in skipped])
+    return staged_dir, skipped
+
+
 def _chunk_experiences(files: list[Path], max_items: int,
                        max_bytes: int) -> list[list[Path]]:
     """按**条数**与**字节**双重上限分批。
@@ -538,6 +593,17 @@ def _post_experiences(endpoint: str, body: bytes,
 def publish_via_scp(out_dir: Path,
                     ssh_alias: str = "fstdd-hub",
                     remote_dir: str = "/home/ubuntu/fstdd-inbox") -> tuple[bool, str]:
+    """出站收口：先强制脱敏 stage，再走 scp（传输源恒为 stage 内容）。"""
+    staged_dir, _skipped = stage_sanitized(out_dir)
+    try:
+        return _scp_dir(staged_dir, ssh_alias, remote_dir)
+    finally:
+        shutil.rmtree(staged_dir, ignore_errors=True)
+
+
+def _scp_dir(out_dir: Path,
+             ssh_alias: str = "fstdd-hub",
+             remote_dir: str = "/home/ubuntu/fstdd-inbox") -> tuple[bool, str]:
     """把经验包 scp 到云服务器 fstdd-inbox（最直接、最可靠的回传路径）。
 
     前提：本机已配置好 `ssh fstdd-hub`（.ssh/config Host 块 + 密钥已加载），
@@ -595,6 +661,15 @@ def publish_via_scp(out_dir: Path,
 
 
 def publish_via_inbox(out_dir: Path, url: str) -> tuple[bool, str]:
+    """出站收口：先强制脱敏 stage，再 POST（发送源恒为 stage 内容）。"""
+    staged_dir, _skipped = stage_sanitized(out_dir)
+    try:
+        return _post_inbox_dir(staged_dir, url)
+    finally:
+        shutil.rmtree(staged_dir, ignore_errors=True)
+
+
+def _post_inbox_dir(out_dir: Path, url: str) -> tuple[bool, str]:
     """把经验**分批** POST 到接收端点（无需任何账号/凭证）。
 
     此前是逐条提交：提交 N 条 = N 次请求，服务端一旦按请求数限流，
@@ -691,6 +766,15 @@ def _gh_api(method: str, path: str, token: str, payload=None) -> dict:
 
 
 def publish_via_pr(out_dir: Path, repo: str, token: str, dry_run: bool = False) -> bool:
+    """出站收口：先强制脱敏 stage，再走 fork+PR（拷贝源恒为 stage 内容）。"""
+    staged_dir, _skipped = stage_sanitized(out_dir)
+    try:
+        return _pr_dir(staged_dir, repo, token, dry_run)
+    finally:
+        shutil.rmtree(staged_dir, ignore_errors=True)
+
+
+def _pr_dir(out_dir: Path, repo: str, token: str, dry_run: bool = False) -> bool:
     """自动 fork → 推送到 fork → 创建 Pull Request。
 
     适用对象：没有目标仓库写权限的贡献者（即绝大多数使用者）。
@@ -818,6 +902,7 @@ def publish(out_dir: Path, repo: str, token: str = "") -> tuple[bool, str]:
 
     # 优先级 2: GitHub（需 token）
     if token:
+        staged_dir, _skipped = stage_sanitized(out_dir)
         tmp = Path(tempfile.mkdtemp(prefix="exp_publish_"))
         try:
             url = git_remote(repo, token)
@@ -831,7 +916,7 @@ def publish(out_dir: Path, repo: str, token: str = "") -> tuple[bool, str]:
             dst = repo_dir / "experiences"
             dst.mkdir(parents=True, exist_ok=True)
             n = 0
-            for f in export_files(out_dir):
+            for f in export_files(staged_dir):
                 shutil.copy2(f, dst / f.name)
                 n += 1
 
@@ -858,6 +943,7 @@ def publish(out_dir: Path, repo: str, token: str = "") -> tuple[bool, str]:
             return True, ""
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+            shutil.rmtree(staged_dir, ignore_errors=True)
 
     # 优先级 3: inbox POST
     ok, reason = publish_via_inbox(out_dir, inbox_url())

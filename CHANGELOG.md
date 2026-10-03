@@ -10,6 +10,21 @@
 
 ## [Unreleased]
 
+### 安全
+- **经验出站强制脱敏收口（share-outbound-sanitize）**：`tools/share_experience.py` 此前把脱敏
+  只做在「导出写盘」一步，而四条出站通道（scp / GitHub 直推 / GitHub fork+PR / inbox POST）
+  在发送时**直读源目录**——一旦目录混入未经本流水线的文件（手工放入 / 旁路写入），其中的
+  绝对路径与凭证片段就被原样外发（实测：某经验含 `/home/ubuntu/...` 与 token 片段，被接收端
+  以 `contains POSIX home path` 拒收）。
+  现把脱敏收口到**每个出站函数入口**：新增 `stage_sanitized(out_dir) -> (staged_dir, skipped)`，
+  读入 → `sanitize(text, True)` → 写独立临时目录；四条通道的发送/拷贝源一律改为 stage 目录，
+  用 `try/finally` 清理。`--no-sanitize` 对出站无效（离开本机必脱敏）。
+  另设**第二道防线** `OUTBOUND_RESIDUAL_RE`：逐字复刻服务端拒收判据并叠加已知凭证模式，
+  命中残余的条目剔除并计入审计（`target=stage`）。
+  **帮助**：无论 `experiences/` 里有什么，只要经 share 出站就必然脱敏。
+  12/12 TC 全绿（`pytest tests/test_share_publish_sanitize.py -q`），全量无新增失败；
+  新增经验 `EXP-2026-0017`（security/high）。
+
 ### 合规
 - **开源合规红线由「散文改写」升级为可执行门禁**：`be4711d` 已把 NOTICE / README / LICENSE 的
   vendor 口径与事实对齐（上游内容**随本仓库一并分发**；不得主张为原创），但**只改了散文**，

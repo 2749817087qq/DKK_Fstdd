@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-03-share-publish-sanitize: proposals/2026-10-03-share-publish-sanitize.yaml
+specs:
+  agent:
+    2026-10-03-share-publish-sanitize: specs/agent/2026-10-03-share-publish-sanitize.yaml
+  code:
+    2026-10-03-share-publish-sanitize: specs/code/2026-10-03-share-publish-sanitize.yaml
+version: '2.9'

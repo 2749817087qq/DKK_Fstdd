@@ -1,0 +1,58 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+# change: 2026-10-03-share-publish-sanitize | task_type: code
+
+meta:
+  task_id: "share-outbound-sanitize-verify"
+  change_id: "2026-10-03-share-publish-sanitize"
+  created: "2026-10-03T11:05:00+00:00"
+  task_type: code
+  system: "tools/share_experience.py 经验出站链路（stage_sanitized + 4 个拷贝点收口）"
+
+preconditions:
+  - "Phase 2 spec 已锁定（canonical/specs/code/2026-10-03-share-publish-sanitize.yaml）"
+  - "工作区可运行 pytest -q，且可 import tools/share_experience.py"
+  - "出站发送经本地 stub/scp 可观测桩替代，不触达真实服务器与 GitHub"
+
+steps:
+  - id: "CP-1"
+    description: "stage_sanitized 强制脱敏 + 不误伤（覆盖 SC-001/002/003）"
+    action: "pytest -q tests/test_share_publish_sanitize.py -k stage"
+    assertions:
+      - type: exit_code
+        expected: 0
+  - id: "CP-2"
+    description: "stage 不改原目录 + frontmatter sanitized 修正（覆盖 SC-004/005）"
+    action: "pytest -q tests/test_share_publish_sanitize.py -k immutable"
+    assertions:
+      - type: exit_code
+        expected: 0
+  - id: "CP-3"
+    description: "出站残余自检剔除 + 判据常量可直接断言（覆盖 SC-006/007）"
+    action: "pytest -q tests/test_share_publish_sanitize.py -k residual"
+    assertions:
+      - type: exit_code
+        expected: 0
+  - id: "CP-4"
+    description: "四条出站路径拷贝源为 stage（覆盖 SC-008/009/010/011）"
+    action: "pytest -q tests/test_share_publish_sanitize.py -k outbound"
+    assertions:
+      - type: exit_code
+        expected: 0
+  - id: "CP-5"
+    description: "端到端静默回传零阻塞 + 审计留痕（覆盖 SC-012）"
+    action: "python tools/share_experience.py --export --publish --silent"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: file_exists
+        path: ".fstdd/share-audit.yaml"
+        expected: true
+
+expected_outcomes:
+  - "SC-001..003：staged 内容清除 POSIX home path、替换凭证、保留 README.md/sqlite3.connect/github.com"
+  - "SC-004：原始 experiences/ 目录逐字节不变，staged 位于独立临时目录"
+  - "SC-005：staged frontmatter 的 sanitized 被改写为 true"
+  - "SC-006：残余命中条目被剔除且 skipped 报告文件名与原因"
+  - "SC-007：OUTBOUND_RESIDUAL_RE 直接断言命中/不命中符合服务端判据"
+  - "SC-008..011：inbox/scp/GitHub直推/fork+PR 四路径的外发内容均来自 stage"
+  - "SC-012：静默入口返回 0，失败/剔除写入 share-audit.yaml"

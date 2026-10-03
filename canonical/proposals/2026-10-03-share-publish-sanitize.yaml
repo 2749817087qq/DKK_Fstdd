@@ -1,0 +1,115 @@
+# 2026-10-03-share-publish-sanitize.yaml — Canonical Proposal (YAML-first, V2.9)
+
+meta:
+  change_id: "2026-10-03-share-publish-sanitize"
+  title: "经验出站强制脱敏收口（publish_via_inbox / scp / GitHub 发送前 sanitize）"
+  created: "2026-10-03T19:00:00+08:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    `tools/share_experience.py` 的出站路径直接读取 `experiences/` 目录下的**原始文件**
+    并外发，不再过 `sanitize()`：
+      · `publish_via_inbox`（L626-638）逐条 `f.read_text()` 直发；
+      · `publish_via_scp`（L575+）把整个 out_dir 原样 scp 到服务器；
+      · `publish()` 的 GitHub 分支（L834-836）用 `shutil.copy2` 原样拷贝。
+    该目录本应只放 `prepare_entries()` 产出的脱敏文件，但一旦混入**未经本流水线**
+    的文件（如手工放入的 `experiences/FSTDD003-EXP-*.md`），原始路径/凭证片段就会
+    被直接外发。实测事故：`FSTDD003-EXP-20261002-03` 含 `/home/ubuntu/...` 与一段
+    token 片段，被 inbox 服务端以 `contains POSIX home path` 拒收。
+  motivation: |
+    脱敏目前只发生在「导出写盘」这一步（`prepare_entries` → `experiences/`），
+    「发送」这一步默认目录已干净——这是**隐式契约**，无法保证。本次把脱敏移到
+    **出站收口**：无论目录里有什么，只要经过 publish 就必然被脱敏。收口点唯一
+    （新增 `stage_sanitized()`），复用同一 `sanitize()` 规则，杜绝「两条路径各写一遍
+    脱敏、迟早漂移」的既有教训（见 L420-421 同源注释）。
+  evidence:
+    observed_at: "2026-10-03T18:50:00+08:00"
+    observed_base_git_sha: "066b9f629d21547670a38a375e28e815794e17bd"
+    details: |
+      1. 客户端未脱敏直发：`share_experience.py` L626-638 `f.read_text(encoding="utf-8")`
+         后直接进 `items[].content`，无 sanitize 调用。
+      2. 服务端判据（拒收方）：`/home/ubuntu/fstdd-inbox-server/inbox_server.py` L288
+         `re.compile(r"/(?:home|Users)/[^\s/]+")`，命中即 `content rejected: contains
+         POSIX home path`（L583）。
+      3. 实测复现：对 `experiences/FSTDD003-EXP-20261002-03.md` 调用 `sanitize()`
+         可清除全部 `/home/...`；说明规则本身有效，缺的是「发送前调用它」。
+      4. 对照：`tools/fstdd003_daily_share.py` L185 已在发送前显式 `se.sanitize(content, True)`，
+         行为正确——只有 `share_experience.py` 的三条出站路径缺失该步。
+
+what_changes:
+  - id: C1
+    description: "新增 `stage_sanitized(out_dir) -> Path`：把 out_dir 下经验文件逐条读入、经 `sanitize(text, True)` 强制脱敏后写入临时目录并返回；同时内置**出站残余自检**（复刻服务端同款判据 `/(?:home|Users)/` + 已知凭证模式），命中残余则该条不进入 stage 并记录原因"
+    type: new
+    files: 1  # tools/share_experience.py
+  - id: C2
+    description: "三条出站路径统一改为经 `stage_sanitized()` 收口：`publish_via_inbox` 用 stage 内容发送；`publish_via_scp` 改为先 stage 再 scp stage 目录（不再直发原目录）；`publish()` 的 GitHub 分支从 stage 目录 copy（替换 `shutil.copy2(f, ...)` 原文件）"
+    type: modified
+    files: 1  # tools/share_experience.py
+  - id: C3
+    description: "新增回归测试 `tests/test_share_publish_sanitize.py`：以含 `/home/ubuntu/...` 与 token 片段的样本文件驱动三条出站路径，断言出站内容不含 POSIX home path 与已知凭证模式；并断言正常文件正文不被误伤（语义保持）"
+    type: new
+    files: 1  # tests/test_share_publish_sanitize.py
+  - id: C4
+    description: "重跑 DELIVER 静默回传（--export --publish --silent）验证端到端无残留、无 4xx 拒收，并核对 .fstdd/share-audit.yaml 记录正常"
+    type: ops
+    files: 0
+
+capabilities:
+  new:
+    - name: "share-outbound-sanitize"
+      description: "经验回传的出站收口：任何经 share_experience 发送的内容（inbox POST / scp / GitHub）在离开本机前强制脱敏，且脱敏不可被 --no-sanitize 绕过"
+  modified: []
+
+constraints:
+  - "脱敏 MUST 与 export 同源：复用既有 `sanitize()` 与其 TLD 白名单/规则集，MUST NOT 另写一份规则（防漂移）"
+  - "静默与显式两条路径 MUST 都收口；`--no-sanitize` 对出站脱敏无效（维持既有静默语义）"
+  - "MUST 保持「宁漏勿误」既有取舍：不扩大替换面，避免误伤 `README.md` / `sqlite3.connect` 这类标识符"
+  - "MUST 保持既有退出码与零阻塞语义：回传失败不阻断 DELIVER"
+  - "MUST NOT 引入新第三方依赖（纯标准库）"
+  - "MUST NOT 原地改写/删除 `experiences/` 下的用户文件（stage 到临时目录，用完清理）"
+
+stakeholders:
+  - "FSTDD003（设计 + 实现 + 发布）"
+  - "所有使用 share_experience 回传经验的节点/使用者（出站数据不再夹带本机路径与凭证）"
+  - "inbox 服务端维护者 K（不再收到带 POSIX home path 的拒收样本）"
+
+risk_areas:
+  - capability: "share-outbound-sanitize"
+    risk: "二次脱敏可能过度替换，破坏经验正文技术内核"
+    mitigation: "复用同源规则 + 保持 TLD 白名单『宁漏勿误』不变；C3 用固定样本断言正文关键标识符不被替换"
+  - capability: "share-outbound-sanitize"
+    risk: "scp 改为 stage 后远端目录结构/批次命名变化，影响 K 侧既有消费"
+    mitigation: "stage 后仍写入同一 batch 子目录命名（`<node>-experiences-<ts>`），结构与内容类型不变"
+  - capability: "share-outbound-sanitize"
+    risk: "出站自检过严导致合法经验被跳过"
+    mitigation: "自检判据与服务端完全一致；仅在命中时才跳过并记审计，正常内容零影响"
+
+non_goals:
+  - "不修改服务端 `inbox_server.py` 的任何逻辑"
+  - "不做 `experiences/` 目录净化（不删除、不原地改写用户放置的文件）"
+  - "不重构 GitHub fork+PR 既有流程（仅把拷贝源换成 stage 目录）"
+  - "不为 `fstdd003_daily_share.py` 做改动（其已正确脱敏）"
+
+critical:
+  is_critical: false
+  reason: "本机工具链的出站数据处理修正，不触碰服务端与运行时核心；但涉及对外数据外发安全"
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L1
+  reference_changes: []
+
+success_criteria:
+  - "对含 `/home/ubuntu/...` 与 token 片段的样本，经 `publish_via_inbox` 发送的 body 不再含 `/(?:home|Users)/` 与已知凭证模式，服务端返回 accepted（非 4xx 拒收）"
+  - "`publish_via_scp` 与 GitHub 分支的拷贝源为 stage 目录，且 stage 内容已脱敏（测试可断言）"
+  - "`tests/test_share_publish_sanitize.py` 全绿；`pytest tests/` 无回归"
+  - "`--export --publish --silent` 端到端成功，`.fstdd/share-audit.yaml` 记录正常"
+  - "三条出站路径的代码中不存在对 `experiences/` 原始文件『读后直发』的调用（grep 可验证）"
+
+finance:  # optional: 本 change FINANCIAL_PROJECT=NO，留空
+  domain: ""
