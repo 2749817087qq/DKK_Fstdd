@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-03-finance-failure-modes: proposals/2026-10-03-finance-failure-modes.yaml
+specs:
+  agent:
+    2026-10-03-finance-failure-modes: specs/agent/2026-10-03-finance-failure-modes.yaml
+  code:
+    2026-10-03-finance-failure-modes: specs/code/2026-10-03-finance-failure-modes.yaml
+version: '2.9'

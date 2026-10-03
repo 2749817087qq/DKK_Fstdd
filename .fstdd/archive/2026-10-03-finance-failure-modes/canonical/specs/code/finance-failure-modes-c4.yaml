@@ -1,0 +1,35 @@
+meta:
+  capability: finance-failure-modes-c4
+  change_id: "2026-10-03-finance-failure-modes"
+  created: "2026-10-03T09:35:00+08:00"
+  confidence: high
+
+requirements:
+  - id: REQ-001
+    description: "build.md C4 section 追加 8 行金融失败模式（编号 15-22）"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "observed_at=2026-10-03T09:15:00+08:00 build.md L317-332 = 14 行"
+        given: "build.md C4 section 存在 14 类通用模式 Markdown table"
+        when: "在 #14 后面追加 8 行金融模式"
+        then: "build.md C4 section SHALL 包含 22 行 table（header + 14 通用 + 8 金融）"
+        and: ["编号 15-22", "4 列对齐: # | 失败模式 | 覆盖方式 | BUILD 检查动作"]
+  - id: REQ-002
+    description: "8 类金融模式每类有具体 BUILD 检查动作"
+    scenarios:
+      - id: SC-002
+        confidence: high
+        evidence: "fstdd-fin SKILL.md 8 类: 重复扣款/账实不符/静默降级/精度丢失/审计缺口/状态机漏洞/额度穿透/合规遗漏"
+        given: "每类金融模式"
+        when: "检查 BUILD 检查动作列"
+        then: "每类 SHALL 有具体可执行步骤（如审查接口、检查字段、运行命令），不能只写审查代码"
+  - id: REQ-003
+    description: "原有 14 类条目一字不改"
+    scenarios:
+      - id: SC-003
+        confidence: high
+        evidence: "向后兼容约束"
+        given: "追加前的 build.md L317-332"
+        when: "追加 8 行"
+        then: "L317-332（原 14 类 + header + 分隔线）SHALL 一字不变"

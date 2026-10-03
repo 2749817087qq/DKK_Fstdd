@@ -1,0 +1,43 @@
+baseline:
+  at: '2026-10-03T02:02:01+00:00'
+  base_git_sha: a53a6a90861bbf32c6d6f11bac03e7d8bac6ee89
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-03-finance-failure-modes
+complexity_score: null
+current_phase: understand
+design_adjustments:
+  count: 0
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T02:03:36+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: Gate 3：1 文件 / 3 TC 全 PASS / 22 行 table / 14 原有不变 / 8 金融追加。进
+      DELIVER。
+    status: completed
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T02:02:51+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: Gate 2 确认：1 capability / 3 scenario / 3 TC，纯文档追加 8 行，全 high
+      置信度。进 BUILD。
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-03T02:02:01+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: Gate 1 确认：build.md C4 追加 8 类金融失败模式。复杂度 12/17 thorough。
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

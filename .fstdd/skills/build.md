@@ -330,6 +330,14 @@ stdd_version: "3.0.5"
 | 12 | 输出截断（Output Truncation） | Guard stdin 健壮性 | 大 payload hook 输入不截断；PostToolUse 完整输出 |
 | 13 | 格式错误（Malformed Output） | skill 引导 | tool_input / canonical YAML 格式合法；无半结构化残留 |
 | 14 | 循环依赖（Circular Dependency） | skill 引导 | 模块 import 图无环；递归函数有明确终止条件 |
+| 15 | 重复扣款（Double Charge） | 金融红线联动 | 审查所有扣款接口：是否有幂等 key；重复请求是否产生副作用；消息重试是否去重 |
+| 16 | 账实不符（Reconciliation Gap） | 金融红线联动 | 内部账本 vs 外部对账源：是否有 reconciliation 任务；差异是否有告警和处理流程 |
+| 17 | 静默降级（Silent Degradation） | 金融红线联动 | 支付/风控/对账组件不可用时：是否显式标记失败；是否拒绝继续处理；是否有告警 |
+| 18 | 精度丢失（Precision Loss） | 金融红线联动 | 审查金额字段：是否用 Decimal 而非 float；是否有四舍五入边界值测试；是否跨币种精度一致 |
+| 19 | 审计缺口（Audit Gap） | 金融红线联动 | 关键操作：资金流/权限变更/风控决策是否有不可变日志；日志包含谁/何时/做了什么/前后值 |
+| 20 | 状态机漏洞（State Machine Gap） | 金融红线联动 | 交易状态转换：是否有非法转换路径；是否有死锁/卡死检测；失败后是否有补偿机制 |
+| 21 | 额度穿透（Limit Bypass） | 金融红线联动 | 限额检查：是否在服务端而非客户端；并发下是否有竞态；是否有超限后的阻断逻辑 |
+| 22 | 合规遗漏（Compliance Gap） | 金融红线联动 | KYC/AML/限额：是否全量覆盖；是否有跨境数据传输评估；是否有敏感数据脱敏 |
 
 **检查结果必须写入 test-report.md**：每类标注 ✅ / ❌ / SKIPPED，未通过的说明处置方式（修复 / 记录为已知问题）。
 
