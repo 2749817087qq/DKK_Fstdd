@@ -1,0 +1,61 @@
+# spec.yaml — 行为规格（Canonical YAML）
+# Capability: build-quality-verification（modified）— C4 失败模式检查 22 → 23 类
+
+meta:
+  capability: "build-quality-verification"
+  change_id: "2026-10-03-build-yagni-ladder"
+  created: "2026-10-03T22:10:00+08:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-BQV-001"
+    description: "BUILD 阶段 C4 失败模式检查清单 SHALL 由 22 类扩展为 23 类，本地与 upstream 两份 build.md 逐行一致"
+    scenarios:
+      - id: "SC-BQV-001"
+        confidence: high
+        evidence: "proposal.yaml#success_criteria[1]; observed_at=2026-10-03T21:30:00+08:00 source=build.md L317-340 现为 22 data row"
+        given: "`.fstdd/skills/build.md` 的 C4 section 含一张 markdown 表"
+        when: "统计 '## C4' 到 '## C5' 之间排除 header/separator 的 data row 数"
+        then: "SHALL 等于 23（较既有 22 类 +1）"
+      - id: "SC-BQV-002"
+        confidence: high
+        evidence: "proposal.yaml#constraints[2]"
+        given: "`upstream/.fstdd/skills/build.md` 与 `.fstdd/skills/build.md` 两份文件"
+        when: "分别统计 C4 data row 数并逐行比对"
+        then: "SHALL 均为 23 且两份内容完全一致"
+
+  - id: "REQ-BQV-002"
+    description: "C4 第 23 行 SHALL 表示「过度工程（Over-Engineering）」，覆盖方式为 YAGNI-7 梯子"
+    scenarios:
+      - id: "SC-BQV-003"
+        confidence: high
+        evidence: "proposal.yaml#what_changes[C1]"
+        given: "build.md 的 C4 表第 23 行"
+        when: "读取该行的失败模式列与覆盖方式列"
+        then: "SHALL 含关键词 'YAGNI'，且覆盖方式列标记为 'YAGNI-7 梯子'"
+      - id: "SC-BQV-004"
+        confidence: high
+        evidence: "proposal.yaml#what_changes[C1]; observed_at=2026-10-03T21:30:00+08:00 source=build.md L312 标题仍写「14 类」"
+        given: "build.md 的 C4 小节标题行"
+        when: "读取标题文本"
+        then: "SHALL 显示「23 类失败模式检查清单」（与 23 行数据对齐）"
+
+  - id: "REQ-BQV-003"
+    description: "既有 22 类失败模式 SHALL 保持编号与语义无回归"
+    scenarios:
+      - id: "SC-BQV-005"
+        confidence: high
+        evidence: "proposal.yaml#non_goals[3]"
+        given: "C4 表第 1 至第 22 行（14 通用 + 8 金融）"
+        when: "对比变更前后的编号与文本"
+        then: "SHALL 逐字不变，无重编号、无删改"
+
+  - id: "REQ-BQV-004"
+    description: "静态内容断言 SHALL 与 C4 行数保持同步，保证 release validation L1 全绿"
+    scenarios:
+      - id: "SC-BQV-006"
+        confidence: high
+        evidence: "proposal.yaml#risk_areas[0]"
+        given: "`tests/test_finance_content.py` 的 L1-05 / L1-06 断言"
+        when: "运行 `pytest tests/test_finance_content.py --platform workbuddy`"
+        then: "SHALL 全部通过（断言已由 22 更新为 23），无 FAIL/ERROR"

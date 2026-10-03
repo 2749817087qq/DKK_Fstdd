@@ -3,10 +3,15 @@ name: fstdd
 description: |
   FSTDD（Spec+Test Driven Development）总入口：Spec 先行 + TDD 执行的 AI 辅助研发流程，四阶段（UNDERSTAND → SPEC → BUILD → DELIVER）+ 三道用户确认门 + 失败模式检查。负责判断项目是否已初始化 FSTDD、路由到正确的阶段 skill，并说明 CLI 与静态资源位置。
   触发词：FSTDD、fstdd、spec 驱动开发、测试驱动开发、TDD 流程、规约驱动、四阶段流程、用 FSTDD 开发
+version: "3.0.5"
+stdd_version: "3.0.5"
+license: MIT（上游 STDD leonai42/stdd，版权归杭州大道一以科技有限公司；
+  本文件为其在 WorkBuddy 平台的适配版本，含本地安全策略与路径适配）
+source: https://github.com/leonai42/stdd
 ---
 
 
-# FSTDD 总入口（Trae 全局安装）
+# FSTDD 总入口（WorkBuddy 全局安装）
 
 ## 这是什么
 
@@ -25,7 +30,7 @@ FSTDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
 - 静态资源与模板：`D:/FSTDD003/upstream`
 - CLI 入口：`"C:\Users\Administrator\.workbuddy-ai\binaries\python\envs\default\Scripts\python.exe" "D:/FSTDD003/upstream/bin/fstdd"`
   - 依赖 PyYAML / Jinja2 / requests，本机使用 `C:\Users\Administrator\.workbuddy-ai\binaries\python\envs\default\Scripts\python.exe`（已具备）；换成其他解释器请先确认依赖
-- 已安装的阶段 skill：`C:/Users/Administrator/.trae-cn/skills` 下的 `fstdd-understand/` `fstdd-spec/` `fstdd-build/` `fstdd-deliver/` `fstdd-upgrade/`
+- 已安装的阶段 skill：`C:/Users/Administrator/.workbuddy-ai/skills` 下的 `fstdd-understand/` `fstdd-spec/` `fstdd-build/` `fstdd-deliver/` `fstdd-upgrade/`
 
 > 生成自 stdd-repo@3.1.0（本机适配层；重装后此值随仓库版本更新）
 

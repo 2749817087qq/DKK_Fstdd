@@ -1,0 +1,33 @@
+change_id: 2026-10-03-build-yagni-ladder
+generated_at: '2026-10-03T18:12:00+08:00'
+base_git_sha: e869dc8dab892db3a97d9de627dbc799773d8815
+adjustments:
+  - id: DA-09
+    type: small
+    title: "L1-11 版本断言由 3.1.1 修正为 3.1.2（基线漂移）"
+    original_design: "C3 仅改造 C4 相关断言（L1-05/L1-06 + 新增 L1-14..L1-17）"
+    actual: "额外将 test_L1_11 的 fstdd_version 断言 3.1.1 → 3.1.2（一行）"
+    reason: "基线 e869dc8（v3.1.2）已把 .fstdd/version.yaml bump 到 3.1.2，但断言未同步，导致全量 pytest 存在既存 FAIL；不改则无法满足『全量绿』，且通过率 16/17=94.1% < 95% 会触发长程降级"
+    impact: "仅测试断言一行；Phase 4 DELIVER 若 bump v3.2.0 需再次同步该断言"
+    spec_ref: "REQ-BQV-004"
+    severity: low
+    recorded_by: ai
+  - id: DA-10
+    type: clarification
+    title: "SC-BQV-002『两份内容完全一致』收窄为『C4 区域一致』"
+    original_design: "SC-BQV-002 断言本地与 upstream 两份 build.md 内容完全一致"
+    actual: "实测两文件存在既存全文件漂移（upstream 用 `bin/stdd` 引用、且缺 B2.5 金融 10 维段）；本 change 保证 C4 区域逐行一致，未扩大差异"
+    reason: "C1 代码评审代理发现该漂移为历史遗留、非本 change 引入；全文件对齐超出本 change 范围"
+    impact: "spec 表述与实际对齐；全文件对齐可作为后续独立 change 承接"
+    spec_ref: "SC-BQV-002"
+    severity: low
+    recorded_by: ai
+deferred:
+  - id: DF-01
+    title: "AGENTS.md 仍写『14 类失败模式检查』"
+    reason: "本 change C1 范围仅 build.md×2；AGENTS.md 同步属文档更新，移交 Phase 4 DELIVER 统一修订"
+    severity: low
+  - id: DF-02
+    title: "design.md 架构图注释行号轻微失准（L1-15/16 归属、build.md#L309-L342 off-by-1）"
+    reason: "低影响文档瑕疵，不阻塞 Gate 3；DELIVER 修订"
+    severity: low

@@ -3,9 +3,14 @@ name: fstdd-understand
 description: |
   FSTDD Phase 1 需求理解与确认：把模糊需求转化为可验证的变更提案（canonical/proposals/<change>.yaml + proposal.md），并执行自动提案审查、复杂度评分与模式建议，最后经用户确认 Gate 1 锁定。
   触发词：fstdd-understand、需求理解、需求分析、变更提案、写 proposal、proposal 起草、FSTDD 第一步、FSTDD Phase 1
+version: "3.0.5"
+stdd_version: "3.0.5"
+license: MIT（上游 STDD leonai42/stdd，版权归杭州大道一以科技有限公司；
+  本文件为其在 WorkBuddy 平台的适配版本，含本地安全策略与路径适配）
+source: https://github.com/leonai42/stdd
 ---
 
-> 本 skill 来自开源项目 FSTDD (Spec+Test Driven Development) V3.0.5，源仓库 https://github.com/leonai42/stdd ，已适配 Trae 全局 skill 目录。
+> 本 skill 来自开源项目 FSTDD (Spec+Test Driven Development) V3.0.5，源仓库 https://github.com/leonai42/stdd ，已适配 WorkBuddy 全局 skill 目录。
 > 静态资源与共享片段根目录：`D:/FSTDD003/upstream`
 > CLI 入口：`"C:\Users\Administrator\.workbuddy-ai\binaries\python\envs\default\Scripts\python.exe" "D:/FSTDD003/upstream/bin/fstdd"`（该解释器已具备 PyYAML / Jinja2 / requests 依赖）
 > 首次在某项目使用 FSTDD 前，需先在该项目根目录执行初始化：`"C:\Users\Administrator\.workbuddy-ai\binaries\python\envs\default\Scripts\python.exe" "D:/FSTDD003/upstream/bin/fstdd" init` —— 生成 `.fstdd/` 骨架、模板与项目状态文件。
@@ -22,6 +27,26 @@ description: |
 先读取并执行版本自检步骤：`D:/FSTDD003/upstream/.fstdd/skills/_shared/version-check.md`
 
 > 检查项目 `.fstdd/version.yaml` 与技能版本是否一致。落后时告警但不阻断执行。
+
+### Step 0.5: 金融系统前置判定与 7 红线检查（条件触发）
+
+**判定规则**：搜索用户需求描述，命中以下任一关键词 → 标记 `FINANCIAL_PROJECT=YES`，否则 = NO。
+
+关键词白名单：支付、银行、交易、撮合、风控、KYC、AML、DeFi、结算、对账、资金、金额、Decimal、幂等、账户、余额、汇率、杠杆、保证金、清算、行情、托管、票据、债券、股票、期货、期权、私募、公募、资管、净值、回撤、夏普、贝塔、阿尔法、波动率、流动性风险、信用风险、市场风险
+
+**FINANCIAL_PROJECT=YES 时，以下 7 红线 MUST 全部覆盖。缺失任一 → Gate 1 SHALL NOT 通过**：
+
+1. **交易准确性** — 是否有 Decimal 精度处理？浮点数零容忍？币种统一？
+2. **幂等性** — 所有写操作（扣款/入账/状态变更）是否幂等？重复请求是否产生副作用？
+3. **审计不可篡改** — 关键操作（资金流/权限变更）是否有不可变日志？谁/何时/做了什么？
+4. **账实相符** — 内部账本 vs 外部对账源是否有 reconciliation 机制？差异如何处理？
+5. **降级不静默** — 支付/风控/对账组件降级时，是否显式标记 + 告警 + 拒绝继续处理？
+6. **数据合规** — KYC/AML 流程？敏感数据脱敏？跨境数据传输？
+7. **无硬编码** — 阈值/费率/风控规则是否配置化？不能 hardcode 在源码里
+
+检查结果 SHALL 写入 `proposal.yaml` 的 `constraints` 和 `risk_areas` 章节。
+
+**FINANCIAL_PROJECT=NO 时**：跳过此步骤，继续 Step 1。
 
 ---
 

@@ -1,0 +1,153 @@
+# spec.yaml — caveman-compressor 行为规格（Canonical YAML）
+
+meta:
+  capability: "caveman-compressor"
+  change_id: "2026-10-03-caveman-kg-sync"
+  created: "2026-10-03T14:00:00+08:00"
+  confidence: high
+  upstream_sync: false
+
+# ================================================================
+# REQ 1: Python API — 独立库，可 import
+# ================================================================
+requirements:
+  - id: CAVE-REQ-001
+    description: "caveman 必须是独立 Python 库（fstdd/caveman.py），任何模块可直接 import，不绑定 hub_client 或 canon.py"
+    scenarios:
+      - id: CAVE-SC-001
+        given: "fstdd caveman.py 已实现 compress() + compress_dict()"
+        when: "任何模块执行 `from fstdd.caveman import compress, compress_dict`"
+        then: "SHALL 成功导入，无循环 import；无 hub_client / canon 依赖"
+      - id: CAVE-SC-002
+        given: "compress(text, max_chars=200) 被调用"
+        when: "输入是纯文本/Markdown 字符串"
+        then: "SHALL 返回 ≤max_chars 长度的字符串"
+      - id: CAVE-SC-003
+        given: "compress_dict(d, keep_keys=[...]) 被调用"
+        when: "输入是 dict（如 multihub task scope）"
+        then: "SHALL 返回只保留 keep_keys 中 key 的 dict，值不变"
+
+# ================================================================
+# REQ 2: 压缩算法 — 字段加权 + 修饰词砍 + 预算分配
+# ================================================================
+  - id: CAVE-REQ-002
+    description: "压缩按 proposal §implementation.algorithm 执行：field_weights + trim_rules + budget_allocation"
+    scenarios:
+      - id: CAVE-SC-004
+        given: "输入文本含 motivation 段落（背景故事）"
+        when: "compress() 执行"
+        then: "SHALL 直接砍 motivation（weight=1, max_chars=0），输出里无 motivation 文本"
+      - id: CAVE-SC-005
+        given: "输入含中文修饰词（如'在 Windows 环境下使用 PowerShell'）"
+        when: "compress() 执行"
+        then: "SHALL 应用中文修饰词 regex 砍去'的'前后各 2 字 → 'Win + PS5'"
+      - id: CAVE-SC-006
+        given: "输入含英文停用词（the/a/an/is/are/in/on...）"
+        when: "compress() 执行"
+        then: "SHALL 移除停用词"
+      - id: CAVE-SC-007
+        given: "单字段（如 summary）超过分配的 max_chars"
+        when: "compress() 执行"
+        then: "SHALL 先应用 trim_rules 砍；还超 → 砍最低 weight 字段"
+      - id: CAVE-SC-008
+        given: "总输出超过 max_chars 预算且 mandatory_fields 不全"
+        when: "compress() 执行 final check"
+        then: "SHALL 截断优先级倒转：先砍 summary（weight=10）让 constraints（weight=5）进来，而不是砍 constraints"
+
+# ================================================================
+# REQ 3: output_contract 强制校验
+# ================================================================
+  - id: CAVE-REQ-003
+    description: "压缩结果必须包含 mandatory_fields（做什么/怎么做/约束/deadline）；缺失则失败或倒转截断优先级"
+    scenarios:
+      - id: CAVE-SC-009
+        given: "compress() 生成的输出 ≤max_chars 但缺 constraints"
+        when: "final check 执行"
+        then: "SHALL 截断优先级倒转 → 砍 summary 腾出空间 → constraints 补进来"
+      - id: CAVE-SC-010
+        given: "输入不含 deadline（非必需）"
+        when: "compress() 执行"
+        then: "SHALL 跳过 deadline 校验，不影响其他字段"
+      - id: CAVE-SC-011
+        given: "输入是 dict（compress_dict）"
+        when: "default_keep_keys 被应用"
+        then: "SHALL 包含 task_id + idempotency_key（multihub 必需字段）"
+
+# ================================================================
+# REQ 4: Determinism — 同输入 = 同输出
+# ================================================================
+  - id: CAVE-REQ-004
+    description: "compress() 必须 deterministic，同输入多次调用返回完全相同输出"
+    scenarios:
+      - id: CAVE-SC-012
+        given: "同一段输入文本"
+        when: "连续调用 compress() 3 次"
+        then: "SHALL 三次输出字符级完全一致（可用于 git diff）"
+
+# ================================================================
+# REQ 5: CLI 子命令
+# ================================================================
+  - id: CAVE-REQ-005
+    description: "fstdd CLI 新增 caveman 子命令"
+    scenarios:
+      - id: CAVE-SC-013
+        given: "命令行 `fstdd caveman proposal.yaml`"
+        when: "执行"
+        then: "SHALL 输出压缩文本到 stdout（或 --out 指定路径）"
+      - id: CAVE-SC-014
+        given: "命令行 `fstdd caveman --max 100 text.txt`"
+        when: "执行"
+        then: "SHALL 用 100 字预算（默认 200）"
+      - id: CAVE-SC-015
+        given: "输入文件不存在"
+        when: "执行"
+        then: "SHALL exit code non-zero + stderr 提示"
+
+# ================================================================
+# REQ 6: Integration points — canon generate + hub_client
+# ================================================================
+  - id: CAVE-REQ-006
+    description: "canon/spec generate + hub_client issue/complete 自动附带 caveman 输出"
+    scenarios:
+      - id: CAVE-SC-016
+        given: "fstdd canon generate 完成 proposal.yaml"
+        when: "canon.py 内置 caveman 钩子"
+        then: "SHALL 自动在同目录追加 caveman_summary.txt（≤200 字）"
+      - id: CAVE-SC-017
+        given: "hub_client.issue(scope=dict) 被调用"
+        when: "issue() 内置 caveman 钩子"
+        then: "SHALL scope dict 自动附带 scope_min 键（compress_dict 结果）"
+      - id: CAVE-SC-018
+        given: "hub_client.complete(result=long_string) 被调用且 result 长度 >200"
+        when: "complete() 内置 caveman 钩子"
+        then: "SHALL result dict 自动附带 result_min 键（compress 结果）；result ≤200 则不加"
+
+# ================================================================
+# REQ 7: Trim rules — 具体 regex 实现
+# ================================================================
+  - id: CAVE-REQ-007
+    description: "trim_rules 必须精确实现 proposal 中定义的 4 条规则"
+    scenarios:
+      - id: CAVE-SC-019
+        given: "输入含中文修饰词'在 Windows 环境下使用 PowerShell 处理用户要求更新到最新版的请求'"
+        when: "compress() 执行中文修饰词 regex"
+        then: "SHALL 输出类似'Win + PS5: 更新请求处理'"
+      - id: CAVE-SC-020
+        given: "输入含英文停用词'The implementation is in the file for testing'"
+        when: "compress() 执行停用词移除"
+        then: "SHALL 输出类似'implementation file testing'"
+      - id: CAVE-SC-021
+        given: "输入含重复命令（如'git pull ... git pull ...'）"
+        when: "compress() 执行重复合并"
+        then: "SHALL 只保留一次"
+
+# ================================================================
+# REQ 8: Token reduction 实测
+# ================================================================
+  - id: CAVE-REQ-008
+    description: "multihub 实测 scope_min vs full scope token 差 ≥ 50%"
+    scenarios:
+      - id: CAVE-SC-022
+        given: "用 release-validation-framework 的 task scope 做基准"
+        when: "compress_dict() 生成 scope_min"
+        then: "SHALL token_count(scope_min) ≤ token_count(full_scope) * 0.5"

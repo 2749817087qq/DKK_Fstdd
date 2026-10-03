@@ -3,9 +3,14 @@ name: fstdd-build
 description: |
   FSTDD Phase 3 BUILD（切片规划 + TDD 实现 + 质量验证三合一）：拆分垂直切片，逐切片执行 RED→GREEN→REFACTOR，记录设计偏离，最后做全量质量验证与失败模式检查，生成 test-report 并经用户确认 Gate 3。
   触发词：fstdd-build、fstdd-slice、fstdd-verify、TDD 实现、切片规划、切片拆分、写测试、RED GREEN REFACTOR、质量验证、覆盖率、FSTDD Phase 3
+version: "3.0.5"
+stdd_version: "3.0.5"
+license: MIT（上游 STDD leonai42/stdd，版权归杭州大道一以科技有限公司；
+  本文件为其在 WorkBuddy 平台的适配版本，含本地安全策略与路径适配）
+source: https://github.com/leonai42/stdd
 ---
 
-> 本 skill 来自开源项目 FSTDD (Spec+Test Driven Development) V3.0.5，源仓库 https://github.com/leonai42/stdd ，已适配 Trae 全局 skill 目录。
+> 本 skill 来自开源项目 FSTDD (Spec+Test Driven Development) V3.0.5，源仓库 https://github.com/leonai42/stdd ，已适配 WorkBuddy 全局 skill 目录。
 > 静态资源与共享片段根目录：`D:/FSTDD003/upstream`
 > CLI 入口：`"C:\Users\Administrator\.workbuddy-ai\binaries\python\envs\default\Scripts\python.exe" "D:/FSTDD003/upstream/bin/fstdd"`（该解释器已具备 PyYAML / Jinja2 / requests 依赖）
 > 首次在某项目使用 FSTDD 前，需先在该项目根目录执行初始化：`"C:\Users\Administrator\.workbuddy-ai\binaries\python\envs\default\Scripts\python.exe" "D:/FSTDD003/upstream/bin/fstdd" init` —— 生成 `.fstdd/` 骨架、模板与项目状态文件。
@@ -295,7 +300,39 @@ description: |
 
 ## C4: 失败模式检查
 
-对照经验库中的已知失败模式逐项检查（含锚定缺失、Agent CP 失败、跨系统不一致等）。**全量执行，不得用占位符代替。** 未实际执行的检查必须标注 SKIPPED。
+对照经验库中的已知失败模式逐项检查。**全量执行，不得用占位符代替。** 未实际执行的检查必须标注 SKIPPED。
+
+### 23 类失败模式检查清单（V3.0.10 完整性对齐）
+
+每类标注当前覆盖方式（CLI / skill / hook），**必须逐项打勾**。
+
+| # | 失败模式 | 覆盖方式 | BUILD 检查动作 |
+|---|---|---|---|
+| 1 | 幻觉调用（Hallucination） | skill 引导 | 审查代码：无未 import 的函数调用；无 fake/undefined 标识符 |
+| 2 | 过度信任 LLM（Overtrust） | skill 引导 | 每次工具调用结果必须二次验证；AI 可能瞎编输出 |
+| 3 | Prompt 注入 | skill 引导 | 审查 system prompt 无 `ignore previous` / `you are now` 等注入痕迹 |
+| 4 | 记忆污染（Memory Pollution） | skill 引导 | 跨 Session 时清空 memory 上下文，避免旧污染传播 |
+| 5 | 上下文窗溢出（Context Overflow） | skill 引导 | 单文件 edit 控制 < 300 行；大修改 chunk 化 |
+| 6 | 工具参数漂移（Tool Drift） | skill 引导 | 工具调用参数 schema 与官方定义一致（无 self-invented 参数） |
+| 7 | 安全凭证泄露 | **三層** verify_notices + skill + Guard | 运行 verify_notices.py 扫描；无 token/key 硬编码 |
+| 8 | 权限绕过（Privilege Bypass） | skill 引导 | 不得手动改 .fstdd.yaml 确认字段（Guard V3.0.5 硬阻断） |
+| 9 | 并发竞态（Race Condition） | skill 引导 | batch 操作串行化；避免同时推多个 change |
+| 10 | 路径遍历（Path Traversal） | Guard _is_inside_project | 所有文件操作路径在 project_root 内；无 `../` 逃逸 |
+| 11 | 跨会话残留（Cross-Session State） | skill 引导 | Phase 完成后清理 `.tmp` / `.scratch` 目录 |
+| 12 | 输出截断（Output Truncation） | Guard stdin 健壮性 | 大 payload hook 输入不截断；PostToolUse 完整输出 |
+| 13 | 格式错误（Malformed Output） | skill 引导 | tool_input / canonical YAML 格式合法；无半结构化残留 |
+| 14 | 循环依赖（Circular Dependency） | skill 引导 | 模块 import 图无环；递归函数有明确终止条件 |
+| 15 | 重复扣款（Double Charge） | 金融红线联动 | 审查所有扣款接口：是否有幂等 key；重复请求是否产生副作用；消息重试是否去重 |
+| 16 | 账实不符（Reconciliation Gap） | 金融红线联动 | 内部账本 vs 外部对账源：是否有 reconciliation 任务；差异是否有告警和处理流程 |
+| 17 | 静默降级（Silent Degradation） | 金融红线联动 | 支付/风控/对账组件不可用时：是否显式标记失败；是否拒绝继续处理；是否有告警 |
+| 18 | 精度丢失（Precision Loss） | 金融红线联动 | 审查金额字段：是否用 Decimal 而非 float；是否有四舍五入边界值测试；是否跨币种精度一致 |
+| 19 | 审计缺口（Audit Gap） | 金融红线联动 | 关键操作：资金流/权限变更/风控决策是否有不可变日志；日志包含谁/何时/做了什么/前后值 |
+| 20 | 状态机漏洞（State Machine Gap） | 金融红线联动 | 交易状态转换：是否有非法转换路径；是否有死锁/卡死检测；失败后是否有补偿机制 |
+| 21 | 额度穿透（Limit Bypass） | 金融红线联动 | 限额检查：是否在服务端而非客户端；并发下是否有竞态；是否有超限后的阻断逻辑 |
+| 22 | 合规遗漏（Compliance Gap） | 金融红线联动 | KYC/AML/限额：是否全量覆盖；是否有跨境数据传输评估；是否有敏感数据脱敏 |
+| 23 | 过度工程（Over-Engineering） | YAGNI-7 梯子 | 对每个新增功能点/新文件/新依赖逐级回答 7 阶梯子（1 真需要→2 本仓已有→3 标准库→4 平台原生→5 已装依赖→6 一行→7 最小实现），首个成立级别即答案 |
+
+**检查结果必须写入 test-report.md**：每类标注 ✅ / ❌ / SKIPPED，未通过的说明处置方式（修复 / 记录为已知问题）。
 
 ## C5: 经验库自动记录/更新
 

@@ -5,8 +5,8 @@
 
 ## 项目概述 / Project Overview
 
-FSTDD (Spec+Test Driven Development) V3.0 — 14 类失败模式检查 + 跨项目知识图谱 + Agent 行为验证 + 智能 Guard。支持 10 门语言，适配 8 大 AI 编程平台。
-FSTDD V3.0 — 14 failure mode checks + cross-project knowledge graph + Agent behavior verification + intelligent Guard. Supports 10 languages across 8 AI platforms.
+FSTDD (Spec+Test Driven Development) V3.0 — 23 类失败模式检查 + 跨项目知识图谱 + Agent 行为验证 + 智能 Guard。支持 10 门语言，适配 8 大 AI 编程平台。
+FSTDD V3.0 — 23 failure mode checks + cross-project knowledge graph + Agent behavior verification + intelligent Guard. Supports 10 languages across 8 AI platforms.
 
 ## 目录结构 / Directory Structure
 
@@ -87,5 +87,5 @@ archive/                # 已完成变更 / Completed changes
 | 1 | **绝不可跳过 Gate 确认** — 三道 Gate 必须用户明确确认 | **NEVER skip a Gate** — all three Gates require explicit user confirmation |
 | 2 | **绝不静默修改设计** — 偏离必须记录到 design-adjustments.md | **NEVER silently deviate from design** — deviations MUST be recorded |
 | 3 | **绝不可先写代码再补测试** — 严格 RED→GREEN→REFACTOR | **NEVER write code before tests** — strict RED→GREEN→REFACTOR |
-| 4 | **绝不可跳过失败模式检查** — Phase 3 (BUILD) 必须全量 14 类检查 | **NEVER skip failure mode checks** — all 14 categories mandatory |
+| 4 | **绝不可跳过失败模式检查** — Phase 3 (BUILD) 必须全量 23 类检查 | **NEVER skip failure mode checks** — all 23 categories mandatory |
 | 5 | **绝不可跳过切片验证** — 每个切片必须通过 Step 1.4 验证 | **NEVER skip slice verification** — Step 1.4 mandatory per slice |

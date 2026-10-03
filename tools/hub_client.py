@@ -14,6 +14,7 @@
 """
 import json
 import os
+import sys
 import time
 import hashlib
 import argparse
@@ -35,6 +36,24 @@ def _load_dotenv() -> None:
                 os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
             break
 _load_dotenv()
+
+
+def _caveman():
+    """懒加载 FSTDD-Caveman（``upstream/fstdd/caveman.py``）。
+
+    返回 ``(compress, compress_dict, DEFAULT_KEEP_KEYS)``；upstream 不可用时返回
+    ``None``，保证 hub_client 脱离 upstream 仍能独立工作（V3.1.1 / 2026-10-03-caveman-kg-sync）。
+    """
+    import sys
+    from pathlib import Path
+    upstream = Path(__file__).resolve().parent.parent / "upstream"
+    if upstream.is_dir() and str(upstream) not in sys.path:
+        sys.path.insert(0, str(upstream))
+    try:
+        from fstdd.caveman import DEFAULT_KEEP_KEYS, compress, compress_dict
+        return compress, compress_dict, DEFAULT_KEEP_KEYS
+    except ImportError:
+        return None
 
 
 class HubError(Exception):
@@ -158,12 +177,20 @@ class HubClient:
             except Exception:
                 base_git_sha = "unknown"
         key_raw = summary + "|" + base_git_sha
+        scope_full = dict(scope or {})
+        # V3.1.1: caveman — scope 自动附带 scope_min（跨节点传讯省 token）
+        cv = _caveman()
+        if cv and scope_full:
+            try:
+                scope_full["scope_min"] = cv[1](scope_full, cv[2])
+            except Exception as e:  # noqa: BLE001 — caveman 为增强项，失败降级不阻断 issue
+                print(f"[caveman] scope_min 生成失败，已降级: {e}", file=sys.stderr)
         body = {
             "summary": summary,
             "kind": kind,
             "parent_change_id": parent_change_id or f"fstdd-{kind}-{datetime.now().strftime('%Y%m%d')}",
             "child_change_id": child_change_id,
-            "scope": scope or {},
+            "scope": scope_full,
             "base_git_sha": base_git_sha,
             "idempotency_key": hashlib.sha256(key_raw.encode()).hexdigest()[:32],
         }
@@ -191,6 +218,13 @@ class HubClient:
     def complete(self, task_id: str, result: str = "ok", battle_report: str = "") -> dict:
         """POST /tasks/{id}/complete — 完成认领的任务。"""
         body = {"result": result, "node_id": self.node_id}
+        # V3.1.1: caveman — 长 result (>200) 自动附带 result_min
+        cv = _caveman()
+        if cv and isinstance(result, str) and len(result) > 200:
+            try:
+                body["result_min"] = cv[0](result, 200)
+            except Exception as e:  # noqa: BLE001 — caveman 为增强项，失败降级不阻断 complete
+                print(f"[caveman] result_min 生成失败，已降级: {e}", file=sys.stderr)
         # 必须带 lease_token（claim 返回的）
         lease = self._leases.get(task_id, "")
         if lease:

@@ -1,0 +1,175 @@
+# spec.yaml — kg-autosync 行为规格（Canonical YAML）
+
+meta:
+  capability: "kg-autosync"
+  change_id: "2026-10-03-caveman-kg-sync"
+  created: "2026-10-03T14:05:00+08:00"
+  confidence: medium
+  upstream_sync: false
+
+# ================================================================
+# REQ 1: CLI 入口 — fstdd kg sync
+# ================================================================
+requirements:
+  - id: KG-REQ-001
+    description: "fstdd CLI 新增 kg sync 子命令，支持 --dry-run / --deep / --edge-threshold"
+    scenarios:
+      - id: KG-SC-001
+        given: "命令行 `fstdd kg sync`"
+        when: "执行"
+        then: "SHALL 扫描所有 scan_targets 路径 → 执行 ADD/UPDATE/DEPRECATE → 打印 ADD N / UPDATE N / DEPRECATE N / EDGE_BUILD N → 原地更新 knowledge-graph.yaml"
+      - id: KG-SC-002
+        given: "命令行 `fstdd kg sync --dry-run`"
+        when: "执行"
+        then: "SHALL 扫描 + 计算 diff → 打印 ADD/UPDATE/DEPRECATE/EDGE_BUILD → 不修改 knowledge-graph.yaml；exit code 0"
+      - id: KG-SC-003
+        given: "命令行 `fstdd kg sync --edge-threshold 3`"
+        when: "执行 BUILD_EDGES"
+        then: "SHALL 只对同文档内共现 ≥3 次的 ID pairs 建 edge（默认阈值 2）"
+      - id: KG-SC-004
+        given: "命令行 `fstdd kg sync --deep`"
+        when: "执行"
+        then: "SHALL 递归扫描子目录（默认只扫 files/*.md）"
+
+# ================================================================
+# REQ 2: ADD — 新节点发现
+# ================================================================
+  - id: KG-REQ-002
+    description: "源码扫描发现新 ID → 追加 node + 写 first_seen_at + last_synced_at"
+    scenarios:
+      - id: KG-SC-005
+        given: "scan_targets 扫描结果里有 KG 不存在的 ID（如 FIN-THR-005）"
+        when: "kg sync 执行 ADD"
+        then: "SHALL append node 到 knowledge-graph.yaml → 含 id: 'FIN-THR-005' + type（从 type_keywords 推断）+ severity（从 severity_keywords 推断，默认 medium）+ first_seen_at: now + last_synced_at: now + source_files: [命中文件列表]"
+      - id: KG-SC-006
+        given: "新 ID 在多个源码文件里出现"
+        when: "ADD 执行"
+        then: "SHALL source_files 包含所有命中文件的相对路径列表"
+      - id: KG-SC-007
+        given: "新 ID 带 markdown/yaml 引用格式（反引号或冒号后）"
+        when: "ADD 执行"
+        then: "SHALL 接受为真引用"
+      - id: KG-SC-008
+        given: "新 ID 只在普通文本里偶然出现（无引用格式）"
+        when: "ADD 执行"
+        then: "SHALL 默认 severity=medium，不自动升 high；需手动 review"
+
+# ================================================================
+# REQ 3: UPDATE — 现有节点字段变更
+# ================================================================
+  - id: KG-REQ-003
+    description: "同 ID 但字段（description/tags/severity）变了 → update node + 更新 last_synced_at"
+    scenarios:
+      - id: KG-SC-009
+        given: "KG 已存在 node FIN-THR-001，description='旧描述'"
+        when: "源码里 FIN-THR-001 的描述改为'新描述'且 kg sync 执行"
+        then: "SHALL UPDATE node 的 description 为'新描述' + last_synced_at: now"
+      - id: KG-SC-010
+        given: "KG node 字段未变"
+        when: "kg sync 执行"
+        then: "SHALL 跳过该 node（SKIP），last_synced_at 不更新"
+
+# ================================================================
+# REQ 4: DEPRECATE — 消失节点标记废弃
+# ================================================================
+  - id: KG-REQ-004
+    description: "源码消失 → 写 last_removed_at；距今天 >30 天 → deprecated=true"
+    scenarios:
+      - id: KG-SC-011
+        given: "KG node FAIL-008 在源码扫描结果里找不到了"
+        when: "本次 kg sync 执行"
+        then: "SHALL 写 last_removed_at: now（若已存在则保留第一次值，不覆盖）"
+      - id: KG-SC-012
+        given: "KG node 有 last_removed_at 且距今天 = 29 天"
+        when: "kg sync 执行"
+        then: "SHALL 不置 deprecated=true"
+      - id: KG-SC-013
+        given: "KG node 有 last_removed_at 且距今天 = 31 天"
+        when: "kg sync 执行"
+        then: "SHALL 置 deprecated=true（保留 id/type/first_seen_at/last_removed_at）"
+      - id: KG-SC-014
+        given: "deprecated=true 的节点重新在源码里出现"
+        when: "kg sync 执行"
+        then: "SHALL 置 deprecated=false + 清 last_removed_at + 更新 last_synced_at"
+
+# ================================================================
+# REQ 5: BUILD_EDGES — 共现关系建 edge
+# ================================================================
+  - id: KG-REQ-005
+    description: "同文档内共现 ≥阈值 的 ID pairs → 建 edge；默认不入主文件"
+    scenarios:
+      - id: KG-SC-015
+        given: "spec.yaml 里 FIN-THR-001 和 FIN-THR-002 共现 2 次（默认阈值）"
+        when: "BUILD_EDGES 执行"
+        then: "SHALL edge {from: 'FIN-THR-001', to: 'FIN-THR-002', type: 'co-occurrence', last_synced_at: now} 入 diff_kg.yaml"
+      - id: KG-SC-016
+        given: "同 pair 已存在 edge"
+        when: "BUILD_EDGES 执行"
+        then: "SHALL 不重复建 edge，只更新 last_synced_at"
+      - id: KG-SC-017
+        given: "pair 共现次数 < 阈值（默认 2）"
+        when: "BUILD_EDGES 执行"
+        then: "SHALL 跳过，不建 edge"
+      - id: KG-SC-018
+        given: "BUILD_EDGES 默认配置"
+        when: "kg sync 完成"
+        then: "SHALL 新 edge 只存在于 diff_kg.yaml，不自动写入 knowledge-graph.yaml 主文件（需手动确认）"
+
+# ================================================================
+# REQ 6: KG Schema 变更 — 新增 5 个 metadata 字段
+# ================================================================
+  - id: KG-REQ-006
+    description: "knowledge-graph.yaml node schema 新增 first_seen_at / last_synced_at / last_removed_at / deprecated / source_files；edge 加 type + last_synced_at"
+    scenarios:
+      - id: KG-SC-019
+        given: "首次 kg sync 前 knowledge-graph.yaml 是旧 schema"
+        when: "首次 kg sync 执行 ADD/UPDATE"
+        then: "SHALL 所有 node 自动注入 first_seen_at + last_synced_at；旧 node first_seen_at 设为本次 sync 时间"
+      - id: KG-SC-020
+        given: "KG edge 原来是简单 {from, to} 格式"
+        when: "BUILD_EDGES 或首次 sync 升级"
+        then: "SHALL edge schema 统一为 {from, to, type, last_synced_at}"
+
+# ================================================================
+# REQ 7: 幂等性
+# ================================================================
+  - id: KG-REQ-007
+    description: "kg sync 必须幂等：连续跑 2 次 → 第二次 0 ADD / 0 UPDATE / 0 EDGE_BUILD"
+    scenarios:
+      - id: KG-SC-021
+        given: "kg sync 跑了 1 次（成功）"
+        when: "立即再跑第 2 次"
+        then: "SHALL 第二次输出 ADD 0 / UPDATE 0 / DEPRECATE 0 / EDGE_BUILD 0"
+
+# ================================================================
+# REQ 8: Scan targets — 路径覆盖
+# ================================================================
+  - id: KG-REQ-008
+    description: "scan_targets 必须覆盖 .fstdd/skills + skills/fstdd-fin + .fstdd/templates + upstream/.fstdd/skills + upstream/.fstdd/templates"
+    scenarios:
+      - id: KG-SC-022
+        given: "kg sync 执行 --dry-run"
+        when: "扫描结果打印"
+        then: "SHALL 输出扫描的所有文件路径，包含上面 5 类目录（各至少 1 个文件）"
+
+# ================================================================
+# REQ 9: Dry-run 安全性
+# ================================================================
+  - id: KG-REQ-009
+    description: "--dry-run 必须绝对安全，不修改任何文件"
+    scenarios:
+      - id: KG-SC-023
+        given: "knowledge-graph.yaml 有 backup 副本（hash 已知）"
+        when: "执行 fstdd kg sync --dry-run"
+        then: "SHALL knowledge-graph.yaml 的 hash 与 backup 完全一致"
+
+# ================================================================
+# REQ 10: 增量优化（首次后）
+# ================================================================
+  - id: KG-REQ-010
+    description: "首次全量后，后续 kg sync 应该用 git diff 做增量扫描"
+    scenarios:
+      - id: KG-SC-024
+        given: "kg sync 已跑过 ≥1 次（有 last_synced_at 记录）"
+        when: "执行 kg sync 第 N 次"
+        then: "SHALL 用 git diff HEAD~1..HEAD 确定哪些文件变了，只扫描变更文件（--full 强制全量）"

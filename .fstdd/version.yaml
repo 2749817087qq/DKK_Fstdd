@@ -1,25 +1,41 @@
 # FSTDD003 本地版本声明
 # upstream: stdd-repo@3.1.0
 # FSTDD003: 基于 upstream + 金融领域融合
-fstdd_version: "3.1.1"
+fstdd_version: "3.2.0"
 upstream_version: "3.1.0"
-released_at: "2026-10-03T11:30:00+08:00"
+released_at: "2026-10-03T18:40:00+08:00"
 changelog: |
-  v3.1.1 — FSTDD × 金融融合版
+  v3.2.0 — 失败模式完备版（C4 第 23 类「过度工程」+ YAGNI-7 决策梯子模板）
 
-  核心变更（6 change / 4 commit）：
-  - finance-integration: fstdd-fin SKILL.md 回归主目录 + understand Step 0.5 金融判定 + build B2.5 10 维测试
-  - finance-failure-modes: build C4 失败模式清单 14 → 22 行（+8 金融特有模式）
-  - upstream-finance-sync: upstream 内核同步，所有平台安装自动带金融增强
-  - cli-template-finance-fields: CLI canonical 模板加 finance domain/redlines/threads/test_dimensions 可选字段
-  - kg-finance-four-threads: knowledge-graph 注册 4 条金融主线 + 8 类金融失败模式（nodes 170→182, version 1.0→1.1）
-  - skill-install-verify: install + verify 全链路跑通，7 skills 安装到 .workbuddy-ai/skills
+  核心变更（1 change / 2 能力 / 11 TC）：
+  - build-yagni-ladder: BUILD Part C 的 C4 失败模式清单由 22 类扩展至 23 类，新增
+    #23「过度工程（Over-Engineering）」，覆盖方式 = YAGNI-7 决策梯子
+    （1 真需要→2 本仓已有→3 标准库→4 平台原生→5 已装依赖→6 一行→7 最小实现），
+    首个成立级别即为答案；小节标题「14 类」→「23 类」。
+    + 新增 .fstdd/templates/yagni-ladder.md（7 级判定表 + 逐级填写说明 + carve-out 豁免清单：
+      安全 / 信任边界校验 / 防数据丢失的错误处理 / 无障碍 —— 永不跳过），双份一致。
+    + tests/test_finance_content.py：L1-05/L1-06 断言 22→23，新增 L1-14..L1-17（共 17 TC）。
 
-  金融知识覆盖完整度：
-  7 红线 → 7 条 Gate 1 强制检查
-  10 维测试 → 10 维 BUILD 强制覆盖
-  8 类失败模式 → 8 条 C4 强制勾选 + KG severity=high
-  4 条主线 → 4 条 KG domain_thread 节点
+  质量：L1 17/17 全绿；全量 pytest 32 passed·2 skipped；runner L0+L1 🟢 PASS；
+  失败模式 23/23 逐项执行（17 ✅ / 6 SKIPPED 非金融 / 0 ❌）；design-adjustments 2 条（DA-09/DA-10）。
+  已知承接：build.md 本地/upstream 全文件既存漂移（DA-10）另立 change 对齐。
+
+  v3.1.2 — 跨节点效率增强版（caveman 语体压缩器 + KG 自动同步器）
+
+  核心变更（1 change / 2 能力 / 46 TC）：
+  - caveman-compressor: 新增独立库 upstream/fstdd/caveman.py（compress / compress_dict，≤200 字，deterministic）
+    + `fstdd caveman` CLI；canon 生成后追加 caveman_summary.txt；hub_client issue/complete 自动附 scope_min/result_min
+    实测：multihub scope 543→230 字（降幅 57.6%，满足 ≥50%）；Phase 1 proposal 11367→200 字（降幅 98.2%）
+  - kg-autosync: 新增 upstream/fstdd/kg_sync.py + `fstdd kg sync [--dry-run|--deep|--edge-threshold|--full]`
+    scan_targets 5 类路径 → ID 提取 → ADD / UPDATE / DEPRECATE(>30天) / BUILD_EDGES(共现阈值)
+    + knowledge-graph.yaml node schema 加 5 字段（first_seen_at / last_synced_at / last_removed_at / deprecated / source_files）
+    + graph_version 1.1→1.2；diff_kg.yaml 输出；幂等（连续 sync 计数恒 0/0/0/0）
+
+  质量：46/46 TC 全绿（CAVE 22 + KG 24）；失败模式 22/22 ✅；design-adjustments 8 条（DA-01~08）
+  已知承接：kg-sync-incremental（DA-02/03/07）、caveman-structured-hardening（DA-08）、内联引用 ID（DA-04）
+
+  v3.1.1 — FSTDD × 金融融合版（前序 release，tag fstdd-v3.1.1）
+  6 change / 7 红线 / 10 维测试 / 22 行 C4 / 4 主线 KG；nodes 170→182
 
 breaking_changes: []
 install:
@@ -37,9 +53,9 @@ install:
       - "git pull origin master --tags"
       - "python tools/install_workbuddy_skills.py --platform trae"
 notes: |
-  upstream 未变，本 release 是 FSTDD003 项目侧 enhancement。
+  upstream/ 新增 caveman.py + kg_sync.py 两个模块（本 release 携带），upstream 内核版本仍 3.1.0。
   platforms.yaml 声明 3 平台（workbuddy/claude-code/trae），install 脚本统一入口。
-  所有平台 agents 按自身平台跑 --platform <name> 即可安装金融增强。
+  所有平台 agents 按自身平台跑 --platform <name> 即可安装。
 
 feedback_protocol:
   mandatory: true
