@@ -1,10 +1,11 @@
 meta:
-  last_updated: '2026-10-03T13:57:53+00:00'
+  last_updated: '2026-10-03T14:54:55+00:00'
   modules: {}
-  total_changes: 8
+  total_changes: 11
 modules:
   caveman_summary.txt:
     changes:
     - 2026-10-03-caveman-kg-sync
     - 2026-10-03-build-yagni-ladder
     - 2026-10-03-share-publish-sanitize
+    - 2026-09-21-guard-hook-input-robustness

@@ -1,0 +1,55 @@
+meta:
+  change_id: 2026-09-21-guard-hook-input-robustness
+  title: Guard 钩子 stdin 解析健壮性 —— 修掉尾逗号导致的 1 元组崩溃
+  type: code
+  status: proposed
+  created_at: '2026-09-21T03:15:21+00:00'
+  version: '2.9'
+
+why:
+  problem: |
+    upstream/fstdd/cli/commands/guard.py 的 _read_hook_input() 在「stdin JSON
+    不可用」的 fallback 分支写成 return x,（尾逗号），返回的是 **1 元组**；
+    调用方 cmd_guard_check（guard.py:681）以
+    `hook_path, hook_content = _read_hook_input()` 解包 →
+    ValueError: not enough values to unpack (expected 2, got 1) →
+    钩子以 exit 1 + Traceback 崩掉。该钩子为非阻塞（fail-open）挂载点，
+    用户无感，但门禁在该次调用中**等于没生效** —— 属安全相关的静默失效。
+  evidence:
+    observed_at: '2026-09-21T03:15:21+00:00'
+    observed_base_git_sha: 'bba4a17a7c4a42e88c1af465c46e65ae04994b92'
+    method: |
+      实证日志 ~/.workbuddy-ai/logs/2026-09-18|19|20/fstdd-hub__*.log：
+      `Hook exited with non-blocking error code 1: Traceback` 约 74 次/日。
+      等价最小复现：旧写法 `return path,` → ('D:/x.py',) 长度 1，调用方解包即
+      ValueError。该「尾逗号」缺陷此前已被台账纪律 ⑬ 识别但未修复。
+    source: .fstdd/changes/2026-09-21-guard-hook-input-robustness/test-report.md
+
+what_changes:
+  - description: 两处 fallback return 补齐第二元素（""），保证任何路径都返回 2 元组；
+      非法输入 ⇒ (None, None)（显式 fail-open）；可恢复路径 ⇒ (path, "")
+  - description: 修复处注释留痕（历史缺陷 + change 名），防后人「清理」改回
+  - description: 新增 upstream/tests/test_guard_hook_input.py（GHI-001..004，含参数化 6 种输入），
+      GHI-001 的 len(out)==2 为该缺陷的守门断言
+  - description: 不改 fail-open 非阻塞语义，不改门禁判据
+
+capabilities:
+  new:
+    - name: guard-hook-input-robustness
+      description: guard 钩子 stdin 解析在任何输入下返回可解包的 2 元组，不再 ValueError 崩溃
+  modified:
+    - name: cli-guard
+      description: cmd_guard_check 的钩子输入读取不再因尾逗号崩溃（保持 fail-open 非阻塞语义不变）
+
+out_of_scope:
+  - fail-open vs fail-closed 的策略选择 —— 需用户决策，本 change 不动
+  - guard.py 其余 except 吞异常治理 —— 属 detection-silence-fixes 范畴，不重复
+  - stdin 大 payload 被截断的上游成因（平台侧）—— 非本仓可控，仅做 fallback 恢复
+
+success_criteria:
+  - GIVEN 6 种 stdin 形态（空/非JSON/截断JSON/未转义Windows路径/坏JSON含file_path/合法），
+    WHEN _read_hook_input 被调用 THEN 一律返回长度 2 的元组，不抛异常
+  - GIVEN 完全非法的输入 WHEN 解析 THEN 显式返回 (None, None)（fail-open），不抛
+  - GIVEN JSON 坏但含 file_path WHEN fallback 恢复 THEN 返回 (path, "")，content 为空串而非缺项
+  - GIVEN --hook-stdin 传入坏 JSON WHEN 端到端调用 cmd_guard_check THEN 不抛 ValueError，返回 int
+  - 既有 tests/test_guard_silent_except.py 与 tests/test_except_audit.py 不回归

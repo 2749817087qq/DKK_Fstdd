@@ -1,0 +1,46 @@
+baseline:
+  at: '2026-09-23T02:50:00'
+  base_git_sha: 59cece97fbc60d43911d54151f11b61efc5732ca
+  clock_source: system
+  established_by: backfill
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-09-23-poll-daemon-499-fix
+complexity_score: 6
+current_phase: deliver
+design_adjustments:
+  count: 0
+  file: design-adjustments.md
+mode: thorough
+phases:
+  build:
+    confirmed_at: '2026-09-23T02:50:00'
+    confirmed_by: automation
+    confirmed_evidence: 用户 2026-09-23 显式指令「499 canceled ... 走FSTDD修复」；无人值守自动化按默认自动确认三道
+      Gate
+    status: completed
+  deliver:
+    status: completed
+    completed_at: '2026-10-03T20:45:00+08:00'
+    confirmed_by: operator-delegation
+    confirmed_evidence: 开发总工 2026-10-03 指令授权收口；补齐 test-report（TC-1~TC-6 全绿）+ 修复 canonical proposal YAML 块标量缩进 + 重生成 Human View（DC-HASH 一致）+ 归档 + 根 canonical 并入 + canon verify 2/2 + structure merge
+  spec:
+    confirmed_at: '2026-09-23T02:50:00'
+    confirmed_by: automation
+    confirmed_evidence: 同上
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-23T02:50:00'
+    confirmed_by: automation
+    confirmed_evidence: 用户 2026-09-23 显式指令「499 canceled ... 走FSTDD修复」；提案范围/6 条成功标准/thorough
+      模式经默认确认进入 Phase 2
+    status: completed
+score_confidence: high
+status: archived
+task_type: automation
+traceability:
+  spec_requirements: 4
+  spec_scenarios: 6
+  tc_cases: 6
+  test_functions: 0
+version: '3.0'

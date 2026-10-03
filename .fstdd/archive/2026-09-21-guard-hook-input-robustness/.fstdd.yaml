@@ -1,0 +1,45 @@
+baseline:
+  at: '2026-09-24T17:33:14+00:00'
+  base_git_sha: bba4a17a7c4a42e88c1af465c46e65ae04994b92
+  clock_source: system
+  established_by: cli
+  node_id: DESKTOP-1MEQDMR
+change_id: 2026-09-21-guard-hook-input-robustness
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 0
+mode: standard
+phases:
+  build:
+    confirmed_at: '2026-10-03T20:35:00+08:00'
+    confirmed_by: operator-delegation
+    confirmed_evidence: 修复提交 53633d9（guard 钩子 stdin 解析健壮性）已入主仓；test-report 实测 20 passed
+      / 0 failed（GHI-001..004 + REG-001/002）；开发总工 2026-10-03 指令授权收口
+    status: completed
+  deliver:
+    status: completed
+    completed_at: '2026-10-03T20:38:00+08:00'
+    confirmed_by: operator-delegation
+    confirmed_evidence: 开发总工 2026-10-03 指令授权收口；归档+Human View specs 合并+根 canonical 并入+.canon-index 更新+canon verify 2/2+structure merge 完成
+  spec:
+    confirmed_at: '2026-10-03T20:35:00+08:00'
+    confirmed_by: operator-delegation
+    confirmed_evidence: design.md / test-plan.md 实测产物齐备；canonical proposal + agent/code
+      spec 由真实 design/test-plan/test-report 转写补齐，canon 双轨一致
+    status: completed
+  understand:
+    confirmed_at: '2026-10-03T20:35:00+08:00'
+    confirmed_by: operator-delegation
+    confirmed_evidence: 提案内容来自真实实证（日志摘录「Hook exited with non-blocking error code 1
+      / Traceback」约 74 次/日 + 等价最小复现），canonical proposal 已转写补齐
+    status: completed
+score_confidence: high
+status: archived
+task_type: code
+traceability:
+  spec_requirements: 4
+  spec_scenarios: 4
+  tc_cases: 6
+  test_functions: 9
+version: '3.0'

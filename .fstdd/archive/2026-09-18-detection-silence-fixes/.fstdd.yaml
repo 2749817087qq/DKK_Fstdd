@@ -1,0 +1,47 @@
+baseline:
+  at: '2026-09-18T02:54:57+00:00'
+  base_git_sha: c00a6055a02ed766901dfc0d436c7b3450151bc1
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-1MEQDMR
+change_id: 2026-09-18-detection-silence-fixes
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 0
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-21T00:53:51+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 2026-09-21 08:3x 指示『继续』，即确认 Gate 3；证据：全量回归 1 failed/725
+      passed（唯一失败为基线既有 test_e3_memory，与本次改动无关）；S4b 由 K 实现并实测通过（DFX-010 跳过计数可见、DFX-011
+      逐条告警且其余正常）；审计活表同步；提交 74ad408/6bd7eed/646fb0c 已推送
+    status: completed
+  deliver:
+    status: completed
+    completed_at: '2026-10-03T20:30:00+08:00'
+    confirmed_by: operator-delegation
+    confirmed_evidence: 开发总工 2026-10-03 指令「把 fstdd 该收的 change 全部收完，然后归一为一个版本重新发布」，授权自行裁定收口；归档+Human View specs 合并+根 canonical 并入+.canon-index 更新+canon verify 2/2+structure merge 完成
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-18T02:59:51+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 对 Gate 2 回复『Please continue』确认（2026-09-18 对话）：design 7
+      决策 + test-plan 17 TC + 3 能力 spec，canon 双轨 2/2
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-09-18T02:54:57+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: D哥 对 Gate 1 回复『Please continue』确认（2026-09-18 10:45+08:00 对话），无范围调整
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

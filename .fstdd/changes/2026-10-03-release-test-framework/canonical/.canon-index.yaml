@@ -1,9 +1,0 @@
-designs: {}
-proposals:
-  2026-10-03-release-test-framework: proposals/2026-10-03-release-test-framework.yaml
-specs:
-  agent:
-    2026-10-03-release-test-framework: specs/agent/2026-10-03-release-test-framework.yaml
-  code:
-    2026-10-03-release-test-framework: specs/code/2026-10-03-release-test-framework.yaml
-version: '2.9'

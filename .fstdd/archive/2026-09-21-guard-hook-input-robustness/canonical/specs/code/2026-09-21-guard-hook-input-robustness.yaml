@@ -1,0 +1,36 @@
+meta:
+  capability: guard-hook-input-robustness
+  title: Guard 钩子 stdin 解析健壮性（返回契约 + fail-open）
+  spec_version: '1.0'
+  change: 2026-09-21-guard-hook-input-robustness
+  status: draft
+
+overview: |
+  guard.py 的 _read_hook_input() 在任何 stdin 形态下都 SHALL 返回可解包的
+  2 元组；非法输入显式 (None, None)，可恢复路径 (path, "")。不改变钩子的
+  fail-open（非阻塞）语义，只消除「尾逗号 → 1 元组 → ValueError 崩溃」。
+
+requirements:
+  - id: GHR-001
+    text: _read_hook_input 在 6 种输入（空/非JSON/截断JSON/未转义Windows路径/坏JSON含file_path/合法）下必须返回长度 2 的元组且不抛异常
+    priority: P1
+  - id: GHR-002
+    text: 完全非法的输入必须显式返回 (None, None)（fail-open），不抛异常
+    priority: P1
+  - id: GHR-003
+    text: JSON 坏但含 file_path 的 fallback 恢复路径必须返回 (path, "")，content 为空串而非缺项
+    priority: P1
+  - id: GHR-004
+    text: 端到端 cmd_guard_check（--hook-stdin + 坏 JSON）必须不抛 ValueError 并返回 int
+    priority: P1
+
+invariants:
+  - 钩子保持 fail-open（非阻塞）；崩溃→不拦 的既有方向不变，本次只修「崩」
+  - 不改门禁判定判据（相位门/GATE token/.fstdd.yaml 硬阻断逻辑不动）
+  - 返回值契约恒为 2 元组（任何分支）
+
+test_mapping:
+  GHR-001: GHI-001
+  GHR-002: GHI-002
+  GHR-003: GHI-003
+  GHR-004: GHI-004

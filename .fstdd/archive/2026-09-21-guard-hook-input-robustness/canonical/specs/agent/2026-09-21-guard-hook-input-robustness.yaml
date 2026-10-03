@@ -1,0 +1,35 @@
+meta:
+  capability: guard-hook-input-robustness
+  title: Guard 钩子 stdin 解析健壮性（agent 视角执行规格）
+  spec_version: '1.0'
+  change: 2026-09-21-guard-hook-input-robustness
+  status: draft
+
+overview: |
+  agent 在修复/回归 guard 钩子输入解析时 SHALL 以「任何分支都返回 2 元组」
+  为硬契约，并保留 fail-open 非阻塞语义。GHI-001 的 len(out)==2 是守门断言，
+  不得被「清理」为 1 元组写法。
+
+requirements:
+  - id: GHRA-001
+    text: agent 修改 _read_hook_input 时 SHALL 确保所有 return 分支返回 2 元组，禁止尾逗号单元素写法
+    priority: P1
+  - id: GHRA-002
+    text: agent 在 fallback 分支 SHALL 对非法输入返回 (None, None)，对可恢复路径返回 (path, "")
+    priority: P1
+  - id: GHRA-003
+    text: agent SHALL 保留 GHI-001 的 len(out)==2 守门断言，作为防复发机制
+    priority: P1
+  - id: GHRA-004
+    text: agent SHALL NOT 改动 fail-open 非阻塞语义或门禁判定逻辑
+    priority: P2
+
+invariants:
+  - 返回契约恒为 2 元组
+  - fail-open 非阻塞语义不变
+
+test_mapping:
+  GHRA-001: GHI-001
+  GHRA-002: GHI-002
+  GHRA-003: GHI-001
+  GHRA-004: GHI-004
