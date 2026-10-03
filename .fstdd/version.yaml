@@ -40,3 +40,16 @@ notes: |
   upstream 未变，本 release 是 FSTDD003 项目侧 enhancement。
   platforms.yaml 声明 3 平台（workbuddy/claude-code/trae），install 脚本统一入口。
   所有平台 agents 按自身平台跑 --platform <name> 即可安装金融增强。
+
+feedback_protocol:
+  mandatory: true
+  deadline: "24h"
+  feedback_schema:
+    node_id: "string (FSTDD-XXX)"
+    platform: "workbuddy | claude-code | trae"
+    timestamp: "ISO 8601"
+    overall: "PASS | FAIL | PARTIAL"
+    classes: "{L0-L6 status + duration_ms}"
+    tcs: "[{id, status, evidence}]"
+  publish_side_action: "跟踪各 agent complete result → 汇总 → L7 判定"
+  how_to_report: "runner 自动 claim release task → complete + result JSON"

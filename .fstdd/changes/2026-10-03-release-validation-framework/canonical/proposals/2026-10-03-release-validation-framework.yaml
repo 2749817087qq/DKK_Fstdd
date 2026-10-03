@@ -1,0 +1,269 @@
+meta:
+  change_id: "2026-10-03-release-validation-framework"
+  title: "FSTDD v3.1.1 大规模跨节点测试框架 — 8 大类 / 47 TC / 颜色编码 / 派发矩阵"
+  created: "2026-10-03T12:30:00+08:00"
+  status: draft
+
+why:
+  problem: |
+    FSTDD v3.1.1 commit 836b394 push 前，我跳过了 FSTDD Phase 2-3 流程，
+    直接手写测试代码 + commit + push + 派发模糊 scope 的 multihub 任务。
+    问题根因：没有预定义测试体系，想到什么写什么，违反 AGENTS.md 里
+    "enforce_stdd: true" 的强制约束。
+    具体表现：
+      - 测试正则误匹配（39 行 != 22 行 C4）
+      - .heartbeat.env key 名混淆（FSTDD_ 前缀 vs HUB_ 前缀）
+      - pytest mark 未注册（claude-code 连字符 vs claude_code 下划线）
+      - multihub 任务 scope 里没写可执行命令，节点无从下手
+      - 我自己 commit 了 4 个文件，全部被 revert 干净
+  motivation: |
+    建立 FSTDD 自己的、可复用的、跨节点一致的 release 测试体系。
+    8 大类测试覆盖从基础设施冒烟到跨节点汇总的完整链条，
+    每个 TC 有精确定义，runner 一个入口，multihub 自动回传。
+    这套体系不仅服务 v3.1.1，以后每次 release 都用同一套。
+  evidence:
+    observed_at: "2026-10-03T12:24:00+08:00"
+    observed_base_git_sha: "5037781"
+    details: |
+      revert 历史: 5037781 revert 836b394 (tests), 96b1e0f revert 6795a5c (tools),
+      99d007a revert 6e126d1 (version.yaml feedback_protocol)
+      违规 commit: 836b394 4 files, 502 lines, 跳过 Phase 2/3
+
+# ================================================================
+# 8 大类测试体系（核心设计）
+# ================================================================
+test_taxonomy:
+  dependency_chain: "L0 → L1 → L2 → L3 → L4 → L5 → L6 → L7"
+  rule: "前一类 FAIL → 立即停，后一类不许跑。L7 只在 L0-L6 全绿后执行。"
+
+  classes:
+    - id: L0
+      name: "基础设施冒烟"
+      nature: "动态（需要 install）"
+      deps: "无"
+      runner_when: "每节点最先跑"
+      tcs: 5
+      description: "git pull + install + verify + node heartbeat"
+      expected_duration: "1 min"
+
+    - id: L1
+      name: "静态内容校验"
+      nature: "纯静态（无需 install）"
+      deps: "无"
+      runner_when: "所有平台都能跑"
+      tcs: 13
+      description: "源文件关键词精确匹配 + YAML schema + C4 行数 = 22"
+      expected_duration: "30 sec"
+
+    - id: L2
+      name: "Skill 加载与内容可见性"
+      nature: "动态（需要 UI 触发 skill）"
+      deps: "L0 ✅"
+      runner_when: "workbuddy/trae 有 UI 的节点"
+      tcs: 4
+      description: "触发 /fstdd-understand /fstdd-build /fstdd-fin → Step 0.5/C4 22行/B2.5 可见"
+      expected_duration: "3 min"
+
+    - id: L3
+      name: "金融钩子功能验证"
+      nature: "动态（需要 Agent 理解能力）"
+      deps: "L2 ✅"
+      runner_when: "能执行 skill 并产生输出的节点"
+      tcs: 2
+      description: "POS prompt → 触发 Step 0.5 + 7 红线；NEG prompt → 跳过 Step 0.5"
+      expected_duration: "5 min"
+
+    - id: L4
+      name: "CLI Canonical 模板生成"
+      nature: "动态（需要 fstdd CLI）"
+      deps: "L0 ✅"
+      runner_when: "有 Python + fstdd CLI 的节点"
+      tcs: 3
+      description: "canon generate → proposal.yaml 含 finance 字段 → validate schema OK"
+      expected_duration: "1 min"
+
+    - id: L5
+      name: "Mini E2E 四阶段循环"
+      nature: "动态（完整 FSTDD 流程）"
+      deps: "L3 ✅ + L4 ✅"
+      runner_when: "designated 1-2 节点（FSTDD005/007 优先）"
+      tcs: 3
+      description: "UNDERSTAND→SPEC→BUILD→DELIVER + Gate 1-3 全 approve + archive 存在"
+      expected_duration: "10-15 min"
+
+    - id: L6
+      name: "Multihub 协作与反馈协议"
+      nature: "动态（自动）"
+      deps: "L0 ✅"
+      runner_when: "所有节点最后跑（自动 complete）"
+      tcs: 3
+      description: "claim release task → complete + result JSON"
+      expected_duration: "10 sec"
+
+    - id: L7
+      name: "跨节点一致性汇总"
+      nature: "汇总（发布者侧）"
+      deps: "L0-L6 ✅ (≥ 95% 绿)"
+      runner_when: "FSTDD003 发布者"
+      tcs: 3
+      description: "拉全节点 result 矩阵 → skill hash 一致 → ship 判定"
+      expected_duration: "5 min"
+
+  total:
+    tcs: 47
+    classes: 8
+
+color_coding:
+  - code: "🟢"
+    name: "PASS"
+    meaning: "exit 0 / assert 全过 / result=ok"
+  - code: "🟡"
+    name: "WARN"
+    meaning: "有 SKIP 或非阻断 warning"
+  - code: "🔴"
+    name: "FAIL"
+    meaning: "exit non-zero / assert 失败 / result=fail"
+  - code: "⚪"
+    name: "SKIP"
+    meaning: "本平台不适用（如 claude_code mark 的 test 不跑在 trae）"
+  - code: "🔵"
+    name: "PENDING"
+    meaning: "multihub 任务未认领"
+
+dispatch_matrix:
+  - group: "G1 WorkBuddy"
+    targets: ["FSTDD-K", "FSTDD-Q", "FSTDD005", "FSTDD007", "M"]
+    platform: "workbuddy"
+    classes: ["L0", "L1", "L2", "L3", "L4", "L6"]
+    runner: "python tests/run_release_validation.py --platform workbuddy"
+
+  - group: "G2 Linux"
+    targets: ["FSTDD-F", "FSTDD013", "FSTDD014", "FSTDD015"]
+    platform: "linux"
+    classes: ["L0", "L1", "L4", "L6"]
+    runner: "python3 tests/run_release_validation.py --platform workbuddy"
+    note: "linux skill 目录也是 ~/.workbuddy/skills, --platform 仍传 workbuddy"
+
+  - group: "G3 trae (self)"
+    targets: ["FSTDD003"]
+    platform: "trae"
+    classes: ["L0", "L1", "L2", "L3", "L4", "L5", "L6"]
+    runner: "python tests/run_release_validation.py --platform trae --e2e"
+
+  - group: "G4 Claude Code"
+    targets: ["(有则派)"]
+    platform: "claude_code"
+    classes: ["L0", "L1", "L2", "L4", "L6"]
+    runner: "python tests/run_release_validation.py --platform claude_code"
+
+  - group: "G5 Designated E2E"
+    targets: ["FSTDD005", "FSTDD007"]
+    platform: "workbuddy"
+    classes: ["L5"]
+    runner: "单独派发 mini E2E 任务"
+    note: "需要 fstdd-cli capability"
+
+  - group: "G6 Infra"
+    targets: ["fstdd-hub-infra", "FSTDD-M"]
+    platform: "linux"
+    classes: ["L0"]
+    runner: "ssh fstdd-hub 'check_mirror.sh'"
+
+runner_design:
+  entry: "tests/run_release_validation.py"
+  args:
+    - "--platform <workbuddy|trae|claude_code|linux>"
+    - "--task-id <multihub_task_id, 自动检测>"
+    - "--skip <l2|l3|l4|l5|l6, 可多选逗号分隔>"
+    - "--e2e (触发 L5, 默认关)"
+    - "--skip-report (本地调试, 不回传 multihub)"
+  internal_logic: |
+    按依赖链串行执行，任何一类 FAIL 立即停
+    report 先回传进度，再继续下一类
+    L6 自动：claim → complete + result JSON
+    L7 发布者拉汇总
+  output:
+    stdout: 分步骤 PASS/FAIL 颜色标记 + 最终 OVERALL
+    tests/last_report.json: 结构化 JSON，所有字段可被 L7 汇总
+
+what_changes:
+  - id: C1
+    description: "创建 tests/conftest.py — pytest 共享配置：--platform CLI + 自动 skip 不匹配平台"
+    type: new
+    files: 1
+  - id: C2
+    description: "创建 tests/test_finance_content.py — 13 TC 纯静态校验（L1）"
+    type: new
+    files: 1
+  - id: C3
+    description: "创建 tests/test_install_smoke.py — 5 TC 安装冒烟（L0）"
+    type: new
+    files: 1
+  - id: C4
+    description: "创建 tests/run_release_validation.py — 8 大类单入口 runner + 自动 multihub 回传"
+    type: new
+    files: 1
+  - id: C5
+    description: "修复 .heartbeat.env 读取 — FSTDD_TOKEN/FSTDD_NODE_ID/FSTDD_MULTIHUB_URL 主键兼容"
+    type: modified
+    files: 0  # 不改源文件，runner 内部双 key 兼容
+  - id: C6
+    description: "修复 pytest platform marker 命名一致性 — conftest.py 和 test_*.py 统一用 claude_code"
+    type: new
+    files: 0  # conftest.py 里处理
+
+capabilities:
+  new:
+    - name: "release-validation-framework"
+      description: "FSTDD 跨节点 release 测试体系：8 大类 / 47 TC / 单入口 runner / 自动 multihub 反馈"
+
+constraints:
+  - "不改 install_workbuddy_skills.py 或 verify_workbuddy_skills.py（两者已正确配置）"
+  - "不改 hub_client.py （FSTDD_ 前缀 key 兼容在 runner 里处理）"
+  - "不删除之前 revert 的 3 个 commit（git 历史保留违规记录作为教训）"
+  - "测试代码跑通后，必须 FSTDD Phase 4 deliver + commit + push，不能再跳过"
+
+stakeholders:
+  - FSTDD003（设计 + 实现 + L7 汇总）
+  - 所有 multihub 节点（跑自己平台的 runner + 自动回传）
+  - 未来每次 release 的发布者（复用这套体系）
+
+risk_areas:
+  - capability: "release-validation-framework"
+    risk: "pytest 版本差异导致 --platform addoption 行为不同"
+    mitigation: "conftest.py 用 pytest_configure 注册 + 异常兜底；runner 捕获并降级"
+  - capability: "multihub auto-report"
+    risk: "节点 heartbeat 过期导致 claim/complete 失败"
+    mitigation: "runner auto_report_multihub 捕获 HTTP error 后打印指导消息，不强依赖"
+
+non_goals:
+  - "不写 L2/L3 的 UI 自动化（需要每个平台自己触发 skill，prompt/response 验证在 runner 里用 CLI hook 替代）"
+  - "不改 hub_client.py 本身的 env 读取（双 key 兼容在 runner 里做）"
+  - "不实现 CI/CD 自动触发（以后有需要再加）"
+
+critical:
+  is_critical: true
+  reason: "之前因违反流程导致 3 个 commit revert，这套体系必须严格按 FSTDD 流程落地"
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: true  # 跨节点一致
+
+anchoring:
+  level: L2
+  reference_changes:
+    - "2026-10-03-finance-integration (fstdd-fin + 四阶段金融钩子)"
+    - "2026-10-03-finance-failure-modes (C4 22 行)"
+  anchor_implementations:
+    - "C4 table 精确 22 行的正则提取方法（## C4 → ## C5 边界）"
+    - "pytest --platform + conftest.py collect hook 架构"
+    - "multihub auto_report 用 .heartbeat.env FSTDD_ 前缀 key"
+
+success_criteria:
+  - "conftest.py --platform 参数注册成功，无 UnknownMarkWarning"
+  - "test_finance_content.py 所有 TC PASS（静态内容确实对得上）"
+  - "test_install_smoke.py 所有平台 PASS（install + verify exit 0）"
+  - "run_release_validation.py 完整跑通 → OVERALL: PASS"
+  - "runner 自动 multihub complete 成功（result 字段含完整 JSON report）"
+  - "multihub 新派发的任务 scope 里有可执行命令（不是模糊描述）"
+  - "commit + push 后，其他节点 pull 后直接能跑（不依赖额外环境）"
