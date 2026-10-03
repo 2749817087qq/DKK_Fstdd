@@ -10,10 +10,10 @@
 | 指标 | 数值 |
 |------|------|
 | 本变更 TC 数 | 9 TC（TC-CRED-001..009） |
-| 新增测试文件 | 1（`upstream/tests/test_no_plaintext_credentials.py`，12 个测试函数） |
+| 新增测试文件 | 1（`upstream/tests/test_no_plaintext_credentials.py`，8 个测试函数 / 12 个用例） |
 | 去形态化既有 fixture | 2 文件 / 6 处 |
-| 全量回归（`upstream/tests`） | **884 passed, 54 skipped, 0 failed** |
-| 全量回归（改动前基线 8ce867b） | 884 passed **2 failed** → 修复后 0 failed（见 §4） |
+| 全量回归（`upstream/tests`） | **885 passed, 54 skipped, 0 failed**（Gate 3 实测；收口时并入并行的僵尸 change 后为 **887 passed**） |
+| 全量回归（改动前基线 8ce867b） | 预存 **2 failed** → 修复后 0 failed（见 §4） |
 | 四自检脚本 | verify_rename 8/8、verify_eol 7/7、verify_skill_standards 7/7、verify_workbuddy_skills PASS |
 | 通过率 | 100% |
 
