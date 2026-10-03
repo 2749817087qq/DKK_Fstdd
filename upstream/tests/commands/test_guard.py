@@ -664,3 +664,31 @@ class TestGuardChangeScope:
         self._stdin_json(monkeypatch, "Edit", str(tmp_path / "docs" / "x.md"))
         monkeypatch.chdir(tmp_path)
         assert cmd_guard_check(self._make_args(hook_stdin=True, quiet=True)) == 0
+
+    def test_tc_scope_013_state_confirmation_still_blocked(self, tmp_path, monkeypatch):
+        """SC-005：已声明 scope 时 .fstdd.yaml 确认字段篡改仍硬阻断。
+
+        目标 `.fstdd.yaml` 归一化后不在 scope（`src/`）内，若作用域判定先于硬阻断
+        会误放行；本用例锁定「硬阻断先于作用域判定」的判定序（test-plan 案例 3.2）。
+        """
+        from fstdd.cli.commands.guard import cmd_guard_check
+        cd = self._make_change(tmp_path, phase="understand", scope=["src/"])
+        (tmp_path / "src").mkdir()
+        self._stdin_json(monkeypatch, "Write", str(cd / ".fstdd.yaml"),
+                         content="confirmed_at: 2026-09-25T00:00:00\nconfirmed_by: dialog\n")
+        monkeypatch.chdir(tmp_path)
+        assert cmd_guard_check(self._make_args(hook_stdin=True, quiet=True)) == 2
+
+    def test_tc_scope_014_agent_runtime_exempt_ignores_scope(self, tmp_path, monkeypatch):
+        """SC-010：agent runtime 目录豁免不因作用域收窄而失效。
+
+        目标 `.workbuddy-ai/` 归一化后不在 scope（`src/`）内，豁免分支位于作用域
+        判定之前（test-plan 案例 3.5）；本用例锁定豁免面不被 scope 逻辑覆盖。
+        """
+        from fstdd.cli.commands.guard import cmd_guard_check
+        self._make_change(tmp_path, phase="understand", scope=["src/"])
+        (tmp_path / ".workbuddy-ai" / "memory").mkdir(parents=True)
+        self._stdin_json(monkeypatch, "Write",
+                         str(tmp_path / ".workbuddy-ai" / "memory" / "2026-09-25.md"), "# log\n")
+        monkeypatch.chdir(tmp_path)
+        assert cmd_guard_check(self._make_args(hook_stdin=True, quiet=True)) == 0
