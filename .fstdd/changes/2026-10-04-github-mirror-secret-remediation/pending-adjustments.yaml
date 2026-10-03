@@ -1,0 +1,46 @@
+# pending-adjustments.yaml — 设计偏离记录（Phase 3 BUILD）
+# change: 2026-10-04-github-mirror-secret-remediation
+# 均为「小偏离」（不改变对外接口与行为语义），按 B4 记录后继续。
+
+adjustments:
+  - id: "ADJ-001"
+    type: small
+    origin: "design.md 决策 4（高置信前缀 + 零白名单）"
+    original: "PAT 形态模式为 `ghp_[A-Za-z0-9]{20,}`"
+    actual: "扩为 `gh[pousr]_[A-Za-z0-9]{20,}`（ghp_/gho_/ghu_/ghs_/ghr_）"
+    reason: "与独立复核命令 `git grep -e 'gh[pousr]_…'` 对齐；C1 复核同时报出前缀覆盖缺口"
+    impact: "更严；不引入误报（前缀后须紧跟 ≥20 连续字母数字）"
+    evidence: "upstream/tests/test_no_plaintext_credentials.py:35；11 passed"
+
+  - id: "ADJ-002"
+    type: small
+    origin: "design.md 决策 2（git grep 扫描 tracked 文件）"
+    original: "git 缺失/非仓库 → pytest.skip"
+    actual: "仅 `FileNotFoundError`（git 未安装）→ skip；退出码非 0/1 → 断言硬失败"
+    reason: "C1 评审指出 fail-open：git 执行错误（如 128）会静默 skip，使门禁假绿"
+    impact: "门禁不可被静默绕过；影响面仅测试"
+    evidence: "同文件 `_git_grep`；docstring 已说明判据"
+
+  - id: "ADJ-003"
+    type: small
+    origin: "spec REQ-005 / SC-007"
+    original: "SC-007 由外部 `git ls-files` / `check-ignore` 命令验证（TC-CRED-008）"
+    actual: "新增 `test_orphan_private_key_untracked_and_ignored` 自动断言"
+    reason: "C1 测试评审指出 SC-007 无自动测试（GAP），门禁应自证"
+    impact: "只读 git 调用；无副作用"
+    evidence: "同文件第 142 行起；11 passed"
+
+  - id: "ADJ-004"
+    type: small
+    origin: "spec REQ-006 / SC-008（不破坏既有基线：全量 0 failed）"
+    original: "本 change 不改审计表解析逻辑"
+    actual: "修复 `tools/audit_silent_except.py::_default_table` 与 2 个测试 helper 的 archive 兜底排序（首个→末个）"
+    reason: |
+      全量 pytest 实测 2 failed（test_aud_002 / test_grd_001）。经在基线 8ce867b
+      建 worktree 复跑，**确认该 2 项在本 change 之前即失败**，非本 change 引入：
+      上一 change（2026-10-04-baseline-failures-zero）的审计活表随 change 归档后，
+      解析回退到字典序最早的 2026-09-18 旧表，导致哨兵误报。
+      发布门禁 §三 要求 pytest 0 failed，不修复则本 change 无法交付。
+    impact: "3 处同源解析改动；语义（changes 优先、archive 兜底）不变，仅兜底选择由最早改为最近"
+    evidence: "修复前 2 failed / 修复后 11 passed；提交 9d3bfb1"
+    out_of_scope_note: "属范围外必要修复，非本 change 需求；已在 test-report 与 CHANGELOG 如实记录"

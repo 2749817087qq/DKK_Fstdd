@@ -1,0 +1,31 @@
+# design-adjustments.yaml — 设计调整汇总（Phase 3 C6）
+# change: 2026-10-04-github-mirror-secret-remediation
+# 来源：pending-adjustments.yaml（ADJ-001..004）。全部为小偏离，无接口/语义破坏。
+
+summary:
+  total: 4
+  large: 0
+  small: 4
+  spec_change_required: false
+  design_change_required: false
+  note: |
+    4 项均不改本 change 的对外契约：ADJ-001/002/003 为门禁自身硬化与补测；
+    ADJ-004 为范围外的预存缺陷修复（阻塞发布门禁），与凭证卫生主题相邻但独立。
+
+items:
+  - id: "ADJ-001"
+    summary: "PAT 前缀扩为 gh[pousr]_"
+    status: "applied"
+  - id: "ADJ-002"
+    summary: "门禁 fail-open 改 fail-hard（git 执行错误硬失败）"
+    status: "applied"
+  - id: "ADJ-003"
+    summary: "SC-007 补自动断言"
+    status: "applied"
+  - id: "ADJ-004"
+    summary: "审计活表解析取最近维护者（修复归档后回退旧表）"
+    status: "applied"
+    follow_up: "建议后续 change 将活表落到 change 无关的稳定路径（如 .fstdd/audit/），彻底消除归档耦合"
+
+revision_inputs:
+  - "后续迭代：审计活表的稳定落位（消除对 change 目录生命周期的依赖）"
