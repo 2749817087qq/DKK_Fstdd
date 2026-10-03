@@ -43,6 +43,28 @@
   `2026-10-03-release-test-framework`（全 TODO 占位空壳，已被归档的 `2026-10-03-release-validation-framework` 取代）。
   **帮助**：在办清单只剩真正进行中的 change，不再被空壳稀释。
 
+### 质量基线（发布门禁实测）
+- **四个自检脚本全绿**：`verify_rename.py` **8/8**、`verify_eol.py` **7/7**、
+  `verify_skill_standards.py` **7/7**、`verify_workbuddy_skills` PASS。为此精确豁免两类
+  「必须保留的事实」：带日期的历史快照报告逐字引用了改名前 CLI 输出、`skills-archive/`
+  是外部节点的技能归档留存件（改写即篡改历史记录，与既有「上游 STDD」同理）。
+- **全量测试（`pytest upstream/tests/`）**：`6 failed / 867 passed / 54 skipped`。
+  6 项失败**全部为预存基线问题**（与本次变更无因果），与归档 change
+  `2026-10-03-caveman-kg-sync` 的 test-report 分类**逐一对应**：
+  模板双源漂移（`test_tmpl_001` / `test_epr_003`）、审计表历史行号漂移
+  （`test_aud_002` / `test_grd_001`，涉 `guard.py` / `tools/` 内本变更外文件）、
+  share 历史行为漂移（`test_tc_cas_008b`）、时间戳扫描环境项（`test_tsn_007`，
+  `.fstdd/fstdd003-ssh-key` 权限）。**已知偏离（显式记录，不静默）**：规程 §三 要求
+  「全量测试 0 failed」方可 tag，本版因上述预存基线未清零，tag 与「预存基线」并存，
+  已在此明示；基线修复另立 change。
+- **部署**：`tools/install_workbuddy_skills.py` 已按 `3.3.0` 重装 7 个 skill 至
+  `%USERPROFILE%\.workbuddy-ai\skills`（安装戳版本与仓库一致，`verify_workbuddy_skills` 转绿）。
+- **在建 change（未在本版收口，非「该收」项）**：`changes/` 内仍有 3 个 change——
+  `2026-09-18-inbox-api-only-write`（S 侧维护，K 仅版本收录，停在 Gate 1）、
+  `2026-09-19-notices-authenticity-gate`、`2026-09-25-guard-phase-path-scope`（后者
+  `test-plan.md` 明记「测试缺」，BUILD 未完成）。三者**均无 Gate 3 证据**，
+  归档即编造验收记录，故按纪律保留在建，待其 BUILD 完成后各自 DELIVER。
+
 ### 安全
 - **经验出站强制脱敏收口（share-outbound-sanitize）**：`tools/share_experience.py` 此前把脱敏
   只做在「导出写盘」一步，而四条出站通道（scp / GitHub 直推 / GitHub fork+PR / inbox POST）
