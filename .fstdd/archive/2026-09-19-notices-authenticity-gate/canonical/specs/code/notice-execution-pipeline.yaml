@@ -1,0 +1,48 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-09-19-notices-authenticity-gate
+# capability: notice-execution-pipeline（REQ-006 / SC-016..018）
+# 说明：本 change 的 spec 按 capability 拆分为两个文件（V2.9.2 单 capability 约定），
+#       notice-authenticity-verification 见 specs/code/notice-authenticity-verification.yaml。
+
+meta:
+  capability: "notice-execution-pipeline"
+  change_id: "2026-09-19-notices-authenticity-gate"
+  created: "2026-09-19T01:30:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-006"
+    capability: "notice-execution-pipeline"
+    description: |
+      闸门接入 SHALL 不改变既有回传语义：回传脚本不被修改、不附带 X-FSTDD-Token、
+      不读取凭证现场文件，submitted 计数保持 P17 去重语义。
+
+    scenarios:
+      - id: "SC-016"
+        confidence: high
+        evidence: "proposal.yaml constraints[2]；design.md 关键不变量"
+        given: "本变更前 tools/fstdd003_daily_share.py 的基线内容"
+        when: "本变更完成后 diff 该文件"
+        then: "SHALL 使该文件内容零改动（diff 为空）"
+        and:
+          - "该文件 SHALL 不包含 X-FSTDD-Token 字样"
+          - "该文件 SHALL 不包含读取 _fstdd003_token.txt 的代码路径"
+
+      - id: "SC-017"
+        confidence: high
+        evidence: "proposal.yaml success_criteria[7]；P17"
+        given: ".fstdd/_fstdd003_share_log.json 记录 submitted 计数与已回传经验 id 集合"
+        when: "连续两轮运行校验器与既有回传流程"
+        then: "SHALL 使 submitted 计数只增不减且无重复经验 id"
+        and:
+          - "第二轮运行在无新增经验时 SHALL 使 submitted 计数保持不变"
+          - "闸门自身 SHALL 不写入 _fstdd003_share_log.json"
+
+      - id: "SC-018"
+        confidence: medium
+        evidence: "proposal.yaml constraints[3]；design.md 关键不变量"
+        given: ".fstdd/_fstdd003_token.txt 存在（保留现场，等待 K 指定销毁方式），其内容与 mtime 已记录"
+        when: "完整运行校验器 CLI 一次（含隔离路径）"
+        then: "SHALL 使该文件内容与 mtime 均保持不变"
+        and:
+          - "verify_notices 模块 SHALL 不含对该文件路径的任何字符串引用"

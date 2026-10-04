@@ -87,9 +87,6 @@ changes:
   2026-09-18-inbox-api-only-write:
     phase: understand
     status: in_progress
-  2026-09-19-notices-authenticity-gate:
-    phase: build
-    status: in_progress
   _batch:
     phase: unknown
     status: in_progress

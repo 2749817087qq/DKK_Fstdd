@@ -1,0 +1,10 @@
+# 协作通知真伪校验闸门：阻断未签名收-*.md 落盘与配置改动
+
+<!-- source_hash: 81f1…
+<!-- generated_: 2026-…
+<!-- canonical: canoni…yaml -->
+
+## What Changes
+
+- 新增 `tools/verify_notices.py`：通知真伪校验器。读取渠道侧
+`00-SIGNATURES.md`（文件名 

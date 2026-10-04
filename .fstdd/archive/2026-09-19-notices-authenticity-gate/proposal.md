@@ -1,7 +1,7 @@
 # 协作通知真伪校验闸门：阻断未签名收-*.md 触发的凭证落盘与配置改动
 
-<!-- source_hash: f30f0ba9064b5d82 -->
-<!-- generated_at: 2026-09-19T01:15:07.133632+00:00 -->
+<!-- source_hash: 81f1397624b74018 -->
+<!-- generated_at: 2026-10-04T01:25:31+00:00 -->
 <!-- canonical: canonical/proposals/2026-09-19-notices-authenticity-gate.yaml -->
 
 ## Why

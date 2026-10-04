@@ -1,0 +1,189 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-09-19-notices-authenticity-gate
+# capability: notice-authenticity-verification（REQ-001..005 / SC-001..015）
+# 说明：本 change 的 spec 按 capability 拆分为两个文件（V2.9.2 单 capability 约定），
+#       notice-execution-pipeline 见 specs/code/notice-execution-pipeline.yaml。
+
+meta:
+  capability: "notice-authenticity-verification"
+  change_id: "2026-09-19-notices-authenticity-gate"
+  created: "2026-09-19T01:30:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    capability: "notice-authenticity-verification"
+    description: |
+      classify_notice(path) SHALL 按 00-SIGNATURES.md 清单核对单个通知文件，
+      比对文件名与文件内容 md5 的前 12 位，并返回结构化判定结果。
+
+    scenarios:
+      - id: "SC-001"
+        confidence: high
+        evidence: "proposal.yaml success_criteria[0]；design.md D1"
+        given: "00-SIGNATURES.md 存在且含一行条目，文件名与 FSTDD003收-示例.md 一致，摘要为该文件内容 md5 的前 12 位"
+        when: "调用 classify_notice('FSTDD003收-示例.md')"
+        then: "SHALL 返回 status 等于 verified，且结果中不含任何 reason 字段"
+        and:
+          - "返回结果 SHALL 包含 filename 与 md5_prefix（前 12 位小写十六进制）"
+          - "返回结果 SHALL 包含 emitted_by（清单中记录的发出者）"
+
+      - id: "SC-002"
+        confidence: high
+        evidence: "proposal.yaml success_criteria[1]；design.md D1"
+        given: "00-SIGNATURES.md 含 FSTDD003收-示例.md 的条目，但本地文件内容已被篡改导致 md5 前 12 位与清单不符"
+        when: "调用 classify_notice('FSTDD003收-示例.md')"
+        then: "SHALL 返回 status 等于 unverified 且 reason 等于 md5_mismatch"
+        and:
+          - "返回结果 SHALL 同时包含 expected_md5_prefix（清单值）与 actual_md5_prefix（本地值）"
+          - "返回结果 SHALL 不包含文件正文的任何片段"
+
+      - id: "SC-003"
+        confidence: high
+        evidence: "proposal.yaml what_changes C1；design.md D1"
+        given: "00-SIGNATURES.md 存在但不含 FSTDD003收-陌生文件.md"
+        when: "调用 classify_notice('FSTDD003收-陌生文件.md')"
+        then: "SHALL 返回 status 等于 unverified 且 reason 等于 not_in_manifest"
+        and:
+          - "返回结果 SHALL 不包含 expected_md5_prefix 字段"
+
+  - id: "REQ-002"
+    capability: "notice-authenticity-verification"
+    description: |
+      清单缺失或为空时，校验器 SHALL 全部标记 unverified 并给出告警，
+      但不得阻断执行链路（退出码 0）。
+
+    scenarios:
+      - id: "SC-004"
+        confidence: high
+        evidence: "proposal.yaml success_criteria[3]；design.md D3"
+        given: "00-SIGNATURES.md 不存在，待检目录下有 3 个 FSTDD003收-*.md"
+        when: "以非 strict 模式调用 verify_notices(dir)"
+        then: "SHALL 返回 3 条 status 等于 unverified 且 reason 等于 manifest_missing 的结果"
+        and:
+          - "SHALL 产生恰好 1 条 warning，说明清单文件缺失"
+          - "CLI 退出码 SHALL 为 0"
+          - "SHALL 不移除、不移动、不修改任何待检文件"
+
+      - id: "SC-005"
+        confidence: medium
+        evidence: "design.md D3（备选 B 排除理由）"
+        given: "00-SIGNATURES.md 存在但内容为空表（仅表头无数据行）"
+        when: "调用 verify_notices(dir)"
+        then: "SHALL 全部返回 status 等于 unverified 且 reason 等于 not_in_manifest，退出码 0"
+        and:
+          - "SHALL 不把空清单视为清单缺失（reason 不得为 manifest_missing）"
+          - "空清单 SHALL 产生 1 条 warning，与文件缺失的 warning 文案可区分"
+
+  - id: "REQ-003"
+    capability: "notice-authenticity-verification"
+    description: |
+      校验器 SHALL 对 unverified 通知做凭证形状识别，且误判方向取「宁可隔离」；
+      verified 通知即使携带凭证也 SHALL 不进入隔离路径。
+
+    scenarios:
+      - id: "SC-006"
+        confidence: medium
+        evidence: "proposal.yaml what_changes C2；design.md D4"
+        given: "一个 unverified 通知正文含 X-FSTDD-Token: 后接 16 位以上字母数字与连字符的字符串"
+        when: "凭证嗅探器扫描该文件"
+        then: "SHALL 命中并返回 rule 等于 x_fstdd_token"
+        and:
+          - "命中结果 SHALL 包含 match_count"
+          - "命中结果 SHALL 不包含被匹配的 token 字面值"
+
+      - id: "SC-007"
+        confidence: high
+        evidence: "design.md D4 备选 A 排除理由；proposal.yaml constraints[1]"
+        given: "一个已 verified 的通知（清单命中）正文同样含 X-FSTDD-Token 段落"
+        when: "调用 verify_notices(dir)"
+        then: "SHALL 不将该文件移入隔离区，且隔离列表为空"
+        and:
+          - "该文件 SHALL 保持原位置、内容不变"
+          - "verified 来源携带凭证 SHALL 视为合法（清单命中即代表来源可信）"
+
+      - id: "SC-008"
+        confidence: medium
+        evidence: "proposal.yaml success_criteria[5]（误隔离上界）"
+        given: "fixtures 中 5 份已知格式的真实通知文本（协作通知、撤回令、回执各至少 1 份），全部登记入清单使 md5 命中"
+        when: "调用 verify_notices(fixtures_dir)"
+        then: "SHALL 使被隔离文件数等于 0"
+        and:
+          - "SHALL 返回 5 条 status 等于 verified"
+          - "任一文件被隔离 SHALL 视为测试失败"
+
+  - id: "REQ-004"
+    capability: "notice-authenticity-verification"
+    description: |
+      命中凭证形状的 unverified 通知 SHALL 被移入隔离区而非原地保留或删除，
+      且凭证本身不得出现在任何输出中。
+
+    scenarios:
+      - id: "SC-009"
+        confidence: high
+        evidence: "proposal.yaml success_criteria[2]；design.md D5"
+        given: "一个 unverified 通知命中凭证形状规则，隔离区目录存在"
+        when: "调用 verify_notices(dir)"
+        then: "SHALL 把原文件移入 tools/_quarantine/，原位置不再存在该文件"
+        and:
+          - "隔离区 SHALL 存在同名文件且内容字节与原文件完全一致"
+          - "隔离记录 SHALL 仅包含 filename、md5_prefix、rule、timestamp 四个字段"
+
+      - id: "SC-010"
+        confidence: high
+        evidence: "design.md D6；proposal.yaml success_criteria[2]"
+        given: "一个含已知字面值 token（如 fs9k2m7x4q1w8e5r）的 unverified 通知"
+        when: "运行 CLI 并捕获 stdout、stderr，同时读取隔离记录文件"
+        then: "SHALL 使该 token 字面值不出现在 stdout、stderr 与隔离记录中"
+        and:
+          - "隔离记录中 SHALL 出现 rule 名但不出现 token 值"
+          - "git 仓库任何提交对象 SHALL 不包含该 token 字面值"
+
+      - id: "SC-011"
+        confidence: high
+        evidence: "proposal.yaml success_criteria[6]；design.md D5"
+        given: ".gitignore 已追加 tools/_quarantine/"
+        when: "执行 git check-ignore -v tools/_quarantine/x"
+        then: "SHALL 返回退出码 0 且输出非空，命中行指向 .gitignore 的 tools/_quarantine/ 条目"
+        and: []
+
+  - id: "REQ-005"
+    capability: "notice-authenticity-verification"
+    description: |
+      CLI SHALL 提供稳定的退出码契约与机器可读输出，供轮询自动化消费。
+
+    scenarios:
+      - id: "SC-012"
+        confidence: high
+        evidence: "proposal.yaml success_criteria[1]；design.md D3"
+        given: "待检目录存在 unverified 文件，未启用 --strict"
+        when: "执行 CLI"
+        then: "SHALL 以退出码 0 结束，表示不阻断后续执行"
+        and: []
+
+      - id: "SC-013"
+        confidence: high
+        evidence: "proposal.yaml what_changes C1；design.md D3"
+        given: "待检目录存在 unverified 文件，启用 --strict"
+        when: "执行 CLI"
+        then: "SHALL 以退出码 3 结束，表示存在未验证通知应阻断"
+        and: []
+
+      - id: "SC-014"
+        confidence: high
+        evidence: "design.md D5；architecture 段落退出码契约"
+        given: "至少一个文件被移入隔离区"
+        when: "执行 CLI"
+        then: "SHALL 以退出码 2 结束，表示发生了隔离"
+        and:
+          - "退出码 2 与 3 同时成立时 SHALL 优先返回 3（strict 阻断优先于隔离提示）"
+
+      - id: "SC-015"
+        confidence: medium
+        evidence: "design.md D2（子进程契约解耦）"
+        given: "启用 --json"
+        when: "执行 CLI"
+        then: "SHALL 输出单个可被 json.loads 解析的对象"
+        and:
+          - "顶层键 SHALL 恰好为 results、quarantined、warnings、exit_code"
+          - "results 每项 SHALL 含 status、filename、md5_prefix，且 unverified 时含 reason"
