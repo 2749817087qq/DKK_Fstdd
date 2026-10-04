@@ -58,3 +58,6 @@ tools/.heartbeat.env
 # 规程见 .fstdd/standards/track-lease.md —— 同一 change 单一档主责
 .fstdd/changes/*/.lease.yaml
 .fstdd/changes/*/lease-events.yaml
+# 归档后同样属运行态：change 收口即释放租约，归档副本不应入库
+.fstdd/archive/*/.lease.yaml
+.fstdd/archive/*/lease-events.yaml

@@ -1,10 +1,30 @@
 # FSTDD 本地版本声明（F 仓 / stdd-repo）
 # 发行版口径：fstdd_version（须 = .fstdd/config.d/project.yaml 的 stdd_version）
 # vendored 上游内核口径：upstream_version（= upstream/ 内核，见 upstream/CHANGELOG.md 与 upstream/pyproject.toml）
-fstdd_version: "3.3.3"
+fstdd_version: "3.3.4"
 upstream_version: "3.1.0"
-released_at: "2026-10-04T21:30:00+08:00"
+released_at: "2026-10-04T22:30:00+08:00"
 changelog: |
+  v3.3.4 — inbox 写入面收口版（鉴权三态 + 部署加固）
+
+  交付（1 change：2026-09-18-inbox-api-only-write，归档 + 根 canonical 并入 5 文件 + canon verify 2/2 + structure merge）：
+  - tools/inbox_server.py 鉴权三态：token 校验失败 401 / 源 IP ∈ FSTDD_INBOX_ALLOW_IPS 灰度放行（记 legacy-ip）/
+    未配 FSTDD_INBOX_TOKEN 开放并横幅显式 auth: OFF；/health、/healthz 始终免鉴权。
+  - 健壮性两处：do_POST 先按 Content-Length 消费请求体再鉴权（消 TCP RST / WinError 10053）；
+    凭证比较改 bytes（compare_digest，消非 ASCII 头 TypeError）。
+  - tools/deploy_inbox_server.sh 加固：独立系统用户 fstdd-inbox（nologin、无 home）+ EnvironmentFile 存在性校验
+    （缺失即 exit 1，不生成/不覆盖/不上传）+ 目录属主权限收口（chown -R、chmod 755、unit UMask=0022）
+    + 部署后置逐条 PASS/FAIL 校验与负向断言（非服务用户写入必须被拒）。
+  - upstream/tests/test_inbox_endpoint.py 新增 D/E 组 19 用例（TC-IAOW-006..009 + TC-IBDP-002/003/004）。
+
+  交付分层：A 仓库侧全绿收口；B 生产端 ssh 运维 9 项（TC-IAOW-001..005 + TC-IBDP-001/002(端上)/004(端上)/005）
+  随交付说明转 K 人工执行并回执，不阻塞收口。
+
+  质量：单文件 upstream/tests/test_inbox_endpoint.py 64 passed；
+  全量 pytest upstream/tests 0 failed / 906 passed / 54 skipped；
+  四自检脚本全绿（rename 8/8、eol 7/7、skill_standards 7/7、workbuddy_skills PASS）。
+  经验：新增 EXP-2026-0018/0019 并 verify；静默回传 78/78 条、知识图谱 +13 节点。
+
   v3.3.3 — 协作通知真伪校验闸门版
 
   交付（1 change：2026-09-19-notices-authenticity-gate，归档 + 根 canonical 并入 4 文件 + canon verify 2/2 + structure merge）：

@@ -10,26 +10,30 @@ current_phase: build
 design_adjustments:
   count: 4
   file: design-adjustments.md
-mode: standard
 long_range:
   enabled: true
   mode: full_auto
   pre_auth_completed: true
   pre_auth_timestamp: '2026-10-04T10:58:55+08:00'
+mode: standard
 phases:
   build:
-    status: in_progress
+    confirmed_actor: ai
+    confirmed_at: '2026-10-04T03:54:41+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认通过 Gate 3
     slices_completed:
       '1':
+        new_tests: 15
         status: done
         tc_coverage: 4/4
-        new_tests: 15
         verified_at: '2026-10-04T11:04:56+08:00'
       '2':
+        new_tests: 4
         status: done
         tc_coverage: 3/3
-        new_tests: 4
         verified_at: '2026-10-04T11:09:29+08:00'
+    status: completed
   deliver:
     status: pending
   spec:
@@ -45,7 +49,7 @@ phases:
     confirmed_evidence: 确认（D哥 2026-09-18 16:57，Gate 1 展示后回复『确认』）
     status: completed
 score_confidence: null
-status: active
+status: archived
 task_type: configuration
 traceability:
   spec_requirements: 5

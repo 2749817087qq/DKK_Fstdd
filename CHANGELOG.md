@@ -10,6 +10,30 @@
 
 ## [Unreleased]
 
+## [3.3.4] — 2026-10-04
+
+**主题**：**inbox 写入面收口（鉴权三态 + 部署加固）** —— 把只读内网 inbox 端点的写入通道从「无鉴权 / 无边界」收敛为「token 校验 + 源 IP 灰度白名单 + 未配即开放显式横幅」三态，并把生产部署脚本的权限与可观测性收口到最小面。
+**规模**：交付 1 change（`2026-09-18-inbox-api-only-write`，归档 + 根 canonical 并入 5 文件 + `canon verify` 2/2 + `structure merge`）；单文件 `upstream/tests/test_inbox_endpoint.py` **`64 passed / 0 failed`**；全量 `pytest upstream/tests` **`0 failed / 906 passed / 54 skipped`**；四自检脚本全绿（rename 8/8、eol 7/7、skill_standards 7/7、workbuddy_skills PASS）。
+
+### 新功能（BUILD）
+- **`tools/inbox_server.py` 鉴权三态（A 层）**：`X-FSTDD-Token` 校验失败 → **401**；源 IP ∈ `FSTDD_INBOX_ALLOW_IPS` → **灰度放行**（记 `legacy-ip`）；未配 `FSTDD_INBOX_TOKEN` → **开放**并在启动横幅显式打印 `auth: OFF`。`/health`、`/healthz` 始终免鉴权。
+- **健壮性两处**：`do_POST` 调整为「先按 `Content-Length` 消费请求体、再做鉴权」（消 TCP RST / `WinError 10053`）；凭证比较改 **bytes**（`compare_digest`，消非 ASCII 头 `TypeError`）。
+- **`tools/deploy_inbox_server.sh` 加固（A 层）**：独立系统用户 `fstdd-inbox`（`nologin`、无 home）+ `EnvironmentFile` 存在性校验（缺失即 `exit 1`，**不生成 / 不覆盖 / 不上传**）+ 目录属主/权限收口（`chown -R`、`chmod 755`、unit `UMask=0022`）+ 部署后置逐条 `[PASS]/[FAIL]` 校验与负向断言（非服务用户写入必须被拒）。
+- **`upstream/tests/test_inbox_endpoint.py`（新增 D/E 组 19 用例）**：对应 `TC-IAOW-006..009` + `TC-IBDP-002/003/004`，含 `test_d1d`（非 ASCII 凭证头应照常 401 且不落盘）与「未消费 body」RST 回归。
+
+### 交付分层与外部挂账（B 层）
+- **A 仓库侧**（本机 pytest 可验）已全绿收口；**B 生产端 ssh 运维** 9 项（`TC-IAOW-001..005` + `TC-IBDP-001/002(端上)/004(端上)/005`）随交付说明转 K 人工执行并回执，**不阻塞本次收口**。
+
+### 质量基线（发布门禁实测）
+- **单文件**：`upstream/tests/test_inbox_endpoint.py` **`64 passed`**。
+- **全量**：`pytest upstream/tests` **`0 failed / 906 passed / 54 skipped`**（462s）。
+- **根 canonical 并入**：proposal 1 + specs(agent 2, code 2) 共 5 文件并入根 `canonical/`，`.canon-index.yaml` 同步；`canon verify` **2/2**。
+- **经验**：新增 `EXP-2026-0018`（未消费 body 即响应 → TCP RST）、`EXP-2026-0019`（`compare_digest` 非 ASCII `TypeError`），均 `verified`；静默回传 78/78 条、知识图谱 +13 节点。
+
+### 已知问题（非本 change 引入，逐项记录）
+- `fstdd ci check-failures` 的「TC-ID 重复」与「TC 实现覆盖 0/N」为**工具口径问题**（按全文出现次数判定 / 硬编码扫描 `<root>/tests` 而本仓在 `upstream/tests`），已核实既往已交付 change 同样触发。
+- `--rate-limit` CLI 覆写后未复检 `MAX_BATCH<=RATE_LIMIT`（预存在）；`quality.yaml` 的 `lint/typecheck/unit_dir` 路径指向不存在的 `app/` 且与本仓 `upstream/tests` 不一致（预存在）。建议另立 change 校正。
+
 ## [3.3.3] — 2026-10-04
 
 **主题**：**协作通知真伪校验闸门交付** —— 把「渠道零防伪 → 伪造 `收-*.md` 触发未授权凭证落盘 / 回传链路变更」（2026-09-18 事故根因）修掉：新增独立校验器 + 配套回归，凭证形状命中即**隔离而非删除**，凭证字面值绝不进入任何输出面。

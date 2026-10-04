@@ -1,0 +1,76 @@
+# inbox-api-only-write — Agent 验证规格（Canonical YAML）
+meta:
+  task_id: "verify-inbox-api-only-write"
+  change_id: "2026-09-18-inbox-api-only-write"
+  task_type: configuration
+  system: "云服务器 43.134.236.80（ssh 别名 fstdd-hub）：/home/ubuntu/fstdd-inbox + fstdd-inbox.service"
+  preconditions:
+    - "已取得 D哥 部署授权（生产服务，含秒级重启窗口）"
+    - "已对收目录做 tar 快照备份（fstdd-hub-backup 不覆盖 inbox 目录）"
+    - "已知 token 存放位置且部署过程不回显其内容"
+
+steps:
+  - id: CP-1
+    description: "快照备份收目录（变更前）"
+    action: "ssh fstdd-hub \"sudo tar czf /home/ubuntu/fstdd-inbox-prelockdown.tgz -C /home/ubuntu fstdd-inbox && ls -l /home/ubuntu/fstdd-inbox-prelockdown.tgz\""
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: file_exists
+        path: "/home/ubuntu/fstdd-inbox-prelockdown.tgz"
+        expected: true
+
+  - id: CP-2
+    description: "迁移试运行文件到 quarantine（只移不删）"
+    action: "ssh fstdd-hub \"sudo mkdir -p /home/ubuntu/fstdd-inbox/quarantine && sudo bash -c 'mv /home/ubuntu/fstdd-inbox/EXP-2026091[567]-*.md /home/ubuntu/fstdd-inbox/quarantine/' && ls /home/ubuntu/fstdd-inbox/EXP-2026091[567]-*.md 2>/dev/null | wc -l && ls /home/ubuntu/fstdd-inbox/quarantine/*.md | wc -l\""
+    assertions:
+      - type: stdout_contains
+        expected: "根目录残留 0"
+      - type: stdout_contains
+        expected: "quarantine 计数 30"
+
+  - id: CP-3
+    description: "建服务用户 + 收目录收权"
+    action: "ssh fstdd-hub \"sudo useradd --system --no-create-home --shell /usr/sbin/nologin fstdd-inbox || true; sudo chown -R fstdd-inbox:fstdd-inbox /home/ubuntu/fstdd-inbox; sudo chmod 755 /home/ubuntu/fstdd-inbox; sudo chmod 644 /home/ubuntu/fstdd-inbox/*.log 2>/dev/null; namei -l /home/ubuntu/fstdd-inbox | tail -1\""
+    assertions:
+      - type: stdout_contains
+        expected: "fstdd-inbox fstdd-inbox"
+
+  - id: CP-4
+    description: "负向断言：ubuntu 身份写入必须被拒"
+    action: "ssh fstdd-hub \"touch /home/ubuntu/fstdd-inbox/.perm-probe; echo exit=$?; ls /home/ubuntu/fstdd-inbox/.perm-probe 2>&1\""
+    assertions:
+      - type: stdout_contains
+        expected: "Permission denied"
+      - type: stdout_contains
+        expected: "exit=1"
+
+  - id: CP-5
+    description: "正向断言：API 仍可落盘，/health 正常"
+    action: "ssh fstdd-hub \"curl -s -m 15 -H 'X-FSTDD-Token: $(sudo sed -n 's/^FSTDD_INBOX_TOKEN=//p' /home/ubuntu/fstdd-inbox-server/inbox.env)' -H 'Content-Type: application/json' -d '{\\\"experience_id\\\":\\\"EXP-LOCKDOWN-PROBE-1\\\",\\\"content\\\":\\\"# probe\\\"}' http://127.0.0.1:8787/api/share-experience; echo; curl -s -m 15 http://127.0.0.1:8787/health\""
+    assertions:
+      - type: stdout_contains
+        expected: "\"accepted\": 1"
+      - type: stdout_contains
+        expected: "\"ok\": true"
+
+  - id: CP-6
+    description: "清理探测文件（不留垃圾，且必须由服务用户/uid 删除）"
+    action: "ssh fstdd-hub \"sudo rm -f /home/ubuntu/fstdd-inbox/EXP-LOCKDOWN-PROBE-1.md /home/ubuntu/fstdd-inbox/.perm-probe; ls /home/ubuntu/fstdd-inbox/*.md | wc -l\""
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-7
+    description: "漂移清零：repo 与服务端 md5 一致"
+    action: "md5sum 本地 tools/inbox_server.py 与 ssh fstdd-hub md5sum /home/ubuntu/fstdd-inbox-server/inbox_server.py 比对"
+    assertions:
+      - type: diff_empty
+        expected: true
+
+rollback:
+  steps:
+    - "sudo chown -R ubuntu:ubuntu /home/ubuntu/fstdd-inbox && sudo chmod 775 /home/ubuntu/fstdd-inbox（权限回退）"
+    - "sudo bash -c 'mv /home/ubuntu/fstdd-inbox/quarantine/EXP-2026091[567]-*.md /home/ubuntu/fstdd-inbox/'（试运行文件回位，需人工确认后执行）"
+    - "sudo tar xzf /home/ubuntu/fstdd-inbox-prelockdown.tgz -C /home/ubuntu（整体回滚快照）"
+    - "回滚后须 systemctl restart fstdd-inbox 并复跑 CP-5 正向断言"
