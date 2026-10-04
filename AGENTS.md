@@ -89,3 +89,4 @@ archive/                # 已完成变更 / Completed changes
 | 3 | **绝不可先写代码再补测试** — 严格 RED→GREEN→REFACTOR | **NEVER write code before tests** — strict RED→GREEN→REFACTOR |
 | 4 | **绝不可跳过失败模式检查** — Phase 3 (BUILD) 必须全量 23 类检查 | **NEVER skip failure mode checks** — all 23 categories mandatory |
 | 5 | **绝不可跳过切片验证** — 每个切片必须通过 Step 1.4 验证 | **NEVER skip slice verification** — Step 1.4 mandatory per slice |
+| 6 | **同一 change 单一档主责（租约）** — 同机多档并发时，动 change 记录前须持有效租约，未持租的档对该 change 只读；详见 `.fstdd/standards/track-lease.md` | **One track owns a change at a time (lease)** — concurrent tracks on one host MUST hold a valid lease before writing change records; non-holders are read-only. See `.fstdd/standards/track-lease.md` |

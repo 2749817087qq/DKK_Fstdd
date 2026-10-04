@@ -53,3 +53,8 @@ tools/.heartbeat.env
 # 孤儿私钥：曾被 tracked（2026-10-04-github-mirror-secret-remediation 处置），
 # 现已 git rm --cached 撤销跟踪；保留磁盘文件，杜绝同类误提交
 .fstdd/_fstdd003_key_new.txt
+
+# 单机双档租约：本机运行态（两档共享文件系统即可仲裁），不入库
+# 规程见 .fstdd/standards/track-lease.md —— 同一 change 单一档主责
+.fstdd/changes/*/.lease.yaml
+.fstdd/changes/*/lease-events.yaml
