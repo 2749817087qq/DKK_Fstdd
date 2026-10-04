@@ -10,6 +10,26 @@
 
 ## [Unreleased]
 
+## [3.3.3] — 2026-10-04
+
+**主题**：**协作通知真伪校验闸门交付** —— 把「渠道零防伪 → 伪造 `收-*.md` 触发未授权凭证落盘 / 回传链路变更」（2026-09-18 事故根因）修掉：新增独立校验器 + 配套回归，凭证形状命中即**隔离而非删除**，凭证字面值绝不进入任何输出面。
+**规模**：交付 1 change（`2026-09-19-notices-authenticity-gate`，归档 + 根 canonical 并入 4 文件 + `canon verify` 2/2 + `structure merge`）；单文件 `tools/test_verify_notices.py` **`20 passed / 1 skipped / 0 failed`**；全量 `pytest upstream/tests` **`0 failed / 887 passed / 54 skipped`**。
+
+### 新功能（BUILD）
+- **`tools/verify_notices.py`（新增，仅标准库）**：对拉取到的 `FSTDD003收-*.md` 做清单摘要校验与凭证形状嗅探。
+  - `classify_notice(path)` 单文件定级：`verified`（清单命中且 md5 前 12 位一致）/ `unverified`（`reason` ∈ `not_in_manifest` / `md5_mismatch` / `manifest_missing`）。
+  - `verify_notices(dir)` 批量 + CLI（`--json` / `--strict`）。**契约**：`--json` 顶层**恰好** `results` / `quarantined` / `warnings` / `exit_code` 四键；非 strict 下 `unverified` 仅告警 `exit 0`，`--strict` 下 `exit 3`；命中凭证隔离 `exit 2`，二者并存时 **3 优先**。
+  - **默认告警不阻断**：清单 `00-SIGNATURES.md` 尚未落地，默认阻断会让全部通知被拦、协作停摆 —— 故先就位、默认低危，待清单机制就绪再切 `--strict`。
+- **凭证防线**：形状正则（`X-FSTDD-Token:` / `Bearer` / 「凭证段落 + 16 位以上字母数字与连字符」）命中即移入 `tools/_quarantine/`（**保留原文以不断审计链**），隔离记录仅含文件名 / md5 前 12 位 / 规则名 / 时间；**凭证字面值绝不进入 stdout / stderr / 隔离记录 / git**。
+- **`tools/test_verify_notices.py`（新增，21 个 TC）**：与 `TC-NAV-001..018` + `TC-NEP-001..003` 一一对应；含「回传行为不变」的回归断言（`TC-NEP-001..003`，防 09-18 未授权配置变更重演）。
+- **`.gitignore`**：追加 `tools/_quarantine/`（隔离区经 `git check-ignore` 断言不入库）。
+
+### 质量基线（发布门禁实测）
+- **单文件**：`tools/test_verify_notices.py` **`20 passed / 1 skipped`**（`TC-NEP-003` 的「场景节点本地凭证证据」断言在非场景节点自动 `pytest.skip`，已在 `test-report.md` 显式记录，非掩盖失败）。
+- **全量**：`pytest upstream/tests` **`0 failed / 887 passed / 54 skipped`**。
+- **根 canonical 并入**：proposal 1 + specs(agent 1, code 2) 共 4 文件并入根 `canonical/`，`.canon-index.yaml` 同步；`canon verify` **2/2**。
+- **已知偏离（显式记录，不静默）**：本变更只产出工具与测试，**不修改**轮询自动化 `06ec2c4f` 的 prompt；闸门接入（切 `--strict`）待 `00-SIGNATURES.md` 清单就绪后单独动作。
+
 ## [3.3.2] — 2026-10-04
 
 **主题**：**在办 change 收口 + 凭证泄露防线** —— 把一个长期卡死（"僵尸"）的 change 如实补全并交付，同时把「服务器 GitHub 镜像被 push protection 拦截」的根因（脚本里的 PAT 占位示例被扫描器误判）处置为**仓库侧可执行门禁**。

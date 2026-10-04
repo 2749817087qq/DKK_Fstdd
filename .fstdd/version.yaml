@@ -1,10 +1,26 @@
 # FSTDD 本地版本声明（F 仓 / stdd-repo）
 # 发行版口径：fstdd_version（须 = .fstdd/config.d/project.yaml 的 stdd_version）
 # vendored 上游内核口径：upstream_version（= upstream/ 内核，见 upstream/CHANGELOG.md 与 upstream/pyproject.toml）
-fstdd_version: "3.3.2"
+fstdd_version: "3.3.3"
 upstream_version: "3.1.0"
-released_at: "2026-10-04T19:00:00+08:00"
+released_at: "2026-10-04T21:30:00+08:00"
 changelog: |
+  v3.3.3 — 协作通知真伪校验闸门版
+
+  交付（1 change：2026-09-19-notices-authenticity-gate，归档 + 根 canonical 并入 4 文件 + canon verify 2/2 + structure merge）：
+  - 新增 tools/verify_notices.py（仅标准库）：classify_notice/verify_notices + CLI（--json/--strict）。
+    契约：--json 顶层恰好 results/quarantined/warnings/exit_code 四键；非 strict 下 unverified 仅告警 exit 0，
+    --strict 下 exit 3；命中凭证隔离 exit 2，并存时 3 优先。默认告警不阻断（清单未落地前不阻碍协作）。
+  - 凭证防线：形状正则命中即移入 tools/_quarantine/（隔离而非删除，保留审计链），
+    隔离记录仅含文件名/md5 前 12 位/规则名/时间；凭证字面值绝不进入 stdout/stderr/隔离记录/git。
+  - 新增 tools/test_verify_notices.py（21 TC，对应 TC-NAV-001..018 + TC-NEP-001..003），含回传行为不变的回归断言。
+  - .gitignore 追加 tools/_quarantine/。
+
+  质量：单文件 tools/test_verify_notices.py 20 passed / 1 skipped；
+  全量 pytest upstream/tests 0 failed / 887 passed / 54 skipped；
+  四自检脚本全绿（rename 8/8、eol 7/7、skill_standards 7/7、workbuddy_skills PASS）。
+  已知偏离：本变更不改轮询自动化 06ec2c4f 的 prompt，闸门接入（切 --strict）待 00-SIGNATURES.md 清单就绪后单独动作。
+
   v3.3.2 — 在办 change 收口 + 凭证泄露防线版
 
   收口（2 change，归档 + 根 canonical 并入 + canon verify 2/2 + structure merge）：
