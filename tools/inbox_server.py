@@ -28,7 +28,14 @@ GET /         -> 服务自述
 推论：单次批量的条数必须 <= RATE_LIMIT，否则该批量永远无法通过 ——
 故有下面的 MAX_BATCH <= RATE_LIMIT 断言。
 
-防护（**无鉴权是有意设计**——降低门槛；靠下面这些兜底）：
+鉴权（**可选，默认关闭**）
+-------------------------
+服务端设置 FSTDD_INBOX_TOKEN 即开启校验：POST 须带 `X-FSTDD-Token`。
+凭证缺失/错误时，源 IP 命中 FSTDD_INBOX_ALLOW_IPS（逗号分隔 IP/CIDR）则
+灰度放行（记 legacy-ip），否则 401。未配置 token → 保持开放（启动横幅 auth: OFF）。
+GET /health、/healthz **始终免鉴权**（节点回执要拉计数）。
+
+防护（**鉴权之外**仍保留下面这些兜底）：
     1. 单条大小上限 MAX_ITEM_BYTES
     2. 单请求大小上限 MAX_REQUEST_BYTES（批量）
     3. 单请求条数上限 MAX_BATCH
@@ -42,8 +49,12 @@ GET /         -> 服务自述
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
+import os
 import re
+import secrets
+import sys
 import time
 from collections import defaultdict, deque
 from datetime import datetime, timezone
@@ -59,6 +70,11 @@ RETRY_AFTER_MIN = 1                     # Retry-After 下限
 
 assert MAX_BATCH <= RATE_LIMIT, \
     "MAX_BATCH 不能大于 RATE_LIMIT，否则单次大批量永远无法通过限流"
+
+# 鉴权（可选，默认关闭）：设置 FSTDD_INBOX_TOKEN 即开启；白名单为灰度回退通道
+AUTH_TOKEN_ENV = "FSTDD_INBOX_TOKEN"
+AUTH_ALLOW_IPS_ENV = "FSTDD_INBOX_ALLOW_IPS"
+AUTH_HEADER = "X-FSTDD-Token"
 
 # 明显敏感内容 —— 服务端兜底，防止客户端漏脱敏
 SENSITIVE_PATTERNS = [
@@ -99,6 +115,66 @@ def _rate_check(ip: str, n: int) -> tuple[bool, int]:
 
     q.append((now, n))
     return True, 0
+
+
+# --------------------------------------------------------------- 鉴权（三态）
+def _auth_token() -> str:
+    """返回当前配置的 token（未配置即空串）。每次调用读 env，便于测试与热切换。"""
+    return (os.environ.get(AUTH_TOKEN_ENV) or "").strip()
+
+
+def _allow_ips() -> list:
+    """解析 FSTDD_INBOX_ALLOW_IPS（逗号分隔的 IP 或 CIDR）。
+
+    非法项**显式告警**而非静默跳过（防静默降级），随后忽略该项继续解析。
+    """
+    raw = os.environ.get(AUTH_ALLOW_IPS_ENV) or ""
+    nets: list = []
+    for part in raw.replace(";", ",").split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            nets.append(ipaddress.ip_network(part, strict=False))
+        except ValueError:
+            print("[inbox] warn: 忽略非法白名单项 %r（%s）"
+                  % (part, AUTH_ALLOW_IPS_ENV), file=sys.stderr, flush=True)
+    return nets
+
+
+def _ip_allowed(ip: str) -> bool:
+    """源 IP 是否命中灰度白名单。"""
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    return any(addr in net for net in _allow_ips())
+
+
+def _authorized(handler) -> bool:
+    """鉴权三态：未配置 token → 放行；凭证正确 → 放行；凭证缺失/错误 → 看白名单。"""
+    token = _auth_token()
+    if not token:
+        return True                                  # auth: OFF，保持开放
+    supplied = (handler.headers.get(AUTH_HEADER) or "").strip()
+    # 按字节比较：HTTP 头以 latin-1 解码，可能含非 ASCII（如 0xE9）；
+    # secrets.compare_digest 对含非 ASCII 的 str 会抛 TypeError，故先编码为 bytes。
+    if supplied and secrets.compare_digest(supplied.encode("utf-8", "surrogateescape"),
+                                          token.encode("utf-8")):
+        return True
+    ip = handler.client_address[0]
+    if _ip_allowed(ip):                              # 灰度：老节点 IP 直连放行
+        print("[inbox] legacy-ip allow <- %s" % ip, flush=True)
+        return True
+    return False
+
+
+def _auth_banner() -> str:
+    """启动横幅：auth ON/OFF 必须显式打印（防静默降级）。"""
+    if _auth_token():
+        return ("[fstdd-inbox] auth: ON (token set; %d allow-ip net(s) from %s)"
+                % (len(_allow_ips()), AUTH_ALLOW_IPS_ENV))
+    return "[fstdd-inbox] auth: OFF (%s not set; endpoint open)" % AUTH_TOKEN_ENV
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -164,8 +240,9 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, {
                 "service": "fstdd-experience-inbox",
                 "api": {
-                    "POST /api/share-experience": "提交经验（单条或批量，无需凭证）",
-                    "GET /health": "健康检查与已收条数",
+                    "POST /api/share-experience":
+                        "提交经验（单条或批量；服务端启用 token 时须带 X-FSTDD-Token）",
+                    "GET /health": "健康检查与已收条数（免鉴权）",
                 },
             })
         else:
@@ -189,14 +266,23 @@ class Handler(BaseHTTPRequestHandler):
                                       % MAX_REQUEST_BYTES})
             return
 
-        # 2) 解析
+        # 2) 先消费请求体，再鉴权 —— 否则 401 提前关连接会留下未读数据 → TCP RST
+        raw = self.rfile.read(length)
+
+        # 3) 鉴权（三态）：未配 token → 放行；凭证错/缺 → 白名单灰度或 401
+        if not _authorized(self):
+            print("[inbox] 401 <- %s" % ip, flush=True)
+            self._json(401, {"success": False, "error": "unauthorized"})
+            return
+
+        # 4) 解析
         try:
-            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            payload = json.loads(raw.decode("utf-8"))
         except Exception as exc:  # noqa: BLE001
             self._json(400, {"success": False, "error": "bad json: %s" % exc})
             return
 
-        # 3) 归一化为条目列表（兼容单条与批量两种 body）
+        # 5) 归一化为条目列表（兼容单条与批量两种 body）
         if not isinstance(payload, dict):
             self._json(400, {"success": False,
                              "error": "body must be a JSON object"})
@@ -214,7 +300,7 @@ class Handler(BaseHTTPRequestHandler):
                              "error": "batch too large: %d > %d" % (len(items), MAX_BATCH)})
             return
 
-        # 4) 限流（按条数，批量一次算 len(items) 条）
+        # 6) 限流（按条数，批量一次算 len(items) 条）
         ok, wait = _rate_check(ip, len(items))
         if not ok:
             self._json(429,
@@ -225,7 +311,7 @@ class Handler(BaseHTTPRequestHandler):
                        {"Retry-After": wait})
             return
 
-        # 5) 逐条校验（服务端兜底，不信任客户端已脱敏）
+        # 7) 逐条校验（服务端兜底，不信任客户端已脱敏）
         accepted: list[tuple[str, str, str]] = []
         errors: list[dict] = []
         for idx, it in enumerate(items):
@@ -256,7 +342,7 @@ class Handler(BaseHTTPRequestHandler):
                              "error": "all items rejected"})
             return
 
-        # 6) 落盘
+        # 8) 落盘
         self.data_dir.mkdir(parents=True, exist_ok=True)
         ids = [self._store(eid, content, author, ip)
                for eid, content, author in accepted]
@@ -298,6 +384,7 @@ def main() -> int:
           "%d items/%ds per IP"
           % (MAX_BATCH, MAX_ITEM_BYTES, MAX_REQUEST_BYTES, RATE_LIMIT, RATE_WINDOW),
           flush=True)
+    print(_auth_banner(), flush=True)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

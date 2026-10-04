@@ -143,8 +143,14 @@ class _Srv:
 
 
 @pytest.fixture(autouse=True)
-def _clean_rate_state():
-    """`_hits` 是模块级全局，跨用例残留会让限流用例互相污染。"""
+def _clean_rate_state(monkeypatch):
+    """`_hits` 是模块级全局，跨用例残留会让限流用例互相污染。
+
+    同时把鉴权环境变量复位为「未配置」，让既有 A/B/C 组始终运行在开放模式下
+    （hermetic：不因宿主机恰好导出 FSTDD_INBOX_TOKEN 而集体变 401）。
+    """
+    monkeypatch.delenv(AUTH_ENV, raising=False)
+    monkeypatch.delenv(ALLOW_ENV, raising=False)
     INBOX._hits.clear()
     yield
     INBOX._hits.clear()
@@ -750,3 +756,188 @@ class TestCClient:
         monkeypatch.delenv("FSTDD_INBOX_URL", raising=False)
         # 2026-09-23 端点迁移：8787 公网入口永久关闭，默认改为 443 反代
         assert SHARE.inbox_url() == "https://quanthub.ccreits.cn/inbox/api/share-experience"
+
+
+# ===========================================================================
+# D 组 —— 鉴权三态与 /health 免鉴权（本 change A 层新增）
+# ===========================================================================
+AUTH_ENV = "FSTDD_INBOX_TOKEN"          # 服务端 token 环境变量名
+ALLOW_ENV = "FSTDD_INBOX_ALLOW_IPS"     # 灰度白名单（逗号分隔 IP / CIDR）
+AUTH_HEADER = "X-FSTDD-Token"           # 请求携带凭证的头名
+
+
+def _post_with_token(server: _Srv, eid: str, token: str | None) -> _Resp:
+    """带（或不带）X-FSTDD-Token 的单条 POST。"""
+    headers = {"Content-Type": "application/json"}
+    if token is not None:
+        headers[AUTH_HEADER] = token
+    return _request(server.port, "POST", API,
+                    json.dumps({"experience_id": eid, "content": "鉴权用例正文",
+                                "author": "tester"}).encode("utf-8"),
+                    headers)
+
+
+class TestDAuthGate:
+    """鉴权三态：token 校验失败 401 / 白名单 IP 灰度放行 / 未配 token 开放。
+
+    契约见 `canonical/specs/code/inbox-api-only-write.yaml` REQ-003（SC-006..SC-009）。
+    鉴权开关在**每次请求时**读取环境变量，故 monkeypatch.setenv 即时生效，无需重载模块。
+    """
+
+    # ---- SC-006：无凭证 / 错误凭证 → 401 ----
+    def test_d1_post_without_token_401_and_logs(self, server, monkeypatch, capsys):
+        """TC-IAOW-006：配了 token 的非白名单无凭证 POST → 401，日志含 [inbox] 401 <- <ip>。"""
+        monkeypatch.setenv(AUTH_ENV, "s3cret-token")
+
+        r = server.post_single("EXP-AUTH-401", "不给凭证")
+        assert r.status == 401
+        assert r.data["success"] is False
+        assert "unauthorized" in (r.data.get("error") or "")
+        assert server.files() == [], "401 请求不得落盘"
+        out = capsys.readouterr().out
+        assert "[inbox] 401 <- %s" % LOOPBACK in out, "缺少 401 审计日志"
+
+    def test_d1b_wrong_token_401(self, server, monkeypatch):
+        """TC-IAOW-006 变体：凭证**错误**（非缺失）同样 401，且不落盘。"""
+        monkeypatch.setenv(AUTH_ENV, "s3cret-token")
+        r = _post_with_token(server, "EXP-AUTH-BAD", "not-the-token")
+        assert r.status == 401
+        assert server.files() == []
+
+    def test_d1c_correct_token_accepted(self, server, monkeypatch):
+        """SC-002：正确 token → 200 accepted=1（鉴权不误伤合法客户端）。"""
+        monkeypatch.setenv(AUTH_ENV, "s3cret-token")
+        r = _post_with_token(server, "EXP-AUTH-OK", "s3cret-token")
+        assert r.status == 200
+        assert r.data["accepted"] == 1
+        assert len(server.files()) == 1
+
+    def test_d1d_non_ascii_token_header_rejected_gracefully(self, server, monkeypatch):
+        """TC-IAOW-006 边界：非 ASCII 凭证头不得让服务端抛异常，应照常 401 且不落盘。
+
+        安全依据：HTTP 头由客户端以 latin-1 解码，攻击者可寄 `X-FSTDD-Token: <0xE9>`；
+        若直接 `secrets.compare_digest(str, str)` 会抛 TypeError（它只接受 ASCII str），
+        导致未捕获异常 → 连接中断 / 栈刷屏。故须按字节比较。
+        """
+        monkeypatch.setenv(AUTH_ENV, "s3cret-token")
+        r = _post_with_token(server, "EXP-AUTH-NONASCII", "tok\xe9n")
+        assert r.status == 401
+        assert server.files() == [], "非 ASCII 凭证请求不得落盘"
+
+    # ---- SC-007：白名单 IP 灰度放行 ----
+    def test_d2_allow_ip_whitelist_grants_access(self, server, monkeypatch, capsys):
+        """TC-IAOW-007：源 IP 在白名单内 → 无凭证仍放行，日志含 legacy-ip。"""
+        monkeypatch.setenv(AUTH_ENV, "s3cret-token")
+        monkeypatch.setenv(ALLOW_ENV, "127.0.0.1/32")
+
+        r = server.post_single("EXP-AUTH-LEGACY", "老节点直连")
+        assert r.status == 200
+        assert r.data["accepted"] == 1
+        assert len(server.files()) == 1
+        assert "legacy-ip" in capsys.readouterr().out
+
+    @pytest.mark.parametrize("allow_spec,expected", [
+        ("127.0.0.1/32", True),          # 声明形态①：CIDR
+        ("127.0.0.1", True),             # 声明形态②：裸 IP
+        ("127.0.0.0/8", True),           # 声明形态③：父网段覆盖回环
+        ("10.0.0.1", False),             # 不含本机 → 仍 401
+        ("127.0.0.1/32, 10.0.0.1", True),  # 声明形态④：逗号分隔多项
+    ])
+    def test_d2b_allow_ip_declared_forms(self, server, monkeypatch,
+                                         allow_spec, expected):
+        """TC-IAOW-007 边界：白名单声明支持的 IP 形态逐一校验（EXP-2026-0013 声明-实现同源）。"""
+        monkeypatch.setenv(AUTH_ENV, "s3cret-token")
+        monkeypatch.setenv(ALLOW_ENV, allow_spec)
+        r = server.post_single("EXP-AUTH-FORM", "形态校验")
+        assert (r.status == 200) == expected
+
+    # ---- SC-008：未配 token 保持开放 ----
+    def test_d3_no_token_keeps_endpoint_open(self, server, monkeypatch):
+        """TC-IAOW-008：未配 token → 任意来源 200（保持开放兼容旧行为）。"""
+        r = server.post_single("EXP-AUTH-OPEN", "开放模式")
+        assert r.status == 200
+        assert r.data["accepted"] == 1
+
+    def test_d3b_auth_banner_reports_off(self, monkeypatch):
+        """TC-IAOW-008：未配 token 时启动横幅含 'auth: OFF' 警告。"""
+        assert "auth: OFF" in INBOX._auth_banner()
+
+    def test_d3c_auth_banner_reports_on(self, monkeypatch):
+        """配了 token 时启动横幅含 'auth: ON'（与 OFF 互斥，防漏打印 / 防静默降级）。"""
+        monkeypatch.setenv(AUTH_ENV, "s3cret-token")
+        assert "auth: ON" in INBOX._auth_banner()
+
+    # ---- SC-009：/health 免鉴权 ----
+    def test_d4_health_exempt_from_auth(self, server, monkeypatch):
+        """TC-IAOW-009：配了 token 时 GET /health、/healthz 仍免鉴权，received 口径 == 根下 *.md 数。"""
+        monkeypatch.setenv(AUTH_ENV, "s3cret-token")
+
+        # 先证明鉴权确实生效：无凭证 POST 被拒
+        assert server.post_single("EXP-AUTH-H1", "x").status == 401
+        # 带凭证落一条，作为计数基线
+        assert _post_with_token(server, "EXP-AUTH-H1", "s3cret-token").status == 200
+
+        h = server.get("/health")
+        assert h.status == 200, "/health 必须免鉴权"
+        assert h.data["ok"] is True
+        assert h.data["received"] == 1 == len(server.files())
+        assert server.get("/healthz").status == 200
+
+    # ---- 白名单解析健壮性（EXP-2026-0014：不得静默吞异常）----
+    def test_d5_invalid_allow_ip_logs_warning_not_silent(self, monkeypatch, capsys):
+        """非法白名单项**显式告警**而非静默跳过（EXP-2026-0014）。"""
+        monkeypatch.setenv(AUTH_ENV, "s3cret-token")
+        monkeypatch.setenv(ALLOW_ENV, "not-an-ip, 127.0.0.1/32")
+        assert INBOX._ip_allowed(LOOPBACK) is True
+        assert "not-an-ip" in capsys.readouterr().err
+
+
+# ===========================================================================
+# E 组 —— 部署脚本静态守护（本 change A 层新增）
+# ===========================================================================
+DEPLOY_SH = REPO / "tools" / "deploy_inbox_server.sh"
+
+
+def _deploy_text() -> str:
+    """读部署脚本全文（静态守护：断言关键行齐备、危险模式缺席）。"""
+    return DEPLOY_SH.read_text(encoding="utf-8")
+
+
+class TestEDeployScriptGuards:
+    """部署脚本静态守护：单元关键行 / 建用户收权 / env 存在性校验 / 后置校验含负向断言。
+
+    契约见 `canonical/specs/code/inbox-deploy.yaml` REQ-101（SC-101..SC-104）。
+    """
+
+    def test_e1_unit_template_has_required_lines(self):
+        """TC-IBDP-003：单元含 User=fstdd-inbox / EnvironmentFile= / UMask=0022；不含 pkill -f inbox_server。"""
+        text = _deploy_text()
+        assert "User=fstdd-inbox" in text, "单元必须把服务用户收到 fstdd-inbox"
+        assert "EnvironmentFile=" in text, "单元必须显式声明 EnvironmentFile（防重跑丢鉴权）"
+        assert "UMask=0022" in text, "UMask=0022 保证日志 other 可读（巡检链路）"
+        assert "pkill -f inbox_server" not in text, \
+            "该模式会匹配 ssh 命令行自身（历史事故），脚本不得出现"
+
+    def test_e1b_creates_system_user_and_locks_dir(self):
+        """SC-101：useradd --system --no-create-home --shell /usr/sbin/nologin + chown -R + chmod 755。"""
+        text = _deploy_text()
+        assert "--system" in text and "--no-create-home" in text
+        assert "/usr/sbin/nologin" in text
+        assert "chown -R" in text and "chmod 755" in text
+
+    def test_e2_env_missing_aborts_nonzero(self):
+        """TC-IBDP-002(静态)：含 inbox.env 存在性校验，缺失即非 0 退出并打印处置指导（不生成/不覆盖/不上传）。"""
+        text = _deploy_text()
+        assert "ENV_FILE" in text and "inbox.env" in text
+        assert "[ -f " in text and "ENV_FILE" in text, "缺少远端 env 存在性校验"
+        assert "exit 1" in text, "env 缺失必须非 0 退出"
+        assert "不生成" in text and "不覆盖" in text and "不上传" in text, \
+            "缺少处置指导（token 属机密，不得自动造/传）"
+
+    def test_e3_verify_section_has_negative_assertion(self):
+        """TC-IBDP-004(静态)：后置校验含 PASS/FAIL 逐条 + 负向写入探测 + 任一 FAIL 非 0 退出。"""
+        text = _deploy_text()
+        assert "[PASS]" in text and "[FAIL]" in text, "后置校验必须逐条输出 PASS/FAIL"
+        assert "perm-probe" in text, "缺少负向断言（ubuntu 写入必须被拒）"
+        assert "FAILED" in text, "缺少失败累加器，无法保证任一 FAIL 即非 0 退出"
+        assert "exit 1" in text

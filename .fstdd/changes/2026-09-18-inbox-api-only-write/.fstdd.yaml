@@ -6,17 +6,38 @@ baseline:
   node_id: DESKTOP-1MEQDMR
 change_id: 2026-09-18-inbox-api-only-write
 complexity_score: null
-current_phase: understand
+current_phase: build
 design_adjustments:
-  count: 0
+  count: 4
+  file: design-adjustments.md
 mode: standard
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-10-04T10:58:55+08:00'
 phases:
   build:
-    status: pending
+    status: in_progress
+    slices_completed:
+      '1':
+        status: done
+        tc_coverage: 4/4
+        new_tests: 15
+        verified_at: '2026-10-04T11:04:56+08:00'
+      '2':
+        status: done
+        tc_coverage: 3/3
+        new_tests: 4
+        verified_at: '2026-10-04T11:09:29+08:00'
   deliver:
     status: pending
   spec:
-    status: pending
+    confirmed_actor: ai
+    confirmed_at: '2026-10-04T02:50:59+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 用户确认原文：确认（D哥/F-chief 于 2026-10-04 Gate 2 展示后回复『确认』）
+    status: completed
   understand:
     confirmed_actor: ai
     confirmed_at: '2026-09-18T08:58:13+00:00'
@@ -27,7 +48,8 @@ score_confidence: null
 status: active
 task_type: configuration
 traceability:
-  spec_scenarios: 0
-  tc_cases: 0
-  test_functions: 0
+  spec_requirements: 5
+  spec_scenarios: 15
+  tc_cases: 15
+  test_functions: 19
 version: '3.0'
