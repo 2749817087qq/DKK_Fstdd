@@ -1,0 +1,60 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+# change: 2026-10-05-upstream-baseline-alignment
+# task_type: documentation（文档 + 一个适配脚本的版本字段去硬编码）
+# 对应行为规格：specs/code/version-nomenclature.yaml（REQ-001..003 / SC-001..010）、
+#              specs/code/upstream-baseline-alignment.yaml（REQ-001..003 / SC-001..006）
+# 验证手段：实测命令退出码 + 定向扫描断言 + 结构化字段核对；不以「阅读文档」代替执行。
+
+meta:
+  task_id: "upstream-baseline-alignment"
+  change_id: "2026-10-05-upstream-baseline-alignment"
+  created: "2026-10-05T11:45:00+00:00"
+  task_type: documentation
+  system: |
+    本仓（stdd-repo）的对外版本声明面与上游基线证据面：NOTICE.md / README.md /
+    skills/fstdd-fin/SKILL.md / docs/WORKBUDDY_INSTALL_NOTES.md / tools/install_workbuddy_skills.py
+    的版本口径，以及新增 docs/UPSTREAM_BASELINE.md（快照单一事实源）。
+    四自检脚本与全量 pytest 作为最终回归闸门。
+
+preconditions:
+  - "工作树除本变更外干净（verify_eol TC-EOL-005 只允许 tools/ docs/ skills/ 前缀与 README.md/.gitignore 出现未提交 diff）"
+  - "解释器为 F 侧 default env python（3.13.14，含 PyYAML / Jinja2 / requests）；本机 CLI 入口 upstream/bin/fstdd 可用"
+  - "上游基线探针已完成（经 ssh fstdd-hub 只读，本机不可直连 github.com:443）"
+  - "禁改区（upstream/ 内上游自有文档、.fstdd/archive/**、skills-archive/**、_scratch/**、artifacts/**）未被改动"
+
+steps:
+  - action: "按对象判定并修正 5 个活体声明面的版本轴（E 外部上游锚 / K vendored 内核 3.1.0 / R 发行版 3.3.4）"
+    verify: "对 5 个文件执行定向扫描断言：把内核轴写作 3.0.5 的命中数为 0；NOTICE §1 内不存在互相矛盾的版本声明（命令原文记入 test-report 证据表）"
+
+  - action: "新增 docs/UPSTREAM_BASELINE.md，固化观测时点 + base git sha + tag/HEAD sha/pushed_at/Releases/分支/通道排除 + 本仓领先量清单"
+    verify: "文件存在；含 observed_at（带时区）、base sha、v3.0.5、b9a4af62b5f4fd2747884c0a61febbc341792ac2、2026-08-17T15:25:43Z、Releases 空、Gitee/PyPI 通道排除、领先量清单段"
+
+  - action: "在 docs/UPSTREAM_BASELINE.md 固化上游经验库 leonai42/stdd-experiences 的只读对标结论"
+    verify: "明确「非我方回传目标」+ 我方目标 2749817087qq/Fstdd-experiences + 我方 node 前缀条目数实测值（含计数口径与观测时点）"
+
+  - action: "把 tools/install_workbuddy_skills.py 的 frontmatter version/stdd_version 与来源横幅、module docstring 改为由机器可读源派生"
+    verify: "生成 frontmatter version == repo_stdd_version(REPO_ROOT)=3.3.4；stdd_version == 3.1.0（纯 [0-9.]+）；源码与生成物均无字面量 3.0.5"
+
+  - action: "重跑安装与校验"
+    verify: "python tools/install_workbuddy_skills.py 退出码 0；python tools/verify_workbuddy_skills.py 输出 PASS 且退出码 0"
+
+  - action: "扫描 NOTICE.md / README.md 是否复制了快照数字"
+    verify: "二者均不含 sha（b9a4af62…）与 pushed_at（2026-08-17T15:25:43Z）字面量；对基线的引用以链接指向 docs/UPSTREAM_BASELINE.md"
+
+  - action: "四自检脚本"
+    verify: "verify_rename 8/8；verify_eol 7/7；verify_skill_standards 7/7；verify_workbuddy_skills PASS（四项均退出码 0）"
+
+  - action: "全量回归"
+    verify: "pytest upstream/tests -q 退出码 0（0 failed）"
+
+expected_outcomes:
+  - "活动声明面零矛盾：5 个文件的版本表述各自落到正确的轴，无「内核 = 3.0.5」残留"
+  - "上游基线快照落盘且可核验：后续对标可直接引用，无需再次联网探针"
+  - "适配层版本字段由机器可读源派生，生成 skill 的 version(R)/stdd_version(K) 自洽，install+verify PASS"
+  - "上游经验库对标结论落盘：非我方回传目标 + 我方 node 前缀条目数实测值"
+  - "四自检全绿 + 全量 pytest 0 failed；禁改区零改动；MIT 署名事实未被改写"
+
+rollback:
+  steps:
+    - "若 install 派生改动导致 verify_workbuddy_skills 失败：还原 tools/install_workbuddy_skills.py 的版本字段改动并重跑安装校验（其余文档改动不受影响）"
+    - "若定向扫描误报上游自有文档：修正扫描范围（排除 upstream/ 与历史/临时区），不下沉为对上游文档的改写"
