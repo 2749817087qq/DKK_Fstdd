@@ -2,7 +2,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Upstream](https://img.shields.io/badge/upstream-leonai42%2Fstdd%20v3.0.5-lightgrey.svg)](https://github.com/leonai42/stdd)
+[![Upstream release](https://img.shields.io/badge/upstream%20release-leonai42%2Fstdd%20v3.0.5-lightgrey.svg)](https://github.com/leonai42/stdd)
+[![Vendored kernel](https://img.shields.io/badge/vendored%20kernel-3.1.0-blue.svg)](./docs/UPSTREAM_BASELINE.md)
 
 > 上游 [leonai42/stdd](https://github.com/leonai42/stdd)（MIT）的衍生作品。
 > 本仓库把上游代码**整目录**纳入 `upstream/` 作为**适配内核**（含上游 `LICENSE` 原文）——
@@ -11,6 +12,7 @@
 > 本仓库亦按 change 流程直接维护其中的内核代码与版本条目；正文中「上游 STDD」的署名**原样保留**，
 > 本仓库不含任何无许可的第三方原文。
 > 完整版权与来源说明见 [`NOTICE.md`](./NOTICE.md)。
+> 版本三轴（E 上游发布 / K vendored 内核 / R 本仓发行版）与上游基线快照见 [`docs/UPSTREAM_BASELINE.md`](./docs/UPSTREAM_BASELINE.md)。
 
 ---
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""把 FSTDD (leonai42/stdd V3.0.5) 的 skill 层安装为指定平台全局 skill。
+"""把 FSTDD（本仓 vendored 内核，源自上游 leonai42/stdd）的 skill 层安装为指定平台全局 skill。
 
 唯一事实源：.fstdd/platforms.yaml —— 所有平台差异（skill 根目录、front-matter 字段、
 正文适配）在此声明。install_workbuddy_skills.py 与 verify_workbuddy_skills.py
@@ -77,7 +77,24 @@ from _skill_install_env import (  # noqa: E402
     UPSTREAM_CLI, repo_stdd_version, shadow_installs, stamp_line,
 )
 
-REPO_VERSION = repo_stdd_version(REPO_ROOT)
+
+def _vendored_kernel_version() -> str:
+    """读 .fstdd/version.yaml 的 upstream_version（内核轴 K）；读不到回落 unknown。
+
+    刻意留在本文件内：当前唯一消费者是本安装脚本，不外提到 _skill_install_env（YAGNI）。
+    返回值须为纯 [0-9.]+ 形态（既有测试与 frontmatter_version() 的读取口径）。
+    """
+    path = REPO_ROOT / ".fstdd" / "version.yaml"
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return "unknown"
+    m = re.search(r"^upstream_version:\s*\"?([0-9.]+)\"?\s*$", text, re.M)
+    return m.group(1) if m else "unknown"
+
+
+REPO_VERSION = repo_stdd_version(REPO_ROOT)          # 发行版轴 R
+KERNEL_VERSION = _vendored_kernel_version()          # vendored 内核轴 K
 PY = os.environ.get("FSTDD_PY", sys.executable)
 
 # 本机工具脚本绝对路径：随仓库位置自动定位，避免重装命令指向已删除的旧目录
@@ -301,8 +318,8 @@ def _build_frontmatter(spec: dict, plat_cfg: dict) -> str:
         desc_line,
     ]
     if inc_version:
-        parts.append('version: "3.0.5"')
-        parts.append('stdd_version: "3.0.5"')
+        parts.append(f'version: "{REPO_VERSION}"')
+        parts.append(f'stdd_version: "{KERNEL_VERSION}"')
     # 以下字段 workbuddy 独用——非 workbuddy 不加
     if inc_trigger and not desc_quotes:
         parts.extend([
@@ -374,7 +391,8 @@ def main() -> int:
             body += "\n---\n" + UPGRADE_DUTY
 
         header = (
-            "> 本 skill 来自开源项目 FSTDD (Spec+Test Driven Development) V3.0.5，"
+            "> 本 skill 来自开源项目 FSTDD (Spec+Test Driven Development)，"
+            f"本仓 vendored 内核 v{KERNEL_VERSION}，"
             f"源仓库 https://github.com/leonai42/stdd ，已适配 {display_name} 全局 skill 目录。\n"
             f"> 静态资源与共享片段根目录：`{SRC.as_posix()}`\n"
             f"> CLI 入口：`{PY_CMD}`（该解释器已具备 PyYAML / Jinja2 / requests 依赖）\n"

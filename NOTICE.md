@@ -12,7 +12,7 @@
 |----|------|
 | 项目 | FSTDD — Spec+Test Driven Development |
 | 仓库 | https://github.com/leonai42/stdd |
-| 版本 | V3.0.5（master 分支） |
+| 版本 | 上游最新发布 V3.0.5（master 分支；基线快照见 [`docs/UPSTREAM_BASELINE.md`](./docs/UPSTREAM_BASELINE.md)） |
 | 许可 | **MIT License** |
 | 版权 | Copyright (c) 2026 杭州大道一以科技有限公司 (Hangzhou Dadao Yiyi Technology Co., Ltd.) |
 
@@ -30,8 +30,9 @@
 > ⚠️ **`upstream/` 不是逐字节冻结的上游快照**：它同时是本仓库**持续维护、随版本发布**的内核，
 > 其中的文件由本仓库按 change 流程直接修改（如 CLI 内核代码、`upstream/CHANGELOG.md` 的版本条目）。
 > 这些修改属**本仓库的衍生改动**，不是上游的内容；上游自身的版权与许可声明（`upstream/LICENSE`）
-> **未被改动**。故上游版本号见 `upstream/pyproject.toml`（`3.0.5`），内核的实际发布版本
-> 以仓库根 [`CHANGELOG.md`](./CHANGELOG.md) 为准。
+> **未被改动**。故 `upstream/` 内核版本见 `upstream/pyproject.toml`（当前 `3.1.0`；内核轴 K），
+> 内核的实际发布版本以仓库根 [`CHANGELOG.md`](./CHANGELOG.md) 为准。其中 **E 轴 = 上游最新发布 V3.0.5**
+> （仅作对标锚，含 sha / pushed_at 的基线快照见 [`docs/UPSTREAM_BASELINE.md`](./docs/UPSTREAM_BASELINE.md)）。
 
 未纳入版本控制（**不随本仓库分发**）的上游内容：`website/`（独立部署的站点，上游 `.gitignore`
 亦忽略之）与 `.stdd/archive/`（历史变更归档）。

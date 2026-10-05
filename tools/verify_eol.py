@@ -36,10 +36,14 @@ BASELINE_WARN_LINES = 640  # 无规则时实测告警行数（对照基准，随
 # 精确文件项用于无法用前缀表达的散落文件，新增时必须注明原因。
 # skills/ 只含本项目自研的 fstdd-fin（上游代码在 upstream/，不该被改动），
 # 因此其 diff 同样属于正常开发活动。
-ALLOWED_DIFF_PREFIX = ("tools/", "docs/", "skills/")
+ALLOWED_DIFF_PREFIX = ("tools/", "docs/", "skills/",
+                       # 经验库：BUILD 的 C5 要求在实施期更新既有经验条目（occurrences / 证据回填），
+                       # 属有意变更；与 tools/ 同类，纳入允许前缀。
+                       ".fstdd/experiences/")
 ALLOWED_DIFF_EXACT = {
     "README.md",     # 仓库说明，随变更持续更新
     ".gitignore",    # 忽略规则会随开发活动调整（如新增产物目录），属有意变更
+    "NOTICE.md",     # 根级版权/来源声明，与 README.md 同类：随 release 的版本口径更新
 }
 
 

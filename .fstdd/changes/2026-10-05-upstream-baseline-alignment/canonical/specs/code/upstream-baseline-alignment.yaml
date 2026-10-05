@@ -1,0 +1,90 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-05-upstream-baseline-alignment
+# capability: upstream-baseline-alignment（上游基线快照 + 领先量清单 + 经验库对标，单一事实源）
+# 说明：本规格约束**新增产物** docs/UPSTREAM_BASELINE.md 的内容与出处唯一性；
+#       上游查询为一次性只读探针（经 ssh fstdd-hub），不新增常驻/定时任务。
+
+meta:
+  capability: "upstream-baseline-alignment"
+  change_id: "2026-10-05-upstream-baseline-alignment"
+  created: "2026-10-05T11:45:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    capability: "upstream-baseline-alignment"
+    description: |
+      仓库 SHALL 新增 `docs/UPSTREAM_BASELINE.md`，把上游基线快照固化为**可核验证据**：
+      观测时点（带时区）+ 观测时本仓 base git sha + 外部锚 E 的 tag / HEAD sha / pushed_at /
+      Releases 状态 + 其他通道排除结论；SHALL 使后续对标可直接引用而无需再次联网探针。
+      其中数值 SHALL 与实测一致。
+
+    scenarios:
+      - id: "SC-001"
+        confidence: high
+        evidence: "proposal.yaml what_changes C3 + success_criteria 第 2 条；design.md 决策 2"
+        given: "仓库当前无上游基线快照文档；每次「有没有新版本」都需重新联网探针"
+        when: "检查 `docs/UPSTREAM_BASELINE.md` 是否存在并读取其证据段"
+        then: "SHALL 存在该文件，且含观测时点（带时区的 observed_at）与观测时本仓 base git sha"
+        and:
+          - "SHALL 含外部锚 E 的 tag、master HEAD sha、pushed_at 三项"
+          - "SHALL 含 Releases 状态与分支状态（仅 master / 未归档）"
+          - "SHALL 含其他通道排除结论（Gitee / PyPI）"
+
+      - id: "SC-002"
+        confidence: high
+        evidence: "observed_at=2026-10-05T11:20:00+08:00 source=@1046f5ea 只读实测（经 ssh fstdd-hub）：tag=v3.0.5 / HEAD=b9a4af62… / pushed_at=2026-08-17T15:25:43Z / Releases=[] / 仅 master；Gitee 404；PyPI stdd=同名无关包、fstdd=404"
+        given: "上游基线探针已在观测时点完成（本机不可直连 github.com:443，经服务器出网）"
+        when: "把 `docs/UPSTREAM_BASELINE.md` 记录的快照数值与实测值逐一比对"
+        then: "SHALL 使 tag=v3.0.5、master HEAD sha=b9a4af62b5f4fd2747884c0a61febbc341792ac2、pushed_at=2026-08-17T15:25:43Z、Releases 为空 与实测一致"
+        and:
+          - "SHALL 记录观测通道（经 ssh fstdd-hub 只读查询）"
+          - "SHALL NOT 记录任何凭证、内网私密路径或用户数据"
+
+      - id: "SC-003"
+        confidence: high
+        evidence: "proposal.yaml what_changes C3；design.md 决策 1/2（K=3.1.0、R=3.3.4 领先于 E=v3.0.5）"
+        given: "本仓 vendored 内核 K=3.1.0 与发行版 R=3.3.4 均领先于上游最新发布 E=v3.0.5"
+        when: "检查 `docs/UPSTREAM_BASELINE.md` 是否含领先量清单"
+        then: "SHALL 含「本仓领先量清单」，逐项列出本仓相对外部锚 E 的增量"
+        and:
+          - "清单 SHALL 至少覆盖 vendored 内核轴（K）与发行版轴（R）两个维度"
+          - "清单中的版本数值 SHALL 与机器可读源一致"
+
+  - id: "REQ-002"
+    capability: "upstream-baseline-alignment"
+    description: |
+      `docs/UPSTREAM_BASELINE.md` SHALL 固化上游经验库 `leonai42/stdd-experiences` 的**只读**
+      对标结论：明确其**非**我方回传目标、给出「清单中我方 node 前缀条目数」的只读核对实测值，
+      并给出可借鉴增量。对标 SHALL NOT 修改、外发或接入回传链路。
+
+    scenarios:
+      - id: "SC-004"
+        confidence: high
+        evidence: "proposal.yaml what_changes C4 + success_criteria 第 4 条；README.md §6/§9（回传目标 = 2749817087qq/Fstdd-experiences）+ tools/share_experience.py DEFAULT_EXP_REPO"
+        given: "我方经验回传目标锁定为 2749817087qq/Fstdd-experiences（share_experience.py DEFAULT_EXP_REPO）"
+        when: "读取 `docs/UPSTREAM_BASELINE.md` 的经验库对标段"
+        then: "SHALL 明确 leonai42/stdd-experiences 非我方回传目标"
+        and:
+          - "SHALL 指明我方回传目标为 2749817087qq/Fstdd-experiences"
+          - "SHALL 记录该上游经验库的最近推送时点（观测值）"
+
+      - id: "SC-005"
+        confidence: high
+        evidence: "proposal.yaml success_criteria 第 4 条；design.md 决策 4"
+        given: "对标为只读核对（经 ssh fstdd-hub 拉取清单，不写入上游仓库）"
+        when: "检查对标段中的「我方 node 前缀条目数」"
+        then: "SHALL 给出该计数的只读核对实测值（含 0 也是有效实测值）"
+        and:
+          - "SHALL 写明计数口径（我方 node 前缀形如 FSTDD003 / FSTDD-003）"
+          - "SHALL 与观测时点绑定，标注为实测值而非估计"
+
+      - id: "SC-006"
+        confidence: high
+        evidence: "proposal.yaml risk_areas（UPSTREAM_BASELINE 与 NOTICE 重复维护之风险）+ design.md 决策 2/5"
+        given: "快照数字（sha / pushed_at / Releases）易变，多处分维护必然再漂移"
+        when: "扫描 NOTICE.md 与 README.md 是否复制了快照数字"
+        then: "SHALL 使 NOTICE.md 与 README.md 中不出现快照型的 sha / pushed_at 字面量"
+        and:
+          - "NOTICE.md / README.md 引用基线时 SHALL 以链接指向 docs/UPSTREAM_BASELINE.md"
+          - "快照数字 SHALL 仅存在于 docs/UPSTREAM_BASELINE.md 一处（单一事实源）"

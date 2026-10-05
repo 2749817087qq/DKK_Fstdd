@@ -7,14 +7,14 @@ description: |
   领域知识全部转化为流程中的强制规格项与验收项，而不是事后检查表。
   触发词：fstdd-fin、金融 fstdd、FinFSTDD、金融规驱、支付系统、银行集成、交易系统、撮合引擎、
   风控系统、反欺诈、KYC/AML、开放银行、金融系统研发、fintech 开发。
-stdd_version: "3.0.5-fin.2"
+stdd_version: "3.1.0"
 version: "1.0.0"
 agent_created: true
 license: |
   本文件为原创重构作品：流程框架、检查项组织方式、测试维度与失败模式均为原创撰写。
   参考来源已在 sources 中署名，本文件**不包含任何第三方 skill 的原文内容**。
 sources: |
-  - 方法论基底: FSTDD V3.0.5 (MIT) https://github.com/leonai42/stdd
+  - 方法论基底: FSTDD 内核 v3.1.0 (MIT；上游最新发布 v3.0.5) https://github.com/leonai42/stdd
   - 领域视角参考: fintech-engineer v1.0.3 (ClawHub 市场) — 仅参考其领域分类视角，
     已重新组织为自查问题，未复制原文表述；该 skill 本身无开源许可声明，故不转载其内容
   - 行情/投研取数协作: WorkBuddy 内置 wb-finance-skill（仅当需要市场数据时引用其规范）

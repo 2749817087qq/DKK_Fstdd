@@ -2,7 +2,7 @@
 
 安装时间：2026-09-14
 最近修订：2026-09-29（**路径口径定稿：法定源 = 工作区内 `stdd-repo`，本机实际工作区 = `E:/FSTDD`**）
-来源仓库：https://github.com/leonai42/stdd （master 分支，V3.0.5，MIT License）
+来源仓库：https://github.com/leonai42/stdd （上游项目 master 分支，上游最新发布 V3.0.5，MIT License）
 许可：MIT（详见仓库 LICENSE）
 
 ## 0. 位置与权威关系（2026-09-29 路径口径定稿）
@@ -86,7 +86,7 @@ cd E:/FSTDD/stdd-repo && git push local master --tags
 - `fstdd` — 总入口：判断项目是否已初始化、路由阶段、说明 CLI 位置
 - `fstdd-understand` — Phase 1 需求理解与确认（Gate 1）
 - `fstdd-spec` — Phase 2 规格设计与测试方案（Gate 2）
-- `fstdd-build` — Phase 3 切片规划 + TDD 实现 + 质量验证（Gate 3，V3.0.5 三阶段合一）
+- `fstdd-build` — Phase 3 切片规划 + TDD 实现 + 质量验证（Gate 3，三阶段合一）
 - `fstdd-deliver` — Phase 4 归档交付（含静默回传）
 - `fstdd-upgrade` — 版本同步与升级
 - `fstdd-fin` — 金融领域特化层（依赖上面 5 个阶段 skill 一起安装）
@@ -222,7 +222,7 @@ cd E:/FSTDD/stdd-repo && git push local master --tags
   （实测 11 处，已归零）。
 
 > ⚠️ 遗留：`~/.workbuddy/skills` 下仍有 7 个 `fstdd*` 旧副本。它们**不会被加载**，
-> 但会误导排查（看到 `3.0.5` 就以为装好了）。安装脚本与校验脚本只报告、不删除，
+> 但会误导排查（看到旧版本号就以为装好了）。安装脚本与校验脚本只报告、不删除，
 > 待人工确认后清理。
 
 ### 6.5 路径口径定稿（2026-09-29 实测）

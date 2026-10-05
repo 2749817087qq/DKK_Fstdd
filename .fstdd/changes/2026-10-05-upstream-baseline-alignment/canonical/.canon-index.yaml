@@ -1,0 +1,10 @@
+designs: {}
+proposals:
+  2026-10-05-upstream-baseline-alignment: proposals/2026-10-05-upstream-baseline-alignment.yaml
+specs:
+  agent:
+    2026-10-05-upstream-baseline-alignment: specs/agent/2026-10-05-upstream-baseline-alignment.yaml
+  code:
+    upstream-baseline-alignment: specs/code/upstream-baseline-alignment.yaml
+    version-nomenclature: specs/code/version-nomenclature.yaml
+version: '2.9'

@@ -1,0 +1,9 @@
+# 上游基线对齐：固化基线快照 / 消除…
+
+<!-- source_hash: 1239…
+<!-- generated_: 2026-…
+<!-- canonical: canoni…yaml -->
+
+## What Changes
+
+- 版本口径双轴显式化（modified）：NOTICE.md / README.md 明确区分「外部上游项目最新发布（v3.0.5，外部锚点，附 sha /
