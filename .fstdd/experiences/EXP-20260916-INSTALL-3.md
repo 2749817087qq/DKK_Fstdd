@@ -1,13 +1,25 @@
 <!-- fstdd-inbox
 experience_id: EXP-20260916-INSTALL-3
 author: anonymous
-received_at: 2026-10-03T11:57:07.032388+00:00
+received_at: 2026-10-04T10:15:02.623611+00:00
 remote_addr: 172.18.0.8
+node_id: FSTDD006
+-->
+
+---
+exported_at: 2026-10-04
+sanitized: true
+---
+<!-- fstdd-inbox
+experience_id: EXP-20260916-INSTALL-3
+author: anonymous
+received_at: 2026-09-26T08:30:08.002068+00:00
+remote_addr: <IP>
 node_id: FSTDD001
 -->
 
 ---
-exported_at: 2026-10-03
+exported_at: 2026-09-26
 sanitized: true
 ---
 <!-- fstdd-inbox
