@@ -13,6 +13,7 @@ proposals:
   2026-10-03-share-publish-sanitize: proposals/2026-10-03-share-publish-sanitize.yaml
   2026-10-04-baseline-failures-zero: proposals/2026-10-04-baseline-failures-zero.yaml
   2026-10-04-github-mirror-secret-remediation: proposals/2026-10-04-github-mirror-secret-remediation.yaml
+  2026-10-05-upstream-baseline-alignment: proposals/2026-10-05-upstream-baseline-alignment.yaml
 specs:
   agent:
     2026-09-19-notices-authenticity-gate: specs/agent/2026-09-19-notices-authenticity-gate.yaml
@@ -23,6 +24,7 @@ specs:
     2026-10-03-share-publish-sanitize: specs/agent/2026-10-03-share-publish-sanitize.yaml
     2026-10-04-baseline-failures-zero: specs/agent/2026-10-04-baseline-failures-zero.yaml
     2026-10-04-github-mirror-secret-remediation: specs/agent/2026-10-04-github-mirror-secret-remediation.yaml
+    2026-10-05-upstream-baseline-alignment: specs/agent/2026-10-05-upstream-baseline-alignment.yaml
     inbox-api-only-write: specs/agent/inbox-api-only-write.yaml
     inbox-deploy: specs/agent/inbox-deploy.yaml
   code:
@@ -42,5 +44,7 @@ specs:
     notice-authenticity-verification: specs/code/notice-authenticity-verification.yaml
     notice-execution-pipeline: specs/code/notice-execution-pipeline.yaml
     scan-coverage: specs/code/scan-coverage.yaml
+    upstream-baseline-alignment: specs/code/upstream-baseline-alignment.yaml
+    version-nomenclature: specs/code/version-nomenclature.yaml
     yagni-ladder-gate: specs/code/yagni-ladder-gate.yaml
 version: '2.9'

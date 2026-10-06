@@ -1,6 +1,6 @@
 # 上游基线对齐：固化基线快照 / 消除版本口径漂移 / 经验库对标
 
-<!-- source_hash: 123947dcc4ca2b5b -->
+<!-- source_hash: b3badcb8dd9a928b -->
 <!-- generated_at: 2026-10-05T03:25:03+00:00 -->
 <!-- canonical: canonical/proposals/2026-10-05-upstream-baseline-alignment.yaml -->
 

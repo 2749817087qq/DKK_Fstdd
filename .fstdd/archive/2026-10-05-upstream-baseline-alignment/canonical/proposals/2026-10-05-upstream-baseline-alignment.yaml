@@ -1,0 +1,148 @@
+# 2026-10-05-upstream-baseline-alignment.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `fstdd canon generate` 生成。
+
+meta:
+  change_id: "2026-10-05-upstream-baseline-alignment"
+  title: "上游基线对齐：固化基线快照 / 消除版本口径漂移 / 经验库对标"
+  created: "2026-10-05T03:18:06+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    本仓库自我定位为「上游 leonai42/stdd（MIT）的 WorkBuddy 适配层与金融扩展」，
+    但「上游版本」这一口径在本仓**自相矛盾**，且缺少可核验的基线快照证据：
+    1) 对外声明把两个不同对象混为一谈 —— ①外部上游项目的**最新发布**（= v3.0.5）；
+       ②本仓 vendored 内核 `upstream/` 的**实际版本**（= 3.1.0，含本仓衍生改动）。
+       NOTICE.md §1 表格写「版本 V3.0.5（master 分支）」，而同一节注记又写
+       「上游版本号见 upstream/pyproject.toml（3.0.5）」—— 该文件现为 3.1.0，
+       同一节内互相打架，读者无法判定哪个是真。
+    2) 适配层脚本 tools/install_workbuddy_skills.py 把 `version: "3.0.5"` /
+       `stdd_version: "3.0.5"` 与来源横幅「来自开源项目 FSTDD … V3.0.5」**硬编码**，
+       而同一脚本已能读到本仓真实发行版号（REPO_VERSION = 3.3.4）——
+       生成的 skill 因此同时携带两个互相矛盾的版本号。
+    3) 缺少固化的上游基线快照：每次「有没有新版本」都要重新联网探针，且无从判断
+       「基线是否已变」。唯一仍在活跃的上游资产 leonai42/stdd-experiences 也从未被
+       纳入对标栅格。
+    结果：任何外部读者或协作节点按 NOTICE / README / skill 判断「本仓处于哪个版本」，
+    都会得到错误或矛盾答案。
+  motivation: |
+    D哥 2026-10-05 指令：对上游做一次基线对标（「上游早就有新版本了吧，我们和新版本
+    做个对标比较」）。实测上游自 2026-08-17 起未再发布新版本（见 evidence），
+    故本次价值不在「追版」，而在于三件事：
+    ① 把「上游基线快照」固化为可核验证据，避免日后反复探针；
+    ② 消除本仓版本口径漂移，让对外声明自洽；
+    ③ 把唯一仍在活跃的上游资产 leonai42/stdd-experiences 纳入对标栅格，
+       确认我方经验回传链路的边界（我方回传是否、以及应当流向何处）。
+  evidence:
+    observed_at: "2026-10-05T11:20:00+08:00"
+    observed_base_git_sha: "1046f5eaffa4f4c80b533ca2d24700fd7b0a46f2"
+    details: |
+      1) 上游基线探针（本机不可直连 github.com:443，经服务器 ssh fstdd-hub 出网）：
+         - leonai42/stdd 最新 tag = v3.0.5；master HEAD sha =
+           b9a4af62b5f4fd2747884c0a61febbc341792ac2（与 v3.0.5 tag 同一提交）；
+           pushed_at = 2026-08-17T15:25:43Z；Releases = 空数组；仅 master 一个分支；
+           11★ / 3 fork；未归档。
+         - 其他通道排除：Gitee leonai42/stdd = 404；PyPI `stdd` = 200 但为 LiiraGH
+           的 PyQt6 模板包（同名无关）；PyPI `fstdd` = 404。
+         - 唯一活跃上游资产：leonai42/stdd-experiences，pushed_at =
+           2026-10-05T00:31:25Z（当天仍在推）。
+      2) 本仓版本口径实测：
+         - upstream/pyproject.toml version = 3.1.0；upstream/CHANGELOG.md 有
+           V3.1.0（2026-09-26，change 隔离形态）条目。
+         - .fstdd/version.yaml：fstdd_version = 3.3.4，upstream_version = 3.1.0；
+           .fstdd/config.d/project.yaml stdd_version = 3.3.4。
+         - 漂移点定位（实测行号）：NOTICE.md:15「V3.0.5（master 分支）」、
+           NOTICE.md:33「upstream/pyproject.toml（3.0.5）」与实际 3.1.0 矛盾、
+           README.md:5 徽章（改名前标识 + v3.0.5）、skills/fstdd-fin/SKILL.md:10
+           `stdd_version: "3.0.5-fin.2"` 与 :17 sources 行、
+           docs/WORKBUDDY_INSTALL_NOTES.md:5 与 :89、
+           tools/install_workbuddy_skills.py:304-305（version / stdd_version）
+           与 :377（来源横幅）。
+      3) 经验库对标（本仓现状，需以本次实测固定）：
+         - README.md §6 明确「上游 experience share 子命令在本仓库已永久移除」，
+           回传目标锁定 2749817087qq/Fstdd-experiences
+           （tools/share_experience.py DEFAULT_EXP_REPO）。
+         - 故 leonai42/stdd-experiences 并非我方回传目标；需以只读清单核对
+           「其中是否含我方 node 前缀条目（FSTDD003 / FSTDD-003 等）」。
+
+what_changes:
+  - description: "版本口径双轴显式化（modified）：NOTICE.md / README.md 明确区分「外部上游项目最新发布（v3.0.5，外部锚点，附 sha / pushed_at）」与「本仓 vendored 内核版本（3.1.0）」两个口径，消除 NOTICE §1 内部自相矛盾的版本声明"
+    type: modified
+  - description: "适配层硬编码消除（modified）：tools/install_workbuddy_skills.py 的 generated frontmatter `version` / `stdd_version` 与来源横幅不再写死 3.0.5，改为由既有 REPO_VERSION + vendored 内核版本派生，使生成 skill 的版本号自洽"
+    type: modified
+  - description: "上游基线快照证据固化（new）：新增 docs/UPSTREAM_BASELINE.md，固化观测时点 / tag / HEAD sha / pushed_at / Releases 空 / 通道排除结论 + 本仓领先量清单，供后续对标直接引用，免重复联网探针"
+    type: new
+  - description: "上游经验库对标栅格（new）：记录 leonai42/stdd-experiences 的只读对标结论 —— 我方回传边界（非回传目标）、清单中是否含我方 node 条目（实测值）、可借鉴增量"
+    type: new
+  - description: "余留口径对齐（modified）：skills/fstdd-fin/SKILL.md 与 docs/WORKBUDDY_INSTALL_NOTES.md 的上游版本表述与上述双轴口径一致"
+    type: modified
+
+capabilities:
+  new:
+    - name: "upstream-baseline-alignment"
+      description: "上游基线对标产物：可核验的基线快照证据（tag / HEAD sha / pushed_at / Releases 空 / 通道排除）+ 本仓领先量清单 + 经验回传边界与对标结论，单一出处、免重复探针"
+  modified:
+    - name: "version-nomenclature"
+      description: "版本口径双轴分离 —— 「外部上游发布」与「本仓 vendored 内核」分别声明、互不冒充；NOTICE / README / fstdd-fin / 安装文档 / 安装脚本同源自洽，不再硬编码 3.0.5"
+
+impact:
+  code:
+    - "tools/install_workbuddy_skills.py —— frontmatter 版本字段与来源横幅去硬编码（唯一代码面改动）"
+  config:
+    - "无新增/变更配置项；上游基线快照中的数字集中于 docs/UPSTREAM_BASELINE.md 单一事实源"
+  infrastructure:
+    - "无基础设施改动；上游查询为一次性只读探针（经 ssh fstdd-hub），不新增常驻/定时任务"
+
+constraints:
+  - "只改「活的」声明面（NOTICE.md、README.md、skills/fstdd-fin/SKILL.md、docs/WORKBUDDY_INSTALL_NOTES.md、tools/install_workbuddy_skills.py）；历史/临时区（.fstdd/archive/**、skills-archive/**、_scratch/**、artifacts/**、.fstdd/_notices/**）不得改动 —— 属历史证据或非发布物"
+  - "upstream/ 内描述**上游自身** V3.0.5 的上游自有文档（upstream/README.md、upstream/README_EN.md、upstream/FSTDD.md、upstream/EXTENDING.md、upstream/V3.0_SLIM_PLAN.md、upstream/WORKBUDDY_INSTALL_NOTES.md）保持原样（MIT 署名忠于事实），不属本次漂移"
+  - "本机不可直连 github.com:443；一切上游查询须经服务器 ssh fstdd-hub（见 docs/DISTRIBUTED_ACCESS.md）"
+  - "改动后四自检须全绿：verify_rename 8/8（ALLOWED_OLD_MENTIONS 中的 `STDD V3.0.5` 不因本次改动作废）、verify_eol 7/7、verify_skill_standards 7/7、verify_workbuddy_skills PASS"
+  - "不引入新的第三方数据外发；不触碰经验回传链路（tools/share_experience.py）的行为与目标"
+
+stakeholders:
+  - "D哥（决策与验收）"
+  - "K（归口端；上游基线查询经服务器 fstdd-hub）"
+  - "FSTDD001–006（协作节点：对外版本口径以本次修正后为准）"
+
+risk_areas:
+  - capability: "version-nomenclature"
+    risk: "误把 upstream/ 内描述「上游自身」的 V3.0.5 当作漂移一起改，破坏 MIT 署名忠于事实并触发 verify_rename 报警"
+    mitigation: "逐处判定「对象是上游项目本身 vs 本仓 vendored 内核」；改动前先跑 verify_rename 定向核对 8/8"
+  - capability: "version-nomenclature"
+    risk: "修版本号时只改一处，留下新的自相矛盾"
+    mitigation: "成功标准要求「活体声明面零矛盾」并以定向断言核验（而非人眼）"
+  - capability: "upstream-baseline-alignment"
+    risk: "经验库对标需联网拉取，受本机断网限制"
+    mitigation: "经 fstdd-hub 只读查询；只读、不外发、不写上游仓库"
+  - capability: "upstream-baseline-alignment"
+    risk: "新增 docs/UPSTREAM_BASELINE.md 与 NOTICE §1 重复维护，未来再度漂移"
+    mitigation: "单一事实源：数字只写在 UPSTREAM_BASELINE.md，NOTICE 只链接引用不复制"
+
+non_goals:
+  - "不追版：上游自 2026-08-17 无新发布，本次不含「升级到新上游版本」的代码迁移"
+  - "不改 upstream/ 内核代码与其版本号（vendored 内核 3.1.0 维持）"
+  - "不改历史归档（.fstdd/archive/**、skills-archive/**）与非发布物（_scratch/**、artifacts/**）"
+  - "不改经验回传链路的实现（tools/share_experience.py 的目标 / 脱敏 / 通道）"
+  - "不新增联网自动化或定时探针 —— 本次只固化一次性基线快照证据"
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L1
+  reference_changes: []
+  anchor_implementations: []
+
+success_criteria:
+  - "全仓**活体声明面**（NOTICE.md、README.md、skills/fstdd-fin/SKILL.md、docs/WORKBUDDY_INSTALL_NOTES.md、tools/install_workbuddy_skills.py）不再把本仓 vendored 内核版本写作 3.0.5；NOTICE §1 内不再存在互相矛盾的版本声明"
+  - "上游基线快照落盘为可核验证据（tag=v3.0.5 / HEAD sha=b9a4af62b5f4fd2747884c0a61febbc341792ac2 / pushed_at=2026-08-17T15:25:43Z / Releases 空 / 其他通道排除），后续对标可直接引用，无需再次联网探针"
+  - "生成 skill frontmatter 的 `version` 与 `stdd_version` 不再硬编码 3.0.5，与安装脚本可读到的 REPO_VERSION / vendored 内核版本自洽；重跑 tools/install_workbuddy_skills.py + tools/verify_workbuddy_skills.py 输出 PASS"
+  - "经验库对标结论落盘：明确 leonai42/stdd-experiences 非我方回传目标，并给出「清单中我方 node 前缀条目数」的只读核对实测值"
+  - "四自检脚本全绿：verify_rename 8/8、verify_eol 7/7、verify_skill_standards 7/7、verify_workbuddy_skills PASS"
+  - "全量 pytest upstream/tests 0 failed"

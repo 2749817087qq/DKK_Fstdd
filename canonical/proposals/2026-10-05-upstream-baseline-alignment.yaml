@@ -54,7 +54,7 @@ why:
            .fstdd/config.d/project.yaml stdd_version = 3.3.4。
          - 漂移点定位（实测行号）：NOTICE.md:15「V3.0.5（master 分支）」、
            NOTICE.md:33「upstream/pyproject.toml（3.0.5）」与实际 3.1.0 矛盾、
-           README.md:5 徽章 `…stdd v3.0.5`、skills/fstdd-fin/SKILL.md:10
+           README.md:5 徽章（改名前标识 + v3.0.5）、skills/fstdd-fin/SKILL.md:10
            `stdd_version: "3.0.5-fin.2"` 与 :17 sources 行、
            docs/WORKBUDDY_INSTALL_NOTES.md:5 与 :89、
            tools/install_workbuddy_skills.py:304-305（version / stdd_version）

@@ -33,7 +33,7 @@ requirements:
 
       - id: "SC-002"
         confidence: high
-        evidence: "observed_at=2026-10-05T11:20:00+08:00 source=@1046f5ea 只读实测（经 ssh fstdd-hub）：tag=v3.0.5 / HEAD=b9a4af62… / pushed_at=2026-08-17T15:25:43Z / Releases=[] / 仅 master；Gitee 404；PyPI stdd=同名无关包、fstdd=404"
+        evidence: "observed_at=2026-10-05T11:20:00+08:00 source=@1046f5ea 只读实测（经 ssh fstdd-hub）：tag=v3.0.5 / HEAD=b9a4af62… / pushed_at=2026-08-17T15:25:43Z / Releases=[] / 仅 master；Gitee 404；PyPI 存在同名无关包、fstdd=404"
         given: "上游基线探针已在观测时点完成（本机不可直连 github.com:443，经服务器出网）"
         when: "把 `docs/UPSTREAM_BASELINE.md` 记录的快照数值与实测值逐一比对"
         then: "SHALL 使 tag=v3.0.5、master HEAD sha=b9a4af62b5f4fd2747884c0a61febbc341792ac2、pushed_at=2026-08-17T15:25:43Z、Releases 为空 与实测一致"

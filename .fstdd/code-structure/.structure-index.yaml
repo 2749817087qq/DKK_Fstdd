@@ -1,7 +1,7 @@
 meta:
-  last_updated: '2026-10-04T04:01:25+00:00'
+  last_updated: '2026-10-06T12:26:44+00:00'
   modules: {}
-  total_changes: 16
+  total_changes: 18
 modules:
   caveman_summary.txt:
     changes:
@@ -11,6 +11,8 @@ modules:
     - 2026-09-21-guard-hook-input-robustness
     - 2026-10-04-baseline-failures-zero
     - 2026-10-04-github-mirror-secret-remediation
+    - 2026-10-05-upstream-baseline-alignment
+    - 2026-10-05-upstream-baseline-alignment
   tools/test_verify_notices.py:
     changes:
     - 2026-09-19-notices-authenticity-gate

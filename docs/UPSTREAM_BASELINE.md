@@ -46,7 +46,7 @@
 | 轴 | 版本 | 机器可读事实源 | 相对 E 的增量 |
 |----|------|----------------|---------------|
 | **K** vendored 内核 | `3.1.0` | `.fstdd/version.yaml: upstream_version`；`upstream/pyproject.toml: version` | 内核含本仓衍生改动，**领先**上游最新发布；`upstream/CHANGELOG.md` 有 V3.1.0（2026-09-26）条目 |
-| **R** 本仓发行版 | `3.3.4` | `.fstdd/config.d/project.yaml: stdd_version`；`.fstdd/version.yaml: fstdd_version` | 本仓发布号，随本仓 release 漂移（独立于 E） |
+| **R** 本仓发行版 | `3.3.5` | `.fstdd/config.d/project.yaml: stdd_version`；`.fstdd/version.yaml: fstdd_version` | 本仓发布号，随本仓 release 漂移（独立于 E） |
 
 > 口径提醒：`upstream/` **不是**逐字节冻结的上游快照 —— 它被本仓按 change 流程持续修改并**在本仓内单独编版本**
 > （K），因此 K ≠ E。任何把 K 或 R 写作 `3.0.5` 的声明都是错的。

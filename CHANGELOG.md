@@ -10,6 +10,26 @@
 
 ## [Unreleased]
 
+## [3.3.5] — 2026-10-06
+
+**主题**：**上游基线对齐（版本三轴 E/K/R 显式化 + 版本派生去硬编码）** —— 把「上游最新发布 / 本仓 vendored 内核 / 本仓发行版」三个版本轴从混用状态收敛为显式命名，并把「上游版本号被误当作本仓版本」这一歧义从 4 处活体声明面与 1 处生成脚本里一次性消除。
+**规模**：交付 1 change（`2026-10-05-upstream-baseline-alignment`，归档 + 根 canonical 并入 4 文件 + `canon verify` 2/2）；新增测试 **21 函数**（TC-VNOM-001..008 + TC-UBL-001..006）；全量 `pytest upstream/tests` **`0 failed / 906 passed / 54 skipped`**；四自检脚本全绿（rename 8/8、eol 7/7、skill_standards 7/7、workbuddy_skills PASS）。
+
+### 新功能（BUILD）
+- **`docs/UPSTREAM_BASELINE.md`（新增）**：上游基线快照的**单一事实源** —— 记录 `observed_at` + `observed_base_git_sha` + E 轴全套（tag / HEAD sha / `pushed_at` / Releases / 分支）+ 通道排除结论（Gitee 与 PyPI 均不可作为基线来源）+ 本仓 K/R 领先量清单 + 上游经验库只读对标实测值。`NOTICE.md` / `README.md` 只**链接**本文件、**不复制**易变数字，从根上消除多处分维护再次漂移。
+- **版本三轴口径显式化（E / K / R）**：`NOTICE.md`、`README.md`、`skills/fstdd-fin/SKILL.md`、`docs/WORKBUDDY_INSTALL_NOTES.md` 四处活体声明面改写 —— **E** = 外部上游锚（`v3.0.5`，标注为「上游最新发布」）、**K** = 本仓 vendored 内核（`3.1.0`）、**R** = 本仓发行版。使用者不再把上游的 `3.0.5` 误读成本仓版本。
+- **`tools/install_workbuddy_skills.py` 版本字段去硬编码**：新增 `_vendored_kernel_version()`（读 `.fstdd/version.yaml: upstream_version`，读不到回落 `unknown`）；生成 skill 的 frontmatter `version` ← **R**（`repo_stdd_version`）、`stdd_version` ← **K**。此前 `stdd_version` 写死 `3.0.5-fin.2`，装出来的 skill 版本号是错的 —— 现在随仓库版本自动派生。
+
+### 测试
+- 新增 `tests/test_version_nomenclature.py`（TC-VNOM-001..005，活体声明面版本轴）、`tests/test_install_version_derivation.py`（TC-VNOM-006..008，适配层派生端到端）、`tests/test_upstream_baseline.py`（TC-UBL-001..006，基线快照静态一致性）；三文件定向 **21 passed / 0 failed**。
+
+### 变更
+- `tools/verify_eol.py`：`ALLOWED_DIFF_EXACT` 增补 `NOTICE.md`（带原因注释）。根级 `NOTICE.md` 在必改清单内但既不属允许前缀、也非既有精确项，其 diff 会被行尾治理判为「非预期变更」而**假失败**；本次仅扩展脚本自带的允许清单扩展位，不改任何 TC 判据。
+
+### 已知问题（非本 change 引入，逐项记录）
+- 仓库根 `tests/test_finance_content.py::test_L1_11` 硬编码 `fstdd_version == "3.3.0"`（自 3.3.1 起已过期）；`tests/test_multi_platform.py` 两例失败。二者**均不在发布门禁扫描面**（门禁只跑 `upstream/tests`），建议另立 change 校正。
+- `fstdd ci check-failures` 的「TC-ID 重复」与「TC 覆盖 0/N」为**工具口径问题**（按全文出现次数判定 / 硬编码扫描 `<root>/tests` 而本仓在 `upstream/tests`）。
+
 ## [3.3.4] — 2026-10-04
 
 **主题**：**inbox 写入面收口（鉴权三态 + 部署加固）** —— 把只读内网 inbox 端点的写入通道从「无鉴权 / 无边界」收敛为「token 校验 + 源 IP 灰度白名单 + 未配即开放显式横幅」三态，并把生产部署脚本的权限与可观测性收口到最小面。

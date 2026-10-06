@@ -1,10 +1,33 @@
 # FSTDD 本地版本声明（F 仓 / stdd-repo）
 # 发行版口径：fstdd_version（须 = .fstdd/config.d/project.yaml 的 stdd_version）
 # vendored 上游内核口径：upstream_version（= upstream/ 内核，见 upstream/CHANGELOG.md 与 upstream/pyproject.toml）
-fstdd_version: "3.3.4"
+fstdd_version: "3.3.5"
 upstream_version: "3.1.0"
-released_at: "2026-10-04T22:30:00+08:00"
+released_at: "2026-10-06T21:00:00+08:00"
 changelog: |
+  v3.3.5 — 上游基线对齐版（版本三轴 E/K/R 显式化 + 版本派生去硬编码）
+
+  交付（1 change：2026-10-05-upstream-baseline-alignment，归档 + 根 canonical 并入 4 文件 + canon verify 2/2）：
+  - 新增 docs/UPSTREAM_BASELINE.md：上游基线快照的**单一事实源**（E 轴 tag/HEAD/pushed_at/Releases/分支 +
+    通道排除 Gitee/PyPI + 本仓 K/R 领先量 + 上游经验库只读对标实测值）。NOTICE/README 只链接、不复制易变数字。
+  - 版本三轴口径显式化（E 外部上游锚 / K vendored 内核 / R 本仓发行版）：
+    NOTICE.md、README.md、skills/fstdd-fin/SKILL.md、docs/WORKBUDDY_INSTALL_NOTES.md 四处活体声明面改写，
+    消除「上游版本号 3.0.5 被误当作本仓版本」的歧义。
+  - tools/install_workbuddy_skills.py：新增 _vendored_kernel_version()（读 .fstdd/version.yaml: upstream_version，
+    读不到回落 unknown）；生成 frontmatter 的 version ← R、stdd_version ← K，**去硬编码**（此前写死 3.0.5）。
+  - 新增测试 tests/test_version_nomenclature.py（TC-VNOM-001..005）、
+    tests/test_install_version_derivation.py（TC-VNOM-006..008）、tests/test_upstream_baseline.py（TC-UBL-001..006）。
+  - tools/verify_eol.py：ALLOWED_DIFF_EXACT 增补 NOTICE.md（门禁相容性必要改动，带原因注释）。
+
+  质量：全量 pytest upstream/tests 0 failed / 906 passed / 54 skipped；
+  四自检脚本全绿（rename 8/8、eol 7/7、skill_standards 7/7、workbuddy_skills PASS）。
+
+  已知问题（非本 change 引入）：
+  - 仓库根 tests/test_finance_content.py::test_L1_11 硬编码 fstdd_version == "3.3.0"（自 3.3.1 起已过期）；
+    根 tests/test_multi_platform.py 两例失败。二者均不在发布门禁扫描面（门禁只跑 upstream/tests），
+    建议另立 change 校正。
+  - fstdd ci check-failures 的「TC-ID 重复 / TC 覆盖 0/N」为工具口径问题（硬编码扫描 <root>/tests 而本仓在 upstream/tests）。
+
   v3.3.4 — inbox 写入面收口版（鉴权三态 + 部署加固）
 
   交付（1 change：2026-09-18-inbox-api-only-write，归档 + 根 canonical 并入 5 文件 + canon verify 2/2 + structure merge）：
