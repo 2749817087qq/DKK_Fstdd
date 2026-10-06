@@ -10,6 +10,49 @@
 
 ## [Unreleased]
 
+## [3.3.6] — 2026-10-07
+
+**主题**：**遗留债务清理（门禁可信度）** —— 把「绿灯到底可不可信」这件事从「靠人记得在特定环境跑」收敛为「机器可验证的契约」。修的是**门禁自身**：测试套件不再随运行环境的 locale / 控制台代码页变红或变绿；发布清单不再声称「仓库根没有 `tests/`」；版本断言不再硬编码过期版本号；非发布物 `_scratch/`（20 MB）退出 git 索引。
+**规模**：交付 1 change（`2026-10-06-legacy-debt-cleanup`，归档 + 根 canonical 并入 6 文件 + `canon verify` 2/2 + `structure merge`）；新增测试 **27 函数 / 18 TC**（4 个新文件）；根 `tests/` **双环境逐字一致**（`94 passed / 4 skipped / 0 failed`）；全量 `pytest upstream/tests` **`953 passed / 5 skipped / 2 failed`**（1 项提交前预期、1 项 flaky）；四自检脚本全绿（rename 8/8、eol 7/7、skill_standards 7/7、workbuddy_skills PASS）；设计偏离 8 条。
+
+### 修复
+
+- **测试套件不再依赖运行环境编码（`test-suite-portability`）**：此前用例普遍以 `subprocess(..., text=True)` 调用而**不指定 `encoding=`**，解码走 `locale.getpreferredencoding()` —— 在中文 Windows 上会**双向**出错：子进程输出 UTF-8 而父进程按 GBK 解（`UnicodeDecodeError: 'gbk'`），或子进程输出 GBK 而 `PYTHONUTF8=1` 令父按 UTF-8 解。本次为 **36 处** text-mode 调用补 `encoding="utf-8", errors="replace"`（16 文件），另补 **19 处**文本 I/O（`Path.read_text/write_text/open`）的 `encoding="utf-8"`（7 文件）。
+  **帮助**：门禁结果不再取决于「你在哪台机器、哪个代码页下跑的」—— 换环境不再出现「本地绿、CI 红」或反之。`errors="replace"` 让解码失败以 U+FFFD **可观测**呈现，而不是静默丢字。
+- **Windows 下 PS 5.1 的输出编码（同上）**：`upstream/tests/test_install_scripts.py` 新增 `_force_utf8_output()`，把调用改写为 `-Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & '<script>' <args>"`。
+  **帮助**：PS 5.1 在 stdout 被重定向时按 `[Console]::OutputEncoding`（中文主机 = GBK/CP936）编码，此前中文输出被解成 U+FFFD 而断言失败；该失败**只在控制台非 UTF-8 时出现**，长期潜伏。修的是**编码端**，而非只在自己这侧声明 `encoding=`。
+- **发布清单失真（`release-tooling-accuracy`）**：`.fstdd/standards/release-and-docs.md` 第 29 行原写「注意测试在 `upstream/tests/`，仓库根**没有** `tests/`」——实际仓库根 `tests/` 存在且当时已有 **3 例预存失败**；同行还写着会漂移的「851 用例」（实测 `upstream/tests` 已收集 **960** 用例），且给出的全量命令只跑 `upstream/tests`。本次一行纠错：消除失真表述 + 去掉用例数 + 命令改为同时覆盖两处测试目录。
+  **帮助**：照清单执行发布的人不会再漏跑根 `tests/`（那正是 3 例预存失败长期无人发现的原因）。
+- **版本断言去硬编码（同上）**：`tests/test_finance_content.py::test_L1_11` 原为 `assert m.group(1) == "3.3.0"`（自 3.3.1 起已过期 **5 个版本**）；`tests/test_install_smoke.py::test_L0_01` 原断言字面量 tag `fstdd-v3.1.1`。二者改为由 `.fstdd/version.yaml` 派生（`test_L1_11` 并与 `.fstdd/config.d/project.yaml` 的 `stdd_version` 比对）。
+  **帮助**：版本一致性从「人记得改」变成「自动锚定」。第二处缺陷此前**被 `git fetch` 失败 → `skip` 长期掩盖**，一旦镜像通道恢复即会转红 —— 属定时炸弹，本次一并拆除，并补宿主隔离用例覆盖「tag 一致 / 不一致」两个分支。
+- **canonical 哈希欠账（`canonical-hash-integrity`）**：归档 `2026-09-18-inbox-api-only-write` 的 `proposal.md` `source_hash` 同步为 `29c0012fe4d0b612`。
+  **帮助**：`canon verify` 从 1/2 恢复 2/2；全仓 **15 条** proposal 现全部 2/2，双轨一致性检查不再有噪声。
+- **非发布物误入库（`repo-hygiene`）**：`git rm -r --cached _scratch/`（**27 条目**，含 2 个 mode 160000 的 gitlink）+ `.gitignore` 增 `_scratch/`。
+  **帮助**：**20 MB**（含 13 MB `red_pytest.log`）不再进入后续提交；**仅动索引**，磁盘 12 个顶层实体零损失（25 个文件 md5 逐字节一致）。
+
+### 变更
+
+- `.gitignore`：新增 `_scratch/` 规则（带原因注释）。注意 gitignore **不作用于已跟踪文件** —— 已跟踪者须配合 `git rm --cached`。
+- `.fstdd/standards/release-and-docs.md`：仅第 29 行一处改动，其余条目**逐字不变**（由 `TC-RTA-001` 系列断言锚定）。
+- `tools/fstdd003_daily_share.py`：**回退**一处误加参数（详见「已知问题」）。
+
+### 测试
+
+- 新增 `tests/test_subprocess_encoding_policy.py`（6 函数）：AST 审计 —— text-mode `subprocess` 必须声明 `encoding=`；`errors=` 不得为 `ignore`；二进制模式 `open` 不得带 `encoding=`；**扫描器自检**（识别 `import subprocess as X` 等别名写法）。
+- 新增 `tests/test_canon_hash_integrity.py`（3 函数）：调 CLI 断言归档条目与全仓 proposal 的 `canon verify` 2/2。
+- 新增 `tests/test_release_manifest_accuracy.py`（10 函数）：清单失真表述模式扫描 + 版本断言动态性 + 发布 tag 字面量扫描 + **检测器自检**（把「漏判」与「误报」两个反例固化为断言）。
+- 新增 `tests/test_repo_hygiene_scratch.py`（8 函数）：`_scratch/` 索引为空 + gitignore 生效 + 磁盘实体零损失（无 `_scratch/` 的 fresh clone 上自动 skip 磁盘断言）。
+- 全量：根 `tests/` 在**权威 UTF-8** 与**非 UTF-8（GBK）**两环境下结果**逐字一致**（本 change 的核心验收证据）。
+
+### 已知问题（非本 change 引入，逐项记录）
+
+- `.fstdd/standards/release-and-docs.md` **第 16 行**版本号仍写 `3.1.0`（实际已 `3.3.6`）。**刻意未改** —— 改它会违反本 change 自身的 `SC-001`「除该处失真表述外，清单其余条目 SHALL 逐字保持不变」。已记为 `ADJ-005`，建议另立 change 改为**引用单一事实源**而非写死版本号。
+- `fstdd ci check-failures` 的「**(d) 重复 TC-ID**」为**工具与约定错配**：工具只读 `test-plan.md` 且要求每个 TC-ID 恰好出现一次，而项目约定在「案例标题 + 优先顺序 + 回归矩阵 + 证据表」多处引用 —— 实测 `.fstdd/` 下 **38 份 test-plan 有 26 份重复**。其 TC 覆盖检查硬编码扫描 `<root>/tests`，**未覆盖 `upstream/tests`（960 用例）**。
+- `fstdd experience verify` 会把 `.fstdd/experiences/.experience-index.yaml` 写成 **CRLF**（与仓库 LF 约定冲突），本次已手工归一；建议给写盘加 `newline=""`。
+- `tools/verify_eol.py` 的 `TC-EOL-005` 与 `test_a6_no_stray_untracked_files` 的判据均为「索引 vs HEAD」/「无游离 untracked」⇒ **在办 change 期结构性为红**，只能在提交后复跑。建议在《发布与文档规程》中明确「四自检须**提交后**复跑」。
+- `fstdd phase advance --dry-run` 参数被静默忽略（真实落盘）；`extract-proposal` 对 `capabilities/impact/constraints` 恒返回空；`fstdd experience list --format json` 因 `date` 不可序列化而崩溃 —— 三者均为既有缺陷，未在本 change 范围。
+- **GitHub Release 因镜像通道未恢复无法创建**，属《发布与文档规程》§二偏离（与 3.3.1–3.3.5 同）。
+
 ## [3.3.5] — 2026-10-06
 
 **主题**：**上游基线对齐（版本三轴 E/K/R 显式化 + 版本派生去硬编码）** —— 把「上游最新发布 / 本仓 vendored 内核 / 本仓发行版」三个版本轴从混用状态收敛为显式命名，并把「上游版本号被误当作本仓版本」这一歧义从 4 处活体声明面与 1 处生成脚本里一次性消除。
