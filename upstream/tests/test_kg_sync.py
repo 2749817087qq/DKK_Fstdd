@@ -78,7 +78,7 @@ def _sha(p: Path) -> str:
 
 
 def _run_cwd(args, cwd: Path):
-    return subprocess.run(args, capture_output=True, text=True, cwd=str(cwd))
+    return subprocess.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(cwd))
 
 
 def _get_node(nodes, nid):

@@ -93,7 +93,8 @@ _GIT_OK = _git_available()
 
 
 def _git(path: Path, *args: str):
-    return _sp.run(["git", *args], cwd=str(path), capture_output=True, text=True)
+    return _sp.run(["git", *args], cwd=str(path), capture_output=True, text=True,
+                   encoding="utf-8", errors="replace")
 
 
 def _init_git_repo(path: Path) -> None:
@@ -144,6 +145,7 @@ def test_iso_003_help_exposes_isolate():
     result = _sp.run(
         [sys.executable, str(cli), "new", "--help"],
         capture_output=True, text=True, cwd=str(repo),
+        encoding="utf-8", errors="replace",
     )
 
     assert result.returncode == 0, f"`new --help` 退出码 {result.returncode}: {result.stderr}"

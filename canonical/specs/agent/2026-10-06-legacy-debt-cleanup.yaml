@@ -1,0 +1,70 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+# change: 2026-10-06-legacy-debt-cleanup
+# task_type: code（测试面 + 工具文档面 + 仓库卫生；无生产代码）
+# 对应行为规格：specs/code/test-suite-portability.yaml（REQ-001..002 / SC-001..005）、
+#              specs/code/release-tooling-accuracy.yaml（REQ-001..002 / SC-001..004）、
+#              specs/code/canonical-hash-integrity.yaml（REQ-001..002 / SC-001..003）、
+#              specs/code/repo-hygiene.yaml（REQ-001 / SC-001..004）
+# 验证手段：AST 静态扫描 + 双环境实测 + canon verify + git 索引/磁盘双点核对；不以「阅读文档」代替执行。
+
+meta:
+  task_id: "legacy-debt-cleanup"
+  change_id: "2026-10-06-legacy-debt-cleanup"
+  created: "2026-10-06T13:45:00+00:00"
+  task_type: code
+  system: |
+    本仓（stdd-repo）的**门禁可信度**面：测试套件的编码健壮性、发布清单与根 tests/ 断言、
+    canonical 双轨哈希一致性、仓库卫生（_scratch/ 取消跟踪）。
+    四自检脚本与全量 pytest 作为最终回归闸门。
+
+preconditions:
+  - "工作树除本变更外干净（verify_eol TC-EOL-005 只允许 tools/ docs/ skills/ 前缀与 README.md/.gitignore 出现未提交 diff）"
+  - "解释器为 managed default env python（3.13.12，含 PyYAML / Jinja2 / requests）；本机 CLI 入口 upstream/bin/fstdd 可用，cwd = stdd-repo 根"
+  - "权威门禁环境可构造：控制台 UTF-8（chcp 65001 + [Console]::OutputEncoding=UTF8）+ PYTHONUTF8=1 + PYTHONIOENCODING=utf-8"
+  - "非 UTF-8 环境可构造：不设 PYTHONUTF8，控制台保持 GBK/CP936"
+  - "改动前已记录基线：36 处缺 encoding 的调用清单（16 文件）、根 tests/ 修复前用例清单、_scratch/ 磁盘实体清单（27 项）"
+
+steps:
+  - action: "为 upstream/tests、tests/、tools/ 下 16 文件 36 处 text-mode subprocess 调用逐点补 encoding=\"utf-8\", errors=\"replace\""
+    verify: "AST 扫描三目录全部 *.py：text-mode 调用中未指定 encoding= 的数量 == 0；新增 errors= 取值一律为 replace（无 ignore）；未改动 args/cwd/env/timeout 等既有实参"
+
+  - action: "在非 UTF-8 环境下复跑根 tests/ 的多平台用例"
+    verify: "pytest tests/test_multi_platform.py 结果 == 11 passed, 1 skipped；输出中无 UnicodeDecodeError"
+
+  - action: "修正 .fstdd/standards/release-and-docs.md 第 29 行的失真表述（仓库根没有 tests/）"
+    verify: "该文件不再含「仓库根没有 tests/」或等义表述；全量测试命令同时覆盖 upstream/tests 与根 tests；清单其余条目逐字未变"
+
+  - action: "把 tests/test_finance_content.py::test_L1_11 由硬编码 == \"3.3.0\" 改为动态读取 .fstdd/version.yaml 的 fstdd_version 并与 .fstdd/config.d/project.yaml 的 stdd_version 比对"
+    verify: "pytest tests/test_finance_content.py::test_L1_11_version_yaml_fstdd_version 通过；源码中不再含版本字面量断言"
+
+  - action: "把 .fstdd/archive/2026-09-18-inbox-api-only-write/proposal.md 的 source_hash 由 16fa0e448d063e2a 同步为 YAML 的 content_hash 29c0012fe4d0b612"
+    verify: "canon verify 2026-09-18-inbox-api-only-write 输出 2/2；归档 proposal.md 正文（除 source_hash 行）未变"
+
+  - action: "执行 git rm -r --cached _scratch/ 并在 .gitignore 增加 _scratch/ 规则"
+    verify: "git ls-files _scratch/ 为空；.gitignore 含 _scratch/ 规则；磁盘 _scratch/ 27 个实体全部仍在（含 2 个 gitlink 目录与 fstdd-fin/SKILL.md 备份源）"
+
+  - action: "更新本 change 的 canonical/.canon-index.yaml，登记 4 个 capability spec"
+    verify: "索引中登记的文件全部真实存在（零缺失）；canon verify 2026-10-06-legacy-debt-cleanup 输出 2/2"
+
+  - action: "在权威门禁环境执行全量回归"
+    verify: "pytest upstream/tests tests -q 退出码 0（0 failed）；passed >= 906；skipped <= 54"
+
+  - action: "四自检脚本"
+    verify: "verify_rename 8/8；verify_eol 7/7；verify_skill_standards 7/7；verify_workbuddy_skills PASS（四项均退出码 0）"
+
+  - action: "核对用例集合未被改动"
+    verify: "pytest --collect-only -q 的用例清单与改动前逐条一致（无新增/删除/改名/新增 skip）"
+
+expected_outcomes:
+  - "门禁不再依赖环境变量：同一份代码在权威环境与非 UTF-8 环境下结果一致（均 0 failed）"
+  - "根 tests/ 的版本断言从单一事实源派生，任意合法版本下均通过，且能捕获两处版本源不一致"
+  - "canon 双轨零欠账：canon verify 对 2026-09-18-inbox-api-only-write 与本 change 均为 2/2"
+  - "_scratch/ 退出跟踪且被忽略，磁盘实体零损失；test_a6_no_stray_untracked_files 通过"
+  - "四自检全绿 + 全量 pytest 0 failed；用例集合与改动前一致（无删除）"
+
+rollback:
+  steps:
+    - "若编码修复导致某用例行为变化：按文件粒度还原该文件的 encoding= 增补（改动只增参数，可安全回退），并复核 pytest --collect-only 清单"
+    - "若 test_L1_11 动态断言误伤：回退该用例到读单文件（version.yaml）的形态，保留「不硬编码」这一核心约束"
+    - "若 canon 哈希同步后仍 1/2：说明 YAML 侧也被改动，改以 YAML 为源重新计算 content_hash 并同步 MD，不得反向改 YAML 正文"
+    - "若 git rm --cached 误伤：立即用 git reset 恢复索引条目（磁盘实体本就不受影响），重新核对 git ls-files _scratch/"

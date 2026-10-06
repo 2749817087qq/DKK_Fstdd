@@ -1,0 +1,214 @@
+# pending-adjustments.yaml — 设计偏离记录（Canonical YAML，AI 主读文档）
+# change 2026-10-06-legacy-debt-cleanup｜Phase 3 BUILD 期间记录，Part C 汇总为 design-adjustments.yaml
+
+meta:
+  change_id: "2026-10-06-legacy-debt-cleanup"
+  created: "2026-10-06T14:22:00+00:00"
+  updated: "2026-10-06T15:18:00+00:00"
+
+adjustments:
+  - id: ADJ-001
+    original_design_ref: "specs/code/test-suite-portability.yaml → REQ-001 / SC-001（原文限定「以文本模式调用子进程的测试与工具代码」）"
+    actual_change: |
+      实现范围由「subprocess 文本调用」**扩大**到「所有隐式依赖 locale 的文本 I/O」：
+      除原定的 36 处 subprocess(text=True) 外，另补 19 处
+      `Path.read_text()` / `Path.write_text()` / `Path.open()` / 内置 `open()` 的 `encoding="utf-8"`
+      （7 文件：upstream/tests/commands/test_experience.py 8、tests/test_multi_platform.py 5、
+       upstream/tests/commands/test_bootcamp.py 2、upstream/tests/commands/test_curate.py 1、
+       upstream/tests/test_install_source.py 1、tests/test_upstream_baseline.py 1、
+       tools/fstdd003_daily_share.py 1）。
+    reason: |
+      **实测证据**：仅修 subprocess 后，在真非 UTF-8 环境（unset PYTHONUTF8）下
+      `pytest tests/test_multi_platform.py` 仍 **7 failed**（原为 2 failed）。
+      根因是同一族但不同 API —— `Path.read_text()` 不带 encoding 时同样按 locale 解码，
+      在 GBK 主机上读 UTF-8 源码即 `UnicodeDecodeError: 'gbk' codec can't decode byte 0x8a`
+      （实测 tests/test_multi_platform.py:163 `sf.read_text()`）。
+      补齐 19 处后，非 UTF-8 环境下失败数由 7 降至 2，且**两个环境结果完全一致**
+      —— 即 REQ-001 的**意图**（门禁结果不依赖 locale）只有在覆盖全部隐式 locale 文本 I/O 后才达成。
+      ⇒ 这是为满足 REQ-001 意图所**必需**的范围扩大，非可选项。
+    impact_scope: "capability test-suite-portability 的实现范围与 TC-TSP-001 的扫描口径；接口与行为语义不变"
+    severity: major
+    affected_capabilities:
+      - "test-suite-portability"
+    exp_id: ""
+    resolved: false
+
+  - id: ADJ-002
+    original_design_ref: "specs/code/test-suite-portability.yaml → SC-002（承诺 tests/test_multi_platform.py 结果 11 passed, 1 skipped）"
+    actual_change: |
+      为 `tests/test_multi_platform.py::TestEntryScripts` 两例补**宿主隔离参数**（断言不变）：
+      · `test_install_sh_passes_platform`：调用 install.sh 时补 `--py <sys.executable>`
+      · `test_install_ps1_passes_platform`：调用 install.ps1 时补
+        `-NoProfile -ExecutionPolicy Bypass -Python <sys.executable>`
+    reason: |
+      消除 `UnicodeDecodeError` 后，两例暴露**宿主能力缺口**（与 locale 无关，两环境同样失败）：
+      · PowerShell：本机 ExecutionPolicy 全作用域 Undefined ⇒ 生效策略 Restricted ⇒ 禁止运行任何 .ps1
+        （实测 `Get-ExecutionPolicy -List` + 直接执行 install.ps1 报 SecurityError/UnauthorizedAccess）。
+      · install.sh：脚本自动探测 `python3`，本机 PATH 上的 python3 可执行但**缺 PyYAML**，
+        报 `ModuleNotFoundError: No module named 'yaml'`。
+      两例的**被测目标**是「`--platform` 透传」（TC-MPA-009/010），不是「宿主能否跑脚本」。
+      同文件的 `_run` / `_verify` 助手本就统一使用 `PY = sys.executable` —— 本次补参与该文件既有约定一致。
+      补参后两例在**两个环境**下均通过（实测 11 passed, 1 skipped），断言强度未削弱（仍 `returncode == 0`）。
+    impact_scope: "仅 tests/test_multi_platform.py 的两个集成用例的调用参数；断言与用例集合不变"
+    severity: minor
+    affected_capabilities:
+      - "test-suite-portability"
+      - "release-tooling-accuracy"
+    exp_id: "EXP-2026-0015"
+    resolved: false
+
+  - id: ADJ-003
+    original_design_ref: "proposal.yaml what_changes C2 / specs/code/release-tooling-accuracy.yaml → SC-001（原范围＝纠正「仓库根没有 tests/」一处失真表述）"
+    actual_change: |
+      `.fstdd/standards/release-and-docs.md` 第 29 行的**同一行**内另有第二处过期数字需一并纠正：
+      「851 用例」→ 实际 `upstream/tests` 现收集 **960** 用例（= 906 passed + 54 skipped）；
+      且清单给出的命令 `python -m pytest upstream/tests -q` 未覆盖仓库根 `tests/`（71 用例）。
+    reason: |
+      同一行、同一类失真（清单与仓库实际状态不符），拆开处理会留下自相矛盾的清单。
+      实测 `pytest upstream/tests --collect-only -q` = 960 collected；
+      `pytest tests/ --collect-only -q` = 71 collected（基线观测 2026-10-06T14:0x）。
+    impact_scope: "capability release-tooling-accuracy；仅该文档同一行的数字与命令口径"
+    severity: minor
+    affected_capabilities:
+      - "release-tooling-accuracy"
+    exp_id: ""
+    resolved: false
+
+  - id: ADJ-004
+    original_design_ref: "specs/code/release-tooling-accuracy.yaml → REQ-002（通则：「SHALL NOT 硬编码任何版本字面量」；Phase 2 仅具名 test_L1_11）/ 4 切片中 Slice 2 的实现面"
+    actual_change: |
+      **build 阶段新发现第二处同类硬编码**，Slice 2 实现面扩大一个文件：
+      `tests/test_install_smoke.py` 的 `test_L0_01_git_pull_to_tag` 断言字面量发布 tag
+      `fstdd-v3.1.1`（5 处：注释 1 + 断言 4）。改法：新增 `_expected_release_tag()`，
+      由 `.fstdd/version.yaml` 的 `fstdd_version` 派生为 `fstdd-v<version>`。
+      并新增 2 个**宿主隔离**用例（monkeypatch `_run`）覆盖「tag 一致→通过 / 不一致→失败」两分支。
+      规格侧同步补 `SC-005`（挂在既有 REQ-002 下，未新增 REQ）。
+    reason: |
+      **实测证据**：Phase 3 双环境对照时该用例报
+      `AssertionError: HEAD tag = fstdd-v3.3.5, expected fstdd-v3.1.1`
+      （`observed_at=2026-10-06T22:32Z`, `source=@4c6402e`）。
+      该用例第 39 行 `git fetch origin --tags` 失败即 `pytest.skip`，本沙箱 GitHub 不可达
+      ⇒ 断言路径**长期不被执行**，故从未被列入「3 例预存失败」。
+      ⚠️ **时效风险**：镜像恢复（`F2K-004` runbook 在办）后 `git fetch` 一旦可达，该用例立即转红。
+      ⇒ 属 REQ-002 通则「SHALL NOT 硬编码任何版本字面量」的**具名实例遗漏**，非范围外新增。
+      同步修掉「只在网络可达时才被执行」这一结构性缺陷：改为宿主隔离后可无条件验证。
+    impact_scope: "capability release-tooling-accuracy；1 个既有测试文件 + 新增 2 个用例；接口不变；spec 增 SC-005（REQ 数不变）"
+    severity: major
+    affected_capabilities:
+      - "release-tooling-accuracy"
+    exp_id: ""
+    resolved: false
+
+  - id: ADJ-005
+    original_design_ref: "specs/code/release-tooling-accuracy.yaml → SC-001 AND 条款「除该处失真表述外，清单其余条目 SHALL 逐字保持不变」"
+    actual_change: |
+      **发现但刻意未改**：`.fstdd/standards/release-and-docs.md` 第 16 行
+      「**当前**：`3.1.0`（`project.yaml` 的 `stdd_version`）」亦为过期表述
+      —— 实测 `.fstdd/config.d/project.yaml` 的 `stdd_version` = `3.3.5`。
+    reason: |
+      SC-001 的 AND 条款明文要求「除该处（第 29 行）失真表述外，清单其余条目 SHALL 逐字保持不变」
+      ⇒ 本 change 内修改第 16 行会**违反自身规格**。故仅记录、不改，留待后续 change
+      （建议与「文档中易变数字去硬编码」合并处理，同 `release-and-docs.md` 第 16/29 行一并以
+      引用单一事实源的方式改写，而非写死版本号）。
+    impact_scope: "无代码影响；仅文档一处未纠正的过期表述，已在 test-report 已知问题中登记"
+    severity: minor
+    affected_capabilities:
+      - "release-tooling-accuracy"
+    exp_id: ""
+    resolved: false
+
+  - id: ADJ-006
+    original_design_ref: "specs/code/repo-hygiene.yaml → SC-002（GIVEN 断言「`_scratch/stdd-dev/stdd-repo/skills/fstdd-fin/SKILL.md` 是备份源」；AND 断言「该路径 SHALL 仍可读」）"
+    actual_change: |
+      **规格基于错误事实假设，已更正**（Phase 2 起草时未实测该路径）：
+      实测 `_scratch/stdd-dev/stdd-repo/` 与 `_scratch/upstream-cli-sync/` **均为空目录**
+      —— 2 个 gitlink 从未 init 子模块，工作树无内容。
+      故不存在 `_scratch/stdd-dev/stdd-repo/skills/fstdd-fin/SKILL.md`。
+      SC-002 改写为以**索引实体快照**为准：27 条索引实体（25 普通文件 + 2 空 gitlink 目录）
+      对应的磁盘实体全部仍在、25 个普通文件非空。
+    reason: |
+      **实测证据**（`observed_at=2026-10-06T14:38Z`, `source=@4c6402e`）：
+      `ls -la _scratch/stdd-dev/stdd-repo/` → 空；
+      `ls _scratch/stdd-dev/stdd-repo/skills/fstdd-fin/SKILL.md` → No such file or directory；
+      逐条核对 27 条索引实体的磁盘存在性 → MISSING: 0（即 gitlink 路径本身 `is_dir()` 为真，
+      但其内部为空）。快照落盘 `.fstdd/changes/…/audit/scratch-inventory.txt`（含 25 个文件 md5）。
+      ⚠️ proposal.yaml 第 64–65 行含同一假设（转述 2026-10-03 change 的措辞）。
+      **刻意不改 proposal.yaml** —— 其 `source_hash` 派生 proposal.md 的 DC-HASH，改它会破坏
+      `canon verify` 2/2；且该处为「转述历史 change 原话」，非本 change 的事实断言。
+      ⇒ 事实更正只落在 spec（本 change 自产物），并在 test-report 已知问题登记。
+    impact_scope: "capability repo-hygiene 的 SC-002 文本与 TC-RH-002 的断言面；无代码影响；索引/磁盘状态不变"
+    severity: minor
+    affected_capabilities:
+      - "repo-hygiene"
+    exp_id: ""
+    resolved: false
+
+  - id: ADJ-007
+    original_design_ref: "specs/code/test-suite-portability.yaml → REQ-001（原文落点：以文本模式调用子进程的测试与工具代码 SHALL 声明 encoding=）/ SC-001（AST 判据：缺 encoding= 的数量为 0）"
+    actual_change: |
+      **build 阶段新发现第三类编码缺陷**，Slice 1 实现面扩大一个文件：
+      `upstream/tests/test_install_scripts.py` 的 `_run()` **已**声明
+      `encoding="utf-8", errors="replace"`，但**生产者**（Windows PowerShell 5.1）
+      在 stdout 被重定向时按 `[Console]::OutputEncoding` 编码 —— 本机实测
+      `gb2312 / CP=936` ⇒ 中文输出被按 UTF-8 解成 U+FFFD，断言失败。
+      处置：新增 `_force_utf8_output()` / `_ps_arg()` / `_ps_quote()`，
+      把 `-File <script> <args>` 改写为
+      `-Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & '<script>' <args>"`；
+      `pwsh`（PowerShell 7+，默认 UTF-8）不加包装。规格侧补 `SC-006`（挂既有 REQ-001 下）。
+    reason: |
+      **实测证据**（`observed_at=2026-10-06T15:00Z`, `source=@4c6402e`）：
+      全量 `pytest upstream/tests` = `2 failed, 953 passed, 5 skipped`，其中
+      `test_install_scripts.py::TestInstallPs1ArgParse::test_install_ps1_explicit_python`
+      报 `AssertionError: 未采纳 -Python 指定的解释器`，stdout 呈现 `FSTDD for WorkBuddy ���� ��װ`。
+      ⚠️ **该失败与本 change 的既有改动无关**（`git diff --name-only HEAD` 对
+      install.ps1 / test_install_scripts.py / install_workbuddy_skills.py /
+      verify_workbuddy_skills.py **0 命中**）⇒ 属**预存缺陷**。
+      但它恰好是 REQ-001 明文意图「使解码结果**不依赖运行环境的 locale / 控制台代码页**」
+      的反例：SC-001 的 AST 判据只查「是否声明 encoding=」，**结构上抓不到
+      「声明值与生产者不符」这一类** —— 正是 test-plan §1.2 第 3 条
+      「验证跑坏掉的分支」所指的缺口。
+      ⇒ 修它是为兑现 REQ-001 的意图，非范围外新增。
+    impact_scope: "capability test-suite-portability；1 个既有测试文件（新增 3 个私有 helper，用例集合不变）；spec 增 SC-006（REQ 数不变）"
+    severity: major
+    affected_capabilities:
+      - "test-suite-portability"
+    exp_id: ""
+    resolved: false
+
+  - id: ADJ-008
+    original_design_ref: "specs/code/test-suite-portability.yaml → SC-001（AST 判据：「text-mode 调用中未指定 encoding= 的数量 SHALL 为 0」）与 ADJ-001（文本 I/O 扩展）"
+    actual_change: |
+      **C1 多路并行技术评审（3 代理）暴露三处实现/工具缺陷，Slice 1 实现面再扩大一个文件**：
+      ① **审计工具漏检（假绿）**：扫描器只匹配 `subprocess.X`，漏掉
+         `upstream/tests/commands/test_new_isolate.py` 的 `import subprocess as _sp` 两处
+         （L96 / L144）⇒ 已补 `encoding="utf-8", errors="replace"`，并把扫描器改为
+         `_collect_subprocess_bindings()` 解析 `import subprocess [as X]` 与
+         `from subprocess import Y [as Z]`，另加 `test_scanner_binding_selfcheck` 自检。
+      ② **补丁脚本误插（真 bug）**：`tools/fstdd003_daily_share.py:110` 被补上
+         `_OPENER.open(req, timeout=60, encoding="utf-8")`，而
+         `urllib.request.OpenerDirector.open()` **不接受** `encoding=` ⇒ 运行时 `TypeError`。
+         **已回退该处**（该文件因此恢复零 diff，同时解掉与 `tools/test_verify_notices.py`
+         的 `test_TC_NEP_001`「daily_share.py 零 diff」断言的冲突）。
+         根因：原扫描器把**任意** `.open()` 都当文件 I/O；已改为按接收者形态收窄
+         （`_is_pathish_receiver()`），并保留 `tarfile.open(encoding=)` 这类合法例外。
+      ③ **审计测试自身的假绿/假红**：`test_release_manifest_accuracy.py` 的失真表述检测
+         用固定子串清单，被评审用反例证伪（漏判 `仓库根目录下没有 tests 目录`；
+         误报「引述并更正」的语境）⇒ 改为正则 + 更正语境豁免，并加
+         `test_tc_rta_001e` 把两个反例固化为断言。
+    reason: |
+      **实测证据**（`observed_at=2026-10-06T15:2x–15:3xZ`, `source=@4c6402e`）：
+      · 别名扫描复扫：修复前缺 `encoding=` 的 text-mode subprocess = **2**（均在 test_new_isolate.py）；
+        修复后 = **0**。
+      · 属性式 `.open(encoding=)` 全仓复扫：修复前含 `_OPENER`（**不支持**该参数）；
+        修复后仅剩 `tarfile`×2（**支持**）与 `AUDIT_PATH`（Path）。
+      · `tools/fstdd003_daily_share.py` 回退后 `git diff --stat` 为空。
+      ⇒ 三条均为「审计工具/补丁脚本本身有洞」导致，**不是规格变更**；
+      但 ① 使实现面新增 1 文件，② 是必须修的运行时缺陷，③ 影响审计测试的可信度。
+      ⚠️ 教训已固化：**审计工具的漏检 = 假绿**，故审计器自身必须有自检测试。
+    impact_scope: "capability test-suite-portability（+1 文件、+1 自检用例）；release-tooling-accuracy（+1 自检用例）；tools/ 回退 1 处；无接口变更"
+    severity: major
+    affected_capabilities:
+      - "test-suite-portability"
+      - "release-tooling-accuracy"
+    exp_id: ""
+    resolved: false

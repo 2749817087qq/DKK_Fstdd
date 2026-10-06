@@ -20,6 +20,7 @@ BUILD_LOCAL = ROOT / ".fstdd" / "skills" / "build.md"
 BUILD_UPSTREAM = ROOT / "upstream" / ".fstdd" / "skills" / "build.md"
 KG_PATH = ROOT / ".fstdd" / "knowledge" / "knowledge-graph.yaml"
 VERSION_YAML = ROOT / ".fstdd" / "version.yaml"
+PROJECT_YAML = ROOT / ".fstdd" / "config.d" / "project.yaml"
 
 
 # ============================================================
@@ -140,11 +141,32 @@ def test_L1_10_kg_version_ge_1_1():
 # ============================================================
 # L1-11 / L1-12 / L1-13: version.yaml 检查
 # ============================================================
+def _read_version(path: Path, key: str) -> str:
+    """从 YAML 文本读版本字段（单一事实源）。兼容带引号/不带引号两种写法。"""
+    content = read_file(path)
+    assert content, f"{path} 不可读或为空"
+    m = re.search(rf'^\s*{key}:\s*["\']?([\d.]+)["\']?', content, re.MULTILINE)
+    assert m, f"{key} not found in {path}"
+    return m.group(1)
+
+
+def _assert_versions_consistent(version_yaml: Path, project_yaml: Path) -> None:
+    """断言两处版本源一致（去硬编码：不比对任何版本字面量）。
+
+    发行版口径（R 轴）：`.fstdd/version.yaml` 的 `fstdd_version`
+    须等于 `.fstdd/config.d/project.yaml` 的 `stdd_version`。
+    """
+    fstdd_version = _read_version(version_yaml, "fstdd_version")
+    stdd_version = _read_version(project_yaml, "stdd_version")
+    assert fstdd_version == stdd_version, (
+        f"版本源不一致: {version_yaml.name} fstdd_version={fstdd_version} "
+        f"!= {project_yaml.name} stdd_version={stdd_version}"
+    )
+
+
 def test_L1_11_version_yaml_fstdd_version():
-    content = read_file(VERSION_YAML)
-    m = re.search(r'fstdd_version:\s*["\']?([\d.]+)["\']?', content)
-    assert m, "fstdd_version not found in version.yaml"
-    assert m.group(1) == "3.3.0", f"fstdd_version = {m.group(1)}, expected 3.3.0"
+    """TC-RTA-002 / SC-002：版本断言从单一事实源动态派生，不硬编码任何版本字面量。"""
+    _assert_versions_consistent(VERSION_YAML, PROJECT_YAML)
 
 def test_L1_12_version_yaml_feedback_mandatory():
     content = read_file(VERSION_YAML)

@@ -164,7 +164,7 @@ def test_search_finds_semantic_named_experience() -> None:
              "--format", "json"],
             cwd=tmp,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             env=_cli_env(),
         )
 
@@ -188,7 +188,7 @@ def test_review_lists_semantic_named_draft() -> None:
             [sys.executable, "-m", "fstdd", "experience", "review"],
             cwd=tmp,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             env=_cli_env(),
         )
 
@@ -213,7 +213,7 @@ def test_stats_counts_semantic_named_experiences() -> None:
             [sys.executable, "-m", "fstdd", "experience", "stats"],
             cwd=tmp,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             env=_cli_env(),
         )
 
@@ -245,7 +245,7 @@ def test_session_end_hook_counts_semantic_named_experiences() -> None:
             [sys.executable, str(script)],
             cwd=tmp,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
         )
 
         assert "2 entries" in proc.stdout, (
@@ -308,7 +308,7 @@ def test_search_tolerates_string_numeric_frontmatter() -> None:
              "--format", "json"],
             cwd=tmp,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             env=_cli_env(),
         )
 
@@ -335,7 +335,7 @@ def test_stats_and_list_survive_string_numeric_frontmatter() -> None:
                 [sys.executable, "-m", "fstdd", "experience", sub],
                 cwd=tmp,
                 capture_output=True,
-                text=True,
+                text=True, encoding="utf-8", errors="replace",
                 env=_cli_env(),
             )
             assert proc.returncode == 0, (

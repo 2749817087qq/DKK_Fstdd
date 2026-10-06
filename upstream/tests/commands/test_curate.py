@@ -79,7 +79,7 @@ community:
 
         # Create the tar.gz with both experiences
         tar_path = inbox / "experience-python-v1.0.0.tar.gz"
-        with tarfile.open(tar_path, "w:gz") as tar:
+        with tarfile.open(tar_path, "w:gz", encoding="utf-8") as tar:
             for fm in [exp1_fm, exp2_fm]:
                 eid = fm["experience_id"]
                 fm_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False)

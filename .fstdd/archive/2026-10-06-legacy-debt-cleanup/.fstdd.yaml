@@ -1,0 +1,67 @@
+baseline:
+  at: '2026-10-06T13:31:54+00:00'
+  base_git_sha: 4c6402e366eb3e4e75efafc3f50341b77b0f8fd4
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-06-legacy-debt-cleanup
+complexity_score: 6
+current_phase: build
+design_adjustments:
+  count: 8
+last_modified: '2026-10-06T14:00:37+00:00'
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-10-06T14:07:46+00:00'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-06T16:05:43+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认
+    slices_completed:
+      '1':
+        capability: test-suite-portability
+        completed_at: '2026-10-06T14:34:00+00:00'
+        evidence: 双环境对照逐字一致（1 failed, 74 passed, 3 skipped, 1 deselected）；TC-TSP-001/004
+          审计测试 5 passed
+      '2':
+        capability: release-tooling-accuracy
+        completed_at: '2026-10-06T14:40:00+00:00'
+        evidence: 根 tests/ 权威环境 83 passed / 4 skipped / 0 failed；test_L1_11 动态化；tag
+          字面量 5→0
+      '3':
+        capability: canonical-hash-integrity
+        completed_at: '2026-10-06T14:26:00+00:00'
+        evidence: canon verify 归档条目 2/2；14 条 proposal 批量 2/2
+      '4':
+        capability: repo-hygiene
+        completed_at: '2026-10-06T14:43:00+00:00'
+        evidence: git ls-files _scratch/ 27→0；磁盘顶层实体 12→12；27 条实体缺失 0；gitignore 命中
+          25 条
+    status: completed
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-06T14:00:27+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-06T13:31:54+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认
+    status: completed
+score_confidence: preliminary
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 18
+  tc_cases: 18
+  test_functions: 27
+version: '3.0'

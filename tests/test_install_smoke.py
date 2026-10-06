@@ -2,6 +2,7 @@
 test_install_smoke.py — L0 基础设施冒烟（5 TC）
 需要真实环境：git remote 正确、install_workbuddy_skills.py 可用、hub_client.py 可用
 """
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -14,6 +15,18 @@ from conftest import repo_root, get_current_platform, get_skill_dir, read_heartb
 ROOT = repo_root()
 
 
+def _expected_release_tag() -> str:
+    """期望的发布 tag 由单一事实源派生：`.fstdd/version.yaml` 的 fstdd_version。
+
+    TC-RTA-005 / SC-005：不得硬编码 `fstdd-v<版本>` 字面量（旧写法写死 3.1.1，
+    自 3.3.x 起已过期；仅在 git fetch 可达时才执行，长期被 skip 掩盖）。
+    """
+    content = (ROOT / ".fstdd" / "version.yaml").read_text(encoding="utf-8")
+    m = re.search(r'^\s*fstdd_version:\s*["\']?([\d.]+)["\']?', content, re.MULTILINE)
+    assert m, "fstdd_version not found in .fstdd/version.yaml"
+    return f"fstdd-v{m.group(1)}"
+
+
 def _run(cmd: list, cwd=None, timeout=60):
     """subprocess run wrapper, return (rc, stdout, stderr)"""
     try:
@@ -21,7 +34,7 @@ def _run(cmd: list, cwd=None, timeout=60):
             cmd,
             cwd=str(cwd) if cwd else str(ROOT),
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             timeout=timeout,
         )
         return result.returncode, result.stdout, result.stderr
@@ -32,9 +45,11 @@ def _run(cmd: list, cwd=None, timeout=60):
 
 
 # ============================================================
-# L0-01: git pull → HEAD tag = fstdd-v3.1.1
+# L0-01: git pull → HEAD tag 与 .fstdd/version.yaml 声明一致
 # ============================================================
 def test_L0_01_git_pull_to_tag():
+    expected = _expected_release_tag()
+
     # 先 fetch tags
     rc, out, err = _run(["git", "fetch", "origin", "--tags"])
     # fetch 可能因为 network fail 非零，尝试继续
@@ -45,12 +60,12 @@ def test_L0_01_git_pull_to_tag():
     rc, out, err = _run(["git", "describe", "--tags", "--exact-match", "HEAD"])
     if rc != 0:
         # 可能 HEAD 没打 tag（tag 在某个 commit 上），检查所有 tag
-        rc, out, err = _run(["git", "tag", "-l", "fstdd-v3.1.1"])
-        assert rc == 0 and "fstdd-v3.1.1" in out, \
-            f"fstdd-v3.1.1 tag not found. tags output: {out}"
+        rc, out, err = _run(["git", "tag", "-l", expected])
+        assert rc == 0 and expected in out, \
+            f"{expected} tag not found. tags output: {out}"
         pytest.skip("tag exists but not on HEAD — this is OK for install smoke")
 
-    assert "fstdd-v3.1.1" in out.strip(), f"HEAD tag = {out.strip()}, expected fstdd-v3.1.1"
+    assert expected in out.strip(), f"HEAD tag = {out.strip()}, expected {expected}"
 
 
 # ============================================================

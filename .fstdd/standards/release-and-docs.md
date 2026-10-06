@@ -26,7 +26,7 @@
 
 ## 三、发布检查清单（**逐项打勾才可 tag**）
 
-- [ ] 全量测试 **0 failed**（`python -m pytest upstream/tests -q`，851 用例；注意测试在 `upstream/tests/`，仓库根**没有** `tests/`）
+- [ ] 全量测试 **0 failed**（`python -m pytest upstream/tests tests -q`；**两处测试目录都要跑**：`upstream/tests/`（vendored 内核侧）+ 仓库根 `tests/`（发行版侧）；不写用例数——数字会漂移，以实跑为准）
 - [ ] **四个自检脚本全绿**：`tools/verify_rename.py`（8/8）、`tools/verify_eol.py`（7/7）、
       `tools/verify_skill_standards.py`（7/7）、`tools/verify_workbuddy_skills.py`
       —— 此前清单只覆盖 pytest，导致「改名残留 56 处」「EOL 混合态」长期无人发现

@@ -54,7 +54,7 @@ def _cli_env() -> dict:
 def _stats_total(cwd: Path) -> int:
     proc = subprocess.run(
         [sys.executable, "-m", "fstdd", "experience", "stats"],
-        cwd=cwd, capture_output=True, text=True, env=_cli_env(),
+        cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", env=_cli_env(),
     )
     assert proc.returncode == 0, proc.stderr
     for line in proc.stdout.splitlines():

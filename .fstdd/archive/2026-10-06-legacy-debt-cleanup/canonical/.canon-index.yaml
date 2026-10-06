@@ -1,0 +1,12 @@
+designs: {}
+proposals:
+  2026-10-06-legacy-debt-cleanup: proposals/2026-10-06-legacy-debt-cleanup.yaml
+specs:
+  agent:
+    2026-10-06-legacy-debt-cleanup: specs/agent/2026-10-06-legacy-debt-cleanup.yaml
+  code:
+    canonical-hash-integrity: specs/code/canonical-hash-integrity.yaml
+    release-tooling-accuracy: specs/code/release-tooling-accuracy.yaml
+    repo-hygiene: specs/code/repo-hygiene.yaml
+    test-suite-portability: specs/code/test-suite-portability.yaml
+version: '2.9'

@@ -14,6 +14,7 @@ proposals:
   2026-10-04-baseline-failures-zero: proposals/2026-10-04-baseline-failures-zero.yaml
   2026-10-04-github-mirror-secret-remediation: proposals/2026-10-04-github-mirror-secret-remediation.yaml
   2026-10-05-upstream-baseline-alignment: proposals/2026-10-05-upstream-baseline-alignment.yaml
+  2026-10-06-legacy-debt-cleanup: proposals/2026-10-06-legacy-debt-cleanup.yaml
 specs:
   agent:
     2026-09-19-notices-authenticity-gate: specs/agent/2026-09-19-notices-authenticity-gate.yaml
@@ -25,6 +26,7 @@ specs:
     2026-10-04-baseline-failures-zero: specs/agent/2026-10-04-baseline-failures-zero.yaml
     2026-10-04-github-mirror-secret-remediation: specs/agent/2026-10-04-github-mirror-secret-remediation.yaml
     2026-10-05-upstream-baseline-alignment: specs/agent/2026-10-05-upstream-baseline-alignment.yaml
+    2026-10-06-legacy-debt-cleanup: specs/agent/2026-10-06-legacy-debt-cleanup.yaml
     inbox-api-only-write: specs/agent/inbox-api-only-write.yaml
     inbox-deploy: specs/agent/inbox-deploy.yaml
   code:
@@ -38,12 +40,16 @@ specs:
     2026-10-04-github-mirror-secret-remediation: specs/code/2026-10-04-github-mirror-secret-remediation.yaml
     audit-errata: specs/code/audit-errata.yaml
     build-quality-verification: specs/code/build-quality-verification.yaml
+    canonical-hash-integrity: specs/code/canonical-hash-integrity.yaml
     detection-voice: specs/code/detection-voice.yaml
     inbox-api-only-write: specs/code/inbox-api-only-write.yaml
     inbox-deploy: specs/code/inbox-deploy.yaml
     notice-authenticity-verification: specs/code/notice-authenticity-verification.yaml
     notice-execution-pipeline: specs/code/notice-execution-pipeline.yaml
+    release-tooling-accuracy: specs/code/release-tooling-accuracy.yaml
+    repo-hygiene: specs/code/repo-hygiene.yaml
     scan-coverage: specs/code/scan-coverage.yaml
+    test-suite-portability: specs/code/test-suite-portability.yaml
     upstream-baseline-alignment: specs/code/upstream-baseline-alignment.yaml
     version-nomenclature: specs/code/version-nomenclature.yaml
     yagni-ladder-gate: specs/code/yagni-ladder-gate.yaml

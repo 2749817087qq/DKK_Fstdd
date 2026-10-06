@@ -336,7 +336,7 @@ class TestGatePhaseOrderDeterminism:
         for seed in ("1", "2", "3", "4", "5"):
             env = dict(os.environ, PYTHONHASHSEED=seed)
             proc = subprocess.run([sys.executable, "-c", code], env=env,
-                                  capture_output=True, text=True)
+                                  capture_output=True, text=True, encoding="utf-8", errors="replace")
             assert proc.returncode == 0, proc.stderr
             seen.add(proc.stdout.strip())
         assert len(seen) == 1, f"报错随 PYTHONHASHSEED 变化：{seen}"

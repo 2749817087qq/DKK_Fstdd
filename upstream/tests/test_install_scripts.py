@@ -92,6 +92,45 @@ def _run(cmd: list[str], out_dir: Path) -> subprocess.CompletedProcess:
     )
 
 
+def _ps_quote(s: str) -> str:
+    """PowerShell 单引号字符串转义（单引号自身加倍）。"""
+    return "'" + str(s).replace("'", "''") + "'"
+
+
+def _ps_arg(a: str) -> str:
+    """参数名（`-Xxx`）原样传递，参数值安全引用。
+
+    ⚠️ 不可把参数名也加引号 —— `'-Yes'` 在 PowerShell 里是**字符串字面量**，
+    会退化成位置参数，导致 `param()` 绑定错位（实测 `$Platform` 被赋成 `-Python`）。
+    """
+    s = str(a)
+    if s.startswith("-") and not s[1:2].isdigit():
+        return s
+    return _ps_quote(s)
+
+
+def _force_utf8_output(cmd: list[str]) -> list[str]:
+    """让 Windows PowerShell 以 UTF-8 写出重定向的 stdout。
+
+    根因：Windows PowerShell 5.1 在 stdout 被重定向时按 `[Console]::OutputEncoding`
+    编码（中文主机 = GBK / CP936），与调用点声明的 `encoding="utf-8"` 不一致
+    ⇒ 中文输出被解成 U+FFFD，断言失败。此失败**只在控制台非 UTF-8 时出现**
+    （权威门禁环境为 UTF-8 控制台，故长期未被发现）—— 属 REQ-001「解码结果不依赖
+    控制台代码页」的遗漏点。`pwsh`（PowerShell 7+）默认即 UTF-8，无需包装。
+    """
+    if os.path.basename(cmd[0]).lower().startswith("pwsh"):
+        return cmd
+    if "-File" not in cmd:
+        return cmd
+    i = cmd.index("-File")
+    script, rest = cmd[i + 1], cmd[i + 2:]
+    inner = ("[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & "
+             + _ps_quote(script))
+    if rest:
+        inner += " " + " ".join(_ps_arg(a) for a in rest)
+    return cmd[:i] + ["-Command", inner]
+
+
 def _posix(p: Path) -> str:
     return str(p).replace("\\", "/")
 
@@ -127,8 +166,10 @@ class TestInstallPs1ArgParse:
 
     def test_install_ps1_explicit_python(self, tmp_path: Path):
         r = _run(
-            [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass",
-             "-File", str(PS1), "-Yes", "-Python", PY_ARG],
+            _force_utf8_output(
+                [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass",
+                 "-File", str(PS1), "-Yes", "-Python", PY_ARG]
+            ),
             tmp_path / "skills",
         )
         assert f"使用：{PY_ARG}" in r.stdout, (

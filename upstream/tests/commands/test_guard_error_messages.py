@@ -29,7 +29,7 @@ def _gate_approve_help() -> str:
     proc = subprocess.run(
         [sys.executable, "-m", "fstdd", "gate", "approve", "--help"],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
         cwd=REPO,
         env={**os.environ, "PYTHONPATH": str(REPO)},
     )
@@ -122,7 +122,7 @@ def test_fix_cmd_executes_end_to_end() -> None:
             [sys.executable, "-m", "fstdd", *shlex.split(real_cmd)],
             cwd=tmp,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             env={**os.environ, "PYTHONPATH": str(REPO)},
         )
 

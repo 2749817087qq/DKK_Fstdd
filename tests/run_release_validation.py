@@ -81,7 +81,7 @@ def run_pytest(pytest_target: str, platform: str) -> tuple:
            "-v", "--tb=short", "--no-header"]
 
     try:
-        result = subprocess.run(cmd, cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=180)
+        result = subprocess.run(cmd, cwd=str(REPO_ROOT), capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180)
     except subprocess.TimeoutExpired:
         return "FAIL", 180000, [{"id": "TIMEOUT", "status": "FAIL", "evidence": "pytest timeout 180s"}]
 
@@ -150,7 +150,7 @@ def run_manual_class(class_id: str, args) -> tuple:
         rc, out, err = (0, "", "")
         try:
             r = subprocess.run([sys.executable, str(cli), "--help"],
-                               capture_output=True, text=True, timeout=10)
+                               capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
             rc, out, err = r.returncode, r.stdout, r.stderr
         except Exception as e:
             return "FAIL", 0, [{"id": "L4", "status": "FAIL", "evidence": str(e)}]
@@ -198,7 +198,7 @@ def run_l6_multihub(report: dict, args) -> tuple:
         try:
             r = subprocess.run(
                 [sys.executable, str(hc), "list-tasks", "--status", "pending"],
-                capture_output=True, text=True, timeout=15,
+                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15,
             )
             if r.returncode == 0:
                 # 简单解析 JSON 输出找 release task
@@ -216,7 +216,7 @@ def run_l6_multihub(report: dict, args) -> tuple:
     try:
         r = subprocess.run(
             [sys.executable, str(hc), "claim", "--task-id", task_id],
-            capture_output=True, text=True, timeout=15,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15,
         )
         claim_rc = r.returncode
     except Exception as e:
@@ -230,7 +230,7 @@ def run_l6_multihub(report: dict, args) -> tuple:
         r = subprocess.run(
             [sys.executable, str(hc), "complete", "--task-id", task_id,
              "--result", result_json],
-            capture_output=True, text=True, timeout=15,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15,
         )
         complete_rc = r.returncode
     except Exception as e:

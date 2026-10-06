@@ -572,7 +572,7 @@ class TestCommunityPool:
         assert tar_out.exists()
         # Verify it's a valid tar.gz
         import tarfile
-        with tarfile.open(tar_out, "r:gz") as tar:
+        with tarfile.open(tar_out, "r:gz", encoding="utf-8") as tar:
             names = tar.getnames()
             assert f"{eid}.md" in names or any(n.startswith("EXP-") for n in names)
 
@@ -586,7 +586,7 @@ class TestProjectType:
         monkeypatch.chdir(tmp_path)
         # Create some .py files in changes
         (tmp_path / "changes" / "dummy" / "test.py").parent.mkdir(parents=True, exist_ok=True)
-        (tmp_path / "changes" / "dummy" / "test.py").write_text("x=1")
+        (tmp_path / "changes" / "dummy" / "test.py").write_text("x=1", encoding="utf-8")
 
         from fstdd.cli.commands.experience import _detect_project_type
         ptype = _detect_project_type(tmp_path / "changes")
@@ -597,9 +597,9 @@ class TestProjectType:
         _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "changes" / "web" / "index.html").parent.mkdir(parents=True, exist_ok=True)
-        (tmp_path / "changes" / "web" / "index.html").write_text("<html>")
-        (tmp_path / "changes" / "web" / "style.css").write_text("body {}")
-        (tmp_path / "changes" / "web" / "app.js").write_text("console.log(1)")
+        (tmp_path / "changes" / "web" / "index.html").write_text("<html>", encoding="utf-8")
+        (tmp_path / "changes" / "web" / "style.css").write_text("body {}", encoding="utf-8")
+        (tmp_path / "changes" / "web" / "app.js").write_text("console.log(1)", encoding="utf-8")
 
         from fstdd.cli.commands.experience import _detect_project_type
         ptype = _detect_project_type(tmp_path / "changes")
@@ -610,7 +610,7 @@ class TestProjectType:
         _setup_experiences_dir(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "changes" / "doc" / "readme.md").parent.mkdir(parents=True, exist_ok=True)
-        (tmp_path / "changes" / "doc" / "readme.md").write_text("# Title")
+        (tmp_path / "changes" / "doc" / "readme.md").write_text("# Title", encoding="utf-8")
 
         from fstdd.cli.commands.experience import _detect_project_type
         ptype = _detect_project_type(tmp_path / "changes")
@@ -881,7 +881,7 @@ experience:
   auto_record:
     enabled: true
     min_confidence: 0.5
-""")
+""", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.experience import cmd_experience
@@ -912,7 +912,7 @@ experience:
   auto_record:
     enabled: true
     min_confidence: 0.5
-""")
+""", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.experience import cmd_experience

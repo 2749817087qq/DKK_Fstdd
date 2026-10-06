@@ -1,0 +1,52 @@
+# _scratch/ 索引实体清单（取消跟踪前快照）
+# change: 2026-10-06-legacy-debt-cleanup | capability: repo-hygiene
+# 用途：证明 git rm -r --cached 仅动索引、磁盘实体零变动
+# base_git_sha: 4c6402e366eb3e4e75efafc3f50341b77b0f8fd4
+#
+# mode  sha1(索引)                          size      md5(磁盘)                         path
+
+100644  33232e3239aa7cc497bbce7e4557064fb3c4c132      6927  4a9bf7e15b0f0f79009ef5a1eda2f595  _scratch/add_fin_kg.py
+100644  91b9bb9b22193747c944edce7f346259024a7fca     16450  c97c9c85ae0543ef4793ffedf0b72106  _scratch/cc/fstdd-build/SKILL.md
+100644  a53e8ba56e5c333d50fe18b1a13af2abc38a5922     18170  33e89bd79176d765425beb0f4546ebde  _scratch/cc/fstdd-spec/SKILL.md
+100644  4e86240c7ea97b0eb7a53d6ade2db18660cf74ae      7662  c7e1fb093463e94d5800fbac3232e153  _scratch/cc/fstdd-understand/SKILL.md
+100644  df73ac2e2b018b863cc9192f58a102f240d7139f      4818  916417769eb4b301834ef5cdf67b0d03  _scratch/cc/fstdd/SKILL.md
+100644  fd225facc11ed29318d2fa4a1c29c8ab4a6a7a57     11006  45480ee6b54ffc24edde97ef4af5a6be  _scratch/dispatch_tasks.py
+100644  74624c8fa2069b964c94e40702c2f4335e243497       102  f59f8b315da6ec2df34212be5ca7de3a  _scratch/green_final.log
+100644  fd45fbd6de41e1408776beec4c133ae8edaf6901     45079  68ac886e4eb4a0ece6e525dbc12a47f6  _scratch/green_pytest.log
+100644  a296684f2dbf83790d9f15ac940ba6c6d3198930     17244  0a221667077259e7d5d47bb2f26d6c70  _scratch/green_pytest2.log
+100644  49aff8ddc8bbf4471728639902a4b024f51db14f  13380420  f797c4b3ae22c1a72fe54a37d52bb596  _scratch/red_pytest.log
+100644  064ff8342e200bc440232a6403ae883e7f6cefbd   6364503  fec7303f5c7861461d94172e5720088d  _scratch/stdd-dev/stdd-baseline-5e3f9a3.tar.gz
+160000  5e3f9a35e914fde314373acf70702a64fc53cfe0         -  (gitlink/dir)  _scratch/stdd-dev/stdd-repo
+100644  94a8c9872bbe35558cbfce5e6df56cd4e2d034f7     16714  7172f3c72f0f822309f692ccd07253a8  _scratch/test-wb/fstdd-build/SKILL.md
+100644  e5d17c465c2dcd344b4ebcd10e1102bc8f641086     18434  2210989014f1dacca274ebfd6eee388f  _scratch/test-wb/fstdd-spec/SKILL.md
+100644  5b063c45af86988b49bc263a1652f641f0ca79d0      7926  d2d32c857690df6fdba8ba8f3a00fa50  _scratch/test-wb/fstdd-understand/SKILL.md
+100644  70861c999e46dd0be5ab90f2a988a6468654b5b4      4823  33cf7121ae2deb871e04ccc9d4517bd5  _scratch/test-wb/fstdd/SKILL.md
+100644  94a8c9872bbe35558cbfce5e6df56cd4e2d034f7     16714  7172f3c72f0f822309f692ccd07253a8  _scratch/test-workbuddy-now/fstdd-build/SKILL.md
+100644  e5d17c465c2dcd344b4ebcd10e1102bc8f641086     18434  2210989014f1dacca274ebfd6eee388f  _scratch/test-workbuddy-now/fstdd-spec/SKILL.md
+100644  5b063c45af86988b49bc263a1652f641f0ca79d0      7926  d2d32c857690df6fdba8ba8f3a00fa50  _scratch/test-workbuddy-now/fstdd-understand/SKILL.md
+100644  6af639507abd36e2a66c08ebb2cecae8aaaba9f7      4834  2cf6305926366c5b4f794b631c059b8d  _scratch/test-workbuddy-now/fstdd/SKILL.md
+160000  c383be798f0d2d0dea6d37b115d4a675525659ae         -  (gitlink/dir)  _scratch/upstream-cli-sync
+100644  685dc29e867c4950a484e3258a1dd5464b2ce0e7     16442  48593f757b5b958eafa68da9e90e8563  _scratch/verify-trae/fstdd-build/SKILL.md
+100644  287a1ce3aaa87727ea72988e58bbcde7c40b51c4      8301  ec00cad5c43d53832691582fc1178a38  _scratch/verify-trae/fstdd-deliver/SKILL.md
+100644  d5cef240d5cb0c04fad09e282aec06c80508d77a     18162  ece470396f56f4918c9354f263a09493  _scratch/verify-trae/fstdd-spec/SKILL.md
+100644  1823d45361bc7ca936aeee75f0fd5d53c8f220e8      7654  484aaf50485dc5a8cfa052966fa7a647  _scratch/verify-trae/fstdd-understand/SKILL.md
+100644  8799a30a033983baa254cdb37fb451f6ccfb663e      6526  b551b59ce55156de37da9687c5f61522  _scratch/verify-trae/fstdd-upgrade/SKILL.md
+100644  39ede3ae95b55bdbd10e6561aed537ea06e13680      4547  cfbfe037426af118988d23b25c0a77af  _scratch/verify-trae/fstdd/SKILL.md
+
+# 索引条目合计: 27  (100644=25, 160000=2)
+# 磁盘顶层实体合计: 12
+#   - _scratch/add_fin_kg.py
+#   - _scratch/cc/
+#   - _scratch/dispatch_tasks.py
+#   - _scratch/green_final.log
+#   - _scratch/green_pytest.log
+#   - _scratch/green_pytest2.log
+#   - _scratch/red_pytest.log
+#   - _scratch/stdd-dev/
+#   - _scratch/test-wb/
+#   - _scratch/test-workbuddy-now/
+#   - _scratch/upstream-cli-sync/
+#   - _scratch/verify-trae/
+
+# 关键保留物（SC-002 明名）:
+#   MISSING  _scratch\stdd-dev\stdd-repo\skills\fstdd-fin\SKILL.md

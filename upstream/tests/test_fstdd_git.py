@@ -15,7 +15,7 @@ _SPEC.loader.exec_module(fstdd_git)
 
 
 def git(cwd, *args):
-    return subprocess.run(["git", *args], cwd=cwd, text=True, capture_output=True, check=True)
+    return subprocess.run(["git", *args], cwd=cwd, text=True, encoding="utf-8", errors="replace", capture_output=True, check=True)
 
 
 def make_repo(tmp_path):

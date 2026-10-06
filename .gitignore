@@ -61,3 +61,9 @@ tools/.heartbeat.env
 # 归档后同样属运行态：change 收口即释放租约，归档副本不应入库
 .fstdd/archive/*/.lease.yaml
 .fstdd/archive/*/lease-events.yaml
+
+# 非发布物工作暂存区（历史 change 的调试产物 / 安装验证副本 / 备份源）
+# 曾误入库 20MB（含 13MB red_pytest.log）；2026-10-06-legacy-debt-cleanup 已
+# git rm -r --cached 取消跟踪，磁盘实体完整保留（该目录仍是备份源）。
+# ⚠️ gitignore 不作用于已跟踪文件 —— 若日后又误 add，须再走一次 --cached 取消跟踪。
+_scratch/

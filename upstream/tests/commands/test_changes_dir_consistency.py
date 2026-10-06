@@ -114,7 +114,7 @@ def test_session_start_hook_reads_fstdd_changes() -> None:
             [sys.executable, str(script)],
             cwd=tmp,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
         )
 
         assert "Active change: demo" in proc.stdout, (
@@ -143,7 +143,7 @@ def test_pre_compact_hook_reads_fstdd_changes() -> None:
             [sys.executable, str(script)],
             cwd=tmp,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
         )
 
         assert "State saved" in proc.stdout, (
@@ -183,7 +183,7 @@ def test_pre_compact_hook_actually_persists_last_modified() -> None:
             [sys.executable, str(script)],
             cwd=tmp,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
         )
 
         assert proc.returncode == 0, (
@@ -254,7 +254,7 @@ def test_pre_compact_hook_targets_most_recent_not_alphabetical() -> None:
 
         proc = subprocess.run(
             [sys.executable, str(script)],
-            cwd=tmp, capture_output=True, text=True,
+            cwd=tmp, capture_output=True, text=True, encoding="utf-8", errors="replace",
         )
         assert proc.returncode == 0, f"PreCompact 退出非零：stderr={proc.stderr!r}"
 

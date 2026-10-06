@@ -1,0 +1,56 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-06-legacy-debt-cleanup
+# capability: canonical-hash-integrity（YAML 与 MD 源哈希一致）
+
+meta:
+  capability: "canonical-hash-integrity"
+  change_id: "2026-10-06-legacy-debt-cleanup"
+  created: "2026-10-06T13:45:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    capability: "canonical-hash-integrity"
+    description: |
+      每条 canonical proposal SHALL 满足 `content_hash(<change>.yaml) == <proposal.md> 的
+      source_hash`。以 YAML 为唯一事实源；MD 的 `source_hash` SHALL 是「渲染自哪个 YAML 版本」
+      的指纹，SHALL NOT 与 YAML 实际内容脱节。
+
+    scenarios:
+      - id: "SC-001"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 3) 点；observed_at=2026-10-06T21:28:59+08:00 source=@4c6402e 实测 canon verify 2026-09-18-inbox-api-only-write -> DC-HASH 不一致 (YAML 29c0012fe4d0b612 vs MD 16fa0e448d063e2a)，结论 1/2"
+        given: "`.fstdd/archive/2026-09-18-inbox-api-only-write/proposal.md:3` 的 `source_hash` 为 `16fa0e448d063e2a`，而 `canonical/proposals/2026-09-18-inbox-api-only-write.yaml` 的 `content_hash` 为 `29c0012fe4d0b612`"
+        when: "执行 `fstdd canon verify 2026-09-18-inbox-api-only-write`"
+        then: "SHALL 输出 `2/2 通过`（DC-HASH 一致 + DC-FIELD 完整）"
+        and:
+          - "SHALL 使归档 `proposal.md` 的 `source_hash` 等于 YAML 的 `content_hash` = `29c0012fe4d0b612`"
+          - "SHALL NOT 改动归档 `proposal.md` 的正文内容（除 `source_hash` 注释行外）"
+          - "SHALL NOT 改动该 change 的 canonical YAML 正文"
+
+      - id: "SC-002"
+        confidence: high
+        evidence: "proposal.yaml what_changes C3 + constraints；2026-10-05 同类欠账（维护者命名修复时漏改 source_hash）"
+        given: "本仓 `canonical/proposals/` 下的全部 proposal YAML 与其对应 MD 均存在"
+        when: "对每一条 proposal 执行 `fstdd canon verify <change>`"
+        then: "SHALL 使全部 proposal 的 DC-HASH 一致（不再存在任何 1/2 的欠账条目）"
+        and:
+          - "本次修复 SHALL 只补齐既有欠账，SHALL NOT 借机改动其它 proposal 的内容"
+          - "验证范围 SHALL 至少覆盖根 `canonical/proposals/` 下全部条目"
+
+  - id: "REQ-002"
+    capability: "canonical-hash-integrity"
+    description: |
+      本 change 自身的 canonical 双轨 SHALL 保持一致：`canon verify 2026-10-06-legacy-debt-cleanup`
+      SHALL 输出 2/2，且其 proposal / spec YAML 与生成的 MD 指纹一致。
+
+    scenarios:
+      - id: "SC-003"
+        confidence: high
+        evidence: "proposal.yaml success_criteria；observed_at=2026-10-06 source=@4c6402e 本 change canon verify 实测 2/2"
+        given: "本 change 的 canonical proposal 与各 capability spec YAML 已就绪，且 Human View 已由 `canon generate` 渲染"
+        when: "执行 `fstdd canon verify 2026-10-06-legacy-debt-cleanup`"
+        then: "SHALL 输出 `2/2 通过`"
+        and:
+          - "新增的 4 个 capability spec SHALL 均在 `.canon-index.yaml` 中登记（无未登记文件）"
+          - "索引中登记的文件 SHALL 全部真实存在（零缺失）"

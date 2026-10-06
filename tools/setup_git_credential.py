@@ -127,7 +127,7 @@ def main() -> int:
 
     print("\n完成。若 push 仍失败，检查 remote URL 是否含正确的用户名：")
     r = subprocess.run(["git", "remote", "get-url", "origin"], cwd=str(REPO),
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
     print(f"  origin = {r.stdout.strip()}")
     return 0
 

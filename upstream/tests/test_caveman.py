@@ -26,7 +26,7 @@ PY = sys.executable
 
 
 def _run(args):
-    return subprocess.run(args, capture_output=True, text=True, cwd=str(REPO_ROOT))
+    return subprocess.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(REPO_ROOT))
 
 
 # ============================================================

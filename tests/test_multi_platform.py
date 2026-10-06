@@ -26,7 +26,7 @@ def _run(args: list[str], **env) -> subprocess.CompletedProcess:
     e.update({k: str(v) for k, v in env.items()})
     return subprocess.run(
         [PY, str(TOOLS / "install_workbuddy_skills.py"), *args],
-        capture_output=True, text=True, env=e, cwd=str(REPO_ROOT),
+        capture_output=True, text=True, encoding="utf-8", errors="replace", env=e, cwd=str(REPO_ROOT),
     )
 
 
@@ -36,7 +36,7 @@ def _verify(args: list[str], **env) -> subprocess.CompletedProcess:
     e.update({k: str(v) for k, v in env.items()})
     return subprocess.run(
         [PY, str(TOOLS / "verify_workbuddy_skills.py"), *args],
-        capture_output=True, text=True, env=e, cwd=str(REPO_ROOT),
+        capture_output=True, text=True, encoding="utf-8", errors="replace", env=e, cwd=str(REPO_ROOT),
     )
 
 
@@ -48,7 +48,7 @@ class TestPlatformYaml:
     def test_each_platform_has_manifest(self, tmp_path):
         """TC-MPA-001: platforms.yaml 每平台含 显示名 + 解析规则 + front-matter 规则，正文同源。"""
         import yaml
-        data = yaml.safe_load(PLATFORMS_YAML.read_text())
+        data = yaml.safe_load(PLATFORMS_YAML.read_text(encoding="utf-8"))
         platforms = data["platforms"]
         # workbuddy / claude-code / trae 三平台必须有
         for name in ("workbuddy", "claude-code", "trae"):
@@ -61,7 +61,7 @@ class TestPlatformYaml:
 
     def test_new_platform_needs_only_yaml_entry(self):
         """TC-MPA-002: 新增平台仅改 platforms.yaml，install 脚本无硬编码分支。"""
-        src = (TOOLS / "install_workbuddy_skills.py").read_text()
+        src = (TOOLS / "install_workbuddy_skills.py").read_text(encoding="utf-8")
         # 禁止按平台 if/else
         for plat in ("workbuddy", "claude-code", "trae", "cursor", "qoder"):
             assert f'if plat == "{plat}"' not in src, f"硬编码分支: {plat}"
@@ -81,7 +81,7 @@ class TestParamInstaller:
         # 产出 SKILL.md
         skill = list(out.rglob("SKILL.md")) + list(out.rglob("skill.md"))
         assert skill, f"claude-code 未产出 skill: out={out}"
-        content = skill[0].read_text()
+        content = skill[0].read_text(encoding="utf-8")
         # 无 version 字段
         assert "version:" not in content.split("---", 2)[1] if content.startswith("---") else True
         # description 为引号形态（需适配）
@@ -149,7 +149,7 @@ class TestNoHardcodeBranches:
             assert r.returncode == 0, f"{plat} 安装失败"
             skills = list(out.rglob("SKILL.md")) + list(out.rglob("skill.md"))
             assert skills, f"{plat} 未产出 skill"
-            content = skills[0].read_text()
+            content = skills[0].read_text(encoding="utf-8")
             # 剥离 front-matter，正文必须含共享源特征字符串
             body = content.split("---", 2)[-1] if content.startswith("---") else content
             assert "FSTDD" in body or "fstdd" in body, f"{plat} 正文不含共享源标识"
@@ -160,7 +160,7 @@ class TestNoHardcodeBranches:
         for sf in src_files:
             if not sf.exists():
                 continue
-            lines = sf.read_text().splitlines()
+            lines = sf.read_text(encoding="utf-8").splitlines()
             for i, line in enumerate(lines, 1):
                 for plat in ("workbuddy", "claude-code", "trae", "cursor"):
                     # 禁止: if platform == "xxx": / if plat == "xxx":
@@ -196,8 +196,8 @@ class TestEntryScripts:
         if not bash:
             pytest.skip("无 bash 解释器（Git Bash / WSL）")
         r = subprocess.run(
-            [bash, str(install_sh), "--platform", "claude-code"],
-            capture_output=True, text=True, cwd=str(REPO_ROOT),
+            [bash, str(install_sh), "--py", PY, "--platform", "claude-code"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(REPO_ROOT),
             env={**__import__('os').environ, "FSTDD_OUT": str(tmp_path)},
             timeout=60,
         )
@@ -214,8 +214,9 @@ class TestEntryScripts:
         if not install_ps1.exists():
             pytest.skip("install.ps1 不存在")
         r = subprocess.run(
-            ["powershell", "-File", str(install_ps1), "-Platform", "trae"],
-            capture_output=True, text=True, cwd=str(REPO_ROOT),
+            ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+             "-File", str(install_ps1), "-Python", PY, "-Platform", "trae"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(REPO_ROOT),
             env={**__import__('os').environ, "FSTDD_OUT": str(tmp_path)},
         )
         assert r.returncode == 0, f"install.ps1 exit={r.returncode} stderr={r.stderr}"

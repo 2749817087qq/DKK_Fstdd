@@ -1,0 +1,152 @@
+# 2026-10-06-legacy-debt-cleanup.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `fstdd canon generate` 生成。
+
+meta:
+  change_id: "2026-10-06-legacy-debt-cleanup"
+  title: "测试套件环境健壮性与遗留债务清理"
+  created: "2026-10-06T13:31:07+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    四项经实测确认的遗留债务长期挂账，共同后果是「门禁不可信」—— 红灯可能是环境噪声，
+    绿灯可能漏测：
+    1) 测试套件对环境编码敏感：用例普遍用 subprocess(text=True) 而不指定 encoding=，
+       解码因此走 locale。同一份代码在「控制台 UTF-8 + PYTHONUTF8=1」下 906 passed /
+       0 failed，一旦换环境即红 —— 不设 PYTHONUTF8 时 9 例因用 gbk 解本仓 CLI 的 UTF-8
+       输出而炸；只设 PYTHONUTF8 而控制台非 UTF-8 时，PowerShell 的 GBK 输出被按 UTF-8
+       解而炸（tests/test_multi_platform.py 2 例）。
+    2) 发布清单与实际仓库结构不符，且根 tests/ 带预存失败：
+       .fstdd/standards/release-and-docs.md 明文写「仓库根**没有** `tests/`」，
+       而根 tests/ 实际存在（9 个测试文件）；tests/test_finance_content.py::test_L1_11
+       硬编码 fstdd_version == "3.3.0"，自 3.3.1 起已过期；tests/test_multi_platform.py
+       2 例失败与 (1) 同源。
+    3) 一条归档 change 的 canonical 哈希欠账：
+       canon verify 2026-09-18-inbox-api-only-write 仅 1/2，DC-HASH 源哈希不一致
+       （YAML 29c0012fe4d0b612 vs 归档 proposal.md 16fa0e448d063e2a）。
+    4) _scratch/ 误入库 20MB：git ls-files 显示 27 条目已跟踪（25 普通文件 +
+       2 个 gitlink/内嵌 git 仓库），含 13.4MB red_pytest.log；.gitignore 从未包含
+       _scratch/。2026-09-18 change 的 test-report 曾声称「_scratch/ 已 gitignored」，
+       该断言为假。
+  motivation: |
+    D哥 2026-10-06 指令：把四项遗留问题合并清理（「新开change」）。四项同属「门禁可信度」
+    一条主线，单项体量都小，合并处理可一次性恢复「绿灯可信」的状态。
+  evidence:
+    observed_at: "2026-10-06T21:28:59+08:00"
+    observed_base_git_sha: "4c6402e366eb3e4e75efafc3f50341b77b0f8fd4"
+    details: |
+      1) 编码敏感量化（AST 扫描 upstream/tests + tests + tools 的 *.py）：
+         subprocess 调用 108 处，text-mode 87，带 encoding= 51，缺 encoding= 36（16 文件）。
+         热点：upstream/tests/commands/test_experience_glob_consistency.py(6)、
+         tests/run_release_validation.py(5)、
+         upstream/tests/commands/test_changes_dir_consistency.py(4)、
+         tests/test_multi_platform.py(4)、tools/test_verify_notices.py(3)。
+         复现：pytest tests/test_multi_platform.py -> 2 failed
+         (test_install_sh_passes_platform / test_install_ps1_passes_platform)，
+         均报 UnicodeDecodeError: 'utf-8' codec can't decode byte 0xce。
+      2) 发布清单与预存失败：
+         .fstdd/standards/release-and-docs.md:29 原文「注意测试在 `upstream/tests/`，
+         仓库根**没有** `tests/`」；实际 tests/ 有 9 个 *.py。
+         tests/test_finance_content.py:147 assert m.group(1) == "3.3.0"；
+         复现：pytest tests/test_finance_content.py::test_L1_11_version_yaml_fstdd_version
+         -> 1 failed（当前 fstdd_version = 3.3.5）。
+      3) canon verify 实测：
+         canon verify 2026-09-18-inbox-api-only-write ->
+         [FAIL] DC-HASH 源哈希不一致 (YAML: 29c0012fe4d0b612, MD: 16fa0e448d063e2a)；
+         [OK] DC-FIELD 字段引用完整；结论 1/2 通过。
+         归档 proposal.md:3 = <!-- source_hash: 16fa0e448d063e2a -->。
+      4) _scratch 实测：
+         git ls-files _scratch/ = 27 条目（模式统计：25 x 100644 + 2 x 160000）；
+         git ls-files -s 显示 _scratch/stdd-dev/stdd-repo（5e3f9a3）与
+         _scratch/upstream-cli-sync（c383be7）为 gitlink；du -sh _scratch/ = 20M；
+         最大 _scratch/red_pytest.log = 13,380,420 B；.gitignore 不含 _scratch。
+         注：_scratch/ 是 2026-10-03-finance-integration 变更明文保留的
+         fstdd-fin/SKILL.md 备份源（「源文件在 _scratch/ 保留（作为备份）」）。
+
+what_changes:
+  - description: "测试套件环境健壮性（modified）：为 upstream/tests、tests/、tools/ 下 16 文件 36 处 subprocess(text=True) 显式补 encoding=\"utf-8\", errors=\"replace\"，使门禁在任意 locale 下稳定，不再依赖 PYTHONUTF8/控制台编码"
+    type: modified
+  - description: "发布清单纠错（modified）：.fstdd/standards/release-and-docs.md 更正「仓库根没有 tests/」的失真表述，改为反映根 tests/ 的存在与其执行口径"
+    type: modified
+  - description: "预存失败修正（modified）：tests/test_finance_content.py::test_L1_11 由硬编码 \"3.3.0\" 改为动态读取 .fstdd/version.yaml 的 fstdd_version；tests/test_multi_platform.py 2 例随编码修复转绿"
+    type: modified
+  - description: "canonical 哈希补齐（modified）：.fstdd/archive/2026-09-18-inbox-api-only-write/proposal.md 的 source_hash 16fa0e448d063e2a 改为 29c0012fe4d0b612，使 canon verify 恢复 2/2"
+    type: modified
+  - description: "_scratch 取消跟踪（removed）：git rm -r --cached _scratch/（27 条目，含 2 个 gitlink）+ .gitignore 增 _scratch/；磁盘文件一律保留"
+    type: removed
+
+capabilities:
+  new: []
+  modified:
+    - name: "test-suite-portability"
+      description: "测试套件在任意 locale / 控制台编码下结果稳定：subprocess 文本调用显式指定 UTF-8 解码，门禁不再依赖 PYTHONUTF8 与 chcp 的隐式配合"
+    - name: "release-tooling-accuracy"
+      description: "发布清单与实际仓库结构一致；根 tests/ 断言不再硬编码过期版本号，改为动态读取单一事实源"
+    - name: "canonical-hash-integrity"
+      description: "canonical proposal 的 YAML 与 MD 源哈希一致，canon verify 全绿"
+    - name: "repo-hygiene"
+      description: "非发布物（_scratch/）不入库：取消跟踪 + gitignore，仓库体积回落，内嵌 git 仓库引用解除"
+
+impact:
+  code:
+    - "upstream/tests/** 与 tests/** 共 16 文件：subprocess text-mode 调用补 encoding=（含 tests/test_multi_platform.py、tests/run_release_validation.py）"
+    - "tests/test_finance_content.py：test_L1_11 改动态读版本"
+  config:
+    - ".gitignore：新增 _scratch/"
+    - ".fstdd/standards/release-and-docs.md：发布清单表述纠错"
+    - ".fstdd/archive/2026-09-18-inbox-api-only-write/proposal.md：source_hash 同步"
+  infrastructure:
+    - "无：不改 CLI 运行时行为、不动服务器、不推远端"
+
+constraints:
+  - "只做 git rm --cached，严禁删除 _scratch/ 磁盘实体（含 2 个 gitlink 目标；该目录是 fstdd-fin/SKILL.md 的备份源）"
+  - "断言只做可逆修正，不删除任何测试用例；修复前后须逐例比对，确保用例数不减少"
+  - "不改生产代码 / .fstdd 内核 / CLI 输出编码策略；不动 origin 分叉（另案）"
+  - "本 change 有意在 _scratch/ 上覆盖 2026-10-05 提案「_scratch/** 不得改动」的变更级约束（该约束随其 change 结案，不具跨 change 效力）"
+  - "改动后四自检须全绿：verify_rename 8/8、verify_eol 7/7、verify_skill_standards 7/7、verify_workbuddy_skills PASS"
+  - "权威门禁环境须保持：控制台 UTF-8 + PYTHONUTF8=1 + PYTHONIOENCODING=utf-8；本 change 的目标是让结果不依赖该环境"
+
+stakeholders:
+  - "D哥（决策与验收）"
+  - "后续维护者（发布门禁可信度）"
+
+risk_areas:
+  - capability: "test-suite-portability"
+    risk: "编码修复若写成吞掉错误（如 errors=ignore）会掩盖真实失败"
+    mitigation: "统一用 errors=replace（可观测替换而非静默丢弃）；修复后全量跑并核对 passed/skipped 计数与修复前一致"
+  - capability: "test-suite-portability"
+    risk: "36 处分散改动遗漏或改错，导致部分用例行为变化"
+    mitigation: "以 AST 清单逐文件核对；改动只增 encoding 参数，不改调用语义"
+  - capability: "canonical-hash-integrity"
+    risk: "只改哈希不改内容 / 只改内容不改哈希，造成新的不一致"
+    mitigation: "以 YAML 为唯一事实源，用 canon verify 2/2 作为验收断言"
+  - capability: "repo-hygiene"
+    risk: "误用 git add -A 或误删磁盘文件"
+    mitigation: "全程显式路径；仅 --cached；验收断言 git ls-files _scratch/ 为空且磁盘实体仍在"
+
+non_goals:
+  - "不重构 CLI 输出编码策略（不改 fstdd/cli 的 print 编码处理）"
+  - "不修 .fstdd/experiences 经验库的两个已知坑（per-project 路径 / 双重 frontmatter 包裹）"
+  - "不处理 origin 分叉（本地 master vs origin/master）与镜像 flag"
+  - "不清理 _batch 之外的历史临时文件"
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L1
+  reference_changes: []
+  anchor_implementations: []
+
+success_criteria:
+  - "权威门禁环境（控制台 UTF-8 + PYTHONUTF8=1 + PYTHONIOENCODING=utf-8）下全量 pytest 0 failed"
+  - "非 UTF-8 环境下 tests/test_multi_platform.py 2 例（test_install_sh_passes_platform / test_install_ps1_passes_platform）不再因 UnicodeDecodeError 失败"
+  - "canon verify 2026-09-18-inbox-api-only-write = 2/2"
+  - "git ls-files _scratch/ 为空，且 _scratch/ 在 .gitignore 中，且磁盘文件与 2 个 gitlink 实体仍在"
+  - "tests/test_finance_content.py::test_L1_11 在任意 fstdd_version 下动态通过"
+  - "四自检脚本全绿：verify_rename 8/8、verify_eol 7/7、verify_skill_standards 7/7、verify_workbuddy_skills PASS"

@@ -40,9 +40,9 @@ def test_bootcamp_grade_with_work(temp_project, monkeypatch, capsys):
     (bd / "answer").mkdir(parents=True)
     (bd / "work" / ".fstdd" / "changes" / "fix-typo").mkdir(parents=True)
     # Answer: .fstdd.yaml at answer root
-    (bd / "answer" / ".fstdd.yaml").write_text(yaml.dump({"change_id": "fix-typo"}))
+    (bd / "answer" / ".fstdd.yaml").write_text(yaml.dump({"change_id": "fix-typo"}), encoding="utf-8")
     # Work: .fstdd.yaml nested under .fstdd/changes/ (mimics real CLI output)
-    (bd / "work" / ".fstdd" / "changes" / "fix-typo" / ".fstdd.yaml").write_text(yaml.dump({"change_id": "fix-typo"}))
+    (bd / "work" / ".fstdd" / "changes" / "fix-typo" / ".fstdd.yaml").write_text(yaml.dump({"change_id": "fix-typo"}), encoding="utf-8")
     from fstdd.cli.commands.bootcamp import cmd_bootcamp
     import argparse
     ns = argparse.Namespace(subcommand="grade", level=1, module=None, verbose=0)

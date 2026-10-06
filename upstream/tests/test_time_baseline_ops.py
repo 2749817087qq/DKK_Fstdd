@@ -136,7 +136,7 @@ def test_tb_004_005_base_git_sha_matches_head(tmp_path):
     """TC-TB-004/005：git 项目中 base_git_sha == rev-parse HEAD（40 位）。"""
     proj, change_id = make_project(tmp_path, git=True)
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(proj),
-                          capture_output=True, text=True).stdout.strip()
+                          capture_output=True, text=True, encoding="utf-8", errors="replace").stdout.strip()
     assert head and len(head) == 40
     run_cli("baseline", "establish", change_id, cwd=proj)
     baseline = read_state(proj, change_id)["baseline"]
@@ -145,7 +145,7 @@ def test_tb_004_005_base_git_sha_matches_head(tmp_path):
     )
     # git log -1 能解析该 sha（祖先或自身 → 非空输出）
     log = subprocess.run(["git", "log", "-1", "--format=%H", baseline["base_git_sha"]],
-                         cwd=str(proj), capture_output=True, text=True)
+                         cwd=str(proj), capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert log.returncode == 0 and log.stdout.strip() == head
 
 

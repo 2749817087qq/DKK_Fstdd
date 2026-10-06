@@ -1,0 +1,60 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-06-legacy-debt-cleanup
+# capability: repo-hygiene（非发布物 _scratch/ 不入库）
+
+meta:
+  capability: "repo-hygiene"
+  change_id: "2026-10-06-legacy-debt-cleanup"
+  created: "2026-10-06T13:45:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    capability: "repo-hygiene"
+    description: |
+      非发布物目录 `_scratch/` SHALL NOT 被 git 跟踪。取消跟踪 SHALL 仅作用于**索引**
+      （`git rm --cached`），磁盘实体 SHALL 完整保留 —— 该目录是历史 change 明文保留的
+      `fstdd-fin/SKILL.md` 备份源。同时 SHALL 在 `.gitignore` 中忽略 `_scratch/`，
+      使其不再以 untracked 形态出现。
+
+    scenarios:
+      - id: "SC-001"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 4) 点；observed_at=2026-10-06T21:28:59+08:00 source=@4c6402e 实测 git ls-files _scratch/ = 27 条目（25 x 100644 + 2 x 160000 gitlink）"
+        given: "`_scratch/` 修复前有 27 个条目被 git 跟踪（含 2 个 mode 160000 的 gitlink：`_scratch/stdd-dev/stdd-repo`@5e3f9a3、`_scratch/upstream-cli-sync`@c383be7）"
+        when: "执行 `git ls-files _scratch/`"
+        then: "SHALL 输出为空"
+        and:
+          - "取消跟踪 SHALL 通过 `git rm -r --cached _scratch/` 完成"
+          - "SHALL NOT 使用不带 `--cached` 的 `git rm`（会删除工作树实体）"
+
+      - id: "SC-002"
+        confidence: high
+        evidence: "proposal.yaml constraints 第 1 条；2026-10-03-finance-integration 明文「源文件在 _scratch/ 保留（作为备份）」；**2026-10-06 BUILD 实测磁盘快照**（audit/scratch-inventory.txt）：27 条索引实体对应的磁盘实体 = 25 个普通文件 + 2 个**空** gitlink 目录（子模块从未初始化）⇒ 不存在 `_scratch/stdd-dev/stdd-repo/skills/fstdd-fin/SKILL.md` 该具体路径"
+        given: "`_scratch/` 修复前有 27 条索引实体（25 x 100644 + 2 x 160000 gitlink），磁盘上均存在；其中 2 个 gitlink 的磁盘目录为**空目录**（从未 init 子模块）"
+        when: "在取消跟踪后清点 `_scratch/` 的磁盘实体"
+        then: "SHALL 使 27 条索引实体对应的磁盘实体全部仍在（数量与内容不变）"
+        and:
+          - "2 个 gitlink 的磁盘目录 SHALL 仍在（父仓引用解除，实体不动）"
+          - "25 个普通文件实体 SHALL 全部仍在且非空（内容未丢失）"
+          - "SHALL NOT 出现任何 `_scratch/` 之外的已跟踪文件被删除"
+
+      - id: "SC-003"
+        confidence: high
+        evidence: "proposal.yaml what_changes C4；仓库 .gitignore 既有注释（gitignore 不作用于已跟踪文件，须配合 git rm --cached）"
+        given: "`_scratch/` 已取消跟踪"
+        when: "检查仓库根 `.gitignore` 并执行 `git status --porcelain`"
+        then: "SHALL 使 `.gitignore` 含忽略 `_scratch/` 的规则"
+        and:
+          - "`git status --porcelain` 输出 SHALL NOT 出现任何 `_scratch/` 条目"
+          - "`upstream/tests/test_repo_home.py::test_a6_no_stray_untracked_files` SHALL 通过"
+
+      - id: "SC-004"
+        confidence: high
+        evidence: "proposal.yaml success_criteria 第 4 条；design.md 决策 4"
+        given: "本 capability 的改动（取消跟踪 + gitignore）已完成，且未触碰 `_scratch/` 之外的文件"
+        when: "执行 `git status --porcelain` 与 `git ls-files _scratch/`"
+        then: "SHALL 满足三项同时成立：`git ls-files _scratch/` 为空、`_scratch/` 在 `.gitignore` 中、磁盘实体仍在"
+        and:
+          - "仓库体积相关：`_scratch/` 的 20MB SHALL NOT 再进入后续提交"
+          - "本次 SHALL NOT 因取消跟踪而删除任何非 `_scratch/` 的已跟踪文件"

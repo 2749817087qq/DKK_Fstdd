@@ -67,7 +67,7 @@ class TestInstall:
         out_dir = tmp_path / "skills"
         env = dict(os.environ, FSTDD_OUT=str(out_dir), FSTDD_PY=sys.executable)
         r = subprocess.run([sys.executable, str(INSTALLER)], env=env,
-                           capture_output=True, text=True, timeout=180)
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180)
         assert r.returncode == 0, r.stdout + r.stderr
         names = sorted(p.name for p in out_dir.iterdir() if p.is_dir())
         assert "fstdd" in names
@@ -95,7 +95,7 @@ class TestInstall:
         env = dict(os.environ, FSTDD_OUT=str(out_dir), FSTDD_PY=sys.executable)
         subprocess.run([sys.executable, str(INSTALLER)], env=env, capture_output=True, timeout=180)
         r = subprocess.run([sys.executable, str(VERIFIER)], env=env,
-                           capture_output=True, text=True, timeout=180)
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180)
         assert "PASS" in (r.stdout or ""), r.stdout + r.stderr
 
 

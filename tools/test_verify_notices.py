@@ -75,7 +75,7 @@ def _run_cli(dir_path, extra_args=None, cwd=None):
     return subprocess.run(
         [sys.executable, str(VERIFY_SCRIPT), str(dir_path)] + (extra_args or []),
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
         cwd=str(cwd or REPO_ROOT),
     )
 
@@ -291,7 +291,7 @@ def test_TC_NAV_011_quarantine_dir_gitignored():
     assert "tools/_quarantine" in content, ".gitignore must cover tools/_quarantine/"
     proc = subprocess.run(
         ["git", "check-ignore", "-v", "tools/_quarantine/x"],
-        cwd=str(REPO_ROOT), capture_output=True, text=True,
+        cwd=str(REPO_ROOT), capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
     assert proc.returncode == 0
     assert proc.stdout.strip()
@@ -438,7 +438,7 @@ def test_TC_NEP_001_daily_share_untouched():
     # 3. 本变更对 daily_share.py 必须零 diff
     proc = subprocess.run(
         ["git", "diff", "--", "tools/fstdd003_daily_share.py"],
-        cwd=str(REPO_ROOT), capture_output=True, text=True,
+        cwd=str(REPO_ROOT), capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
     assert proc.stdout.strip() == "", (
         f"daily_share.py must have zero diff from baseline:\n{proc.stdout}"

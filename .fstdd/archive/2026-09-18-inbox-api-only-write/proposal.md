@@ -1,6 +1,6 @@
 # inbox 收目录收口：仅服务用户可写（scp 直写被文件系统拒绝）
 
-<!-- source_hash: 16fa0e448d063e2a -->
+<!-- source_hash: 29c0012fe4d0b612 -->
 <!-- generated_at: 2026-09-18T09:04:43+00:00 -->
 <!-- canonical: canonical/proposals/2026-09-18-inbox-api-only-write.yaml -->
 

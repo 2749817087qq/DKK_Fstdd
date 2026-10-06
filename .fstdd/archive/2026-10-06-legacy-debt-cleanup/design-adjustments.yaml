@@ -1,0 +1,155 @@
+# design-adjustments.yaml — Phase 3 设计偏离汇总
+# 对照 Phase 2 的 design.md / test-plan.md，记录实际执行中的调整
+# 来源：pending-adjustments.yaml（BUILD 期逐条累积，Part C 汇总）
+
+change_id: "2026-10-06-legacy-debt-cleanup"
+created: "2026-10-06T15:50:00+00:00"
+summary: |
+  Phase 3 执行中有 8 项偏离原设计。其中 4 项（ADJ-001/004/007/008）为**范围扩大**：
+  实测证明原设计划定的修复面不足 —— 只修「声明缺失」而不覆盖「同族的隐式 locale 依赖」
+  与「生产者/消费者编码不一致」，无法兑现 REQ-001 的意图「解码结果不依赖运行环境」。
+  2 项（ADJ-002/006）为执行中发现的原设计缺口（宿主能力参数缺失、规格事实假设被证伪）。
+  1 项（ADJ-003）为同一行内的第二处同类失真。
+  1 项（ADJ-005）为**发现但刻意未改** —— 改它会违反本 change 自身的 SC-001 条款。
+
+  贯穿全程的教训：**审计工具自身的假绿与假红都必须被拦住** ——
+  ADJ-008 中三条缺陷里有一条正是「审计脚本漏检别名 import」，它让「0 违规」成为假绿。
+
+adjustments:
+  - id: ADJ-001
+    severity: large
+    type: 范围扩大
+    original: "SC-001 原文限定「以文本模式调用子进程的测试与工具代码」"
+    actual: |
+      实现面由 subprocess 扩大到「所有隐式依赖 locale 的文本 I/O」：
+      除原定 36 处 subprocess(text=True) 外，另补 19 处
+      Path.read_text() / write_text() / open() 的 encoding="utf-8"（7 文件）。
+    reason: |
+      实测证据：仅修 subprocess 后，在真非 UTF-8 环境下 pytest tests/test_multi_platform.py
+      仍 7 failed（原为 2 failed）。根因是同族但不同 API —— Path.read_text() 不带 encoding
+      时同样按 locale 解码，GBK 主机读 UTF-8 源码即 UnicodeDecodeError。
+      补齐 19 处后失败数由 7 降至 2，且两个环境结果完全一致
+      ⇒ REQ-001 的意图只有在覆盖全部隐式 locale 文本 I/O 后才达成。
+    impact: "capability test-suite-portability 的实现范围与 TC-TSP-001 的扫描口径；接口与行为语义不变"
+    evidence: "双环境对照逐字一致（1 failed, 74 passed, 3 skipped, 1 deselected）；最终 92 passed / 3 skipped 两环境相同"
+
+  - id: ADJ-002
+    severity: small
+    type: 新增必要动作
+    original: "SC-002 承诺 tests/test_multi_platform.py 结果 11 passed, 1 skipped"
+    actual: |
+      为 TestEntryScripts 两例补**宿主隔离参数**（断言不变）：
+      install.sh 补 --py <sys.executable>；install.ps1 补 -NoProfile -ExecutionPolicy Bypass -Python <sys.executable>。
+    reason: |
+      消除 UnicodeDecodeError 后，两例暴露**宿主能力缺口**（与 locale 无关，两环境同样失败）：
+      · PowerShell 生效策略 Restricted ⇒ 禁止运行任何 .ps1；
+      · install.sh 自动选中的 python3 缺 PyYAML ⇒ ModuleNotFoundError。
+      两例的被测目标是「--platform 透传」，不是「宿主能否跑脚本」；
+      同文件的 _run / _verify 助手本就统一用 PY = sys.executable，补参与既有约定一致。
+    impact: "仅 tests/test_multi_platform.py 两个集成用例的调用参数；断言与用例集合不变"
+    evidence: "补参后两环境均 11 passed, 1 skipped；断言强度未削弱（仍 returncode == 0）"
+
+  - id: ADJ-003
+    severity: small
+    type: 范围扩大
+    original: "SC-001 原范围＝纠正「仓库根没有 tests/」一处失真表述"
+    actual: |
+      .fstdd/standards/release-and-docs.md 第 29 行的**同一行**内另有第二处过期数字需一并纠正：
+      「851 用例」→ 实际 upstream/tests 现收集 960 用例；且命令未覆盖仓库根 tests/（71 用例）。
+    reason: "同一行、同一类失真；拆开处理会留下自相矛盾的清单。"
+    impact: "capability release-tooling-accuracy；仅该文档同一行的数字与命令口径"
+    evidence: "pytest --collect-only：upstream/tests = 960 collected；tests/ = 71（修复前基线）"
+
+  - id: ADJ-004
+    severity: large
+    type: 范围扩大
+    original: "REQ-002 通则「SHALL NOT 硬编码任何版本字面量」，Phase 2 仅具名 test_L1_11"
+    actual: |
+      build 阶段发现第二处同类硬编码：tests/test_install_smoke.py::test_L0_01_git_pull_to_tag
+      断言字面量发布 tag fstdd-v3.1.1（5 处）。改为由 .fstdd/version.yaml 的 fstdd_version
+      派生；并补 2 个**宿主隔离**用例覆盖「tag 一致→通过 / 不一致→失败」两分支。
+      规格侧补 SC-005（挂既有 REQ-002 下）。
+    reason: |
+      实测 AssertionError: HEAD tag = fstdd-v3.3.5, expected fstdd-v3.1.1。
+      该用例第 39 行 git fetch 失败即 pytest.skip，本沙箱 GitHub 不可达
+      ⇒ 断言路径**长期不被执行**，故从未被列入「预存失败」。
+      ⚠️ 时效风险：镜像恢复后 git fetch 一旦可达，该用例立即转红。
+    impact: "1 个既有测试文件 + 2 个新用例；spec 增 SC-005（REQ 数不变）"
+    evidence: "tests/*.py 硬编码 tag 字面量 5 → 0；test_L0_01 在宿主隔离下两分支均被验证"
+
+  - id: ADJ-005
+    severity: small
+    type: 记录未修（约束冲突）
+    original: "SC-001 AND 条款「除该处失真表述外，清单其余条目 SHALL 逐字保持不变」"
+    actual: |
+      **发现但刻意未改**：release-and-docs.md 第 16 行「当前：3.1.0（project.yaml 的 stdd_version）」
+      亦为过期表述（实测 stdd_version = 3.3.5）。
+    reason: "改第 16 行会**违反本 change 自身的 SC-001 条款**。留待后续 change 一并处理（建议改为引用单一事实源而非写死版本号）。"
+    impact: "无代码影响；仅文档一处未纠正的过期表述，已在 test-report 已知问题登记"
+    evidence: "实测 .fstdd/config.d/project.yaml 的 stdd_version = 3.3.5"
+
+  - id: ADJ-006
+    severity: medium
+    type: 事实更正
+    original: "SC-002 GIVEN 断言「_scratch/stdd-dev/stdd-repo/skills/fstdd-fin/SKILL.md 是备份源」；AND 断言「该路径 SHALL 仍可读」"
+    actual: |
+      **规格基于错误事实假设，已更正**：实测 2 个 gitlink 目录均为**空目录**（子模块从未 init），
+      故不存在该路径。SC-002 改写为以**索引实体快照**为准（27 条实体：25 普通文件 + 2 空 gitlink 目录）。
+    reason: |
+      实测 ls -la _scratch/stdd-dev/stdd-repo/ → 空；目标文件 No such file or directory；
+      逐条核对 27 条索引实体磁盘存在性 → MISSING: 0（gitlink 路径本身 is_dir() 为真，但内部为空）。
+      ⚠️ proposal.yaml 第 64–65 行含同一假设，但**刻意不改** —— 其 source_hash 派生 proposal.md 的
+      DC-HASH，改它会破坏 canon verify 2/2；且该处为「转述历史 change 原话」，非本 change 的事实断言。
+    impact: "capability repo-hygiene 的 SC-002 文本与 TC-RH-002 的断言面；无代码影响；索引/磁盘状态不变"
+    evidence: "audit/scratch-inventory.txt（含 25 个文件 md5）；ls -la 实测"
+
+  - id: ADJ-007
+    severity: large
+    type: 范围扩大
+    original: "REQ-001 落点＝「以文本模式调用子进程的测试与工具代码 SHALL 声明 encoding=」/ SC-001 AST 判据"
+    actual: |
+      **第三类编码缺陷**：upstream/tests/test_install_scripts.py 的 _run() **已**声明
+      encoding="utf-8"，但**生产者**（Windows PowerShell 5.1）在 stdout 被重定向时按
+      [Console]::OutputEncoding 编码（本机实测 gb2312 / CP=936）⇒ 中文被解成 U+FFFD。
+      处置：新增 _force_utf8_output() / _ps_arg() / _ps_quote()，改写为
+      -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & '<script>' <args>"；
+      pwsh（PowerShell 7+，默认 UTF-8）不加包装。规格侧补 SC-006。
+    reason: |
+      实测全量 upstream/tests = 2 failed，其中 test_install_ps1_explicit_python 报
+      AssertionError（stdout 呈现 FSTDD for WorkBuddy ���� ��װ）。
+      ⚠️ 该失败与本 change 既有改动**无关**（git diff 对 install.ps1 / test_install_scripts.py /
+      install_workbuddy_skills.py / verify_workbuddy_skills.py **0 命中**）⇒ 属**预存缺陷**。
+      但它恰好是 REQ-001 明文意图「使解码结果不依赖运行环境的 locale / 控制台代码页」的反例：
+      SC-001 的 AST 判据只查「是否声明 encoding=」，**结构上抓不到「声明值与生产者不符」这一类**。
+      ⇒ 修它是为兑现 REQ-001 的意图，非范围外新增。
+      ⚠️ 独立评审曾判定此项「越界」（理由：该文件已声明 encoding=，与 SC-001 判据不自洽）。
+      本 change 的裁定：**采纳修复、保留并如实登记该分歧** —— 依据是 REQ-001 的意图条款优先于
+      SC-001 的操作化判据；且不修则「套件不依赖环境」的变更目标不成立。
+    impact: "1 个既有测试文件（+3 私有 helper，用例集合不变）；spec 增 SC-006（REQ 数不变）"
+    evidence: "修复前 CP936 控制台 1 failed / 2 passed → 修复后 3 passed（同一 CP936 控制台）"
+
+  - id: ADJ-008
+    severity: large
+    type: 缺陷修复 + 审计工具加固
+    original: "SC-001 AST 判据与 ADJ-001 的文本 I/O 扩展"
+    actual: |
+      C1 多路并行技术评审（3 代理）暴露三处实现/工具缺陷：
+      ① **审计工具漏检（假绿）**：扫描器只匹配 subprocess.X，漏掉 test_new_isolate.py 的
+         import subprocess as _sp 两处（L96 / L144）⇒ 已补 encoding=，并把扫描器改为解析
+         import 别名，另加 test_scanner_binding_selfcheck 自检。
+      ② **补丁脚本误插（真 bug）**：tools/fstdd003_daily_share.py:110 被补上
+         _OPENER.open(req, timeout=60, encoding="utf-8")，而 urllib.request.OpenerDirector.open()
+         **不接受** encoding= ⇒ 运行时 TypeError。已回退（该文件恢复零 diff，同时解掉与
+         tools/test_verify_notices.py::test_TC_NEP_001「daily_share.py 零 diff」断言的冲突）。
+         根因：原扫描器把任意 .open() 都当文件 I/O；已改为按接收者形态收窄
+         （_is_pathish_receiver()），保留 tarfile.open(encoding=) 这类合法例外。
+      ③ **审计测试自身的假绿/假红**：test_release_manifest_accuracy.py 的失真表述检测用固定
+         子串清单，被评审用反例证伪（漏判「仓库根目录下没有 tests 目录」；误报「引述并更正」语境）
+         ⇒ 改为正则 + 更正语境豁免，并加 test_tc_rta_001e 把两个反例固化为断言。
+    reason: |
+      实测：别名扫描修复前缺 encoding 的 text-mode subprocess = 2 → 修复后 = 0；
+      属性式 .open(encoding=) 修复前含 _OPENER（不支持）→ 修复后仅剩 tarfile×2（支持）与
+      AUDIT_PATH（Path）；daily_share.py 回退后 git diff --stat 为空。
+      ⚠️ ② 的隐蔽性极高：**全量 960 + 根 94 用例双双全绿也照不出来**，因为该代码路径无测试覆盖。
+    impact: "test-suite-portability（+1 文件、+1 自检用例）；release-tooling-accuracy（+1 自检用例）；tools/ 回退 1 处"
+    evidence: "见上三条实测；经验库 EXP-2026-0020 / 0021 已固化判据"

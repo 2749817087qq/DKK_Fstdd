@@ -1,0 +1,87 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-06-legacy-debt-cleanup
+# capability: test-suite-portability（测试套件在任意 locale / 控制台编码下结果稳定）
+
+meta:
+  capability: "test-suite-portability"
+  change_id: "2026-10-06-legacy-debt-cleanup"
+  created: "2026-10-06T13:45:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    capability: "test-suite-portability"
+    description: |
+      所有以文本模式调用子进程的测试与工具代码 SHALL 在**调用点**显式指定 UTF-8 解码，
+      使解码结果不依赖运行环境的 locale / 控制台代码页；SHALL NOT 依赖 `PYTHONUTF8` /
+      `PYTHONIOENCODING` 等环境变量的隐式配合。解码失败 SHALL 以可观测方式呈现
+      （`errors="replace"` 产生 U+FFFD），SHALL NOT 静默丢弃（`errors="ignore"`）。
+
+    scenarios:
+      - id: "SC-001"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 1) 点；observed_at=2026-10-06T21:28:59+08:00 source=@4c6402e AST 扫描实测：subprocess 108 / text-mode 87 / 带 encoding= 51 / 缺 36（16 文件）"
+        given: "`upstream/tests/`、`tests/`、`tools/` 下存在以 `text=True`（或 `universal_newlines=True`）调用 `subprocess` 且未指定 `encoding=` 的位置（修复前 36 处 / 16 文件）"
+        when: "对上述三个目录的 `*.py` 执行 AST 扫描，统计 text-mode 调用中未指定 `encoding=` 的数量"
+        then: "SHALL 使该数量为 0"
+        and:
+          - "扫描范围 SHALL 覆盖 `upstream/tests/**`、`tests/**`、`tools/**` 的全部 `*.py`"
+          - "修复 SHALL 只新增 `encoding=` / `errors=` 关键字参数，SHALL NOT 改动 `args` 列表、`cwd`、`env`、`timeout` 等既有实参"
+
+      - id: "SC-002"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 1) 点；observed_at=2026-10-06T21:28:59+08:00 source=@4c6402e 复现：pytest tests/test_multi_platform.py -> 2 failed（UnicodeDecodeError: 'utf-8' codec can't decode byte 0xce）"
+        given: "`tests/test_multi_platform.py` 的 `test_install_sh_passes_platform` 与 `test_install_ps1_passes_platform` 修复前在非 UTF-8 环境下各以 `UnicodeDecodeError` 失败"
+        when: "在**非 UTF-8 环境**（不设 `PYTHONUTF8`，控制台为 GBK）下执行 `pytest tests/test_multi_platform.py`"
+        then: "SHALL 使上述 2 例不再因 `UnicodeDecodeError` 失败"
+        and:
+          - "该文件的结果 SHALL 为 `11 passed, 1 skipped`（原 `2 failed, 9 passed, 1 skipped` 的 2 例转绿）"
+          - "该文件 SHALL NOT 出现任何 `UnicodeDecodeError`"
+
+      - id: "SC-003"
+        confidence: high
+        evidence: "proposal.yaml success_criteria 第 1 条；observed_at=2026-10-06 source=@4c6402e 权威门禁实测 906 passed / 54 skipped / 0 failed"
+        given: "编码修复已完成，且运行于**权威门禁环境**（控制台 UTF-8 + `PYTHONUTF8=1` + `PYTHONIOENCODING=utf-8`）"
+        when: "执行全量 `pytest upstream/tests tests -q`"
+        then: "SHALL 使结果为 `0 failed`"
+        and:
+          - "通过数 SHALL 不低于修复前基线 `906 passed`"
+          - "跳过数 SHALL 不高于修复前基线 `54 skipped`"
+
+      - id: "SC-004"
+        confidence: high
+        evidence: "proposal.yaml risk_areas 第 1 条；EXP-2026-0014（(f) 运行时行为偏差：except Exception: pass 静默降级）"
+        given: "修复后的 text-mode `subprocess` 调用已带 `errors=` 参数"
+        when: "审查全部新增的 `errors=` 取值"
+        then: "SHALL 使取值一律为 `replace`（或 `surrogateescape`），SHALL NOT 出现 `ignore`"
+        and:
+          - "修复 SHALL NOT 引入以 `except Exception: pass` / `except: pass` 吞掉解码或调用异常的兜底"
+          - "`errors=\"replace\"` 产生的 U+FFFD SHALL 视为可观测信号，不视为需要抹除的噪声"
+
+      - id: "SC-006"
+        confidence: high
+        evidence: "2026-10-06 Phase 3 BUILD 实测（build 阶段新发现）：pytest upstream/tests/test_install_scripts.py::TestInstallPs1ArgParse::test_install_ps1_explicit_python -> AssertionError（stdout 里 `使用：<python>` 被解成 U+FFFD）；根因实测 `[Console]::OutputEncoding = gb2312 / CP=936`，Windows PowerShell 5.1 重定向 stdout 时按控制台代码页输出 GBK，与调用点声明的 encoding=\"utf-8\" 不符。修复前该文件在 CP936 控制台 1 failed / 2 passed，修复后 3 passed"
+        given: "`upstream/tests/test_install_scripts.py` 以 `encoding=\"utf-8\"` 解码 Windows PowerShell 的 stdout，而 PowerShell 5.1 在 stdout 被重定向时按 `[Console]::OutputEncoding`（中文主机 = GBK / CP936）编码"
+        when: "在控制台代码页非 UTF-8 的环境下执行 `pytest upstream/tests/test_install_scripts.py`"
+        then: "SHALL 使该文件全部用例通过（3 passed）"
+        and:
+          - "调用 SHALL 显式令 PowerShell 以 UTF-8 写出 stdout（`[Console]::OutputEncoding=UTF8`），SHALL NOT 依赖调用方的控制台代码页"
+          - "对 `pwsh`（PowerShell 7+，默认 UTF-8）SHALL NOT 施加多余包装"
+          - "包装 SHALL NOT 改变 `param()` 绑定语义（参数名不得被引号化为字符串字面量）"
+
+  - id: "REQ-002"
+    capability: "test-suite-portability"
+    description: |
+      编码修复 SHALL NOT 改变任何测试的**收集结果**与**断言语义**：用例集合（数量、ID、文件归属）
+      SHALL 与修复前完全一致，SHALL NOT 新增、删除、改名或跳过任何既有用例。
+
+    scenarios:
+      - id: "SC-005"
+        confidence: high
+        evidence: "proposal.yaml constraints 第 2 条（断言只做可逆修正，不删除任何测试用例）"
+        given: "编码修复前的用例集合已由 `pytest --collect-only -q` 记录"
+        when: "在修复后再次执行 `pytest --collect-only -q`，并与修复前的用例清单逐条比对"
+        then: "SHALL 使用例清单完全一致（无新增 / 无删除 / 无改名 / 无新增 skip）"
+        and:
+          - "`tests/test_multi_platform.py` 的用例数 SHALL 保持 12（11 passed + 1 skipped）"
+          - "任何用例的 `skip` 理由 SHALL NOT 因本次修复而新增"
