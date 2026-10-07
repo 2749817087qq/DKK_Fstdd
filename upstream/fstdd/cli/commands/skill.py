@@ -3,6 +3,8 @@
 import sys
 from pathlib import Path
 
+from ._dryrun import dry_run_guard
+
 
 SKILL_TEMPLATE = """---
 name: {name}
@@ -30,6 +32,7 @@ related_skills: []
 """
 
 
+@dry_run_guard("skill create")
 def cmd_skill_create(args):
     """Create a new STDD Skill from template."""
     project_root = Path.cwd()

@@ -20,6 +20,7 @@ import argparse
 import shutil
 from datetime import datetime, timezone
 from ..timeutil import utc_now_iso
+from ._dryrun import dry_run_preview
 from pathlib import Path
 
 # V2.9.3: Import scope classifier from guard
@@ -726,6 +727,18 @@ def cmd_batch(args: argparse.Namespace) -> None:
     """Entry point for batch command."""
     project_root = Path.cwd()
     action = getattr(args, "action", "status")
+
+    # `--dry-run`：写操作只预览、不落盘（读操作不受影响）
+    # 读路径白名单 = `batch list` / `batch status` / `batch child status`（child 的默认子动作）。
+    # 2026-10-07 评审发现：初版只放行 action in ("list","status")，把 `batch child status`
+    # 这个**纯读**路径也一并屏蔽了 —— 属「dry-run 误伤读命令」。
+    _child_action = getattr(args, "child_action", "status")
+    _is_read_only = (
+        action in ("list", "status")
+        or (action == "child" and _child_action in (None, "", "status", "list"))
+    )
+    if not _is_read_only and dry_run_preview(args, f"batch {action}"):
+        return
 
     if action == "open":
         description = getattr(args, "description", "") or ""

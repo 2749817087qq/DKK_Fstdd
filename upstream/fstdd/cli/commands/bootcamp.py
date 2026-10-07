@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 from ..timeutil import utc_now_iso
+from ._dryrun import dry_run_guard
 
 LEVELS = {
     1: {
@@ -75,6 +76,7 @@ def _calc_level(passed: list) -> str:
     return "none"
 
 
+@dry_run_guard("bootcamp start")
 def cmd_bootcamp_start(args: argparse.Namespace) -> None:
     """Start or continue bootcamp training."""
     project_root = Path.cwd()
@@ -186,6 +188,7 @@ def cmd_bootcamp_status(args: argparse.Namespace) -> None:
     print()
 
 
+@dry_run_guard("bootcamp retry")
 def cmd_bootcamp_retry(args: argparse.Namespace) -> None:
     """Retry a failed level."""
     project_root = Path.cwd()
@@ -212,6 +215,7 @@ def cmd_bootcamp_retry(args: argparse.Namespace) -> None:
     cmd_bootcamp_start(ns)
 
 
+@dry_run_guard("bootcamp skip")
 def cmd_bootcamp_skip(args: argparse.Namespace) -> None:
     """Skip a level (requires user confirmation)."""
     project_root = Path.cwd()
@@ -232,6 +236,7 @@ def cmd_bootcamp_skip(args: argparse.Namespace) -> None:
     print(f"  第 {lv} 关已跳过。当前等级: {_calc_level(passed)}")
 
 
+@dry_run_guard("bootcamp grade")
 def cmd_bootcamp_grade(args: argparse.Namespace) -> None:
     """Grade current level output against answer key (internal, called by AI after training)."""
     project_root = Path.cwd()

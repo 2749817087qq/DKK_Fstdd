@@ -1,0 +1,10 @@
+# 工具链契约保真：6 个既有缺陷修复（声明 = 行为）
+
+<!-- source_hash: 8be0…
+<!-- generated_: 2026-…
+<!-- canonical: canoni…yaml -->
+
+## What Changes
+
+- phase：按既有范式让 `--dr…fstdd.yaml`；并新增**防复发契约测试**…
+- experience：索引写盘统一 …..

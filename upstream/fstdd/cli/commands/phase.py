@@ -5,6 +5,7 @@ import argparse
 from pathlib import Path
 from datetime import datetime
 from ..timeutil import utc_now_iso
+from ._dryrun import dry_run_preview
 import yaml
 
 from .phase_constants import (
@@ -94,6 +95,8 @@ def cmd_phase(args: argparse.Namespace) -> None:
             print(f"  ❌ Slice {slice_id} 已存在不同证据，拒绝覆盖。")
             sys.exit(1)
         slices[slice_id] = evidence
+        if dry_run_preview(args, "phase record-slice", detail=f"slice={slice_id}"):
+            return
         data["last_modified"] = utc_now_iso()
         stdd_yaml.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False), encoding="utf-8")
         print(f"  Slice {slice_id} evidence recorded for change {change_dir.name}")
@@ -165,6 +168,12 @@ def cmd_phase(args: argparse.Namespace) -> None:
                 sys.exit(1)
 
         # Mark current phase completed
+        if dry_run_preview(
+            args,
+            "phase advance",
+            detail=f"{_PHASE_LABELS.get(current, current)} → {_PHASE_LABELS[nxt]}",
+        ):
+            return
         phases.setdefault(current, {})["status"] = "completed"
         # Only auto-set confirmed_at for non-gate phases
         if current not in _GATE_PHASES:
@@ -190,6 +199,8 @@ def cmd_phase(args: argparse.Namespace) -> None:
         if target not in _PHASE_ORDER:
             print(f"  Invalid phase: {target}. Valid: {', '.join(_PHASE_ORDER)}")
             sys.exit(1)
+        if dry_run_preview(args, "phase set", detail=f"→ {_PHASE_LABELS[target]}"):
+            return
         data["current_phase"] = target
         data.setdefault("phases", {}).setdefault(target, {})["status"] = "in_progress"
         data["last_modified"] = utc_now_iso()

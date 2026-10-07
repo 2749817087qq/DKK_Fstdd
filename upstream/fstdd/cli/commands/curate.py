@@ -11,6 +11,7 @@ import yaml
 import requests
 
 from .experience import _coerce_numeric_fields
+from ._dryrun import dry_run_guard
 
 
 def _read_community_config(project_root: Path) -> dict:
@@ -36,6 +37,7 @@ def _pattern_similarity(a: str, b: str) -> float:
     return len(intersection) / len(union) if union else 0.0
 
 
+@dry_run_guard("curate pull")
 def cmd_curate_pull(args: argparse.Namespace, project_root: Path) -> None:
     """Download all .tar.gz packs from all registries into inbox."""
     config = _read_community_config(project_root)
@@ -72,6 +74,7 @@ def cmd_curate_pull(args: argparse.Namespace, project_root: Path) -> None:
     print(f"  Inbox: {inbox}")
 
 
+@dry_run_guard("curate deduplicate")
 def cmd_curate_deduplicate(args: argparse.Namespace, project_root: Path) -> None:
     """Detect and merge duplicate experiences in inbox."""
     curation_dir = _get_curation_dir(project_root)
@@ -158,6 +161,7 @@ def cmd_curate_deduplicate(args: argparse.Namespace, project_root: Path) -> None
         print("  未发现重复经验。")
 
 
+@dry_run_guard("curate review")
 def cmd_curate_review(args: argparse.Namespace, project_root: Path) -> None:
     """Interactive review of experiences in inbox."""
     curation_dir = _get_curation_dir(project_root)
@@ -258,6 +262,7 @@ def cmd_curate_review(args: argparse.Namespace, project_root: Path) -> None:
     print(f"\n  Review complete: {len(approved)} approved, {len(rejected)} rejected")
 
 
+@dry_run_guard("curate pack")
 def cmd_curate_pack(args: argparse.Namespace, project_root: Path) -> None:
     """Package approved experiences into official release tar.gz."""
     curation_dir = _get_curation_dir(project_root)

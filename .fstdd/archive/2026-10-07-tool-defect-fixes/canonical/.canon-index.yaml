@@ -1,0 +1,13 @@
+designs: {}
+proposals:
+  2026-10-07-tool-defect-fixes: proposals/2026-10-07-tool-defect-fixes.yaml
+specs:
+  agent:
+    2026-10-07-tool-defect-fixes: specs/agent/2026-10-07-tool-defect-fixes.yaml
+  code:
+    ci-check-accuracy: specs/code/ci-check-accuracy.yaml
+    dry-run-fidelity: specs/code/dry-run-fidelity.yaml
+    experience-io-contract: specs/code/experience-io-contract.yaml
+    proposal-extraction-fidelity: specs/code/proposal-extraction-fidelity.yaml
+    quarantine-opt-in-safety: specs/code/quarantine-opt-in-safety.yaml
+version: '2.9'

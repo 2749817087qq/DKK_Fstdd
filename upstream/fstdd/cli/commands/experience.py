@@ -10,11 +10,31 @@ import io
 import threading
 from contextlib import contextmanager
 from pathlib import Path
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 import yaml
 import requests
+
+from ._dryrun import dry_run_preview
+
+
+def _json_default(o):
+    """`json.dumps` 的可序列化归一：`date`/`datetime` → ISO 串，其余 → `str`。
+
+    为什么需要：经验条目的 `exported_at` / `first_seen` 等字段若以**未加引号**日期
+    存盘（如 `exported_at: 2026-09-26`），`yaml.safe_load` 会解析成 `datetime.date`，
+    而 `json.dumps` 对 date 无原生支持 ⇒ 无过滤列举时抛
+    `TypeError: Object of type date is not JSON serializable`（实测 74 条中 57 条命中）。
+
+    为什么不逐处补 `default=str`：本模块有 **5 处** `json.dumps`，逐处补必漏
+    （EXP-2026-0020：批量补参数必须按「接收者语义」收口，而非按调用点散补）。
+    故统一走本函数，并由 `test_tc_eio_004` 以「集合相等」断言全部调用点已归一。
+    """
+    if isinstance(o, date):          # datetime 是 date 的子类，一并覆盖
+        return o.isoformat()
+    return str(o)
+
 
 
 VALID_CATEGORIES = [
@@ -278,12 +298,12 @@ def _save_index(exp_dir: Path, index: dict) -> None:
         index_path = _get_index_path(exp_dir)
         tmp_path = index_path.with_suffix(".tmp")
         try:
-            with open(tmp_path, "w", encoding="utf-8") as f:
+            with open(tmp_path, "w", encoding="utf-8", newline="") as f:
                 yaml.dump(index, f, allow_unicode=True, default_flow_style=False)
             os.replace(tmp_path, index_path)
         except OSError:
             # 极端并发下 Windows 可能瞬时拒绝 replace，退化为直接写
-            with open(index_path, "w", encoding="utf-8") as f:
+            with open(index_path, "w", encoding="utf-8", newline="") as f:
                 yaml.dump(index, f, allow_unicode=True, default_flow_style=False)
             print("  警告: 索引原子替换失败，已退化为直接写入。", file=sys.stderr)
 
@@ -465,7 +485,7 @@ def _cmd_list(args: argparse.Namespace, exp_dir: Path) -> None:
         experiences.append(data)
 
     if args.format == "json":
-        print(json.dumps(experiences, ensure_ascii=False, indent=2))
+        print(json.dumps(experiences, ensure_ascii=False, indent=2, default=_json_default))
     elif args.format == "yaml":
         print(yaml.dump(experiences, allow_unicode=True, default_flow_style=False))
     else:
@@ -536,7 +556,7 @@ def _cmd_stats(args: argparse.Namespace, exp_dir: Path) -> None:
     index = _load_index(exp_dir)
 
     if args.format == "json":
-        print(json.dumps(index, ensure_ascii=False, indent=2))
+        print(json.dumps(index, ensure_ascii=False, indent=2, default=_json_default))
         return
 
     print()
@@ -635,7 +655,7 @@ def _cmd_export(args: argparse.Namespace, exp_dir: Path) -> None:
         print("  回传请使用（目标为自有仓库，强制脱敏）:")
         print("    python tools/share_experience.py --export --publish")
     else:
-        result = json.dumps(experiences, ensure_ascii=False, indent=2) if args.format == "json" else yaml.dump(experiences, allow_unicode=True, default_flow_style=False)
+        result = json.dumps(experiences, ensure_ascii=False, indent=2, default=_json_default) if args.format == "json" else yaml.dump(experiences, allow_unicode=True, default_flow_style=False)
 
         if args.output and not publish:
             Path(args.output).write_text(result, encoding="utf-8")
@@ -1183,7 +1203,7 @@ def _cmd_search(args, exp_dir):
         """无命中时的统一出口：JSON 输出空数组（便于脚本消费），table 给出提示。"""
         if fmt == "json":
             import json
-            print(json.dumps([], ensure_ascii=False, indent=2))
+            print(json.dumps([], ensure_ascii=False, indent=2, default=_json_default))
         else:
             print(f"  No results for '{keyword}'")
 
@@ -1250,7 +1270,7 @@ def _cmd_search(args, exp_dir):
                 "lifecycle_state": r["fm"].get("lifecycle_state"),
                 "relevance_score": round(r["score"], 3),
             })
-        print(json.dumps(output, ensure_ascii=False, indent=2))
+        print(json.dumps(output, ensure_ascii=False, indent=2, default=_json_default))
     else:
         print(f"\n  Keyword '{keyword}' matched {len(results)} experience(s):\n")
         for r in results[:20]:
@@ -1274,6 +1294,14 @@ def cmd_experience(args: argparse.Namespace) -> None:
     exp_dir = _get_experiences_dir(project_root)
 
     subcommand = getattr(args, "subcommand", "list")
+
+    # `--dry-run`：写子命令只预览、不落盘（list / stats / search 等读子命令不受影响）
+    _WRITE_SUBCOMMANDS = {
+        "add", "export", "pull", "verify", "deposit",
+        "retire", "extract", "review", "share", "curate",
+    }
+    if subcommand in _WRITE_SUBCOMMANDS and dry_run_preview(args, f"experience {subcommand}"):
+        return
 
     if subcommand == "list":
         _cmd_list(args, exp_dir)

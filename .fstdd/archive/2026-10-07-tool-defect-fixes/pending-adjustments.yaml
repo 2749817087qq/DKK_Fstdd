@@ -1,0 +1,221 @@
+# pending-adjustments.yaml — 设计偏离记录（Canonical YAML，AI 主读文档）
+# change 2026-10-07-tool-defect-fixes｜Phase 3 BUILD 期间记录，Part C 汇总为 design-adjustments.yaml
+
+meta:
+  change_id: "2026-10-07-tool-defect-fixes"
+  created: "2026-10-06T18:30:00+00:00"
+  updated: "2026-10-07T12:18:00+00:00"
+
+adjustments:
+  - id: ADJ-001
+    original_design_ref: "design.md → D1 / specs/code/dry-run-fidelity.yaml → SC-001（原文把违规面描述为「`phase.py` 是唯一违规者」）"
+    actual_change: |
+      **实现范围大幅扩大**：`--dry-run` 被静默忽略的模块**不是 1 个而是 15 个**
+      （收紧正则后 78 个写点）：`baseline` `batch` `bootcamp` `canon` `caveman` `curate`
+      `experience` `gate` `hooks` `index` `knowledge` `phase` `skill` `state` `work`。
+      处置：新建统一守卫 `upstream/fstdd/cli/commands/_dryrun.py`
+      （`dry_run_guard` 装饰器 + `dry_run_preview` 早返回），为 15 个模块的写命令逐一接入；
+      `phase` 因需给出更具体的预览（`from → to`）而在模块内自行实现。
+    reason: |
+      **实测证据**（`observed_at=2026-10-06T18:4x+00:00`, `source=@0710d54`）：
+      Phase 1 的「`phase` 是唯一违规者」结论**只对当时抽查的 9 个模块成立**，不是全量。
+      按 D1 的契约扫描器全量扫描后：有写操作且处理 dry_run 的 10 个 / 未处理的 **15 个**。
+      ⚠️ **D哥 在 BUILD 期间明确裁定「B：本 change 全量补齐 16 模块」** ⇒ 本偏离为**经用户授权**的范围扩大。
+      （裁定当时按 16 个模块报数；收紧正则后 `extract_proposal.py` 被排除，实为 15 个，见 ADJ-004。）
+    impact_scope: "capability dry-run-fidelity；新增 1 个模块 `_dryrun.py` + 修改 15 个命令模块；接口不变"
+    severity: major
+    affected_capabilities:
+      - "dry-run-fidelity"
+    exp_id: "EXP-2026-0020"
+    resolved: false
+
+  - id: ADJ-002
+    original_design_ref: "design.md → D2（`_save_index()` 补 `newline=\"\"`）/ specs/code/experience-io-contract.yaml → SC-004"
+    actual_change: |
+      **发现同族但范围大得多的问题，本 change 不修、记为已知欠账**：
+      `upstream/fstdd/` 下 `write_text` 调用共 **72 处，其中 70 处未传 `newline=`**
+      ⇒ 在 Windows 上都会写出 CRLF，与 `.gitattributes` 的 `eol=lf` 冲突
+      （`phase.py` 写 `.fstdd.yaml` 时实测产出 CRLF，见 TC-DRY-001 的 RED 断言）。
+    reason: |
+      D2 的范围经 D哥 确认只覆盖「经验库索引」（缺陷 2 的原义）。
+      70 处 `write_text` 的 EOL 归一属于**同族但独立**的治理项，涉及面广、需逐处评估
+      「该文件是否本就允许 CRLF」（如某些外部工具消费的文件），不宜在本次顺带改。
+      ⇒ 建议另立 change 处理（可复用本 change 在 `tests/test_experience_io_contract.py`
+      中建立的「写盘后断言无 CRLF」测试模式）。
+    reason_extra: |
+      **BUILD 期间活体复现（2026-10-07）**：执行 `fstdd canon generate 2026-10-07-tool-defect-fixes`
+      重渲染本 change 的 `proposal.md`（Task 3.6）后实测 —— `proposal.md` CRLF=100 / `caveman_summary.txt`
+      CRLF=9（源 `canon.py` 的 `output_file.write_text(..., encoding="utf-8")` 即上述 70 处之一）。
+      已手工归一为 LF。⇒ 本欠账在**每一次** `canon generate` 上都会复现，不是理论问题。
+      同一 BUILD 的 C5 阶段再复现一次：`fstdd experience add` 新建的
+      `EXP-2026-0023/0024/0025.md` 三个条目**均为 CRLF=30**（源为 `experience.py::_cmd_add` 的
+      `exp_file.write_text(...)`，同属 70 处之一）⇒ **每一次 `experience add` 都会产出 CRLF 条目**，
+      而已提交的历史条目都是 LF（`.gitattributes` 的 `text=auto eol=lf` 在 add 时归一），
+      故工作树与索引之间会反复出现 CRLF 告警。已手工归一。
+    impact_scope: "无代码影响；仅记录欠账。已在 test-report 已知问题中登记"
+    severity: minor
+    affected_capabilities:
+      - "experience-io-contract"
+    exp_id: ""
+    resolved: false
+
+  - id: ADJ-003
+    original_design_ref: "specs/code/dry-run-fidelity.yaml → SC-003（有写操作的命令必须处理 dry_run）"
+    actual_change: |
+      **发现「读命令带写副作用」，本 change 不修、记为已知问题**：
+      `fstdd experience list`（读命令）会**重写索引文件**
+      `.fstdd/experiences/.experience-index.yaml`。
+      实测：Phase 2 期间跑一次 `experience list` 即把仓库内该文件从 LF 改成 CRLF=322
+      （已 `git checkout` 还原；本 change 的测试全部改用**临时项目**隔离，仓库零污染）。
+    reason: |
+      「`--dry-run` 不被尊重」与「读命令有写副作用」是**两个不同缺陷**。
+      后者若按 dry-run 语义屏蔽，会连「列出经验」这一只读功能一起屏蔽掉（更糟）。
+      正确修法是让 `list` 走**只读索引路径**（或仅在索引陈旧时才重建），属独立改动。
+      ⇒ 记为已知问题，建议另立 change。
+    impact_scope: "无代码影响；测试已用临时项目隔离，仓库不被污染"
+    severity: minor
+    affected_capabilities:
+      - "dry-run-fidelity"
+      - "experience-io-contract"
+    exp_id: ""
+    resolved: false
+
+  - id: ADJ-004
+    original_design_ref: "design.md → D1 的契约扫描器（「凡含写操作者必须处理 dry_run」）"
+    actual_change: |
+      **扫描口径收紧**：初版用 `yaml\.dump\(` 作为「写操作」特征，把
+      `extract_proposal.py` 的 `print(yaml.dump(result, ...))`（输出到 **stdout**）误判为文件写，
+      使违规模块数虚高为 16、写点虚高为 110。收紧后（去掉 `yaml.dump(`、保留
+      `write_text` / `open(...,"w")` / `shutil.move` / `os.replace` / `mkdir` 等真写点）
+      为 **15 个模块 / 78 个写点**。
+    reason: |
+      EXP-2026-0020（机械匹配按「方法名」而非「接收者语义」选目标）+ EXP-2026-0016
+      （纯文本扫描假阳性）的同族问题：`yaml.dump` 既可写文件也可写 stdout，按名字匹配必误判。
+      ⇒ 扫描器改用「接收者语义」口径，并在 `tests/test_dry_run_fidelity.py::test_tc_dry_004`
+      固化「三种 dry_run 写法都要认」的自检（EXP-2026-0021）。
+    impact_scope: "capability dry-run-fidelity；扫描口径与测试断言；无代码行为影响"
+    severity: minor
+    affected_capabilities:
+      - "dry-run-fidelity"
+    exp_id: "EXP-2026-0016"
+    resolved: false
+
+  - id: ADJ-005
+    original_design_ref: "proposal.yaml → why.problem 第 3) 点（原文把缺陷面描述为「`capabilities` / `impact` / `constraints` **恒返回空**」）/ design.md → D4（只决定补出 `## Capabilities` 与 `## Impact`）"
+    actual_change: |
+      **只修了 capabilities 与 impact 两条轴**，`constraints` / `stakeholders` / `risk_areas` /
+      `non_goals` **仍恒返回空** —— 因为渲染器只输出 5 个 h2
+      （`Why` / `What Changes` / `Capabilities` / `Impact` / `Success Criteria`），
+      而模板 `.fstdd/templates/proposal.md` 声明了 **14 段**（另含 Constraints / Stakeholders /
+      Risk Areas / NonGoals / Critical / Risk Assessment / Anchoring）。
+      实测（本 change 自身，2026-10-07）：`extract-proposal 2026-10-07-tool-defect-fixes`
+      → `capabilities.modified=5`、`impact.code=6` ✅，但
+      `constraints=0 / stakeholders=0 / risk_areas=0 / non_goals=0` ❌。
+    reason: |
+      冻结的 Gate 2 规格（`proposal-extraction-fidelity.yaml` → SC-008/009/010）**只要求**
+      Capabilities 与 Impact 两条轴；design.md D4 亦只决定这两条。其余 7 段属
+      `docs/RUN_ISSUES_2026-09-17_reits-writer.md` 早已记录、范围更大的「生成器 vs 模板」欠账
+      （该文档的建议第 2 条即为「生成器补齐 Impact / Constraints / Stakeholders / Risk Areas / NonGoals」）。
+      ⇒ **不在本 change 内扩大范围**（避免重演 ADJ-001 式的范围膨胀）；记为已知欠账，
+      建议另立 change，可直接复用本 change 建立的 `_proposal_anchors` 单一事实源收口模式。
+    impact_scope: "无代码影响；仅记录欠账。已在 test-report 已知问题中登记"
+    severity: minor
+    affected_capabilities:
+      - "proposal-extraction-fidelity"
+    exp_id: "EXP-2026-0013"
+    resolved: false
+
+  - id: ADJ-006
+    original_design_ref: "canon.py 原渲染器（`### New Capabilities` / `### Modified Capabilities` **非空才输出**）"
+    actual_change: |
+      **改为两个 h3 子段恒定输出**：只要 `## Capabilities` 段被输出（即 new 或 modified 任一非空），
+      `### New Capabilities` 与 `### Modified Capabilities` **两个标题都写出**（空段只写标题）。
+    reason: |
+      与模板 `.fstdd/templates/proposal.md` 的**声明形态**一致（模板恒含两个 h3），
+      且避免「同一段有时在、有时不在」给下游解析器 / 人类读者带来结构不确定性
+      （EXP-2026-0013：声明形态 ≠ 实际形态即为契约断层）。
+      行为影响：仅多出空标题行；`_parse_capabilities` 对空段返回 `[]`，语义不变
+      （`tests/test_proposal_extraction_fidelity.py::test_tc_pxf_001` 锚定）。
+    impact_scope: "capability proposal-extraction-fidelity；仅渲染器输出结构；接口不变"
+    severity: minor
+    affected_capabilities:
+      - "proposal-extraction-fidelity"
+    exp_id: "EXP-2026-0013"
+    resolved: true
+
+  - id: ADJ-007
+    original_design_ref: "design.md → D1（契约扫描器「凡含写操作者必须处理 dry_run」）/ D5（`ci` (d) 判据改定义点）/ specs/code/dry-run-fidelity.yaml → SC-003"
+    actual_change: |
+      **C1 多路并行技术评审（3 代理）报出 3 处真实缺陷，均在冻结基线范围内修复**：
+
+      1. 🔴 **`canon verify --dry-run` 仍会落盘**（`cmd_canon_verify` 内的
+         `_generate_one(...)` 在「Human View 缺 source_hash」分支无条件执行）。
+         ⇒ 修：该分支加 `dry_run_requested(args)` 守卫，dry-run 下照常完成校验、
+         只跳过自动重生成；并新增行为断言 `TC-DRY-003c`。
+         ⚠️ **契约扫描器为何漏判**：`canon.py` 已含 `dry_run`（装饰器），静态判据是
+         「模块级」的，无法识别「同模块内某一处写路径未守住」⇒ 属**扫描口径的已知上限**。
+      2. 🟡 **`ci` (d) 的形态 B（TC-ID 作首列）会把「TC↔测试函数映射表」误计为定义点**
+         —— 实测 `2026-09-25-guard-phase-path-scope/test-plan.md` 因此假红（1/42）。
+         ⇒ 修：形态 B **只在形态 A 一个都没抽到时**才启用（不做并集），
+         并新增回归自检 `TC-CCA-002d2`。
+      3. 🟡 **`batch child status`（纯读）被 dry-run 误伤屏蔽** —— 初版只放行
+         `action in ("list","status")`。⇒ 修：读路径白名单补 `child` + 默认子动作 `status`。
+    reason: |
+      三处都在**冻结的 capability 范围内**（dry-run 契约 / (d) 判据语义），不是范围扩大，
+      而是「同一契约在未被抽查到的路径上仍不成立」—— 正是本 change 要修的病
+      （EXP-2026-0013 / KG-093）。故按 BUILD 的「小偏离」处置：记录 + 继续，
+      不暂停长程流程。
+      另：评审同时报出「`TC-[A-Z]+-\d{3}` 硬编码 3 位数字」—— 项目约定
+      （`.fstdd/config.d/quality.yaml` → `pattern: "TC-{CAPABILITY}-{NNN}"`）即 3 位，
+      现有 43 份 test-plan 全为 3 位，**不改**（放宽会改变既有解析语义），记为已知边界。
+    impact_scope: |
+      capability dry-run-fidelity（+1 处写路径守卫 + 1 条行为断言）；
+      capability ci-check-accuracy（形态优先级 + 1 条回归自检）；
+      命令模块 batch.py（读路径白名单）；无接口变更
+    severity: major
+    affected_capabilities:
+      - "dry-run-fidelity"
+      - "ci-check-accuracy"
+    exp_id: "EXP-2026-0013"
+    resolved: true
+
+  - id: ADJ-008
+    original_design_ref: "Phase 3 Part C 的 C2 全量质量检查（「pytest → 确认全部通过」）"
+    actual_change: |
+      **首次全量回归暴露 4 处失败（951 passed / 5 skipped / 4 failed），逐条处置如下**：
+
+      1. 🔴 `upstream/tests/test_except_audit.py::test_aud_002` +
+         `upstream/tests/test_guard_silent_except.py::test_grd_001` —— 本 change 在多个命令模块
+         插入 import / dry-run 守卫，导致全仓「裸 except 吞异常」审计表的**行号位移**失效
+         （canon.py 156→168 等）。⇒ 修：按既有机制生成本 change 的**活表**
+         `.fstdd/changes/2026-10-07-tool-defect-fixes/audit/except-points.yaml`
+         （承接归档表 25 点；**7 处行号位移、0 新增、0 消失**；指纹未变，仅刷新 line + 记 refreshed_reason）。
+      2. 🔴 `upstream/tests/test_evidence_ops.py::test_epr_004_005` ——
+         `baseline.py` 新增相对导入（`from ._dryrun import dry_run_preview`）后，
+         该用例用 `spec_from_file_location` **单独加载**该模块 ⇒
+         `ImportError: attempted relative import with no known parent package`。
+         ⇒ 修：改为**包成员导入**（`importlib.import_module("fstdd.cli.commands.baseline")`），
+         被测对象的加载方式与生产一致；**断言逻辑一字未改**。
+      3. 🟡 `tests/test_upstream_baseline.py::test_ubl_003` ——
+         `docs/UPSTREAM_BASELINE.md` 的 R 轴仍写 `3.3.5`，而 `.fstdd/version.yaml` /
+         `project.yaml` 均为 `3.3.6` ⇒ **上一版 v3.3.6 DELIVER 的遗留失真**
+         （该版自述已同步此文件，实测未同步）。⇒ 修：纠正为 `3.3.6`（**事实性纠错，非升版**）。
+      4. ⚪ `upstream/tests/test_repo_home.py::test_a6_no_stray_untracked_files` ——
+         **结构性**：判据为「除 `.fstdd/changes/` 外无未跟踪项」，而在办 change 的
+         新文件（5 个测试 + 2 个新模块 + 3 条经验）**在提交前必然是未跟踪** ⇒ 必然红。
+         ⇒ **不修**，DELIVER 提交后自动转绿（上一版 v3.3.6 同此流程）。
+    reason: |
+      1/2 是本 change 的**直接后果**（改源码 ⇒ 位移审计表 / 破坏孤立加载），必须在本 change 内闭合；
+      3 是上一版遗留（属「声明与事实不一致」，与本 change 主线同族，顺手纠错）；
+      4 是流程固有的提交前状态，不得靠改测试规避。
+      另记**流程缺口**（供 DELIVER 用）：升版时必须同步 `docs/UPSTREAM_BASELINE.md` 的 R 轴，
+      否则 `test_ubl_003` 必红 —— 上一版即栽在此处。
+    impact_scope: |
+      新增 1 个审计活表；修改 1 个既有测试的**加载方式**（断言不变）；
+      修改 1 个文档的版本事实；无生产代码行为变更
+    severity: major
+    affected_capabilities:
+      - "dry-run-fidelity"
+      - "experience-io-contract"
+    exp_id: "EXP-2026-0024"
+    resolved: true

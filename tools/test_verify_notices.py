@@ -246,7 +246,11 @@ def test_TC_NAV_009_move_to_quarantine_not_delete(tmp_path):
     f.write_bytes(original)
     _write_manifest(tmp_path, [])
 
-    result = vn.verify_notices(tmp_path)
+    # ⚠️ 2026-10-07 契约变更（quarantine-opt-in-safety / SC-014）：
+    # 移动改为**显式 opt-in**；本用例断言的是「隔离能力本身仍完好」，
+    # 故显式传入 quarantine=True（默认只报告的零变化断言见
+    # tests/test_verify_notices_default_safe.py::TC-QIS-001）。
+    result = vn.verify_notices(tmp_path, quarantine=True)
     assert not f.exists(), "original file must be removed from source dir"
     q_file = DEFAULT_QUARANTINE / f.name
     assert q_file.exists()
@@ -343,8 +347,11 @@ def test_TC_NAV_015_json_contract_top4keys(tmp_path):
     _write_manifest(tmp_path, [])
     proc = _run_cli(tmp_path, ["--json"])
     data = json.loads(proc.stdout)
-    assert set(data.keys()) == {"results", "quarantined", "warnings", "exit_code"}, (
-        f"top-level keys must be exactly 4, got {sorted(data.keys())}"
+    # ⚠️ 2026-10-07：顶层新增第 5 键 `would_quarantine`（quarantine-opt-in-safety / SC-015）。
+    # 本用例的原意是「既有四键存在且语义不变」⇒ 改为子集断言，不禁止新增键；
+    # 「恰好 5 键」的完整契约断言见 tests/test_verify_notices_default_safe.py::TC-QIS-003。
+    assert {"results", "quarantined", "warnings", "exit_code"} <= set(data.keys()), (
+        f"既有四键须保持存在，got {sorted(data.keys())}"
     )
     for item in data["results"]:
         assert "status" in item

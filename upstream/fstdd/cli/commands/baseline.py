@@ -27,6 +27,7 @@ from pathlib import Path
 import yaml
 
 from fstdd.cli.timeutil import utc_now_iso
+from ._dryrun import dry_run_preview
 
 # --------------------------------------------------------------------------- #
 # 配置默认值（SC-014：阈值可配置；未配置时用文档化的默认值）
@@ -180,6 +181,8 @@ def write_baseline(root: Path, change: str, *, established_by: str,
 # --------------------------------------------------------------------------- #
 
 def _cmd_establish(args: argparse.Namespace, root: Path) -> int:
+    if dry_run_preview(args, "baseline establish"):
+        return 0
     change = args.change
     if change:
         resolved = _resolve_change(root, change)

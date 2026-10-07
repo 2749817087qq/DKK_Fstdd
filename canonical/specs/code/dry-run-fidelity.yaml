@@ -1,0 +1,48 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-07-tool-defect-fixes
+# capability: dry-run-fidelity（声明了 --dry-run 的命令必须真的不落盘）
+
+meta:
+  capability: "dry-run-fidelity"
+  change_id: "2026-10-07-tool-defect-fixes"
+  created: "2026-10-06T18:05:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    capability: "dry-run-fidelity"
+    description: |
+      `--dry-run` 是**全局注册**的选项（`upstream/fstdd/cli/__init__.py`，help 声明
+      「预览操作，不实际修改文件系统」），对**所有**子命令可见。凡含写操作的子命令
+      SHALL 实现该语义：`--dry-run` 为真时 SHALL NOT 产生任何落盘副作用。
+      该 SHALL 由**契约扫描测试**锚定，使「新命令忘记实现」不再复发。
+
+    scenarios:
+      - id: "SC-001"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 1) 点；observed_at=2026-10-06T17:25:33+00:00 source=@0710d54 实测 `grep -c dry_run upstream/fstdd/cli/commands/phase.py` = 0（全文 198 行），而 ci.py=16 / upgrade.py=6 / init.py=4 / archive.py 等各 2"
+        given: "`phase.py::cmd_phase` 全文无 `dry_run` 处理，而 `--dry-run` 由全局父解析器注册（help 声明「不实际修改文件系统」）"
+        when: "执行 `fstdd phase advance <change> --dry-run`"
+        then: "SHALL NOT 修改 `.fstdd.yaml`（文件内容与 mtime 均不变）"
+        and:
+          - "SHALL 在 stdout 打印将被推进的相位（from → to），使预览可见"
+          - "SHALL 以退出码 0 结束（预览不是错误）"
+
+      - id: "SC-002"
+        confidence: high
+        evidence: "proposal.yaml constraints 第 5 条（dry-run 修复不得改变非 dry-run 路径）；observed_at=2026-10-06 source=@0710d54 既有 upstream/tests/commands/test_phase.py（258 行）实测全绿"
+        given: "`phase.py` 已补 dry-run 分支"
+        when: "执行 `fstdd phase advance <change>`（不带 `--dry-run`）"
+        then: "SHALL 与修复前的行为逐字节一致（`.fstdd.yaml` 写入内容、退出码、stdout 关键行均不变）"
+        and:
+          - "既有 `upstream/tests/commands/test_phase.py` SHALL 全绿"
+
+      - id: "SC-003"
+        confidence: high
+        evidence: "EXP-2026-0013（契约断层：声明与实现分处两处，无参数化测试用『声明样例』做输入校验）；KG-093（声明了约束但从未生效，跨项目 12 次，severity high）"
+        given: "存在两份命令模块样本：一份「有写操作但未处理 dry_run」，一份「已处理」"
+        when: "执行契约扫描测试（遍历 `upstream/fstdd/cli/commands/*.py`，凡含写操作者须出现 dry_run 处理）"
+        then: "SHALL 对未处理样本判 FAIL、对已处理样本判 PASS"
+        and:
+          - "扫描器 SHALL 同时识别 `getattr(args, \"dry_run\", False)` 与 `args.dry_run` 两种既有写法"
+          - "对当前仓库执行时违规数 SHALL 为 0（修复前 `phase.py` 是唯一违规者）"

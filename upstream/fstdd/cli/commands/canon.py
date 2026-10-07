@@ -5,6 +5,17 @@ import yaml
 import hashlib
 
 from ..timeutil import content_hash, utc_now_iso
+from ._dryrun import dry_run_guard, dry_run_requested
+from ._proposal_anchors import (
+    H2_WHY,
+    H2_WHAT_CHANGES,
+    H2_CAPABILITIES,
+    H2_IMPACT,
+    H2_SUCCESS_CRITERIA,
+    H3_NEW_CAPABILITIES,
+    H3_MODIFIED_CAPABILITIES,
+    IMPACT_SECTIONS,
+)
 from pathlib import Path
 from datetime import datetime
 
@@ -123,6 +134,7 @@ expected_outcomes:
 """
 
 
+@dry_run_guard("canon init")
 def cmd_canon_init(args):
     """Initialize canonical/ directory structure with YAML templates."""
     # V3.0.7: 支持调用方显式指定项目根 —— `stdd new --isolate worktree` 会把
@@ -230,6 +242,7 @@ def cmd_canon_init(args):
         print("    (all template files already exist)")
 
 
+@dry_run_guard("canon generate")
 def cmd_canon_generate(args):
     """Generate Human View from Canonical YAML."""
     project_root = Path.cwd()
@@ -343,39 +356,59 @@ def _generate_one(project_root: Path, change_id: str, gen_type: str,
     lines.append("")
 
     why = data.get("why", {})
-    lines.append("## Why")
+    lines.append(f"## {H2_WHY}")
     lines.append("")
     lines.append(why.get("problem", ""))
     lines.append("")
 
     changes = data.get("what_changes", [])
     if changes:
-        lines.append("## What Changes")
+        lines.append(f"## {H2_WHAT_CHANGES}")
         lines.append("")
         for c in changes:
             lines.append(f"- {c.get('description', '')}")
         lines.append("")
 
-    caps = data.get("capabilities", {})
-    new_caps = caps.get("new", [])
-    if new_caps:
-        lines.append("### New Capabilities")
+    # 2026-10-07（proposal-extraction-fidelity / SC-008）：capability 段必须挂
+    # **独立的 `## Capabilities` h2**，不得再挂在 `## What Changes` 之下 ——
+    # 否则解析器（找 h2）永远匹配不到，且 capability 条目会被当作 what_changes 解析。
+    caps = data.get("capabilities", {}) or {}
+    new_caps = caps.get("new", []) or []
+    modified_caps = caps.get("modified", []) or []
+    if new_caps or modified_caps:
+        lines.append(f"## {H2_CAPABILITIES}")
+        lines.append("")
+        # 两个 h3 子段**恒定输出**（与模板 `.fstdd/templates/proposal.md` 的声明形态一致），
+        # 避免「有时在有时不在」导致下游解析器 / 人类读者对结构产生不确定预期。
+        lines.append(f"### {H3_NEW_CAPABILITIES}")
         lines.append("")
         for c in new_caps:
             lines.append(f"- **{c.get('name', '')}**：{c.get('description', '')}")
         lines.append("")
-
-    modified_caps = caps.get("modified", [])
-    if modified_caps:
-        lines.append("### Modified Capabilities")
+        lines.append(f"### {H3_MODIFIED_CAPABILITIES}")
         lines.append("")
         for c in modified_caps:
             lines.append(f"- **{c.get('name', '')}**：{c.get('description', '')}")
         lines.append("")
 
+    # 2026-10-07（同上 / SC-008）：补出 `## Impact`（此前 `canon.py` 中 `Impact` 0 命中，
+    # 导致 `_parse_impact()` 恒返回空）。段内格式与模板 `**代码层面**：` 一致。
+    impact = data.get("impact", {}) or {}
+    impact_blocks = [(label, key, impact.get(key) or []) for label, key in IMPACT_SECTIONS]
+    if any(items for _label, _key, items in impact_blocks):
+        lines.append(f"## {H2_IMPACT}")
+        lines.append("")
+        for label, _key, items in impact_blocks:
+            if not items:
+                continue
+            lines.append(f"**{label}**：")
+            for it in items:
+                lines.append(f"- {it}")
+            lines.append("")
+
     criteria = data.get("success_criteria", [])
     if criteria:
-        lines.append("## Success Criteria")
+        lines.append(f"## {H2_SUCCESS_CRITERIA}")
         lines.append("")
         for s in criteria:
             lines.append(f"- [ ] {s}")
@@ -434,6 +467,17 @@ def cmd_canon_verify(args):
         # Human View was generated before Canonical YAML existed (Phase 2 creates MD first).
         # Auto-regenerate from YAML to backfill source_hash.
         print("  ⚠️ DC-HASH 无法校验 — Human View 缺少 source_hash")
+        # ⚠️ `canon verify` 是「读为主 + 一处写」的命令：dry-run 下**照常完成校验**，
+        # 只跳过「自动重生成 Human View」这一处落盘。
+        # 2026-10-07 评审发现：此前 `canon verify --dry-run` 仍会经 `_generate_one`
+        # 写出 `proposal.md` + `caveman_summary.txt` —— 属 dry-run-fidelity 的漏点，
+        # 而契约扫描器因 canon.py 已含 dry_run（装饰器）而**漏判**（已知扫描口径限制）。
+        if dry_run_requested(args):
+            print("     [dry-run] 跳过自动重生成 Human View（不修改文件系统）")
+            print(f"\n  结论: {passed}/{total} 通过")
+            if passed < total:
+                sys.exit(1)
+            return
         print("     → 从 Canonical YAML 重新生成 Human View...")
         _generate_one(project_root, args.change_name, "proposal")
         # Recompute hash from regenerated MD

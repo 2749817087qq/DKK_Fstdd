@@ -15,6 +15,7 @@ proposals:
   2026-10-04-github-mirror-secret-remediation: proposals/2026-10-04-github-mirror-secret-remediation.yaml
   2026-10-05-upstream-baseline-alignment: proposals/2026-10-05-upstream-baseline-alignment.yaml
   2026-10-06-legacy-debt-cleanup: proposals/2026-10-06-legacy-debt-cleanup.yaml
+  2026-10-07-tool-defect-fixes: proposals/2026-10-07-tool-defect-fixes.yaml
 specs:
   agent:
     2026-09-19-notices-authenticity-gate: specs/agent/2026-09-19-notices-authenticity-gate.yaml
@@ -27,6 +28,7 @@ specs:
     2026-10-04-github-mirror-secret-remediation: specs/agent/2026-10-04-github-mirror-secret-remediation.yaml
     2026-10-05-upstream-baseline-alignment: specs/agent/2026-10-05-upstream-baseline-alignment.yaml
     2026-10-06-legacy-debt-cleanup: specs/agent/2026-10-06-legacy-debt-cleanup.yaml
+    2026-10-07-tool-defect-fixes: specs/agent/2026-10-07-tool-defect-fixes.yaml
     inbox-api-only-write: specs/agent/inbox-api-only-write.yaml
     inbox-deploy: specs/agent/inbox-deploy.yaml
   code:
@@ -41,11 +43,16 @@ specs:
     audit-errata: specs/code/audit-errata.yaml
     build-quality-verification: specs/code/build-quality-verification.yaml
     canonical-hash-integrity: specs/code/canonical-hash-integrity.yaml
+    ci-check-accuracy: specs/code/ci-check-accuracy.yaml
     detection-voice: specs/code/detection-voice.yaml
+    dry-run-fidelity: specs/code/dry-run-fidelity.yaml
+    experience-io-contract: specs/code/experience-io-contract.yaml
     inbox-api-only-write: specs/code/inbox-api-only-write.yaml
     inbox-deploy: specs/code/inbox-deploy.yaml
     notice-authenticity-verification: specs/code/notice-authenticity-verification.yaml
     notice-execution-pipeline: specs/code/notice-execution-pipeline.yaml
+    proposal-extraction-fidelity: specs/code/proposal-extraction-fidelity.yaml
+    quarantine-opt-in-safety: specs/code/quarantine-opt-in-safety.yaml
     release-tooling-accuracy: specs/code/release-tooling-accuracy.yaml
     repo-hygiene: specs/code/repo-hygiene.yaml
     scan-coverage: specs/code/scan-coverage.yaml

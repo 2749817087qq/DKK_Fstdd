@@ -1,0 +1,64 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-07-tool-defect-fixes
+# capability: experience-io-contract（索引落盘行尾 + JSON 输出可序列化）
+
+meta:
+  capability: "experience-io-contract"
+  change_id: "2026-10-07-tool-defect-fixes"
+  created: "2026-10-06T18:05:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    capability: "experience-io-contract"
+    description: |
+      经验库索引 `.fstdd/experiences/.experience-index.yaml` 的落盘 SHALL 使用 LF 行尾，
+      与仓库 `.gitattributes`（`* text=auto eol=lf`）一致；SHALL NOT 依赖运行平台的行尾翻译。
+      产出文件 SHALL 保持多行结构（SHALL NOT 因禁用翻译而退化成单行）。
+
+    scenarios:
+      - id: "SC-004"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 2) 点；observed_at=2026-10-06T17:25:33+00:00 source=@0710d54 实测该文件 CRLF=322 / LF=0，`git` 报 `warning: CRLF will be replaced by LF`；根因 experience.py:274 `open(tmp, \"w\", encoding=\"utf-8\")` 缺 `newline=\"\"`"
+        given: "`.fstdd/experiences/.experience-index.yaml` 由 `_save_index()` 写入"
+        when: "执行任一触发索引落盘的命令（如 `fstdd experience verify <id>`）"
+        then: "SHALL 使产出文件的字节流中不含 `\\r\\n`"
+        and:
+          - "产出文件的行数 SHALL 大于 1（不得退化为单行）"
+          - "`tools/verify_eol.py` 的 TC-EOL-003「混合态文件清零」SHALL 通过"
+
+      - id: "SC-005"
+        confidence: high
+        evidence: "proposal.yaml risk_areas『experience-io-contract』的 mitigation（改 newline 后若忘记显式换行符，Windows 上可能写出无换行的单行文件）"
+        given: "`_save_index()` 的 `open(...)` 已补 `newline=\"\"`"
+        when: "在 Windows（本机）上写入索引"
+        then: "SHALL 显式产生 `\\n` 分隔，使文件为多行"
+        and:
+          - "同一索引文件在 Windows 与类 Unix 上的字节内容 SHALL 一致（除 schema 数据差异外无行尾差异）"
+
+  - id: "REQ-002"
+    capability: "experience-io-contract"
+    description: |
+      `fstdd experience list --format json` SHALL 对经验库中**任意**条目均可序列化并正常退出；
+      SHALL NOT 因条目字段含 `date` / `datetime` 对象而抛 `TypeError`。
+      同一可序列化归一 SHALL 覆盖该模块内**全部** JSON 输出路径，而非仅报错的那一处。
+
+    scenarios:
+      - id: "SC-006"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 5) 点；observed_at=2026-10-06T17:5x:xx+00:00 source=@0710d54 实测 `fstdd experience list --format json`（无过滤）EXIT=1，`TypeError: Object of type date is not JSON serializable`；定位到 74 条经验中 57 条的 `exported_at` 被 `yaml.safe_load` 解析为 `datetime.date`"
+        given: "经验库中存在 `exported_at` 以未加引号日期（如 `2026-09-26`）存盘的条目"
+        when: "执行 `fstdd experience list --format json`（不加任何过滤）"
+        then: "SHALL 以退出码 0 结束"
+        and:
+          - "stdout SHALL 为合法 JSON（可被 `json.loads` 解析）"
+          - "SHALL NOT 出现 `TypeError` 或 `not JSON serializable` 字样"
+
+      - id: "SC-007"
+        confidence: high
+        evidence: "proposal.yaml why.evidence 缺陷 5『同文件第 539 / 638 / 1186 / 1253 行亦需复核』；EXP-2026-0021（审计工具的匹配面比声称的窄 ⇒ 假绿）"
+        given: "`experience.py` 内存在多处 `json.dumps` 调用点"
+        when: "扫描该模块并统计 `json.dumps` 调用点，逐一核对是否传入了可序列化归一"
+        then: "SHALL 使「未传归一的调用点」集合为空（集合相等断言，非抽检）"
+        and:
+          - "对既有可原生序列化的字段，输出 SHALL 与修复前逐字节一致（归一仅在无法原生序列化时生效）"

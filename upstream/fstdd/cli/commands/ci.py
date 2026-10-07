@@ -307,21 +307,69 @@ def check_files_exist(change_dir: Path, _project_root: Path) -> tuple[str, str]:
     return ("WARN", "(a) 必需文件存在，但 specs 目录为空")
 
 
+# TC-ID 的**定义点**：TC-ID 出现在表格行的「ID 槽位」。
+#
+# 为什么按定义点而非全文出现次数：项目约定在「案例标题 / 优先顺序 / 回归矩阵 / 证据表」
+# 多处**引用**同一 ID，把引用当重复会大面积误判 —— 实测 42 份既有 test-plan 中
+# **26 份（62%）**被判 FAIL，门禁的 ❌ 因此变成噪声，真正的 ID 冲突反被淹没。
+# 该现象此前被记为「已知假阳性」（EXP-2026-0016），本次真正修掉。
+#
+# ⚠️ 形态 B **只在形态 A 一个都没抽到时才启用**（见 `_tcid_definition_points`）：
+# 「TC-ID 作首列」的表格既可能是定义表，也可能是 TC↔测试函数 的**映射表**
+# （实测 `.fstdd/archive/2026-09-25-guard-phase-path-scope/test-plan.md` 就有这种映射表，
+# 若两种形态同时计入会把「1 个定义 + 1 行映射」误判为重复定义）。
+_TC_DEFINITION_RE_A = re.compile(
+    r"^\|\s*\*{0,2}ID\*{0,2}\s*\|\s*`?\*{0,2}(TC-[A-Z]+-\d{3})\*{0,2}`?\s*\|",
+    re.MULTILINE,
+)
+_TC_DEFINITION_RE_B = re.compile(
+    r"^\|\s*`?\*{0,2}(TC-[A-Z]+-\d{3})\*{0,2}`?\s*\|",
+    re.MULTILINE,
+)
+_TC_ANY_RE = re.compile(r"(TC-[A-Z]+-\d{3})")
+
+
+def _tcid_definition_points(content: str) -> list:
+    """抽取全部 TC-ID **定义点**。
+
+    优先级：形态 A（`| **ID** | TC-… |`，本项目现行约定）→ 形态 B（ID 作首列）→ 空。
+    **不做并集** —— 形态 B 与「TC↔测试函数映射表」在文本上不可区分，并集会产生假重复。
+    """
+    a = _TC_DEFINITION_RE_A.findall(content)
+    if a:
+        return a
+    return _TC_DEFINITION_RE_B.findall(content)
+
+
 @_register_check
 def check_tcid_unique(change_dir: Path, _project_root: Path) -> tuple[str, str]:
-    """(d) Check TC-ID uniqueness in test-plan.md."""
+    """(d) Check TC-ID uniqueness in test-plan.md（按**定义点**判定）。
+
+    同一 TC-ID 出现在 **≥2 个定义点**才判 FAIL；纯引用不计。
+
+    兼容：若 test-plan 不含任何标准定义行（旧格式，如裸文本罗列），
+    退回「全文出现次数」判定 —— 此时无法区分定义与引用，保守沿用旧行为。
+    """
     test_plan = change_dir / "test-plan.md"
     if not test_plan.exists():
         return ("SKIP", "(d) test-plan.md 不存在，跳过 TC-ID 检查")
     content = test_plan.read_text(encoding="utf-8")
-    tc_ids = re.findall(r"(TC-[A-Z]+-\d{3})", content)
-    if not tc_ids:
-        return ("WARN", "(d) 未找到 TC-ID")
-    unique = set(tc_ids)
-    duplicates = [tc for tc in unique if tc_ids.count(tc) > 1]
+
+    definitions = _tcid_definition_points(content)
+    if definitions:
+        ids, basis = definitions, "定义点"
+    else:
+        ids, basis = _TC_ANY_RE.findall(content), "全文（无标准定义行，回退）"
+        if not ids:
+            return ("WARN", "(d) 未找到 TC-ID")
+
+    counts: dict = {}
+    for i in ids:
+        counts[i] = counts.get(i, 0) + 1
+    duplicates = sorted(k for k, v in counts.items() if v > 1)
     if duplicates:
         return ("FAIL", f"(d) 重复 TC-ID: {duplicates}")
-    return ("PASS", f"(d) TC-ID 唯一 ({len(unique)} 个)")
+    return ("PASS", f"(d) TC-ID 唯一 ({len(counts)} 个，按{basis})")
 
 
 @_register_check

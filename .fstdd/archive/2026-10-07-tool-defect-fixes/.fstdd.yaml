@@ -1,0 +1,92 @@
+baseline:
+  at: '2026-10-06T17:47:57+00:00'
+  base_git_sha: 0710d5462f973164f83f5096cdf739380e579fb8
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-07-tool-defect-fixes
+complexity_score: 8
+current_phase: deliver
+design_adjustments:
+  count: 8
+last_modified: '2026-10-07T13:11:09+00:00'
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-10-06T18:20:06+00:00'
+mode: thorough
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-07T13:10:55+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认
+    slices_completed:
+      '1':
+        capability: dry-run-fidelity
+        evidence: RED 3 failed/2 passed（真实 stash 对照）→ GREEN 6 passed/0 failed；扫描器改
+          AST 口径后违规模块 15→0（并修 structure.py 的 getattr 漏判）；新增 _dryrun.py 统一守卫；评审发现并修复
+          canon verify --dry-run 仍落盘（新增 TC-DRY-003c 行为断言）
+        new_tests: 6
+        status: done
+        tc_coverage: 4/4
+        verified_at: '2026-10-07T12:55:00+00:00'
+      '2':
+        capability: experience-io-contract
+        evidence: RED 5 failed/2 passed → GREEN 7 passed/0 failed；回归 test_experience
+          系列 65 passed；索引 CRLF 322→0；json.dumps 未归一 5→0
+        new_tests: 7
+        status: done
+        tc_coverage: 5/5
+        verified_at: '2026-10-06T18:35:00+00:00'
+      '3':
+        capability: proposal-extraction-fidelity
+        evidence: RED（HEAD 版）5 failed/1 passed → GREEN 7 passed/0 failed；回归 test_canon+test_canon_coverage
+          13 passed；本 change extract-proposal → capabilities.modified=5 / impact.code=6
+          / what_changes=6 零泄漏；canon verify 2/2；新增 _proposal_anchors.py 单一事实源
+        new_tests: 7
+        status: done
+        tc_coverage: 3/3
+        verified_at: '2026-10-07T12:55:00+00:00'
+      '4':
+        capability: ci-check-accuracy
+        evidence: RED 2 failed/3 passed → GREEN 7 passed/0 failed（评审后加固：自检改用生产抽取器
+          + 形态A优先回归）；43 份既有 test-plan 误判 26→0（独立复核 FAIL=0/WARN=5）；回归 test_ci.py 23
+          passed；反向样本（两个定义点）仍 FAIL
+        new_tests: 7
+        status: done
+        tc_coverage: 2/2
+        verified_at: '2026-10-07T12:55:00+00:00'
+      '5':
+        capability: quarantine-opt-in-safety
+        evidence: RED（HEAD 版）6 failed → GREEN 6 passed/0 failed；回归 tools/test_verify_notices.py
+          20 passed/1 skipped；CLI 新增 --quarantine；--json 顶层 5 键；默认路径对仓库根运行后顶层 *.md
+          摘要不变
+        new_tests: 6
+        status: done
+        tc_coverage: 3/3
+        verified_at: '2026-10-07T12:55:00+00:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-06T18:13:48+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-06T17:47:57+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认
+    status: completed
+score_confidence: preliminary
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 15
+  tc_cases: 17
+  test_functions: 33
+version: '3.0'

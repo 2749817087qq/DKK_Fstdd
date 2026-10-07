@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 from ..timeutil import utc_now_iso
+from ._dryrun import dry_run_preview
 
 import yaml
 
@@ -146,6 +147,9 @@ def cmd_state(args: argparse.Namespace) -> None:
                 print(f"\n  🟢 State Freshness: FRESH — {verified_at}")
 
         print()
+        return
+
+    if getattr(args, "set", None) and dry_run_preview(args, "state --set"):
         return
 
     set_kv = getattr(args, "set", None)

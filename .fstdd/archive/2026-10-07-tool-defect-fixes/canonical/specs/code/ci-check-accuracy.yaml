@@ -1,0 +1,36 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-07-tool-defect-fixes
+# capability: ci-check-accuracy（检查判据与项目实际约定一致）
+
+meta:
+  capability: "ci-check-accuracy"
+  change_id: "2026-10-07-tool-defect-fixes"
+  created: "2026-10-06T18:05:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    capability: "ci-check-accuracy"
+    description: |
+      `fstdd ci check-failures` 的 (d) TC-ID 唯一性检查 SHALL 按 **TC-ID 的定义点**判定，
+      SHALL NOT 把正当的重复**引用**判为违规。同一 TC-ID 出现在 ≥2 个定义点时才 SHALL 判 FAIL。
+      判定 SHALL 基于结构化位置（表格 ID 单元格 / 加粗 ID 行），而非全文文本出现次数。
+
+    scenarios:
+      - id: "SC-011"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 4) 点；observed_at=2026-10-06T17:25:33+00:00 source=@0710d54 实测 `.fstdd/` 下 41 份 test-plan 中 25 份（60%）含重复 TC-ID 而被判 FAIL；EXP-2026-0016 已把该现象记为『已知假阳性』"
+        given: "`test-plan.md` 在「案例标题 / 优先顺序 / 回归矩阵 / 证据表」多处引用同一 TC-ID（项目既有约定），且该 ID 只有 1 个定义点"
+        when: "执行 `fstdd ci check-failures <change>` 并读取 (d) 项结果"
+        then: "SHALL 判 PASS，SHALL NOT 报「重复 TC-ID」"
+        and:
+          - "对 `.fstdd/` 下 41 份既有 test-plan 执行时，报 (d) 重复的份数 SHALL 为 0"
+
+      - id: "SC-012"
+        confidence: high
+        evidence: "proposal.yaml risk_areas『R2』（判据放宽过度会漏掉真正的 TC-ID 冲突 ⇒ 假阴性）；EXP-2026-0021（审计器必须自带自检）"
+        given: "构造一份 test-plan 样本，其中同一 TC-ID 出现在 **2 个定义点**（两个 ID 单元格）"
+        when: "对该样本执行 (d) 检查"
+        then: "SHALL 判 FAIL 并列出该重复 ID"
+        and:
+          - "另构造一份样本：同一 ID 有 1 个定义点 + 多处引用 ⇒ SHALL 判 PASS（正 / 反双向断言）"

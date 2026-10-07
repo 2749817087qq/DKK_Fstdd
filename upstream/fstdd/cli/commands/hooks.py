@@ -4,6 +4,8 @@ import sys
 import json
 from pathlib import Path
 
+from ._dryrun import dry_run_guard
+
 
 HOOK_SCRIPTS = {
     "session-start": """#!/usr/bin/env python3
@@ -164,6 +166,7 @@ def _validate_hooks_config(settings_path: Path) -> list[str]:
     return warnings
 
 
+@dry_run_guard("hooks install")
 def cmd_hooks_install(args):
     """Install STDD hooks to .claude/settings.json."""
     project_root = Path.cwd()
@@ -223,6 +226,7 @@ def cmd_hooks_status(args):
         print(f"    - {s.name}")
 
 
+@dry_run_guard("hooks uninstall")
 def cmd_hooks_uninstall(args):
     """Remove STDD hooks configuration."""
     project_root = Path.cwd()

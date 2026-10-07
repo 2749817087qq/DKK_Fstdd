@@ -1,0 +1,118 @@
+# design-adjustments.yaml — 设计调整汇总（Part C / C6 产出）
+# change: 2026-10-07-tool-defect-fixes｜Phase 3 BUILD 收口
+# 来源：Part B 的 pending-adjustments.yaml（7 条）逐条汇总 + 处置结论
+# 用途：作为后续迭代的输入（哪些偏离已就地解决、哪些转成独立欠账）
+
+meta:
+  change_id: "2026-10-07-tool-defect-fixes"
+  summarized_at: "2026-10-07T13:05:00+00:00"
+  source: "pending-adjustments.yaml"
+  total: 8
+  resolved_in_change: 3
+  carried_as_debt: 4
+  informational: 1
+
+# ---------------------------------------------------------------
+# 一、已在本 change 内闭合（resolved: true）
+# ---------------------------------------------------------------
+resolved:
+  - id: ADJ-006
+    title: "渲染器改为两个 h3 子段恒定输出"
+    capability: proposal-extraction-fidelity
+    disposition: "接受。与模板 `.fstdd/templates/proposal.md` 的声明形态一致；空段只写标题，解析语义不变。"
+    evidence: "tests/test_proposal_extraction_fidelity.py::test_tc_pxf_001"
+
+  - id: ADJ-007
+    title: "C1 评审报出的 3 处真实缺陷（canon verify dry-run 落盘 / (d) 形态 B 假红 / batch child status 误伤）"
+    capability: "dry-run-fidelity + ci-check-accuracy"
+    disposition: |
+      全部就地修复：
+      ① `canon verify` 的 `_generate_one` 分支加 dry-run 守卫 + 新增行为断言 TC-DRY-003c；
+      ② (d) 形态 B 改为「仅在形态 A 抽不到时启用」+ 回归自检 TC-CCA-002d2；
+      ③ `batch` 读路径白名单补 `child status`。
+    evidence: |
+      `canon verify --dry-run` 快照断言通过；43 份 test-plan 独立复核 FAIL=0；
+      `tests/test_ci_tcid_definition.py` 7 passed；`tests/test_dry_run_fidelity.py` 6 passed。
+    note: |
+      ⚠️ 遗留口径上限：dry-run 契约扫描是**模块级**判据，无法识别「同模块内某一处写路径
+      未守住」（正是 ① 的漏判成因）。已用行为断言（TC-DRY-003b/003c）做第二层防线。
+
+  - id: ADJ-008
+    title: "首次全量回归暴露的 4 处失败（3 修 1 结构性）"
+    capability: "dry-run-fidelity + experience-io-contract（回归面）"
+    disposition: |
+      ① 全仓裸 except 审计表因本 change 造成**行号位移** ⇒ 生成 change 活表
+         `audit/except-points.yaml`（25 点 / 7 位移 / 0 新增 / 0 消失）；
+      ② `baseline.py` 新增相对导入 ⇒ `test_evidence_ops` 的孤立加载失败 ⇒ 改**包导入**（断言不变）；
+      ③ `docs/UPSTREAM_BASELINE.md` R 轴 `3.3.5`（上一版遗留失真）⇒ 纠正为 `3.3.6`；
+      ④ `test_a6_no_stray_untracked_files` ⇒ **不修**（在办 change 期结构性必红，DELIVER 提交后转绿）。
+    evidence: |
+      `test_except_audit.py` + `test_guard_silent_except.py` = 11 passed；
+      `test_evidence_ops.py` + `tests/test_upstream_baseline.py` = 11 passed。
+    note: |
+      **流程缺口（供 DELIVER）**：升版时必须同步 `docs/UPSTREAM_BASELINE.md` 的 R 轴，
+      否则 `test_ubl_003` 必红 —— 上一版 v3.3.6 即栽在此处。
+
+# ---------------------------------------------------------------
+# 二、转为独立欠账（carried_as_debt）
+# ---------------------------------------------------------------
+carried_as_debt:
+  - id: ADJ-002
+    title: "`upstream/fstdd/` 下 70 处 `write_text` 未传 `newline=` ⇒ Windows 上写 CRLF"
+    capability: experience-io-contract
+    why_carried: "D2 经 D哥 确认只覆盖经验库索引；70 处属同族但独立的治理项，需逐处评估该文件是否允许 CRLF。"
+    impact: "每次 `canon generate` 都会产出 CRLF 的 proposal.md / caveman_summary.txt（BUILD 期间已活体复现并手工归一）。"
+    follow_up: "另立 change；可复用 `tests/test_experience_io_contract.py` 的「写盘后断言无 CRLF」模式。"
+
+  - id: ADJ-003
+    title: "`fstdd experience list`（读命令）会重写索引文件"
+    capability: "dry-run-fidelity + experience-io-contract"
+    why_carried: "「dry-run 不被尊重」与「读命令有写副作用」是两个缺陷；按 dry-run 屏蔽 list 会连只读功能一起屏蔽（更糟）。"
+    impact: "跑一次 `experience list` 即把仓库内索引从 LF 改成 CRLF（本 change 期间已复现并 `git checkout` 还原）。"
+    follow_up: "另立 change：让 `list` 走只读索引路径，或仅在索引陈旧时才重建。"
+
+  - id: ADJ-005
+    title: "渲染器仍不输出 `## Constraints` / `## Stakeholders` / `## Risk Areas` / `## NonGoals` / `## Critical` / `## Risk Assessment` / `## Anchoring`"
+    capability: proposal-extraction-fidelity
+    why_carried: "冻结的 SC-008/009/010 只要求 Capabilities 与 Impact 两条轴；其余 7 段属 `docs/RUN_ISSUES_2026-09-17_reits-writer.md` 早已记录、范围更大的「生成器 vs 模板」欠账。"
+    impact: |
+      实测本 change 自身：`capabilities.modified=5`、`impact.code=6` ✅，但
+      `constraints=0 / stakeholders=0 / risk_areas=0 / non_goals=0` ❌。
+      **连带**：`ci check-failures` 的 (b) 范围蔓延检查因此恒被 SKIP
+      （它靠 proposal.md 里的 `- capability: <name>` 行取数据，而该行只出现在 Risk Areas 段）。
+    follow_up: "另立 change；可直接复用本 change 建立的 `_proposal_anchors` 单一事实源收口模式。"
+
+  - id: ADJ-001
+    title: "dry-run 实现范围从 1 个模块扩大为 15 个模块 / 78 个写点"
+    capability: dry-run-fidelity
+    why_carried: "范围扩大本身**已经 D哥 在 BUILD 期间明确裁定（选项 B：全量补齐）**，故不算未决偏离；此处保留为「执行面记录」。"
+    impact: "新增 `_dryrun.py` 统一守卫 + 修改 15 个命令模块；接口不变。"
+    follow_up: "无需跟进（已授权）。"
+
+# ---------------------------------------------------------------
+# 三、仅记录（informational）
+# ---------------------------------------------------------------
+informational:
+  - id: ADJ-004
+    title: "契约扫描口径收紧（去掉 `yaml.dump(` 假阳性）⇒ 违规面 16 模块/110 写点 → 15 模块/78 写点"
+    capability: dry-run-fidelity
+    note: |
+      `_dryrun.py` 的模块 docstring 初稿仍写「28 个模块 / 16 个违规 / 110 个写点」，
+      与 ADJ-004 的实测结论矛盾（属本 change 要修的「声明失真」病）。
+      **已修正为实测值**：39 个模块 / 25 个含写操作 / 149 个写点 / 15 个未处理（78 写点）。
+    evidence: "同口径扫描器在 `@0710d54` 上的实测（`tests/test_dry_run_fidelity.py` 复用同一实现）"
+
+# ---------------------------------------------------------------
+# 四、C1 评审报出但**判定不需修改**的项（留档，避免下一轮重复讨论）
+# ---------------------------------------------------------------
+reviewed_no_change:
+  - title: "`TC-[A-Z]+-\\d{3}` 硬编码 3 位数字"
+    reason: "项目约定即 3 位（`.fstdd/config.d/quality.yaml` → `pattern: TC-{CAPABILITY}-{NNN}`），现有 43 份 test-plan 全为 3 位；放宽会改变既有解析语义。"
+  - title: "`_proposal_anchors.py` 导出了 4 个当前未被引用的锚点常量（H2_CONSTRAINTS / H2_STAKEHOLDERS / H2_RISK_AREAS / H2_NON_GOALS）"
+    reason: "解析器已实际使用这 4 个常量（`_parse_section(content, H2_CONSTRAINTS)` 等）；它们是「单一事实源」的组成部分，待 ADJ-005 修复渲染器后即被渲染侧复用。"
+  - title: "`_h3_body` 不把 `####` 当作边界"
+    reason: "proposal.md 模板最深只用到 h3；h4 出现在 capability 段内不会改变语义（内容仍属该段）。"
+  - title: "`dry_run_guard` 装饰器返回 `None`（而非显式退出码）"
+    reason: "CLI 分发层不依赖返回值判定成功与否（既有 8 个命令同此范式）；`canon generate --dry-run` 实测退出码 0。"
+  - title: "`tests/test_verify_notices_default_safe.py` 向真实 `tools/_quarantine/` 写入隔离条目（硬崩溃时可能残留）"
+    reason: "与既有 `tools/test_verify_notices.py` 同范式（该目录已被 `.gitignore` 覆盖，且有 autouse 清理）；本 change 不改变这一约定。"

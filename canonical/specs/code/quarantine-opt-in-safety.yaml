@@ -1,0 +1,49 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-07-tool-defect-fixes
+# capability: quarantine-opt-in-safety（破坏性操作须显式 opt-in）
+
+meta:
+  capability: "quarantine-opt-in-safety"
+  change_id: "2026-10-07-tool-defect-fixes"
+  created: "2026-10-06T18:05:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    capability: "quarantine-opt-in-safety"
+    description: |
+      `tools/verify_notices.py` 的**默认**运行 SHALL NOT 移动或删除任何文件；
+      隔离（`shutil.move` 到 `tools/_quarantine/`）SHALL 仅在显式传入 `--quarantine` 时发生。
+      默认路径 SHALL 仍以**可观测**方式呈现命中项（显式告警 + 非零退出码 + JSON 字段），
+      使「不再破坏」不以「不再可见」为代价。
+
+    scenarios:
+      - id: "SC-013"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 6) 点；observed_at=2026-10-06T17:25:33+00:00 source=@0710d54 实测 `verify_notices.py:220` `shutil.move` 位于主流程内无条件执行，CLI 仅 `directory` / `--json` / `--strict`；EXP-2026-0015 二次命中：对仓库根运行移走含未提交改动的 README.md 等 3 个已跟踪文件"
+        given: "某目录存在凭证形状命中的文件，且**未**传 `--quarantine`"
+        when: "执行 `python tools/verify_notices.py <dir>`（默认）"
+        then: "SHALL NOT 移动、重命名或删除该目录内任何文件"
+        and:
+          - "该目录的文件清单与各文件内容 SHALL 与运行前逐字节一致"
+          - "`tools/_quarantine/` SHALL NOT 新增条目"
+
+      - id: "SC-014"
+        confidence: high
+        evidence: "proposal.yaml what_changes C6；EXP-2026-0015 的 fix_template（隔离能力本身是凭证防线，不应取消）"
+        given: "某目录存在凭证形状命中的文件，且**传入** `--quarantine`"
+        when: "执行 `python tools/verify_notices.py <dir> --quarantine`"
+        then: "SHALL 将命中文件移入 `tools/_quarantine/`（恢复修复前的行为）"
+        and:
+          - "隔离记录 SHALL 仅含文件名 / md5 前 12 位 / 规则名 / 时间，SHALL NOT 含凭证字面值"
+
+      - id: "SC-015"
+        confidence: high
+        evidence: "proposal.yaml design D6（保留可观测性）；KG-095（第二层防线天然不可观测，severity medium）"
+        given: "默认模式（未传 `--quarantine`）下存在命中项"
+        when: "执行 `python tools/verify_notices.py <dir> --json`"
+        then: "SHALL 在 JSON 顶层新增 `would_quarantine` 键，列出「若加 `--quarantine` 会被移走」的条目"
+        and:
+          - "既有四键 `results` / `quarantined` / `warnings` / `exit_code` SHALL 保持存在且语义不变"
+          - "默认模式下 `quarantined` SHALL 为空数组（因为确实没有移动任何东西）"
+          - "存在命中项时退出码 SHALL 非 0（保留告警强度）"

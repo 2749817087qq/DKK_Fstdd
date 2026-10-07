@@ -1,0 +1,56 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-07-tool-defect-fixes
+# capability: proposal-extraction-fidelity（渲染器与解析器的锚点契约一致）
+
+meta:
+  capability: "proposal-extraction-fidelity"
+  change_id: "2026-10-07-tool-defect-fixes"
+  created: "2026-10-06T18:05:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    capability: "proposal-extraction-fidelity"
+    description: |
+      `canon` 渲染出的 `proposal.md` SHALL 包含解析器所期望的顶层锚点：
+      `## Capabilities`（下含 `### New Capabilities` / `### Modified Capabilities`）与 `## Impact`
+      （含 `**代码层面**` / `**配置层面**` / `**基础设施**` 三段）。
+      渲染器与解析器 SHALL 由**同一组锚点常量**驱动，SHALL NOT 各自硬编码导致分叉。
+
+    scenarios:
+      - id: "SC-008"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 3) 点；observed_at=2026-10-06T17:25:33+00:00 source=@0710d54 实测归档 proposal.md 的 h2 仅 `## Why` / `## What Changes` / `## Success Criteria`；`grep -n Impact upstream/fstdd/cli/commands/canon.py` = 0 命中"
+        given: "`canon.py` 的 proposal 渲染器当前把 `### Modified Capabilities` 挂在 `## What Changes` 之下，且从不输出 `## Impact`"
+        when: "执行 `fstdd canon generate <change>` 渲染任一 change 的 proposal.md"
+        then: "SHALL 使渲染结果含顶层 `## Capabilities` 段"
+        and:
+          - "SHALL 使渲染结果含顶层 `## Impact` 段"
+          - "`## What Changes` 段 SHALL NOT 再包含 capability 条目"
+
+  - id: "REQ-002"
+    capability: "proposal-extraction-fidelity"
+    description: |
+      `fstdd extract-proposal <change>` SHALL 正确解析出 `capabilities`（new / modified）与 `impact`；
+      对**历史** change（渲染器尚未输出 h2 的 h3 形态）SHALL 保持向后兼容。
+      `what_changes` SHALL NOT 混入 capability 段条目。
+
+    scenarios:
+      - id: "SC-009"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 3) 点；observed_at=2026-10-06T17:5x:xx+00:00 source=@0710d54 实测 `fstdd extract-proposal 2026-10-07-tool-defect-fixes` → `capabilities: {new: [], modified: []}`，且 `what_changes` 末尾多出 5 条 `**<capability>**：…`"
+        given: "某 change 的 proposal.md 含 `### Modified Capabilities`（h3 形态）或其 h2 等价形态"
+        when: "执行 `fstdd extract-proposal <change>`"
+        then: "SHALL 使 `capabilities.modified` 非空（该 change 确有 modified capability 时）"
+        and:
+          - "`what_changes` 中 SHALL NOT 出现 `**<capability>**：` 形态的条目"
+          - "`impact` SHALL 非空（该 change 的 proposal.yaml 确有 impact 时）"
+
+      - id: "SC-010"
+        confidence: high
+        evidence: "proposal.yaml risk_areas『R5』（渲染器新增两个 h2 后，历史归档 proposal.md 与新建的形态不一致）；observed_at=2026-10-06 source=@0710d54 `.fstdd/archive/` 下 41 份历史 proposal.md 均为 h3 形态"
+        given: "存在渲染器改造**之前**生成的历史 proposal.md（h3 形态）"
+        when: "对历史 change 执行 `fstdd extract-proposal <change>`"
+        then: "SHALL 仍能解析出 capabilities（向后兼容），SHALL NOT 报错"
+        and:
+          - "对同一 change，h2 形态与 h3 形态的解析结果 SHALL 一致"

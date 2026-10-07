@@ -4,7 +4,10 @@ import sys
 import yaml
 from pathlib import Path
 
+from ._dryrun import dry_run_guard
 
+
+@dry_run_guard("index update")
 def cmd_index_update(args):
     """Scan project and generate/update project-index.yaml."""
     project_root = Path.cwd()

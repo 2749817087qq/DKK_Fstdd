@@ -9,6 +9,7 @@ import argparse
 from pathlib import Path
 from datetime import datetime
 from ..timeutil import utc_now_iso
+from ._dryrun import dry_run_preview
 import yaml
 
 
@@ -65,6 +66,9 @@ def cmd_work(args: argparse.Namespace) -> None:
 
     data = yaml.safe_load(stdd_yaml.read_text(encoding="utf-8"))
     works = data.get("related_work", [])
+
+    if action == "add" and dry_run_preview(args, "work add"):
+        return
 
     if action == "add":
         work_type = getattr(args, "work_type", "other") or "other"

@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 from ..timeutil import utc_now_iso
+from ._dryrun import dry_run_guard
 
 import yaml
 
@@ -238,6 +239,7 @@ def _amend_audit(change_dir: Path, gate_num: int, confirmed_by: str,
     return "recorded"
 
 
+@dry_run_guard("gate", detail_fn=lambda a: f"subcommand={getattr(a, 'subcommand', 'approve')}")
 def cmd_gate(args: argparse.Namespace) -> None:
     """CLI entry: gate approval and append-only audit amendments."""
     project_root = Path.cwd()

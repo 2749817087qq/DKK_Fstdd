@@ -1,0 +1,185 @@
+# 2026-10-07-tool-defect-fixes.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `fstdd canon generate` 生成。
+
+meta:
+  change_id: "2026-10-07-tool-defect-fixes"
+  title: "工具链契约保真：6 个既有缺陷修复（声明 = 行为）"
+  created: "2026-10-06T17:26:00+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    FSTDD 工具链有 6 处**声明与行为不一致**的既有缺陷 —— 工具的文档 / 参数 / 默认行为
+    与其实际动作不符，使用者据声明作出的判断会被误导。逐条（均为实测复现，非推测）：
+
+    1) `fstdd phase advance <change> --dry-run` **会真实推进阶段**。
+       `--dry-run` 在 `upstream/fstdd/cli/__init__.py:13` **全局注册**（help 写「预览操作，
+       不实际修改文件系统」），对**所有**子命令可见；其余命令均已按统一范式实现
+       （`dry_run = getattr(args, "dry_run", False)` + 早返回，如 archive.py:22,42 / init.py:108,109），
+       **唯独 `phase.py` 全文 0 处 `dry_run`**（198 行）⇒ 该参数被静默忽略后**落盘**
+       （实测把 `understand` 推到 `spec` / `in_progress`）。
+       危害：使用者以为「先预览一下」，实际已经改了状态 —— 且因为别的命令都能用，
+       更不会怀疑 phase 不行。
+
+    2) `experience verify` 会把 `.fstdd/experiences/.experience-index.yaml` 写成 **CRLF**。
+       `_save_index()`（experience.py:274）用 `open(tmp, "w", encoding="utf-8")` 未传 `newline=""`，
+       Windows 上按平台默认写成 CRLF ⇒ 与仓库 `.gitattributes`（`* text=auto eol=lf`）冲突，
+       撞 `tools/verify_eol.py` 的 TC-EOL-003「混合态文件清零」（实测该文件 CRLF=322 / LF=0）。
+
+    3) `fstdd extract-proposal <change>` 的 `capabilities` / `impact` / `constraints` **恒返回空**。
+       渲染器（canon.py:360-370）把 `### New/Modified Capabilities` 挂在 `## What Changes` 之下，
+       而解析器（extract_proposal.py:41）找的是 `## Capabilities` h2 ⇒ 永远匹配不到。
+       连带后果：capability 条目被当作 `what_changes` 解析出来（实测 4 条 capability 混入 what_changes）。
+       危害：任何依赖 extract-proposal 的自动化（Phase 1 Step 3.5 提案审查等）拿到的是空 / 错数据。
+
+    4) `fstdd ci check-failures` 的 (d) 检查把**任何重复提及**判为「重复 TC-ID」。
+       ci.py:317-323 用 `re.findall` + `count > 1`，而项目约定是在「案例标题 + 优先顺序 +
+       回归矩阵 + 证据表」多处引用同一 ID ⇒ **41 份 test-plan 中 25 份（60%）被判 FAIL**。
+       危害：门禁的 ❌ 变成噪声，真正的 ID 冲突反而被淹没。
+
+    5) `fstdd experience list --format json` **直接崩溃**。
+       experience.py:468 `json.dumps(experiences, ...)` 未传 `default=str`，
+       而条目含 `date` 对象 ⇒ `TypeError: Object of type date is not JSON serializable`。
+       危害：`--format json` 完全不可用（只有文本模式能用）。
+
+    6) `tools/verify_notices.py` 的默认处置是**移动文件**（隔离 = 破坏性副作用）。
+       CLI（第 295-299 行）**只有 `--json` / `--strict`，没有 dry-run 或显式开关**
+       ⇒ 在任何目录上跑一次就会把命中的文件 `shutil.move` 走（第 220 行，主流程内无条件执行）。
+       实测（EXP-2026-0015 二次命中）：对仓库根运行会把 `README.md`（**带未提交改动**）等
+       3 个已跟踪文件移走。危害：有丢失未提交工作的风险，且与 docstring 自述「不写业务文件」矛盾。
+
+    共同主线：**契约断层** —— 声明形态（docstring / 参数名 / 参数语义 / 检查判据）与
+    实际可执行形态不一致。与经验库 EXP-2026-0013「(k) 契约断层」同族。
+  motivation: |
+    6 条全部是「工具骗人」类缺陷，且都落在门禁链路上（phase / ci / experience / verify_notices
+    都是 FSTDD 流程自己会调用的命令）。第 1、6 条会**静默改变状态或移走文件**，第 2、4 条把门禁
+    变成噪声，第 3、5 条让工具直接不可用 —— 任一存在都会削弱「绿灯可信」这一前提。
+    上一版（3.3.6）刚把**测试套件**的环境可信度修好；本版趁热把**工具侧**的可信度一并收口。
+  evidence:
+    observed_at: "2026-10-06T17:25:33+00:00"
+    observed_base_git_sha: "0710d5462f973164f83f5096cdf739380e579fb8"
+    details: |
+      · 缺陷 1：`grep -c dry_run upstream/fstdd/cli/commands/*.py` →
+        `phase.py` = **0 处**（唯一）；对照 `ci.py` 16 / `upgrade.py` 6 / `init.py` 4 /
+        `archive.py` `new.py` `install.py` `rollback.py` `abort.py` 各 2 ⇒ phase 是唯一漏网的。
+        实测 64 个既有 dry-run 断言（test_archive / test_new / test_rollback / test_abort /
+        test_ci / test_phase）**全部 passed** ⇒ 其余命令的 dry-run 确实有效，缺陷仅限 phase。
+        ⚠️ 复核注记：初次粗筛用正则 `args\.dry_run` 得「26 个命令全不尊重 dry-run」，
+        系**假阳性**（既有范式是 `getattr(args, "dry_run", False)`，非 `args.dry_run`）。
+        已按「跑既有断言 + 数出现次数」双重实测更正。
+      · 缺陷 2：`experience.py:274-283 _save_index()` 的 `open(tmp, "w", encoding="utf-8")` 无 `newline=""`；
+        实测 `git` 报 `warning: CRLF will be replaced by LF`，该文件 CRLF=322 / LF=0。
+      · 缺陷 3：实测 `fstdd extract-proposal 2026-10-06-legacy-debt-cleanup` →
+        `capabilities: {new: [], modified: []}`，且 `what_changes` 末尾多出 4 条 `**<capability>**：…`（泄漏）。
+        结构实测：归档 proposal.md 的 h2 仅 `## Why` / `## What Changes` / `## Success Criteria`，
+        `### Modified Capabilities` 在第 38 行（位于 `## What Changes` 之下）。
+      · 缺陷 4：实测 `.fstdd/` 下 41 份 test-plan 中 **25 份**（60%）含重复 TC-ID
+        （脚本：逐份 `re.findall(r'TC-[A-Z]+-\d{3}')` 后判 `count>1`）。
+        上一版 change（2026-10-06-legacy-debt-cleanup）被该检查报 18 个「重复」。
+      · 缺陷 5：`experience.py:468` 无 `default=str`；同文件第 539 / 638 / 1186 / 1253 行亦需复核。
+      · 缺陷 6：`verify_notices.py:220` `shutil.move(str(file_path), str(dest))` 位于 `verify_notices()`
+        主流程内无条件执行；CLI 参数仅 `directory` / `--json` / `--strict`（第 296-299 行）。
+
+what_changes:
+  - id: C1
+    description: "phase：按既有范式让 `--dry-run` 真的不落盘 —— `cmd_phase` 读 `getattr(args, \"dry_run\", False)`，为真时只打印将发生的变更并正常退出，不写 `.fstdd.yaml`；并新增**防复发契约测试**：扫描全部子命令模块，凡含写操作者必须出现 `dry_run` 处理（否则 FAIL），使「声明了 `--dry-run` 却静默忽略」不再复发"
+    type: modified
+  - id: C2
+    description: "experience：索引写盘统一 LF —— `_save_index()` 的 `open(...)` 补 `newline=\"\"` 并显式使用换行符，消除 CRLF 污染"
+    type: modified
+  - id: C3
+    description: "experience：`--format json` 可序列化 —— 输出路径补 `default=str`（或统一经 `_jsonable()` 归一），并复核同文件其它 `json.dumps` 调用点"
+    type: modified
+  - id: C4
+    description: "extract-proposal：解析器与渲染器锚点对齐 —— `_parse_capabilities()` 同时接受 h2 `## Capabilities` 与 h3 `### New/Modified Capabilities`；并把 capability 段从 `what_changes` 解析中排除（消泄漏）"
+    type: modified
+  - id: C5
+    description: "ci：重定义 (d) 检查判据 —— 从「全文出现次数」改为「test-plan 中 TC-ID 的**定义点**唯一」（表格 ID 列 / 案例标题行），重复引用不再判 FAIL；同时评估该检查的扫描面口径"
+    type: modified
+  - id: C6
+    description: "verify_notices：破坏性默认改为显式 opt-in —— 默认只**报告**命中项（不动文件），新增 `--quarantine` 才执行移动；`--json` 输出补 `would_quarantine` 字段；docstring 与行为对齐"
+    type: modified
+
+capabilities:
+  new: []
+  modified:
+    - name: "dry-run-fidelity"
+      description: "声明了 `--dry-run` 的命令必须真的不产生落盘副作用（可预览、可安全试跑）"
+    - name: "experience-io-contract"
+      description: "经验库的落盘与输出遵守契约：索引文件行尾为 LF；`--format json` 在任何条目上均可序列化"
+    - name: "proposal-extraction-fidelity"
+      description: "`extract-proposal` 能正确解析出 capabilities / impact / constraints，且不把 capability 段混入 what_changes"
+    - name: "ci-check-accuracy"
+      description: "`ci check-failures` 的判据与项目实际约定一致，不把正当引用判为违规"
+    - name: "quarantine-opt-in-safety"
+      description: "凭证隔离是显式 opt-in 的破坏性操作；默认运行只报告、不移除任何文件"
+
+impact:
+  code:
+    - "upstream/fstdd/cli/commands/phase.py：`cmd_phase` 增加 dry-run 早返回分支（不写状态文件）"
+    - "upstream/fstdd/cli/commands/experience.py：`_save_index()` 补 `newline=\"\"`；`--format json` 输出路径补 `default=str`（并复核第 539 / 638 / 1186 / 1253 行）"
+    - "upstream/fstdd/cli/commands/extract_proposal.py：`_parse_capabilities()` 锚点放宽到 h3；`what_changes` 解析排除 capability 段"
+    - "upstream/fstdd/cli/commands/ci.py：`check_tcid_unique()` 判据改为「定义点唯一」"
+    - "tools/verify_notices.py：默认只报告；新增 `--quarantine`；`--json` 增 `would_quarantine`；docstring 与行为对齐"
+    - "新增测试：覆盖 6 个缺陷的 RED→GREEN 与反向样本（防判据放宽过度）；另含一条**契约扫描测试**（写操作命令必须处理 `dry_run`）"
+  config:
+    - "无：不改 .fstdd/config.d/**、不改 .gitattributes、不改 .gitignore"
+  infrastructure:
+    - "无：不动服务器、不推远端、不改 CI / hook"
+
+constraints:
+  - "只修工具行为，不改任何业务数据、凭证判定规则、知识图谱或经验条目内容"
+  - "`verify_notices` 的凭证形状正则与隔离目录（`tools/_quarantine/`）保持不变；只改**触发条件**"
+  - "不删除任何既有测试用例；`ci` 的 (d) 判据放宽后，原有 FAIL 面应转为 PASS 而非被跳过"
+  - "`experience.py` 的索引 schema 与 `_index_lock` 并发语义保持不变（只改行尾与序列化）"
+  - "`phase` 的 dry-run 修复不得改变非 dry-run 路径的任何行为"
+  - "所有改动须在 Windows（本机）与既有测试面（test_ci / test_phase / test_experience / test_experience_v29 / tools/test_verify_notices）零回归"
+
+stakeholders:
+  - "D哥（使用者 / 门禁裁决）"
+  - "后续所有 change 的执行者（受 (d) 噪声与 phase dry-run 影响）"
+
+risk_areas:
+  - capability: "dry-run-fidelity"
+    risk: "若 dry-run 判定放错位置，可能把非 dry-run 路径也变成只打印（真实推进失效）"
+    mitigation: "dry-run 只加「早返回 + 打印」分支；用既有 test_phase.py 全量回归 + 新增「dry-run 后 .fstdd.yaml 字节不变」断言"
+  - capability: "ci-check-accuracy"
+    risk: "判据放宽过度会漏掉真正的 TC-ID 冲突（假阴性）"
+    mitigation: "新判据按「定义点」判定：同一 ID 出现两个**定义行**仍判 FAIL；用构造样本做正 / 反两向断言"
+  - capability: "quarantine-opt-in-safety"
+    risk: "默认不再移动后，凭证形状命中的文件会留在原地（防线由「主动移除」变为「报告 + 显式操作」）"
+    mitigation: "默认路径仍以非零退出码 + 显式告警呈现命中；`--json` 增 `would_quarantine`；EXP-2026-0015 的教训是「静默移动」才是危害源，故改为「显式报告 + opt-in 移动」"
+  - capability: "experience-io-contract"
+    risk: "改 `newline` 后若忘记显式换行符，在 Windows 上可能写出无换行的单行文件"
+    mitigation: "写盘时显式拼接换行符；断言产出文件同时满足「无 CRLF」与「行数 > 1」"
+
+non_goals:
+  - "不重构 `experience.py` 的索引 schema 或并发锁"
+  - "不改 `verify_notices.py` 的凭证判定规则与脱敏逻辑"
+  - "不改 FSTDD 的 phase / gate 语义本身（只让 dry-run 生效）"
+  - "不处理 origin 分叉、镜像 flag、hosts 文件等环境侧问题（已单独记录）"
+  - "不把 (d) 检查的扫描面扩到 `upstream/tests`（如需另立 change）"
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L1
+  reference_changes: []
+  anchor_implementations: []
+
+success_criteria:
+  - "`fstdd phase advance <change> --dry-run` 执行后 `.fstdd.yaml` 的内容与 mtime 均不变（字节级比对）"
+  - "`fstdd phase advance <change>`（无 --dry-run）行为与修复前完全一致（既有 test_phase.py 全绿）"
+  - "新增契约测试：扫描全部子命令模块，凡含写操作者必须出现 `dry_run` 处理 ⇒ 违规数为 0（修复前 `phase.py` 是唯一违规者）"
+  - "`fstdd experience verify <id>` 后 `.experience-index.yaml` 不含任何 CRLF 且行数 > 1"
+  - "`fstdd experience list --format json` 在含 date 字段的条目上返回 0，且 stdout 为合法 JSON"
+  - "`fstdd extract-proposal <change>` 的 capabilities.modified 非空（对本仓任一有 modified capability 的 change），且 what_changes 不含 `**<capability>**：` 形态条目"
+  - "`fstdd ci check-failures` 在 41 份既有 test-plan 上不再报 (d) 重复 TC-ID；构造「同一 ID 两个定义行」的样本仍报 FAIL"
+  - "`tools/verify_notices.py <dir>` 默认运行后目标目录文件数与内容零变化；加 `--quarantine` 时才移动；既有 tools/test_verify_notices.py 全绿"
+  - "全量 pytest upstream/tests 0 failed；根 tests/ 0 failed；四自检脚本全绿"

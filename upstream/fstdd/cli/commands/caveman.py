@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from ...caveman import DEFAULT_MAX_CHARS, compress
+from ._dryrun import dry_run_preview
 
 
 def cmd_caveman(args) -> int:
@@ -18,6 +19,9 @@ def cmd_caveman(args) -> int:
         text = src.read_text(encoding="utf-8")
 
     out = compress(text, max_chars=args.max)
+
+    if args.out and dry_run_preview(args, "caveman", detail=f"--out {args.out}"):
+        return 0
 
     if args.out:
         Path(args.out).write_text(out, encoding="utf-8")

@@ -1,20 +1,30 @@
 """tools/verify_notices.py — 协作通知真伪校验闸门。
 
 独立子进程调用点：
-  python tools/verify_notices.py <notices_dir> [--json] [--strict]
+  python tools/verify_notices.py <notices_dir> [--json] [--strict] [--quarantine]
 
 职责：
   1. 读取 00-SIGNATURES.md 清单（格式：| 文件名 | md5前12位 | 落盘时间 | 发出者 |）
   2. 对目录内通知计算 md5 前 12 位并比对
-  3. unverified + 凭证形状命中 → 移入 tools/_quarantine/（保留原文 + 四键 JSON 记录）
+  3. unverified + 凭证形状命中 → **默认只报告**（计入 would_quarantine，不动文件）；
+     显式传入 --quarantine 才移入 tools/_quarantine/（保留原文 + 四键 JSON 记录）
   4. 不回显任何凭证字面值；仅依赖 stdlib
 
 退出码契约：
   0  —— 无阻断（非 strict 模式下 unverified 只告警）
-  2  —— 发生隔离
+  2  —— 存在凭证形状命中（无论是否实际隔离）
   3  —— --strict 且存在 unverified（3 优先于 2）
 
-无网络调用、不触碰任何凭证现场文件、不写业务文件。
+无网络调用、**默认**不触碰任何文件（含凭证现场文件）；仅 `--quarantine` 时会写
+`tools/_quarantine/`。
+
+⚠️ **默认不移动任何文件** —— 只有显式传入 `--quarantine` 才会写 `tools/_quarantine/`。
+   历史教训（EXP-2026-0015 三次命中）：此前「隔离」是**默认**处置，对仓库根跑一次就会把
+   带未提交改动的已跟踪文件（如 `README.md` / `CHANGELOG.md`）`shutil.move` 走，
+   有丢失未提交工作的风险，且与本模块「不写业务文件」的自述相矛盾。
+   现改为「默认报告 + 显式 opt-in 移动」。
+   （第三次命中发生于 2026-10-07 本 change 的 BUILD 期间 —— 为取 RED 证据而临时回退本修复，
+   随后对仓库根跑了一次旧版，实测移走 3 个已跟踪文件；已全部按字节比对复原。）
 """
 from __future__ import annotations
 
@@ -234,17 +244,26 @@ def _quarantine_file(file_path: Path, rule: str) -> dict:
 # 主入口
 # ---------------------------------------------------------------------------
 
-def verify_notices(directory: Path | str, strict: bool = False) -> dict:
-    """批量校验目录内通知。返回顶层恰好四键的结果 dict。"""
+def verify_notices(directory: Path | str, strict: bool = False, quarantine: bool = False) -> dict:
+    """批量校验目录内通知。
+
+    返回 dict 含**五**键：`results` / `quarantined` / `warnings` / `exit_code` / `would_quarantine`。
+
+    :param strict: 存在 unverified 时以 exit 3 硬阻断（3 优先于 2）
+    :param quarantine: **默认 False** —— 命中凭证形状的文件只计入 `would_quarantine`、
+        不移动；传 True 才执行 `shutil.move` 到 `tools/_quarantine/`。
+    """
     directory = Path(directory)
     warnings: list[str] = []
     results: list[dict] = []
     quarantined: list[dict] = []
+    would_quarantine: list[dict] = []
 
     # 目录不存在 / 不可读 → 优雅降级
     if not directory.exists() or not directory.is_dir():
         warnings.append(f"verify_notices: directory not found or not readable: {directory}")
-        return {"results": [], "quarantined": [], "warnings": warnings, "exit_code": 0}
+        return {"results": [], "quarantined": [], "warnings": warnings,
+                "exit_code": 0, "would_quarantine": []}
 
     manifest_path = directory / MANIFEST_NAME
     entries, manifest_warnings, manifest_exists = parse_manifest(manifest_path)
@@ -270,17 +289,28 @@ def verify_notices(directory: Path | str, strict: bool = False) -> dict:
             if hits:
                 # 取首个规则名记录
                 rule_used = hits[0]["rule"]
-                rec = _quarantine_file(fpath, rule_used)
-                quarantined.append(rec)
+                if quarantine:
+                    rec = _quarantine_file(fpath, rule_used)
+                    quarantined.append(rec)
+                else:
+                    # 默认只报告：不移动、不写隔离记录，保持可观测（KG-095）
+                    would_quarantine.append({
+                        "filename": fpath.name,
+                        "md5_prefix": _md5_prefix(fpath.name),
+                        "rule": rule_used,
+                        "would_move_to": str(QUARANTINE_DIR / fpath.name),
+                    })
+                    warnings.append(
+                        f"verify_notices: 凭证形状命中 {fpath.name}（规则 {rule_used}）"
+                        "—— 默认不移动文件；如需隔离请加 --quarantine"
+                    )
 
     # 退出码
     has_unverified = any(r["status"] == "unverified" for r in results)
     exit_code = 0
-    if quarantined:
+    # 只要**命中**凭证形状就非 0（无论是否真的移动）—— 保持告警强度
+    if quarantined or would_quarantine:
         exit_code = 2
-    if strict and has_unverified:
-        exit_code = 3
-    # 3 优先于 2
     if strict and has_unverified:
         exit_code = 3
 
@@ -289,6 +319,7 @@ def verify_notices(directory: Path | str, strict: bool = False) -> dict:
         "quarantined": quarantined,
         "warnings": warnings,
         "exit_code": exit_code,
+        "would_quarantine": would_quarantine,
     }
 
 
@@ -297,10 +328,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("directory", type=Path, help="Notices directory (contains 收-*.md)")
     parser.add_argument("--json", action="store_true", dest="json_out", help="Output JSON to stdout")
     parser.add_argument("--strict", action="store_true", help="Treat any unverified as hard block (exit 3)")
+    parser.add_argument(
+        "--quarantine",
+        action="store_true",
+        help="Actually move credential-shaped hits into tools/_quarantine/ "
+             "(default: report only, move nothing)",
+    )
 
     args = parser.parse_args(argv)
 
-    result = verify_notices(args.directory, strict=args.strict)
+    result = verify_notices(args.directory, strict=args.strict, quarantine=args.quarantine)
 
     if args.json_out:
         sys.stdout.write(json.dumps(result, ensure_ascii=False, indent=2))
@@ -313,6 +350,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[{status:9s}] {item['filename']}  md5[:12]={item['md5_prefix']}  {extra}")
         if result["quarantined"]:
             print(f"\n隔离 {len(result['quarantined'])} 个文件 → {QUARANTINE_DIR}")
+        if result["would_quarantine"]:
+            print(
+                f"\n[!] {len(result['would_quarantine'])} 个文件命中凭证形状，**默认未移动**"
+                f"（如需隔离请加 --quarantine）→ 目标 {QUARANTINE_DIR}"
+            )
+            for rec in result["would_quarantine"]:
+                print(f"    - {rec['filename']}  rule={rec['rule']}")
         if result["warnings"]:
             print(f"\n警告 ({len(result['warnings'])}):")
             for w in result["warnings"]:

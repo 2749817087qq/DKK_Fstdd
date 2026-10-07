@@ -16,6 +16,7 @@ import yaml
 import requests
 
 from .experience import _coerce_numeric_fields, _iter_experience_files
+from ._dryrun import dry_run_guard
 
 
 VALID_NODE_TYPES = {"failure_pattern", "design_decision", "fix_template", "language_idiom"}
@@ -177,6 +178,7 @@ def _fetch_community_graph(config: dict) -> Optional[dict]:
 # ─── CLI subcommands ───
 
 
+@dry_run_guard("knowledge merge")
 def cmd_knowledge_merge(args: argparse.Namespace) -> None:
     """Merge community knowledge graph with local experiences."""
     from ..utils import get_logger, read_config

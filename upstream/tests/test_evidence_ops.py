@@ -60,12 +60,21 @@ def run_cli(*args: str, cwd: Path):
 
 
 def load_baseline_mod():
-    spec = importlib.util.spec_from_file_location(
-        "_fstdd_baseline", UPSTREAM / "fstdd" / "cli" / "commands" / "baseline.py"
-    )
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    """以**包成员**方式导入 `fstdd.cli.commands.baseline`。
+
+    ⚠️ 不能用 `spec_from_file_location` 单独加载：`baseline.py` 现在含**相对导入**
+    （`from ._dryrun import dry_run_preview`，dry-run 契约守卫的一部分），
+    而单独加载出来的模块没有父包 ⇒
+    `ImportError: attempted relative import with no known parent package`
+    （实测 2026-10-07，change 2026-10-07-tool-defect-fixes）。
+    改用包导入后，被测对象与**生产环境的加载方式一致**（更贴合真实运行形态）。
+
+    ⚠️ `sys.path` 用 append 而非 insert(0)：insert(0) 会静默遮蔽同名模块（本项目既有教训）。
+    """
+    upstream = str(UPSTREAM)
+    if upstream not in sys.path:
+        sys.path.append(upstream)
+    return importlib.import_module("fstdd.cli.commands.baseline")
 
 
 # --------------------------------------------------------------------------- #
