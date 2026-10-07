@@ -10,6 +10,38 @@
 
 ## [Unreleased]
 
+## [3.3.7] — 2026-10-07
+
+**主题**：**工具链契约保真（声明 = 行为）** —— 修 6 处「工具声明与行为不一致」的既有缺陷。共同主线是**契约断层**：工具的文档 / 参数名 / 参数语义 / 检查判据与它实际可执行的形态不符，使用者据声明作出的判断会被误导。六条全部落在**门禁链路**上（`phase` / `ci` / `experience` / `verify_notices` 都是 FSTDD 流程自己会调用的命令）。
+**规模**：交付 1 change（`2026-10-07-tool-defect-fixes`，归档 + 根 canonical 并入 7 文件 + `canon verify` 2/2 + `structure merge`）；**17/17 TC**，新增测试 **33 函数 / 5 文件**；全量 `pytest upstream/tests` **`954 passed / 5 skipped / 1 failed`**（唯一失败为提交前结构性的 `test_a6`）；仓库根 `tests/` **`128 passed / 3 skipped / 0 failed`**；`ci check-failures` 6 通过 / 1 警告 / 3 跳过 / 0 错误；设计偏离 8 条。
+
+### 修复
+
+- **`--dry-run` 契约保真（`dry-run-fidelity`）**：`--dry-run` 在父解析器中**全局注册**（help 写「预览操作，不实际修改文件系统」），对**所有**子命令可见；但实测 **39 个命令模块中 25 个含写操作（149 个写点）**，其中 **15 个模块（78 个写点）完全没处理 `dry_run`** —— 该参数被静默忽略后照常落盘。新建统一守卫 `upstream/fstdd/cli/commands/_dryrun.py`（`dry_run_guard` 装饰器 / `dry_run_preview` 早返回 / `dry_run_requested` 判定），15 个模块逐一接入；`phase` 因需给出更具体的预览（`from → to`）而在模块内自行实现。
+  **帮助**：`fstdd phase advance <change> --dry-run` 此前会**真实推进阶段**（实测把 `understand` 推到 `spec`）—— 使用者以为「先预览一下」，实际已经改了状态；而且因为别的命令都能用，更不会怀疑 `phase` 不行。现在「先预览」真的只是预览。
+  **防复发**：新增**契约扫描测试**（凡有写操作的命令模块必须处理 `dry_run`，AST 口径 + 双向自检：注释 / docstring / 字符串字面量提及**不算**已处理；`getattr(args, "dry_run", False)` 这一既有范式必须认），使「下一个新命令又忘」不再可能。
+  **评审追加**：`canon verify --dry-run` 仍会经 `_generate_one` 写 `proposal.md` + `caveman_summary.txt`（**模块级静态扫描结构上抓不到**，因 `canon.py` 已含 dry_run）⇒ 补守卫 + 行为断言 TC-DRY-003c。
+- **经验库 I/O 契约（`experience-io-contract`）**：`_save_index()` 的两处 `open(...)` 补 `newline=""`；引入 `_json_default()` 并覆盖该模块**全部 5 个** `json.dumps` 调用点。
+  **帮助**：① 索引文件此前在 Windows 上被写成 **CRLF=322 / LF=0**，与 `.gitattributes` 的 `eol=lf` 冲突、直接撞 `verify_eol` 的混合态检查 —— 现在写盘即 LF（实测跑 3 次 `experience add` 后索引 CRLF 恒为 0）。② `fstdd experience list --format json`（**无过滤**）此前**直接崩溃**（`TypeError: Object of type date is not JSON serializable`，因为 74 条经验里 57 条的 `exported_at` 以未加引号日期存盘、被 `yaml.safe_load` 解析成 `date` 对象）；现在实测 **76 条全部输出、零崩溃**。逐处补 `default=str` 会漏（同文件有 5 处），故统一走一个归一函数并用「集合相等」断言钉死全部调用点。
+- **proposal 提取保真（`proposal-extraction-fidelity`）**：`canon` 渲染器补出顶层 `## Capabilities` 与 `## Impact` 两个 h2；新增 `upstream/fstdd/cli/commands/_proposal_anchors.py` 作为**渲染器与解析器共用的锚点单一事实源**；`extract_proposal.py` 的解析器兼容 h2 / h3 两种形态，并让 `what_changes` 在首个 capability 锚点处**截断**。
+  **帮助**：`fstdd extract-proposal` 的 `capabilities` / `impact` 此前**恒返回空** —— 渲染器把 `### Modified Capabilities` 挂在 `## What Changes` 之下，而解析器找的是 `## Capabilities` h2，永远匹配不到；`grep Impact canon.py` 更是 **0 命中**。连带后果是 capability 条目被当成 `what_changes` 解析出来。任何依赖 `extract-proposal` 的自动化（Phase 1 的提案审查等）此前拿到的是**空 / 错数据**。实测本 change 自身：`capabilities.modified=5`、`impact.code=6`、`what_changes=6` 且**零泄漏**；对 41 份历史归档 proposal（h3 形态）**向后兼容**、两形态解析结果一致。
+- **`ci` (d) 判据准确（`ci-check-accuracy`）**：`check_tcid_unique()` 从「全文出现次数 > 1」改为「**定义点**出现次数 > 1」（形态 A `| **ID** | TC-… |` 优先，仅 A 抽不到时才回退「ID 作首列」的形态 B）。
+  **帮助**：项目约定在「案例标题 / 优先顺序 / 回归矩阵 / 证据表」多处**引用**同一 TC-ID，而旧判据把引用当重复 ⇒ **43 份既有 test-plan 中 26 份（60%）被判 FAIL**，门禁的 ❌ 因此变成噪声，真正的 ID 冲突反被淹没。现在全量复核 **FAIL=0**（另 5 份「无 TC-ID」为 WARN），而构造的「两个定义点」样本**仍判 FAIL**（反向断言保留）。
+- **凭证隔离改 opt-in（`quarantine-opt-in-safety`）**：`tools/verify_notices.py` 默认**只报告**（新增顶层 `would_quarantine` 键 + 非零退出码 + 人类可读告警），显式传入 `--quarantine` 才把命中文件移入 `tools/_quarantine/`。
+  **帮助**：此前「隔离」是**默认**处置，对任何目录跑一次就会把命中的文件 `shutil.move` 走 —— 实测对仓库根运行会移走 `README.md`（**带未提交改动**）等已跟踪文件，有丢失未提交工作的风险，且与本模块「不写业务文件」的自述相矛盾（EXP-2026-0015 已三次命中，其中一次就发生在本 change 的 BUILD 期间）。现在「默认不破坏」与「仍然可见」两者兼得：默认模式下 `quarantined == []`、命中项进 `would_quarantine`、退出码非 0。退出码契约（0 / 2 / 3，3 优先于 2）与 `--json` 顶层 5 键已重写对齐。
+
+### 交付
+
+- 归档 `.fstdd/archive/2026-10-07-tool-defect-fixes/`（`status: archived`）；Human View 合并到 `.fstdd/specs/<capability>/spec.md`（5 个）；根 `canonical/` 并入 **7 文件**（proposal 1 + code spec 5 + agent spec 1）+ `.canon-index.yaml` 登记 7 条；`canon verify` **2/2**；`structure merge` 完成。
+- 新增经验 **EXP-2026-0023 / 0024 / 0025**（RED 取证即执行旧代码 / 模块级静态判据识别不了局部漏点 / 放宽判据必须用全量既有样本回归）。
+
+### 已知问题（非本 change 引入，建议另立 change）
+
+- `upstream/fstdd/` 下 **70 处 `write_text` 未传 `newline=`** ⇒ 每次 `canon generate` / `experience add` 都会写出 CRLF（本 change 的 BUILD 期间两处均活体复现并手工归一）。
+- `fstdd experience list`（**读**命令）会重写索引文件。
+- canon 渲染器仍不输出 `## Constraints` / `## Stakeholders` / `## Risk Areas` / `## NonGoals` / `## Critical` / `## Risk Assessment` / `## Anchoring` 七段 —— 连带 `ci check-failures` 的 (b) 范围蔓延检查**长期被 SKIP**（它靠 `- capability: <name>` 行取数，而该行只出现在未被渲染的 Risk Areas 段）。
+- `experience` 的 `VALID_CATEGORIES`（15 项）与既有条目的分类口径不一致（`EXP-2026-0020` 用 `tooling`、`EXP-2026-0021` 用 `quality`，二者均不在合法列表内）。
+
 ## [3.3.6] — 2026-10-07
 
 **主题**：**遗留债务清理（门禁可信度）** —— 把「绿灯到底可不可信」这件事从「靠人记得在特定环境跑」收敛为「机器可验证的契约」。修的是**门禁自身**：测试套件不再随运行环境的 locale / 控制台代码页变红或变绿；发布清单不再声称「仓库根没有 `tests/`」；版本断言不再硬编码过期版本号；非发布物 `_scratch/`（20 MB）退出 git 索引。

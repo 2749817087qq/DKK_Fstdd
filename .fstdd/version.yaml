@@ -1,10 +1,53 @@
 # FSTDD 本地版本声明（F 仓 / stdd-repo）
 # 发行版口径：fstdd_version（须 = .fstdd/config.d/project.yaml 的 stdd_version）
 # vendored 上游内核口径：upstream_version（= upstream/ 内核，见 upstream/CHANGELOG.md 与 upstream/pyproject.toml）
-fstdd_version: "3.3.6"
+fstdd_version: "3.3.7"
 upstream_version: "3.1.0"
-released_at: "2026-10-07T00:30:00+08:00"
+released_at: "2026-10-07T21:25:00+08:00"
 changelog: |
+  v3.3.7 — 工具链契约保真版（声明 = 行为：6 处「工具骗人」缺陷修复）
+
+  交付（1 change：2026-10-07-tool-defect-fixes，归档 + 根 canonical 并入 7 文件 + canon verify 2/2 + structure merge）：
+  - dry-run-fidelity：新建统一守卫 upstream/fstdd/cli/commands/_dryrun.py；15 个含写操作的命令模块
+    （78 个写点）全部接入。此前 `--dry-run` 被静默忽略后照常落盘（实测 `phase advance --dry-run`
+    会真实推进阶段）。含评审发现的隐藏路径 `canon verify --dry-run`（经 `_generate_one` 写
+    proposal.md + caveman_summary.txt）。新增**契约扫描测试**（有写操作者必须处理 dry_run，
+    AST 口径 + 双向自检）+ 行为断言（TC-DRY-003b/003c）。
+  - experience-io-contract：`_save_index()` 补 `newline=""`（索引不再被写成 CRLF，实测 322→0）；
+    引入 `_json_default()` 覆盖该模块**全部 5 个** `json.dumps` 调用点，修复
+    `experience list --format json` 的 `TypeError: date is not JSON serializable` 崩溃
+    （实测 76 条无过滤输出零崩溃）。
+  - proposal-extraction-fidelity：渲染器补出顶层 `## Capabilities` 与 `## Impact`
+    （此前 `grep Impact canon.py` = 0 命中 ⇒ 解析器恒空）；新增 `_proposal_anchors.py` 作为
+    渲染器与解析器**共用的锚点单一事实源**；`what_changes` 在 capability 锚点处截断（消泄漏）。
+    实测本 change：capabilities.modified=5 / impact.code=6 / what_changes=6 零泄漏。
+  - ci-check-accuracy：(d) 判据从「全文出现次数」改为「**定义点**唯一」——43 份既有 test-plan
+    的误判由 26 份降为 0。形态 A（`| **ID** | TC-… |`）优先，仅 A 抽不到时才回退形态 B
+    （形态 B 与「TC↔测试函数映射表」文本上不可区分，取并集会造假重复）。
+  - quarantine-opt-in-safety：`tools/verify_notices.py` 默认**只报告**（新增 `would_quarantine` +
+    非零退出码 + 人类可读告警），显式 `--quarantine` 才移动文件 —— 此前默认 `shutil.move`
+    会把仓库根带未提交改动的已跟踪文件移走（EXP-2026-0015 三次命中，本 change BUILD 期间
+    复现第三次）。退出码契约 0/2/3 与 `--json` 顶层 5 键已重写对齐。
+  - 新增测试 5 文件 / 33 函数：test_dry_run_fidelity(6)、test_experience_io_contract(7)、
+    test_ci_tcid_definition(7)、test_verify_notices_default_safe(6)、test_proposal_extraction_fidelity(7)。
+
+  质量：**17/17 TC（100%）**，5 切片全部 RED→GREEN；
+  全量 `pytest upstream/tests` 954 passed / 5 skipped / 1 failed（唯一失败
+  `test_a6_no_stray_untracked_files` 为「在办 change 期新文件未跟踪」的**结构性红**，提交后转绿）；
+  仓库根 `tests/` 128 passed / 3 skipped / 0 failed；
+  `ci check-failures` 6 通过 / 1 警告 / 3 跳过 / 0 错误；四自检 rename 7/8、eol 6/7、
+  skill_standards 7/7、workbuddy_skills PASS+WARN（前两处红为「索引 vs HEAD」判据的结构性红）。
+  经验：新增 EXP-2026-0023/0024/0025。设计偏离 8 条（ADJ-001..008，3 闭合 / 4 欠账 / 1 记录）。
+
+  已知问题（另立 change）：
+  - `upstream/fstdd/` 下 **70 处 `write_text` 未传 `newline=`** ⇒ 每次 `canon generate` /
+    `experience add` 都会写出 CRLF（本 change BUILD 期间两处均活体复现并手工归一）。
+  - `fstdd experience list`（**读**命令）会重写索引文件。
+  - canon 渲染器仍不输出 Constraints / Stakeholders / Risk Areas / NonGoals / Critical /
+    Risk Assessment / Anchoring 七段（连带 `ci` 的 (b) 范围蔓延检查长期 SKIP）。
+  - `experience` 的 `VALID_CATEGORIES`（15 项）与既有条目分类口径不一致
+    （EXP-2026-0020 用 `tooling`、EXP-2026-0021 用 `quality`，二者均不在合法列表内）。
+
   v3.3.6 — 遗留债务清理版（门禁可信度：测试套件环境解耦 + 清单/断言去硬编码）
 
   交付（1 change：2026-10-06-legacy-debt-cleanup，归档 + 根 canonical 并入 6 文件 + canon verify 2/2 + structure merge）：
