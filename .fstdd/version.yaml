@@ -1,10 +1,50 @@
 # FSTDD 本地版本声明（F 仓 / stdd-repo）
 # 发行版口径：fstdd_version（须 = .fstdd/config.d/project.yaml 的 stdd_version）
 # vendored 上游内核口径：upstream_version（= upstream/ 内核，见 upstream/CHANGELOG.md 与 upstream/pyproject.toml）
-fstdd_version: "3.3.7"
+fstdd_version: "3.3.8"
 upstream_version: "3.1.0"
-released_at: "2026-10-07T21:25:00+08:00"
+released_at: "2026-10-09T17:40:00+08:00"
 changelog: |
+  v3.3.8 — 归档生命周期收口版（change 目录解析统一 + 归档/恢复状态自洽）
+
+  交付（1 change：2026-10-07-change-dir-resolution-unify，归档 + 根 canonical 并入 4 文件 +
+  canon verify 2/2 + Human View 合并 + structure merge）：
+  - change-dir-resolution（MODIFIED）：`phase` / `gate` / `state` / `work` / `baseline` 五个模块各自的
+    **自建解析器**（只扫 `.fstdd/changes/`、无归档回退）全部改走统一入口
+    `finder.find_change_dir(..., include_archive=True)`。修复前对已归档 change 报
+    `.fstdd.yaml not found in <name>` —— 读起来像「这个 change 不存在」，实际是「本命令不支持归档区」。
+    实测修复前 `phase status` / `state` / `work list` 三条**读路径**在归档 change 上均失败。
+    新增 `finder.require_active_change_dir()` 作为**唯一**「什么算可写」定义点：归档 change 上的写操作
+    （`phase advance/set/record-slice`、`work add`、`state --set`、`gate approve`、`baseline establish`）
+    统一拒绝，输出三要素文案（「已归档」+ 归档实际路径 + `rollback` 指引）+ 非 0 退出码。
+    **唯一例外**：`gate amend-audit` —— 其设计用途就是给历史/归档 Gate 补追认审计，
+    此前因解析器不支持归档而**用不了**。
+  - archive-state-consistency（NEW）：`archive` 归档时把 `phases.deliver.status` 置为 `completed`
+    （消除「归档态悬空」；实测历史 3 个 change 的 `deliver` 分别停在 in_progress / pending / 更早的 build）；
+    `rollback` 恢复时**保留原 `current_phase`**（此前**无条件**重置为 `understand`，而 `phases.*.status`
+    全保留 ⇒ 恢复后自相矛盾，继续推进会回到 `spec` 而非原相位；老数据兜底「首个未完成相位」→ `understand`）。
+  - 防复发**双层**：AST 契约扫描（凡「接受 change 名」的命令模块必须走统一入口，自带双向自检）
+    + 真实归档 change 逐命令行为断言（读必成功 / 写必给准确拒绝 / `amend-audit` 必放行）。
+  - 新增测试 2 文件 / 21 函数（27 用例）：tests/test_change_dir_resolution_unify.py（15）、
+    tests/test_archive_state_consistency.py（7）。
+
+  质量：**18/18 TC（100%）**，2 切片全部 RED→GREEN；
+  全量 `pytest upstream/tests` 960 tests / 954 passed / 5 skipped / 1 failed（唯一失败
+  `test_a6_no_stray_untracked_files` 为「在办 change 期新文件未跟踪」的**结构性红**，提交后转绿）；
+  仓库根 `tests/` 158 tests / 155 passed / 3 skipped / 0 failed；
+  `ci check-failures` 7/10 通过 / 0 错误 / TC 覆盖 18/18；
+  四自检（提交后复跑值）rename 8/8、eol 7/7、skill_standards 7/7、workbuddy_skills PASS+WARN。
+  经验：新增 EXP-2026-0026（审计器判据的粒度错配：模块级 vs 函数体）、
+  EXP-2026-0027（新守卫用词法前缀判「是否在禁区目录内」⇒ `..` 可逃逸；附「评审结论与自测结论
+  冲突时两边都要留痕」）。知识图谱 +13 节点（总计 286）。设计偏离 8 条（ADJ-001..008）。
+
+  已知问题（另立 change）：
+  - `canon generate` / `canon verify` 走**读入口**（`include_archive=True`）⇒ 对归档 change 仍会**写**
+    `proposal.md` / `caveman_summary.txt`（读写分层未覆盖 canon）。
+  - `baseline` 子命令间退出码不统一（`establish` 1 / `show` 2）。
+  - 契约扫描判据的边界：`_default_change` / `_find_current_change` 这类「取当前/默认 change」
+    的辅助函数不在判据内；新增命令仍需手动加入 `CHANGE_NAME_MODULES`。
+
   v3.3.7 — 工具链契约保真版（声明 = 行为：6 处「工具骗人」缺陷修复）
 
   交付（1 change：2026-10-07-tool-defect-fixes，归档 + 根 canonical 并入 7 文件 + canon verify 2/2 + structure merge）：

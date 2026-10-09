@@ -10,6 +10,36 @@
 
 ## [Unreleased]
 
+## [3.3.8] — 2026-10-09
+
+**主题**：归档生命周期收口 —— change 目录解析统一 + 归档/恢复状态自洽
+
+**规模**：1 change（`2026-10-07-change-dir-resolution-unify`）｜2 capability（MODIFIED `change-dir-resolution` + NEW `archive-state-consistency`）｜**18/18 TC（100%）**｜2 切片全 RED→GREEN｜新增 21 测试函数 / 2 文件
+
+### 修复（5 项）
+
+- **change 目录解析统一**：`phase` / `gate` / `state` / `work` / `baseline` 五个模块各自的**自建解析器**（只扫 `.fstdd/changes/`、无归档回退）全部改走统一入口 `finder.find_change_dir(..., include_archive=True)`。
+  修复前对已归档 change 报 `.fstdd.yaml not found in <name>` —— 读起来像「这个 change 不存在」，实际是「本命令不支持归档区」。实测修复前 `phase status` / `state` / `work list` 三条**读路径**在归档 change 上均失败。
+- **写路径统一拒绝 + 准确指路**：新增 `finder.require_active_change_dir()`（唯一「什么算可写」定义点）。归档 change 上的写操作（`phase advance/set/record-slice`、`work add`、`state --set`、`gate approve`、`baseline establish`）统一拒绝，输出三要素文案（「已归档」+ 归档实际路径 + `rollback` 指引）+ 非 0 退出码。
+  **唯一例外**：`gate amend-audit` —— 其设计用途就是给历史/归档 Gate 补追认审计，此前因解析器不支持归档而**用不了**。
+- **`archive` 归档即闭合相位**：归档时把 `phases.deliver.status` 置为 `completed`，消除「归档态悬空」（实测历史 3 个 change 的 `deliver` 分别停在 `in_progress` / `pending` / 更早的 `build`）。
+- **`rollback` 保留原相位**：此前**无条件**把 `current_phase` 重置为 `understand`，而 `phases.*.status` 全保留 ⇒ 恢复后 `current_phase=understand` 与 `phases.understand.status=completed` **自相矛盾**，继续推进会回到 `spec` 而非原相位。现改为保留原 `current_phase`（仅把 `status` 置回 `active`；老数据兜底「首个未完成相位」→ `understand`）。
+- **防复发双层**：AST 契约扫描（凡「接受 change 名」的命令模块必须走统一入口，自带双向自检）+ 真实归档 change 逐命令行为断言。
+
+### 质量
+
+- 全量 `pytest upstream/tests` **960 tests / 954 passed / 5 skipped / 1 failed**（唯一失败 `test_a6_no_stray_untracked_files` 为在办 change 期的**结构性红**，提交后转绿）；仓库根 `tests/` **158 tests / 155 passed / 3 skipped / 0 failed**。
+- `ci check-failures` 7/10 通过 / **0 错误**；TC 覆盖 **18/18（100%）**。
+- 四自检（提交后复跑值）：`verify_rename` 8/8 · `verify_eol` 7/7 · `verify_skill_standards` 7/7 · `verify_workbuddy_skills` PASS。
+- 新增经验 **EXP-2026-0026 / 0027**；知识图谱 +13 节点（总计 286）。
+- 交付：归档 + 根 canonical 并入 4 文件 + `canon verify` 2/2 + Human View 合并（`change-dir-resolution` 6 REQ / 23 SC；新 capability `archive-state-consistency` 2 REQ / 5 SC）+ `structure merge`。
+
+### 已知问题（另立 change）
+
+- `canon generate` / `canon verify` 走**读入口**（`include_archive=True`）⇒ 对归档 change 仍会**写** `proposal.md` / `caveman_summary.txt`（读写分层未覆盖 canon）。
+- `baseline` 子命令间退出码不统一（`establish` 1 / `show` 2）。
+- 契约扫描判据的边界：`_default_change` / `_find_current_change` 这类「取当前/默认 change」的辅助函数不在判据内；新增命令仍需手动加入 `CHANGE_NAME_MODULES`。
+
 ## [3.3.7] — 2026-10-07
 
 **主题**：**工具链契约保真（声明 = 行为）** —— 修 6 处「工具声明与行为不一致」的既有缺陷。共同主线是**契约断层**：工具的文档 / 参数名 / 参数语义 / 检查判据与它实际可执行的形态不符，使用者据声明作出的判断会被误导。六条全部落在**门禁链路**上（`phase` / `ci` / `experience` / `verify_notices` 都是 FSTDD 流程自己会调用的命令）。
