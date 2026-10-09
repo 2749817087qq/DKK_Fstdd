@@ -1,13 +1,13 @@
 <!-- fstdd-inbox
 experience_id: EXP-009-20260925-TRPC-REVERSE
 author: anonymous
-received_at: 2026-10-04T10:15:01.140749+00:00
+received_at: 2026-10-08T04:23:22.556538+00:00
 remote_addr: 172.18.0.8
 node_id: FSTDD006
 -->
 
 ---
-exported_at: 2026-10-04
+exported_at: 2026-10-08
 sanitized: true
 lifecycle_state: deposited
 ---
