@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 from ..timeutil import utc_now_iso
+from ..finder import find_change_dir, require_active_change_dir
 from ._dryrun import dry_run_guard
 
 import yaml
@@ -21,13 +22,12 @@ GATE_PHASE_KEY = {
 
 
 def _find_change_dir(name: str | None, project_root: Path) -> Path | None:
-    changes_dir = project_root / ".fstdd" / "changes"
-    if not changes_dir.exists():
-        return None
-    if name:
-        return changes_dir / name
-    dirs = sorted(changes_dir.iterdir(), key=lambda d: d.stat().st_mtime, reverse=True)
-    return dirs[0] if dirs else None
+    """**读路径**解析（2026-10-07 收口）：统一入口 + 归档回退。
+
+    此前本函数只拼 `changes/<name>`，对已归档 change 直接返回不存在的路径
+    ⇒ `gate amend-audit`（其设计用途就是给历史/归档 Gate 追加追认审计）用不了。
+    """
+    return find_change_dir(name, project_root, include_archive=True)
 
 
 def _check_gate_order(gate_num: int, change_dir: Path) -> tuple[bool, str]:
@@ -283,10 +283,8 @@ def cmd_gate(args: argparse.Namespace) -> None:
         sys.exit(2)
     evidence = getattr(args, "evidence", "") or ""
 
-    change_dir = _find_change_dir(getattr(args, "name", None), project_root)
-    if change_dir is None:
-        print("  No change found.")
-        sys.exit(1)
+    # 写路径：`approve` 会改写闸门字段 ⇒ 必须是在办 change（归档 change 由统一写入口拒绝）
+    change_dir = require_active_change_dir(getattr(args, "name", None), project_root)
 
     # Check if file token already confirms this gate
     if _check_file_token(gate_num, change_dir):

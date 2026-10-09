@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 from ..timeutil import utc_now_iso
+from ..finder import find_change_dir, require_active_change_dir
 from ._dryrun import dry_run_preview
 
 import yaml
@@ -15,15 +16,13 @@ RESUME_FIELDS = ["resume_context", "active_slice", "last_action", "last_modified
 
 
 def _find_change_dir(name: str | None, project_root: Path) -> Path | None:
-    """Find change directory by name (most recent if None)."""
-    changes_dir = project_root / ".fstdd" / "changes"
-    if not changes_dir.exists():
-        return None
-    if name:
-        return changes_dir / name
-    # Find most recently modified
-    dirs = sorted(changes_dir.iterdir(), key=lambda d: d.stat().st_mtime, reverse=True)
-    return dirs[0] if dirs else None
+    """**读路径**解析（2026-10-07 收口）：统一入口 + 归档回退。
+
+    此前只拼 `changes/<name>`，对已归档 change 会返回不存在的路径，
+    最终报出 `.fstdd.yaml not found in <绝对路径 changes/<name>>`
+    —— 把「本命令去错地方找」这件事直接暴露给了使用者。
+    """
+    return find_change_dir(name, project_root, include_archive=True)
 
 
 def read_resume_context(change_dir: Path) -> dict:
@@ -68,11 +67,15 @@ def write_resume_context(change_dir: Path, **kwargs) -> None:
 def cmd_state(args: argparse.Namespace) -> None:
     """CLI entry: fstdd state <change-name> [--resume] [--set KEY=VALUE]."""
     project_root = Path.cwd()
-    change_dir = _find_change_dir(getattr(args, "name", None), project_root)
-
-    if change_dir is None:
-        print("  No change found.")
-        sys.exit(1)
+    # 读/写分层（2026-10-07 / SC-102 vs SC-106）：只有 `--set` 是写操作，
+    # 归档 change 上的写必须被统一写入口拒绝；查看与 `--resume` 是读，放行归档。
+    if getattr(args, "set", None):
+        change_dir = require_active_change_dir(getattr(args, "name", None), project_root)
+    else:
+        change_dir = _find_change_dir(getattr(args, "name", None), project_root)
+        if change_dir is None:
+            print("  No change found.")
+            sys.exit(1)
 
     if getattr(args, "resume", False):
         ctx = read_resume_context(change_dir)

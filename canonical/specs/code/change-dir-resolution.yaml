@@ -1,0 +1,156 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-07-change-dir-resolution-unify
+# capability: change-dir-resolution（MODIFIED —— 承接 2026-09-26-finder-archive-fallback 的 SC-001..013）
+
+meta:
+  capability: "change-dir-resolution"
+  change_id: "2026-10-07-change-dir-resolution-unify"
+  created: "2026-10-07T14:30:00+00:00"
+  confidence: high
+
+requirements:
+  - id: "REQ-001"
+    capability: "change-dir-resolution"
+    description: |
+      **读路径**：接受 change 名的命令 SHALL 统一经 `finder.find_change_dir(name, root, include_archive=True)`
+      解析，因此对**已归档** change 的只读操作 SHALL 正常完成（rc=0）并输出该 change 的真实信息，
+      SHALL NOT 报 `.fstdd.yaml not found`。
+      覆盖范围（本 change 新纳入的 5 个模块的读分支）：`phase status` / `state`（查看与 `--resume`）/
+      `work list` / `baseline` 读路径 / `gate` 查询。
+
+    scenarios:
+      - id: "SC-101"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 1)/2) 点；observed_at=2026-10-07T13:55:34+00:00 source=@f7bf8ec 实测 `fstdd phase status 2026-10-07-tool-defect-fixes` → `.fstdd.yaml not found in 2026-10-07-tool-defect-fixes`"
+        given: "change 已归档至 `.fstdd/archive/<name>/`，`.fstdd/changes/<name>/` 不存在"
+        when: "执行 `fstdd phase status <name>`"
+        then: "SHALL 以 rc=0 输出该 change 的当前相位与各相位状态"
+        and:
+          - "输出 SHALL NOT 含 `.fstdd.yaml not found`"
+          - "输出 SHALL 含该 change 的真实目录名"
+
+      - id: "SC-102"
+        confidence: high
+        evidence: "同上；实测 `fstdd state 2026-10-07-tool-defect-fixes` → `.fstdd.yaml not found in E:\\FSTDD\\stdd-repo\\.fstdd\\changes\\2026-10-07-tool-defect-fixes`（把「去错地方找」的路径都打出来了）"
+        given: "change 已归档至 `.fstdd/archive/<name>/`"
+        when: "执行 `fstdd state <name>`（只读查看）与 `fstdd state <name> --resume`"
+        then: "SHALL 以 rc=0 输出该 change 的状态摘要"
+        and:
+          - "输出 SHALL NOT 含 `.fstdd.yaml not found`"
+
+      - id: "SC-103"
+        confidence: high
+        evidence: "同上；实测 `fstdd work list 2026-10-07-tool-defect-fixes` → `.fstdd.yaml not found in 2026-10-07-tool-defect-fixes`"
+        given: "change 已归档至 `.fstdd/archive/<name>/`"
+        when: "执行 `fstdd work list <name>`"
+        then: "SHALL 以 rc=0 输出该 change 的关联工作记录（无记录时输出空列表提示）"
+        and:
+          - "输出 SHALL NOT 含 `.fstdd.yaml not found`"
+
+      - id: "SC-104"
+        confidence: high
+        evidence: "既有 spec change-dir-resolution SC-004 已确立「后缀匹配在归档区同样生效」；本 SC 把它扩到 phase/state/work 三条命令"
+        given: "change 以 `YYYY-MM-DD-<短名>` 形式归档，用户只记得短名"
+        when: "执行 `fstdd phase status <短名>`（或 `state` / `work list` 同形调用）"
+        then: "SHALL 经后缀匹配命中 `archive/YYYY-MM-DD-<短名>` 并正常输出"
+        and:
+          - "命中过程 SHALL NOT 因「changes/ 下无同名」而提前失败"
+
+  - id: "REQ-002"
+    capability: "change-dir-resolution"
+    description: |
+      **写路径**：对**已归档** change 的写操作 SHALL 被拒绝（非 0 退出码），并输出**准确可操作**的
+      文案（含「已归档」状态词 + 归档实际路径 + `rollback` 出口指引），SHALL NOT 复用
+      「未找到」类误导文案。**例外**：`gate amend-audit` 的设计用途即「事后追认归档 Gate」，
+      SHALL 对归档 change 放行。
+      在办（active）change 上的读写行为 SHALL 零漂移。
+
+    scenarios:
+      - id: "SC-105"
+        confidence: high
+        evidence: "proposal.yaml what_changes C2；EXP-2026-0015（破坏性操作须显式）；KG-092（失败不得静默）"
+        given: "change 已归档，且其 `phases.deliver.status` 未闭合"
+        when: "执行 `fstdd phase advance <name>`（或 `phase set` / `phase record-slice`）"
+        then: "SHALL 以非 0 退出码拒绝执行，且**不得**改写 `.fstdd/archive/<name>/.fstdd.yaml`"
+        and:
+          - "输出 SHALL 含「已归档」字样"
+          - "输出 SHALL 含 `rollback` 字样"
+          - "输出 SHALL 含该 change 在 `.fstdd/archive/` 下的实际路径"
+
+      - id: "SC-106"
+        confidence: high
+        evidence: "proposal.yaml what_changes C2；同 SC-105 的三条文案要素"
+        given: "change 已归档"
+        when: "分别执行 `fstdd state <name> --set current_phase=spec`、`fstdd work add <name> --type doc \"x\"`、`fstdd baseline establish <name>`"
+        then: "三者 SHALL 均以非 0 退出码拒绝，且各自输出含「已归档」与 `rollback` 字样"
+        and:
+          - "拒绝时 SHALL NOT 在 `archive/<name>/` 内产生任何文件写入"
+
+      - id: "SC-107"
+        confidence: high
+        evidence: "proposal.yaml why.problem 第 4) 点（`gate amend-audit` 的设计用途即事后追认归档 Gate）"
+        given: "change 已归档"
+        when: "执行 `fstdd gate amend-audit <name> --gate <N> --confirmed-by cli --evidence <文本>`"
+        then: "SHALL 正常执行（rc=0），并按既有逻辑追加追认审计记录"
+        and:
+          - "其行为 SHALL 与在办 change 上一致（同一命令、同一参数形态）"
+
+      - id: "SC-108"
+        confidence: high
+        evidence: "proposal.yaml constraints 第 3 条（写路径拒绝不得改变在办 change 行为）"
+        given: "change 位于 `.fstdd/changes/<name>/`（在办）"
+        when: "执行读路径（`phase status` / `state` / `work list`）与写路径（`phase advance` / `state --set` / `work add`）各一次"
+        then: "SHALL 与修复前行为逐字一致（读 rc=0；写正常落盘）"
+        and:
+          - "SHALL NOT 出现「已归档」字样"
+
+  - id: "REQ-003"
+    capability: "change-dir-resolution"
+    description: |
+      **单一入口**：全仓「接受 change 名」的命令模块 SHALL 一律经 `finder` 的统一入口
+      （`find_change_dir` 或 `require_active_change_dir`）解析，SHALL NOT 保留自建解析实现。
+      该约束 SHALL 由**静态契约扫描**锚定，且扫描器 SHALL 自带双向自检。
+      **且**静态判据为模块级、存在固有上限（EXP-2026-0024），故 SHALL 同时以**逐命令行为断言**作第二层防线。
+
+    scenarios:
+      - id: "SC-109"
+        confidence: high
+        evidence: "proposal.yaml what_changes C5；EXP-2026-0021（审计器必须自带自检）；EXP-2026-0024（模块级判据的粒度上限）"
+        given: "全仓 `upstream/fstdd/cli/commands/*.py` 与 `upstream/fstdd/cli/finder.py`"
+        when: "执行契约扫描：凡「接受 change 名」的模块必须出现统一入口调用"
+        then: "SHALL 报出违规模块数 = 0"
+        and:
+          - "扫描判据 SHALL 基于 AST（结构化），SHALL NOT 用字符串子串匹配"
+          - "扫描 SHALL 覆盖 `phase` / `gate` / `state` / `work` / `baseline` 五个本 change 修复的模块"
+
+      - id: "SC-110"
+        confidence: high
+        evidence: "EXP-2026-0021（构造最小违例样本断言「能抓到」+ 合法样本断言「不误报」）"
+        given: "扫描器实现"
+        when: "分别对「自建解析器」违例样本与「走统一入口」合法样本执行扫描"
+        then: "违例样本 SHALL 被判违规；合法样本 SHALL NOT 被判违规"
+        and:
+          - "另需覆盖「注释里提到 find_change_dir 但代码未调用」的反例（SHALL 判违规）"
+
+# ===== 金融领域专属字段（本 change 非金融项目，全部 false）=====
+finance:                          # optional: true
+  test_dimensions:
+    idempotency: false
+    reconciliation: false
+    precision: false
+    timezone: false
+    degradation: false
+    consistency: false
+    security: false
+    audit: false
+    compliance: false
+    recovery: false
+  failure_modes:
+    double_charge: false
+    reconciliation_gap: false
+    silent_degradation: false
+    precision_loss: false
+    audit_gap: false
+    state_machine_gap: false
+    limit_bypass: false
+    compliance_gap: false

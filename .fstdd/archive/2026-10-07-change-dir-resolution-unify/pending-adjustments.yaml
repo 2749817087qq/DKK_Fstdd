@@ -1,0 +1,177 @@
+# pending-adjustments.yaml — 设计偏离记录（Canonical YAML，AI 主读文档）
+# change: 2026-10-07-change-dir-resolution-unify｜Phase 3 BUILD 期间记录，Part C 汇总为 design-adjustments.yaml
+
+meta:
+  change_id: "2026-10-07-change-dir-resolution-unify"
+  created: "2026-10-07T15:00:00+00:00"
+  updated: "2026-10-07T15:20:00+00:00"
+
+adjustments:
+  - id: ADJ-001
+    original_design_ref: "design.md → D2/D3（写路径统一走 `require_active_change_dir`）"
+    actual_change: |
+      **C1 评审（代码质量路）报出一处 critical：`require_active_change_dir` 的归档判定可被路径遍历绕过。**
+      根因两处：① `finder._resolve_in` 把用户输入**直接拼**进 `base_dir / name`（未拒绝分隔符 / `..`）；
+      ② `require_active_change_dir` 用**词法**前缀比较 `hit.relative_to(archive_root)` 判归档 ——
+      `..` 逃逸后的路径不在词法前缀下，会被误判为「在办」而放行写操作（失败模式 #10 路径遍历）。
+      处置（双保险）：
+      ① `_resolve_in` 拒绝含 `/`、`\`、`..` 或为 `.`/`..` 的名字（返回 None）；
+      ② `require_active_change_dir` 改按 `hit.resolve().relative_to(archive_root.resolve())` 归一化比较。
+      并新增回归用例 `test_tc_cdr_005b`（3 种遍历形态 × 写/读两侧）。
+    reason: |
+      ⚠️ **本 AI 的独立复现未能复现「放行」**：实测 `../archive/<name>`、`../../.fstdd/archive/<name>`、
+      `../../.fstdd/archive/../archive/<name>` 三种形态**均被正确拒绝**（`relative_to` 比较的是路径**部件**
+      而非字符串前缀，故 `..` 形态仍落在 archive 前缀下）。但**词法比较本身脆弱**、且 `_resolve_in`
+      确实缺少输入校验 ⇒ 按「加固而非证伪」处置：消除整类风险，代价极小。
+      ⇒ 记入经验：评审报告与自测结论不一致时，**两边都要留痕**，不因「我没复现」就驳回。
+    impact_scope: "capability change-dir-resolution；`finder.py` 2 处 + 新增 1 组回归用例；接口不变（多一条拒绝分支）"
+    severity: major
+    affected_capabilities:
+      - "change-dir-resolution"
+    exp_id: "EXP-2026-0021"
+    resolved: true
+
+  - id: ADJ-002
+    original_design_ref: "design.md → D1（「删除自建解析实现」）"
+    actual_change: |
+      **实际是「重写为统一入口包装」而非「物理删除」**：`phase._find_change` / `work._find_change` /
+      `gate._find_change_dir` / `state._find_change_dir` / `baseline._resolve_change` 五个函数**保留了函数名**，
+      函数体改为调用 `finder` 的统一入口（`phase` / `work` 另保留 V3.0.5 批级子 change 兜底）。
+      保留函数名的理由：① 减少调用点改动面（不改 `cmd_*` 的其余逻辑）；② 让契约扫描器的
+      **函数级泛化判据**（`_self_built_resolvers`）继续覆盖它们。
+    reason: |
+      目标（消除重复实现）已达成 —— 五个函数体内**再无**自己的路径拼接/后缀匹配逻辑，
+      全部委托 finder。措辞「删除」不精确，属文档失真，但**不回改已锁定的 Gate 1/2 文档**
+      （proposal.yaml / design.md），按纪律记入本偏离并在 Gate 3 呈报。
+    impact_scope: "文档措辞；无代码影响"
+    severity: minor
+    affected_capabilities:
+      - "change-dir-resolution"
+    exp_id: "EXP-2026-0013"
+    resolved: false
+
+  - id: ADJ-003
+    original_design_ref: "design.md → D7（契约扫描「接受 change 名的模块必须走统一入口」）"
+    actual_change: |
+      **C1 评审（测试路）实锤一处扫描器盲区**：`rollback.py` 顶部 `from ..finder import find_change_dir`
+      **是死导入**（函数体从未调用它），而它自己内联了一段 `sorted(dir.iterdir(), reverse=True)` +
+      `d.name.endswith(name)` 的**自建后缀匹配** ⇒ 扫描器 `_uses_unified_entry` 因「模块 import 了 finder」
+      判其合规，**实际并未使用统一入口**（假阴性）。
+      处置：① 删除死导入；② `rollback` 改用 `finder._resolve_in(archive_dir, name)` /
+      `(archive_dir/"aborted", name)` —— 复用 finder 的解析原语（精确名 → 后缀匹配），**删掉本地重复实现**；
+      ③ 扫描器把 `_resolve_in` 纳入「统一入口」标记（带注释说明它是 finder 的解析原语）。
+    reason: |
+      `rollback` **不能**用 `find_change_dir(include_archive=True)` —— 后者优先返回 `changes/` 下的同名目录，
+      而 rollback 要的恰恰是**归档区那一份**；且 `archive/aborted/` 是统一入口不覆盖的来源。
+      ⇒ 正解是复用解析**原语**，而不是复用入口函数。
+      另记扫描器边界（已写入测试 docstring）：`_default_change` / `_find_current_change` 这类
+      「取当前/默认 change」的辅助函数不在判据范围内（语义是「当前」而非「具名解析」）；
+      `getattr(mod, "find_change_dir")` 形态已补入判据。
+    impact_scope: "capability change-dir-resolution；`rollback.py` -18/+9 行；扫描器判据 +1 形态"
+    severity: major
+    affected_capabilities:
+      - "change-dir-resolution"
+    exp_id: "EXP-2026-0024"
+    resolved: true
+
+  - id: ADJ-004
+    original_design_ref: "design.md → D2（写路径拒绝的统一文案与退出码）"
+    actual_change: |
+      **`baseline establish` 的两处口径漂移**：
+      ① **退出码/输出流**：原先「找不到 change」返回 **2** 且写 **stderr**；改用统一写入口后变为
+         **exit 1** 且写 **stdout**（与 `phase`/`gate`/`state`/`work` 一致）。`baseline show`（读路径）
+         仍保留 exit 2 + stderr ⇒ **同一命令内两个子命令的失败码不一致**。
+      ② **dry-run 顺序**：原实现先 `dry_run_preview` 后解析 ⇒ `baseline establish <archived> --dry-run`
+         会打印「预览成功」，与 `phase`/`work` 的写路径（先解析后预览，归档即拒绝）不一致。
+      处置：②**已修**（把解析提到 dry-run 之前）；①**记录为已知口径不统一**。
+    reason: |
+      ① 若强行统一需让 `require_active_change_dir` 支持自定义退出码，或让 `show` 也返回 1 ——
+      前者增加参数（YAGNI），后者改动读路径既有契约（超本 change 范围）。
+      已核验**无内部调用方受影响**：`gate.py` 的 Gate 1 自动基线走 `build_baseline()` 纯函数，不经过 CLI 分支。
+    impact_scope: "capability change-dir-resolution；`baseline.py` 退出码契约（2→1）"
+    severity: minor
+    affected_capabilities:
+      - "change-dir-resolution"
+    exp_id: ""
+    resolved: false
+
+  - id: ADJ-005
+    original_design_ref: "design.md → D2 的范围（只覆盖 proposal C1 列出的 5 个模块）"
+    actual_change: |
+      **发现第 6 条「写路径经读入口」的漏网命令，本 change 不修、记为已知欠账**：
+      `canon generate <已归档 change>` 会经 `canon._resolve_change_dir`（读入口，`include_archive=True`）
+      解析到归档区，并由 `_generate_one` **重写归档 change 内的 `proposal.md` + `caveman_summary.txt`**。
+      同类候选：`canon verify`（其「自动重生成 Human View」分支对归档 change 也会写）。
+    reason: |
+      proposal C1/C2 的范围经 Gate 1 冻结为 5 个模块（phase/gate/state/work/baseline），
+      且 SC-105/106 逐条枚举了命令 —— `canon` 不在其中。
+      「归档 change 的派生文档是否允许重生成」本身是一个**待定的语义问题**（`canon verify` 的重生成
+      对归档 change 可能是**正当修复**），不宜在本 change 顺手定调。
+      ⇒ 记为已知问题，建议另立 change 统一「写路径矩阵」。
+    impact_scope: "无代码影响；仅记录欠账。已在 test-report 已知问题中登记"
+    severity: minor
+    affected_capabilities:
+      - "change-dir-resolution"
+    exp_id: ""
+    resolved: false
+
+  - id: ADJ-006
+    original_design_ref: "已锁定的 Gate 1/2 文档（proposal.yaml / design.md / test-plan.md）"
+    actual_change: |
+      **C1 评审（文档路）报出 4 处文档不精确，本 change 不回改已锁定文档，仅记录**：
+      ① `design.md` → D5 写「在 `shutil.move` 成功后读归档目录的 `.fstdd.yaml`」，
+         **实际写在 move 之前**（写 `changes/<name>/.fstdd.yaml`，随后随目录一起移动过去）——
+         效果等价，但描述与实现不符。另 D5 未提及 `state["phases"].setdefault("deliver", {})`
+         在 `phases.deliver` 缺失时会**新建该 key**（严格说多写了一个字段）。
+      ② `design.md` / `test-plan.md` / `proposal.yaml` 里的**源码行号引用**（`phase.py` 20-31 /
+         `gate.py` 23-30 / `state.py` 17-26 / `work.py` 16-30 / `baseline.py` 65-80 等）
+         均为**修复前快照**，改动后已漂移（如 `phase.py` 的批级兜底现约 21-42 行）。
+      ③ `proposal.yaml` 的回归清单含 `test_work`，但仓库**不存在** `test_work*.py`
+         （`work` 此前零测试覆盖，本 change 的 TC-CDR-003 是它的首个覆盖）。
+      ④ `test-plan.md` 第 51 行路径笔误：`upstream/tests/commands/test_finder.py`
+         实为 `upstream/tests/test_finder.py`（在 `tests/` 根，不在 `commands/`）。
+    reason: |
+      这四处**不改变任何 Requirement / Scenario / TC / 行为**，但都属「文档声明 ≠ 事实」——
+      正是本 change 要修的病。**处置分歧点**：改它们就要动 Gate 1/2 已锁定的基线文档
+      （`proposal.yaml` 一改，`source_hash` 变、`canon verify` 的 DC-HASH 失效、Gate 1 证据链被追溯改写）。
+      ⇒ 遵循 FSTDD 纪律与 3.3.6 的先例（当时也刻意留了一处清单失真并记为 ADJ-005），
+      **不回改锁定文档**，改为在本 ADJ + test-report 中逐条登记（含正确值），供 DELIVER 或另立 change 处理。
+    impact_scope: "无代码影响；文档卫生欠账 4 处（含正确值）"
+    severity: minor
+    affected_capabilities:
+      - "change-dir-resolution"
+      - "archive-state-consistency"
+    exp_id: "EXP-2026-0013"
+    resolved: false
+
+  - id: ADJ-007
+    original_design_ref: "design.md → D1（统一入口替代自建解析）"
+    actual_change: |
+      **核实一处「潜伏的行为漂移」，结论为无影响**：改前的 `phase._find_change` / `work._find_change`
+      在枚举时**显式排除** `_batch`（`d.name != "_batch"`），而 `finder.find_change_dir(None, root)`
+      不排除。核验：`_batch` 目录**没有** `.fstdd.yaml`，而统一入口的候选判定要求
+      `(d / ".fstdd.yaml").exists()` ⇒ `_batch` 天然被排除，**语义等价**。
+    reason: |
+      属「实现细节变化但可观测行为不变」，记录以免后续误判为回归。
+    impact_scope: "无；仅记录"
+    severity: minor
+    affected_capabilities:
+      - "change-dir-resolution"
+    exp_id: ""
+    resolved: true
+
+  - id: ADJ-008
+    original_design_ref: "specs/code/archive-state-consistency.yaml → SC-203（恢复保留原相位）"
+    actual_change: |
+      **一处需要说明的语义后果**：`rollback` 保留原 `current_phase` 后，若归档时相位为 `deliver`，
+      恢复后即 `current_phase=deliver` + `status=active` ⇒ 后续 `phase advance` 会报
+      「已在末相位」。这是**刻意的**（change 被恢复到了它归档前的真实位置），不是缺陷。
+    reason: |
+      `rollback` 的语义是「恢复」而非「重做」；若用户确要重来，应另开 change
+      （与 design.md D6 排除备选 A「加 `--reset-phase` 开关」的理由一致）。
+    impact_scope: "capability archive-state-consistency；无代码影响（语义说明）"
+    severity: minor
+    affected_capabilities:
+      - "archive-state-consistency"
+    exp_id: ""
+    resolved: true

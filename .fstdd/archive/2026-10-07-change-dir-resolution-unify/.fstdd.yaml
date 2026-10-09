@@ -1,0 +1,78 @@
+baseline:
+  at: '2026-10-07T14:19:04+00:00'
+  base_git_sha: f7bf8ec39a9784c7a8812d8b4b4e6238d6fe1b46
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-07-change-dir-resolution-unify
+complexity_score: 9
+current_phase: deliver
+design_adjustments:
+  count: 8
+last_modified: '2026-10-09T09:13:56+00:00'
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-10-07T14:39:55+00:00'
+mode: thorough
+phases:
+  build:
+    audit_table: .fstdd/changes/2026-10-07-change-dir-resolution-unify/audit/except-points.yaml（25
+      点 / 3 处行号刷新 / 0 新增 / 0 消失）
+    confirmed_actor: ai
+    confirmed_at: '2026-10-09T09:13:44+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认
+    full_suite:
+      root_tests: 158 tests / 155 passed / 3 skipped / 0 failed
+      upstream_tests: 960 tests / 954 passed / 5 skipped / 1 failed（test_a6 结构性）
+    self_checks:
+      verify_eol: 6/7（TC-EOL-005 结构性）
+      verify_rename: 7/8（TC-RENAME-006 连带）
+      verify_skill_standards: 环境阻塞（safe-delete 守卫 state lock timeout）
+      verify_workbuddy_skills: PASS
+    slices_completed:
+      '1':
+        capability: archive-state-consistency
+        evidence: RED 4 failed/3 passed（行为测试 001/003/003b/005 红，守卫测试 002/004/006 绿）→
+          GREEN 7 passed/0 failed；回归 test_rollback+test_archive+test_phase+test_state+test_state_coverage
+          35 passed；archive.py 只写 phases.deliver.status；rollback.py 保留原 current_phase（新增
+          _kept_current_phase 兜底）
+        new_tests: 7
+        status: done
+        tc_coverage: 6/6
+        verified_at: '2026-10-07T14:45:00+00:00'
+      '2':
+        capability: change-dir-resolution
+        evidence: RED 11 failed/4 passed → GREEN 15 passed/0 failed；回归（phase/gate/state/state_coverage/rollback/archive/finder/finder_archive_fallback/changes_dir_consistency/canon_dchash_ops/batch/batch_pipeline/baseline_ops/canon/canon_coverage）136
+          passed；新增 finder.require_active_change_dir 统一写入口；5 模块改走统一入口；契约扫描 0 违规（AST
+          + 双向自检）
+        new_tests: 15
+        status: done
+        tc_coverage: 12/12
+        verified_at: '2026-10-07T14:52:00+00:00'
+    status: completed
+    verified_at: '2026-10-09T09:20:00+00:00'
+  deliver:
+    status: completed
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-07T14:37:57+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-07T14:19:04+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认
+    status: completed
+score_confidence: preliminary
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 15
+  tc_cases: 18
+  test_functions: 21
+version: '3.0'

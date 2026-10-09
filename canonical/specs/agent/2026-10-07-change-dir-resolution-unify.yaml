@@ -1,0 +1,105 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-07-change-dir-resolution-unify
+# 用途：Phase 3 BUILD 收口与 Phase 4 DELIVER 前的**可执行验证**清单（非 TDD 用例，而是端到端检查点）
+
+meta:
+  task_id: "2026-10-07-change-dir-resolution-unify-verify"
+  change_id: "2026-10-07-change-dir-resolution-unify"
+  created: "2026-10-07T14:30:00+00:00"
+  task_type: code
+  system: "FSTDD CLI（upstream/fstdd）—— change 目录解析与归档生命周期状态机"
+
+preconditions:
+  - "已存在至少一个归档 change：`.fstdd/archive/<archived-name>/`（本仓可用 2026-10-07-tool-defect-fixes）"
+  - "已存在一个在办 change：`.fstdd/changes/<active-name>/`（本 change 自身）"
+  - "CLI 解释器：C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe，cwd = 仓库根"
+
+steps:
+  - id: CP-1
+    description: "读路径在归档 change 上不再失败（REQ-001 / SC-101..103）"
+    action: "对已归档 change 依次执行 `fstdd phase status <archived>` / `fstdd state <archived>` / `fstdd work list <archived>`"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "<archived>"
+      - type: stderr_contains
+        expected: ""
+
+  - id: CP-2
+    description: "写路径在归档 change 上准确拒绝（REQ-002 / SC-105..106）"
+    action: "对已归档 change 执行 `fstdd phase advance <archived>`"
+    assertions:
+      - type: exit_code
+        expected: 1
+      - type: stdout_contains
+        expected: "已归档"
+      - type: stdout_contains
+        expected: "rollback"
+      - type: diff_empty
+        expected: true
+
+  - id: CP-3
+    description: "`gate amend-audit` 对归档 change 放行（REQ-002 / SC-107）"
+    action: "对已归档 change 执行 `fstdd gate amend-audit <archived> --gate 3 --confirmed-by cli --evidence <文本>`"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-4
+    description: "在办 change 上读/写行为零漂移（REQ-002 / SC-108）"
+    action: "对在办 change 执行 `fstdd phase status <active>`（读）与 `fstdd phase advance <active> --dry-run`（写预览）"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "Phase"
+
+  - id: CP-5
+    description: "契约扫描 0 违规（REQ-003 / SC-109..110）"
+    action: "运行新增的契约扫描测试（pytest 定向）"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "passed"
+
+  - id: CP-6
+    description: "`archive` 归档即闭合相位（archive-state-consistency REQ-001 / SC-201..202）"
+    action: "在临时项目内构造一个 `deliver: in_progress` 的在办 change，执行 `fstdd archive <name>`，再读归档 `.fstdd.yaml`"
+    assertions:
+      - type: yaml_valid
+        expected: true
+      - type: exit_code
+        expected: 0
+
+  - id: CP-7
+    description: "`rollback` 保留原相位（archive-state-consistency REQ-002 / SC-203..204）"
+    action: "在临时项目内执行 `fstdd rollback <name>`，对比恢复前后的 `.fstdd.yaml`"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: diff_empty
+        expected: false
+
+  - id: CP-8
+    description: "全量回归 + 四自检"
+    action: "`pytest upstream/tests` + `pytest tests` + tools/verify_{rename,eol,skill_standards,workbuddy_skills}.py"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+expected_outcomes:
+  - "归档 change 上的 3 条读命令（phase status / state / work list）全部 rc=0 且输出真实信息"
+  - "归档 change 上的 4 类写命令（phase 写 / state --set / work add / baseline establish）全部 rc=1 且文案含「已归档」+「rollback」"
+  - "`gate amend-audit` 在归档 change 上 rc=0"
+  - "契约扫描违规数 = 0，且扫描器自检（违例能抓 / 合法不误报）通过"
+  - "`archive` 后 `phases.deliver.status == completed`，且闸门字段逐字段不变"
+  - "`rollback` 后 `current_phase` 保持归档前值、`status == active`，`phases.*` 零改动"
+  - "在办 change 上的既有行为零回归；全量测试零新增失败；四自检全绿"
+
+rollback:
+  steps:
+    - "git checkout -- upstream/fstdd/cli/finder.py upstream/fstdd/cli/commands/{phase,gate,state,work,baseline,archive,rollback}.py"
+    - "删除本 change 新增的测试文件"
+    - "若已误归档/误恢复某 change：用 `fstdd rollback <name>` 或 `fstdd archive <name>` 回到原位；必要时手工恢复 `.fstdd.yaml` 的 `current_phase`"

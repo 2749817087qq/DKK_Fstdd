@@ -1,0 +1,10 @@
+designs: {}
+proposals:
+  2026-10-07-change-dir-resolution-unify: proposals/2026-10-07-change-dir-resolution-unify.yaml
+specs:
+  agent:
+    2026-10-07-change-dir-resolution-unify: specs/agent/2026-10-07-change-dir-resolution-unify.yaml
+  code:
+    archive-state-consistency: specs/code/archive-state-consistency.yaml
+    change-dir-resolution: specs/code/change-dir-resolution.yaml
+version: '2.9'

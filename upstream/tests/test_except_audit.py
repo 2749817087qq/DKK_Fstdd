@@ -30,12 +30,26 @@ def _load_audit_module():
 
 def _audit_table_path() -> Path:
     """活表优先：changes 下最近维护的 audit/except-points.yaml，其次 archive 兜底（同样取最近）。
-    目录名为 `YYYY-MM-DD-` 前缀，字典序即时间序；须取**末个**，
-    否则维护表随 change 归档后会回退到更早的旧表。表随维护 change 迁移，不硬编码 change id。"""
+
+    判据 = 表内 ``meta.observed_at``（**时间语义**），而非目录名字典序 ——
+    后者只在「日期前缀互不相同」时才等价于时间序；**同日的多个 change 会因名字排序取错表**
+    （实测 2026-10-09：`2026-10-07-change-dir-resolution-unify` 与 `2026-10-07-tool-defect-fixes`
+    同日，字典序前者在前 ⇒ 取到旧表、行号漂移 7 > 5 容差）。
+    缺 ``meta.observed_at`` 的旧表回落到目录名字典序。表随维护 change 迁移，不硬编码 change id。
+    """
     for base in ("changes", "archive"):
         hits = sorted((REPO / ".fstdd" / base).glob("*/audit/except-points.yaml"))
-        if hits:
-            return hits[-1]
+        if not hits:
+            continue
+
+        def _observed_at(p: Path) -> tuple[str, str]:
+            try:
+                meta = (yaml.safe_load(p.read_text(encoding="utf-8")) or {}).get("meta") or {}
+                return (str(meta.get("observed_at") or ""), str(p))
+            except Exception:
+                return ("", str(p))
+
+        return max(hits, key=_observed_at)
     raise FileNotFoundError("changes/ 与 archive/ 均找不到审计表")
 
 

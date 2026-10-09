@@ -5,6 +5,7 @@ import argparse
 from pathlib import Path
 from datetime import datetime
 from ..timeutil import utc_now_iso
+from ..finder import find_change_dir, require_active_change_dir
 from ._dryrun import dry_run_preview
 import yaml
 
@@ -17,39 +18,57 @@ from .phase_constants import (
 )
 
 
-def _find_change(project_root: Path, name: str = None) -> Path:
-    """Find change dir by name (most recent if None).
+def _find_batch_child(project_root: Path) -> Path:
+    """V3.0.5 批级管线兜底：open batch 下最近修改的子 change。
 
-    V3.0.5: 顶层无活跃 change 时，回退查 open batch 的子 change（批级管线）。
+    批级子 change 位于 `.fstdd/changes/_batch/<id>/changes/<name>/`，**不在** `.fstdd/changes/`
+    也不在 `.fstdd/archive/` ⇒ 统一入口覆盖不到，故保留此独立来源。
     """
-    changes_dir = project_root / ".fstdd" / "changes"
-    if not changes_dir.is_dir():
-        return None
-    if name:
-        return changes_dir / name
-    candidates = sorted(
-        [d for d in changes_dir.iterdir() if d.is_dir() and d.name != "_batch" and (d / ".fstdd.yaml").exists()],
-        key=lambda d: d.stat().st_mtime, reverse=True,
-    )
-    if candidates:
-        return candidates[0]
-
-    # V3.0.5: batch pipeline — 查 open batch 的子 change
     try:
         from .batch import _find_open_batch
     except Exception:
         return None
     batch_dir = _find_open_batch(project_root)
-    if batch_dir:
-        children_dir = batch_dir / "changes"
-        if children_dir.is_dir():
-            children = sorted(
-                [d for d in children_dir.iterdir() if d.is_dir() and (d / ".fstdd.yaml").exists()],
-                key=lambda d: d.stat().st_mtime, reverse=True,
-            )
-            if children:
-                return children[0]
-    return None
+    if not batch_dir:
+        return None
+    children_dir = batch_dir / "changes"
+    if not children_dir.is_dir():
+        return None
+    children = sorted(
+        [d for d in children_dir.iterdir() if d.is_dir() and (d / ".fstdd.yaml").exists()],
+        key=lambda d: d.stat().st_mtime, reverse=True,
+    )
+    return children[0] if children else None
+
+
+def _find_change(project_root: Path, name: str = None) -> Path:
+    """**读路径**解析 change 目录：统一入口（含归档回退）+ 批级管线兜底。
+
+    2026-10-07（change-dir-resolution 收口）：主路径改走
+    `finder.find_change_dir(..., include_archive=True)` —— 此前本函数只扫
+    `.fstdd/changes/`，对已归档 change 会返回一个不存在的路径，最终报出
+    `.fstdd.yaml not found in <name>` 这种**误导文案**。
+    """
+    hit = find_change_dir(name, project_root, include_archive=True)
+    if hit is not None:
+        return hit
+    if name:
+        return None
+    return _find_batch_child(project_root)
+
+
+def _resolve_write_change(project_root: Path, name: str = None) -> Path:
+    """**写路径**解析：统一写入口（归档拒绝）+ 批级子 change 放行。
+
+    「什么算可写」只有 `finder.require_active_change_dir` 一个定义点 —— 本函数只负责
+    在统一入口**未命中且未指定名字**时补一个来源（批级子 change），其余一律交给它裁决。
+    """
+    hit = find_change_dir(name, project_root, include_archive=True)
+    if hit is None and not name:
+        child = _find_batch_child(project_root)
+        if child is not None:
+            return child
+    return require_active_change_dir(name, project_root)
 
 
 def cmd_phase(args: argparse.Namespace) -> None:
@@ -58,7 +77,13 @@ def cmd_phase(args: argparse.Namespace) -> None:
     action = getattr(args, "phase_action", "status")
     change_name = getattr(args, "name", None)
 
-    change_dir = _find_change(project_root, change_name)
+    # 读/写分层（2026-10-07 / SC-101 vs SC-105）：写操作在归档 change 上必须被拒绝，
+    # 且拒绝文案与退出码由统一写入口给出（唯一定义点）。
+    _WRITE_ACTIONS = {"advance", "set", "record-slice"}
+    if action in _WRITE_ACTIONS:
+        change_dir = _resolve_write_change(project_root, change_name)
+    else:
+        change_dir = _find_change(project_root, change_name)
     if change_dir is None:
         print("  No change found.")
         sys.exit(1)

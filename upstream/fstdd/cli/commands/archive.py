@@ -81,6 +81,13 @@ def cmd_archive(args: argparse.Namespace) -> None:
         with open(state_file, "r", encoding="utf-8") as f:
             state = yaml.safe_load(f) or {}
         state["status"] = "archived"
+        # 2026-10-07（archive-state-consistency / SC-201）：归档即闭合交付相位。
+        # 修复前只写 status，导致 `status: archived` 却 `phases.deliver.status: in_progress|pending`
+        # 的悬空态（实测 3 个历史归档 change 均有此问题）。
+        # ⚠️ 只写这一个字段：`phases.*.confirmed_*` 等闸门审计字段一个不碰（SC-202 / KG-094）。
+        # ⚠️ 此处 `phases` 必然存在 —— 上方已校验 `phases.build.status == completed`，否则早就 exit 1。
+        deliver = state["phases"].setdefault("deliver", {})
+        deliver["status"] = "completed"
         with open(state_file, "w", encoding="utf-8") as f:
             yaml.dump(state, f, allow_unicode=True, default_flow_style=False)
 

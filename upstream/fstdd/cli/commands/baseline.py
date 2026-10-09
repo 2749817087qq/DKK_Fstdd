@@ -27,6 +27,7 @@ from pathlib import Path
 import yaml
 
 from fstdd.cli.timeutil import utc_now_iso
+from ..finder import find_change_dir, require_active_change_dir
 from ._dryrun import dry_run_preview
 
 # --------------------------------------------------------------------------- #
@@ -50,7 +51,15 @@ def _changes_dir(root: Path) -> Path:
 
 
 def _change_yaml(root: Path, change: str) -> Path:
-    return _changes_dir(root) / change / ".fstdd.yaml"
+    """定位 change 的状态文件（2026-10-07 收口：走统一入口，含归档回退）。
+
+    此前只拼 `changes/<change>/.fstdd.yaml` ⇒ 对已归档 change 会指向不存在的路径
+    （`show` 读出空、`establish` 报「找不到」）。
+    """
+    hit = find_change_dir(change, root, include_archive=True)
+    if hit is not None:
+        return hit / ".fstdd.yaml"
+    return _changes_dir(root) / change / ".fstdd.yaml"   # 未命中：保留原路径供错误信息使用
 
 
 def _default_change(root: Path) -> str | None:
@@ -65,19 +74,15 @@ def _default_change(root: Path) -> str | None:
 
 
 def _resolve_change(root: Path, name: str) -> str | None:
-    """把用户输入的 change 名解析为 changes/ 下的真实目录名。
+    """把用户输入的 change 名解析为**真实目录名**（2026-10-07 收口：走统一入口）。
 
-    `new.py` 会给目录加日期前缀（`2026-09-17-<name>`），用户记住的是短名。
-    解析顺序：精确匹配 → 唯一后缀匹配（*<name>）→ 无/多个命中返回 None。
+    统一入口 `finder.find_change_dir` 提供：精确名 → `*<name>` 后缀匹配 → 归档回退。
+    此前本函数只扫 `changes/`，故对已归档 change 一律返回 None。
+
+    ⚠️ 返回的是**目录名**（调用方用它拼路径）；未命中返回 None。
     """
-    d = _changes_dir(root)
-    if not d.is_dir():
-        return None
-    dirs = [p.name for p in d.iterdir() if p.is_dir()]
-    if name in dirs:
-        return name
-    hits = [x for x in dirs if x.endswith(name)]
-    return hits[0] if len(hits) == 1 else None
+    hit = find_change_dir(name, root, include_archive=True)
+    return hit.name if hit is not None else None
 
 
 def _load_yaml(path: Path) -> dict:
@@ -181,20 +186,21 @@ def write_baseline(root: Path, change: str, *, established_by: str,
 # --------------------------------------------------------------------------- #
 
 def _cmd_establish(args: argparse.Namespace, root: Path) -> int:
-    if dry_run_preview(args, "baseline establish"):
-        return 0
     change = args.change
     if change:
-        resolved = _resolve_change(root, change)
-        if not resolved:
-            print(f"错误：changes/ 下找不到 change「{change}」（精确与后缀匹配均无）", file=sys.stderr)
-            return 2
-        change = resolved
+        # 写路径（2026-10-07 / SC-106）：归档 change 由**统一写入口**拒绝，
+        # 文案与退出码只有一个定义点（不再各自拼路径 + 各写一套错误信息）。
+        # ⚠️ 解析在 dry-run 之前 —— 与 `phase` / `work` 的写路径一致：dry-run 也不得
+        #    为归档 change 给出「看起来能成功」的预览（Explore-1 评审发现的顺序不一致）。
+        cd = require_active_change_dir(change, root)
+        change = cd.name
     else:
         change = _default_change(root)
-    if not change:
-        print("错误：未指定 change，且 .fstdd/changes/ 下没有可用 change", file=sys.stderr)
-        return 2
+        if not change:
+            print("错误：未指定 change，且 .fstdd/changes/ 下没有可用 change", file=sys.stderr)
+            return 2
+    if dry_run_preview(args, "baseline establish"):
+        return 0
     yp = _change_yaml(root, change)
     if not yp.is_file():
         print(f"错误：找不到 {yp}", file=sys.stderr)
@@ -227,9 +233,10 @@ def _cmd_establish(args: argparse.Namespace, root: Path) -> int:
 def _cmd_show(args: argparse.Namespace, root: Path) -> int:
     change = args.change
     if change:
+        # 读路径（2026-10-07 / SC-101..104）：走统一入口，支持归档回退
         resolved = _resolve_change(root, change)
         if not resolved:
-            print(f"错误：changes/ 下找不到 change「{change}」（精确与后缀匹配均无）", file=sys.stderr)
+            print(f"错误：找不到 change「{change}」（精确与后缀匹配均无）", file=sys.stderr)
             return 2
         change = resolved
     else:
