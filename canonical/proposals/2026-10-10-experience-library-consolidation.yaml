@@ -1,0 +1,112 @@
+# 2026-10-10-experience-library-consolidation.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-10-10-experience-library-consolidation"
+  title: "经验库跨副本收敛与去重（4→1 权威库）"
+  created: "2026-10-10T14:53:56+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    本机存在 4 个 FSTDD 经验库副本，共 179 个经验文件，但唯一 experience_id 仅 90 个。
+    大量重复（47 个 eid 多份内容完全一致）、21 个 eid 同 id多份内容不一致（漂移）、
+    以及 FSTDD002 含 12 条其他副本完全没有的独有经验。上游 P0-pre change 已修单库
+    解析器（experience.py:428 双块解析），但跨副本物理收敛尚未做。
+    现状导致：经验回传 / Phase 3 自动加载会从多个冲突源取数，门禁可信度数据面未闭合。
+  motivation: |
+    上一轮「FSTDD 进化方向」评审将「经验库可信化」列为 P0-pre 前置批次。单库解析器已修
+    （commit 1555de9），本 change 补上跨副本物理收敛这一剩余子项，使经验库「先可信、再可见」。
+  evidence:
+    observed_at: "2026-10-10T14:40:00+00:00"
+    observed_base_git_sha: "1555de9"
+    details: |
+      只读扫描（analyze_experiences.py + analyze_drift.py，未改任何文件）：
+      - 4 副本文件数：stdd-repo 79 / FSTDD003 69 / home-FSTDD 19 / FSTDD002 12 = 179
+      - 唯一内容哈希 112；唯一 experience_id 90
+      - 纯重复 47 eid（134 冗余文件，67 组）
+      - 内容漂移 21 eid（stdd-repo vs FSTDD003 2 个 + home-FSTDD 漂移 19 个）
+      - FSTDD002 独有 12 eid（stdd-repo 完全没有，删副本会丢）
+      - FSTDD003 / home-FSTDD 相对 stdd-repo 0 条独有
+      - 旧解析器丢 eid 文件 90/179（stdd-repo 子样本 46/79 约 58%，与 P0-pre 基线一致）
+
+what_changes:
+  - id: C1
+    description: "备份三副本（FSTDD003 / home-FSTDD / FSTDD002）到 _backup/，作为回滚基线"
+    type: new
+  - id: C2
+    description: "回灌 FSTDD002 独有 12 条经验进 stdd-repo/.fstdd/experiences，并校验 frontmatter 无双块畸形"
+    type: modified
+  - id: C3
+    description: "逐条裁决 21 个漂移 eid，默认以 stdd-repo 为准，必要时合并 home 版增量字段；裁决依据留痕"
+    type: modified
+  - id: C4
+    description: "删除 134 个纯重复文件（留 stdd-repo 那份，其余移回收站非 rm），逐批不超过 10"
+    type: removed
+  - id: C5
+    description: "修复 upstream/fstdd/experience.py 的 _load_experience 双块解析（解析全部 frontmatter 块并合并取真身），加 RED to GREEN 契约测试（用 46 受影响样本）；这是 P1 本体，本 change 实测 list 仍丢真身，P0-pre 未修"
+    type: modified
+  - id: C6
+    description: "重建 .experience-index.yaml（依赖本 change C5 修复后的解析器），确保 list/stats 不写脏工作树"
+    type: modified
+  - id: C7
+    description: "将 FSTDD003 / home-FSTDD / FSTDD002 三副本降级为只读参考（放置 README 标注），不再作为写源"
+    type: modified
+  - id: C8
+    description: "新增可复现迁移脚本 tools/consolidate_experiences.py（幂等、可重跑、带 --dry-run），执行 C2 回灌 + C3 裁决 + C4 去重 + C6 降级"
+    type: new
+
+capabilities:
+  new:
+    - name: "experience-library-consolidation"
+      description: "将分散在 4 副本的 179 经验文件收敛为 1 个权威、去重、可信库（stdd-repo/.fstdd/experiences），并提供幂等迁移脚本"
+  modified: []
+
+constraints:
+  - "先备份三副本再操作（破坏性），备份完整性须校验文件数与源一致"
+  - "依赖已落地的 P0-pre 解析器修复（1555de9），单库数据须先可信再合并"
+  - "删冗余逐批不超过 10，移回收站（非 rm）；沙箱 rm -rf 被 safe-delete 拦截，改用同盘 os.rename 移出仓库"
+  - "不改动其他项目副本内容，仅降级为只读参考"
+  - "迁移脚本须幂等：重跑不产生重复、不破坏已收敛状态"
+
+stakeholders:
+  - "D哥（终裁）"
+  - "FSTDD 各节点（FSTDD001-006 / 009，经验回传消费方）"
+  - "K（经验库归口端）"
+
+risk_areas:
+  - capability: "experience-library-consolidation"
+    risk: "误删 FSTDD002 独有 12 条经验导致永久丢失"
+    mitigation: "C1 先备份；C2 先回灌再删；备份可完整回退"
+  - capability: "experience-library-consolidation"
+    risk: "21 个漂移 eid 裁决错选旧版，覆盖正确内容"
+    mitigation: "保留 home 版于 _backup/；默认以 stdd-repo 为准；裁决依据写入 change 记录"
+
+non_goals:
+  - "不搜集跨项目经验（reIT / 公众号 / 运维项目的方法论沉淀）"
+  - "不收敛 skill（skill 无回传机制，另立议题）"
+  - "不改 share_experience 回传链路（属 P0-pre 之外）"
+  - "不做任何变成平台类扩展（定位保持流程治理内核）"
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: true
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L3
+  reference_changes: ["2026-10-10-p0-pre-audit-baseline"]
+  anchor_implementations: []
+
+success_criteria:
+  - "收敛后 stdd-repo/.fstdd/experiences = 91 个经验文件（其中 89 个带有效 experience_id，2 个 truncated 残留不贡献 eid，见 AMD-006），且无内容重复文件（git status 仅含新增 12 回灌 + 索引刷新）"
+  - "experience list 输出 ID 列 100% 非空（修复前 58% 空白）"
+  - "experience stats 分类分布不含 unknown / discovered 系统性错配"
+  - "索引 .experience-index.yaml 在 list / stats 执行后工作树保持干净（git status --short 无意外脏文件）"
+  - "21 个漂移 eid 全部裁决完成，清单逐条勾销且裁决依据留痕"
+  - "FSTDD002 独有 12 条经验全部进入权威库索引，0 丢失"
+  - "三副本降级为只读参考（含 README 标注），不再作为写源"
+  - "tools/consolidate_experiences.py 幂等可重跑（--dry-run 与实际执行结果一致）"

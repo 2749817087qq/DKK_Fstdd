@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-10-experience-library-consolidation: proposals/2026-10-10-experience-library-consolidation.yaml
+specs:
+  agent:
+    2026-10-10-experience-library-consolidation: specs/agent/2026-10-10-experience-library-consolidation.yaml
+  code:
+    2026-10-10-experience-library-consolidation: specs/code/2026-10-10-experience-library-consolidation.yaml
+version: '2.9'

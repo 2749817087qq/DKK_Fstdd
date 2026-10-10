@@ -422,13 +422,36 @@ def _coerce_numeric_fields(data: dict) -> dict:
 
 
 def _load_experience(filepath: Path) -> Optional[dict]:
+    """解析经验文件并返回合并后的 frontmatter 字典（FSD-026）。
+
+    兼容三类结构：单块（--- 包裹 frontmatter 后接正文）、inbox 双块
+    （HTML 注释头 + 第1块导出元数据 + 第2块真身 + 正文）、无 frontmatter。
+
+    实现：按全部 --- 切片，逐段 yaml.safe_load，凡是 dict 就合并进累加器，
+    靠后的块覆盖靠前的冲突键 → 真身块优先。空段 / 非 dict 段（HTML 注释头、
+    正文）跳过。
+
+    历史缺陷：原 content.split("---", 2)[1] 只取首个块，inbox 双块文件的真身
+    （第二块）被静默丢弃，导致 experience list 约 58% 条目 ID 列空白
+    （P1 bug，本 change 修复）。
+    """
     if not filepath.exists():
         return None
     content = filepath.read_text(encoding="utf-8")
-    parts = content.split("---", 2)
-    if len(parts) < 3:
+    merged: dict = {}
+    for seg in content.split("---"):
+        seg = seg.strip()
+        if not seg:
+            continue
+        try:
+            loaded = yaml.safe_load(seg)
+        except yaml.YAMLError:
+            continue
+        if isinstance(loaded, dict):
+            merged.update(loaded)  # 后块覆盖前块冲突键 → 真身块优先
+    if not merged:
         return None
-    return _coerce_numeric_fields(yaml.safe_load(parts[1]) or {})
+    return _coerce_numeric_fields(merged)
 
 
 def _sanitize(text: str) -> str:

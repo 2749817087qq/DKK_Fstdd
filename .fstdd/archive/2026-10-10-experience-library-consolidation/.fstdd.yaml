@@ -1,0 +1,42 @@
+baseline:
+  at: '2026-10-10T15:26:34+00:00'
+  base_git_sha: 1555de9ff23f4a653d483a26a37eb9affdbe1188
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-10-experience-library-consolidation
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 7
+mode: standard
+phases:
+  build:
+    status: completed
+  deliver:
+    status: completed
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-10T16:09:58+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: Gate 2 通过
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-10T15:26:34+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: Gate 1 通过
+    status: completed
+score_confidence: null
+status: archived
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-10-10T17:27:01+00:00'
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

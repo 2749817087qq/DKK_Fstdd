@@ -1,0 +1,55 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+# capability: experience-library-consolidation
+
+meta:
+  task_id: "experience-library-consolidation"
+  change_id: "2026-10-10-experience-library-consolidation"
+  task_type: data-migration
+  system: "FSTDD 经验库（4 副本 -> 1 权威库），vendored 内核 upstream/fstdd/experience.py"
+  preconditions:
+    - "P0-pre change 已 commit（base 1555de9），工作树干净"
+    - "三副本已备份到 E:/FSTDD/_backup/exp-*-20261010/"
+
+steps:
+  - id: CP-1
+    description: "修复 _load_experience 双块解析"
+    action: "编辑 upstream/fstdd/experience.py 的 _load_experience 合并全部 frontmatter 块"
+    assertions:
+      - type: stdout_contains
+        expected: "PASS"
+  - id: CP-2
+    description: "契约测试验证双块解析（RED->GREEN，46 样本）"
+    action: "pytest tools/tests/test_experience_parser.py"
+    assertions:
+      - type: exit_code
+        expected: 0
+  - id: CP-3
+    description: "回灌 FSTDD002 独有 12 条"
+    action: "python tools/consolidate_experiences.py --stage ingest"
+    assertions:
+      - type: file_exists
+        expected: true
+  - id: CP-4
+    description: "去重 134 冗余（移回收站，逐批 <=10）"
+    action: "python tools/consolidate_experiences.py --stage dedupe"
+    assertions:
+      - type: exit_code
+        expected: 0
+  - id: CP-5
+    description: "幂等校验收敛不变量"
+    action: "python tools/consolidate_experiences.py --verify"
+    assertions:
+      - type: stdout_contains
+        expected: "unique_eid=90"
+  - id: CP-6
+    description: "工作树干净（索引不被写脏）"
+    action: "git -C E:/FSTDD/stdd-repo status --short"
+    assertions:
+      - type: diff_empty
+        expected: true
+
+rollback:
+  steps:
+    - "git -C E:/FSTDD/stdd-repo checkout -- .fstdd/experiences/ 恢复权威库"
+    - "从 E:/FSTDD/_backup/exp-FSTDD002-20261010/ 还原独有 12 条"
+    - "从 E:/FSTDD/_backup/exp-FSTDD003-20261010/trash/ 还原被删冗余"

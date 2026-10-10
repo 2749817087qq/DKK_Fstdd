@@ -1,8 +1,11 @@
 meta:
-  last_updated: '2026-10-09T09:20:34+00:00'
+  last_updated: '2026-10-10T18:39:52+00:00'
   modules: {}
-  total_changes: 21
+  total_changes: 22
 modules:
+  adjudication-log.tsv:
+    changes:
+    - 2026-10-10-experience-library-consolidation
   audit\scratch-inventory.txt:
     changes:
     - 2026-10-06-legacy-debt-cleanup
@@ -19,6 +22,7 @@ modules:
     - 2026-10-06-legacy-debt-cleanup
     - 2026-10-07-tool-defect-fixes
     - 2026-10-07-change-dir-resolution-unify
+    - 2026-10-10-experience-library-consolidation
   tools/test_verify_notices.py:
     changes:
     - 2026-09-19-notices-authenticity-gate

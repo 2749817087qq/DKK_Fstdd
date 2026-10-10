@@ -1,0 +1,113 @@
+# spec.yaml — 行为规格（Canonical YAML）
+# capability: experience-library-consolidation
+
+meta:
+  capability: "experience-library-consolidation"
+  change_id: "2026-10-10-experience-library-consolidation"
+  created: "2026-10-10T15:30:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-001
+    description: "修复 _load_experience 双块 frontmatter 解析，使其返回完整经验字段"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "observed_at=2026-10-10T14:40:00+00:00 base=1555de9 只读实测：experience list --format json 前几个双块条目仅含 {exported_at, sanitized}，EXP-2026-0012 起才含完整字段，证实只取首个块"
+        given: "存在双 block frontmatter 经验文件（第1块仅 exported_at/sanitized，第2块含 experience_id/category/severity）"
+        when: "调用 _load_experience 加载该文件"
+        then: "SHALL 返回合并后的完整字段，含 experience_id/category/severity"
+        and:
+          - "第2块（真身）字段 SHALL 优先于第1块同名键"
+      - id: SC-002
+        confidence: high
+        evidence: "同 REQ-001"
+        given: "存在单 block frontmatter 经验文件"
+        when: "调用 _load_experience 加载该文件"
+        then: "SHALL 返回该块全部字段，行为与修复前一致"
+      - id: SC-003
+        confidence: medium
+        evidence: "设计决策 C5：合并后块覆盖前块冲突键"
+        given: "某经验文件两 block 含同一键但值不同"
+        when: "调用 _load_experience"
+        then: "SHALL 以靠后的 block（真身）值为准"
+
+  - id: REQ-002
+    description: "回灌 FSTDD002 独有 12 条经验进权威库"
+    scenarios:
+      - id: SC-004
+        confidence: high
+        evidence: "observed_at=2026-10-10T14:40:00+00:00 analyze_drift.py：FSTDD002 独有 12 eid（FSTDD002-EXP-20260918-AUTH-1/GUARD-1/2/POLL-1/S4A-1/STATUS-1/...）"
+        given: "FSTDD002/.fstdd/experiences 含 12 个 stdd-repo 没有的 eid"
+        when: "执行 consolidate 回灌步骤"
+        then: "SHALL 将 12 条全部拷贝进 stdd-repo/.fstdd/experiences 并进入索引"
+        and:
+          - "回灌后 0 条独有经验丢失"
+
+  - id: REQ-003
+    description: "逐条裁决 21 个漂移 eid，依据留痕"
+    scenarios:
+      - id: SC-005
+        confidence: medium
+        evidence: "observed_at=2026-10-10T14:40:00+00:00 analyze_drift.py：21 eid 内容漂移（stdd-repo vs FSTDD003 2 个 + home-FSTDD 19 个）"
+        given: "存在 21 个同 experience_id 但内容不同的文件"
+        when: "执行 consolidate 裁决步骤"
+        then: "SHALL 对每个漂移 eid 选定权威版本（默认 stdd-repo）并写入裁决依据"
+        and:
+          - "21 个 eid 全部裁决完成，清单逐条勾销"
+
+  - id: REQ-004
+    description: "删除 134 个纯重复文件，留权威份，移回收站非 rm"
+    scenarios:
+      - id: SC-006
+        confidence: high
+        evidence: "observed_at=2026-10-10T14:40:00+00:00 analyze_experiences.py：47 eid 纯重复，134 冗余文件，67 组"
+        given: "收敛前 stdd-repo 含 79 文件，跨 4 副本 179 文件"
+        when: "执行 consolidate 去重步骤"
+        then: "SHALL 使 stdd-repo 唯一 content hash = 90，无内容重复文件"
+      - id: SC-007
+        confidence: high
+        evidence: "沙箱 rm -rf 被 safe-delete 拦截（state lock timeout）"
+        given: "需删除冗余经验文件"
+        when: "执行删除"
+        then: "SHALL 用同盘 os.rename 移至回收站/trash，不得调用 rm -rf"
+        and:
+          - "逐批不超过 10 个"
+
+  - id: REQ-005
+    description: "重建 .experience-index.yaml 且不写脏工作树"
+    scenarios:
+      - id: SC-008
+        confidence: high
+        evidence: "P2 旧债：list/stats 重写被 git 跟踪的索引导致脏树"
+        given: "经验库收敛完成"
+        when: "运行 experience list 或 stats"
+        then: "SHALL 不修改 .experience-index.yaml（工作树保持干净）"
+        and:
+          - "git status --short 无意外脏文件"
+
+  - id: REQ-006
+    description: "迁移脚本 consolidate_experiences.py 幂等可重跑"
+    scenarios:
+      - id: SC-009
+        confidence: high
+        evidence: "设计决策 C8：--dry-run 预览"
+        given: "已收敛状态"
+        when: "执行 consolidate_experiences.py --dry-run"
+        then: "SHALL 只打印将执行动作，不写入/删除任何文件"
+      - id: SC-010
+        confidence: high
+        evidence: "L3 锚定：幂等可重跑"
+        given: "已收敛状态"
+        when: "再次执行 consolidate_experiences.py（无 --dry-run）"
+        then: "SHALL 无副作用（不重复回灌/不误删/索引不变）"
+
+  - id: REQ-007
+    description: "三副本降级为只读参考"
+    scenarios:
+      - id: SC-011
+        confidence: high
+        evidence: "analyze_drift.py：FSTDD003/home-FSTDD 0 独有"
+        given: "FSTDD003 / home-FSTDD / FSTDD002 经验目录"
+        when: "执行降级步骤"
+        then: "SHALL 在各副本放置 README 标注其已收敛、不再作为写源"
