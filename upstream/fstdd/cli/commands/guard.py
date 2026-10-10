@@ -860,6 +860,31 @@ def cmd_guard_check(args: argparse.Namespace) -> int:
             if not integrity_ok:
                 # V3.0.6: 报错带 change_id —— 原先不说是哪个 change 被卡，无法定位。
                 change_id = change_data.get("change_id") or active_dir.name
+                # V3.0.11: scope-aware integrity block（根因修复）.
+                # 旧行为：phase-integrity 违规一律全局硬拦截(return 2)，导致一个
+                # 陈旧 change（build 已完成/已验证，仅缺 Gate 确认 token）冻结整个
+                # 工作区，污染无关的新工作区写入（误挂，见 change 2026-10-10-...）。
+                # 新行为：仅当目标路径落在该 change 声明的 scope.paths 内才硬拦截；
+                # 命中 scope 之外（或该 change 已处于 deliver 且 build 完成——功能性
+                # 已完工，仅缺确认 token）降为 warn-only 放行，与 V3.0.7 phase-gate
+                # 作用域冻结保持一致。无 scope 声明且非 deliver 完工的情形维持原硬拦截。
+                scope_patterns = _load_change_scope(active_dir)
+                if hook_path and scope_patterns and not _is_in_change_scope(
+                    project_root, hook_path, scope_patterns
+                ):
+                    _guard_report(
+                        args,
+                        f"⚠️ [{change_id}] {integrity_reason}"
+                        f"（目标在 scope 之外，仅警告，放行）",
+                    )
+                    return 0
+                if phase == "deliver" and _is_build_complete(change_data):
+                    _guard_report(
+                        args,
+                        f"⚠️ [{change_id}] {integrity_reason}"
+                        f"（已处于 deliver 且 build 完成，仅警告，放行）",
+                    )
+                    return 0
                 _guard_report(args, f"🚫 [{change_id}] {integrity_reason}")
                 return 2
 
