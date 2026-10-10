@@ -67,3 +67,9 @@ tools/.heartbeat.env
 # git rm -r --cached 取消跟踪，磁盘实体完整保留（该目录仍是备份源）。
 # ⚠️ gitignore 不作用于已跟踪文件 —— 若日后又误 add，须再走一次 --cached 取消跟踪。
 _scratch/
+
+# 打包 / 虚拟环境（切片 1 packaging，2026-10-10 落盘）
+.venv-test/
+*.egg-info/
+build/
+dist/

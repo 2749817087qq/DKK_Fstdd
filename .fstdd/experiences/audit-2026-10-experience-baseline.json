@@ -1,0 +1,3090 @@
+{
+  "audit_meta": {
+    "tool": "audit_experience_baseline.py",
+    "repo": ".",
+    "audited_at": "2026-10-10T19:35:51.934415+08:00",
+    "git_head": "0c8d2de8b5e904b55931eb3183438cd910e35197",
+    "note": "current_view 模拟 experience.py:428 只取首块；true_view=末块"
+  },
+  "summary": {
+    "total_entries": 79,
+    "dual_block_entries": 47,
+    "affected_entries": 46,
+    "affected_ratio": 0.5823,
+    "field_loss_counts": {
+      "experience_id": 46,
+      "category": 46,
+      "severity": 46
+    },
+    "category_distribution_current_parser": {
+      "code": 1,
+      "contract_gap": 3,
+      "coverage_vacuum": 2,
+      "database": 2,
+      "design": 4,
+      "operations": 1,
+      "process": 2,
+      "quality": 1,
+      "runtime_deviation": 5,
+      "runtime_pitfall": 1,
+      "security": 2,
+      "test": 1,
+      "testing": 2,
+      "tool_misuse": 2,
+      "tooling": 4
+    },
+    "category_distribution_true": {
+      "code": 1,
+      "contract_gap": 3,
+      "coverage_vacuum": 2,
+      "database": 2,
+      "design": 4,
+      "operations": 1,
+      "pipeline_break": 1,
+      "process": 6,
+      "process_deviation": 9,
+      "quality": 4,
+      "runtime": 1,
+      "runtime_deviation": 5,
+      "runtime_pitfall": 1,
+      "security": 3,
+      "test": 1,
+      "testing": 3,
+      "tool_misuse": 3,
+      "tooling": 27
+    },
+    "eid_mismatch": {
+      "count": 6,
+      "files": [
+        "EXP-20260918-C1.md",
+        "EXP-20260918-C2.md",
+        "EXP-20260918-C3.md",
+        "EXP-20260918-C4.md",
+        "EXP-20260918-C5.md",
+        "EXP-20260918-C6.md"
+      ]
+    },
+    "index_reconciliation": {
+      "indexed_true": 78,
+      "indexed_false_files": [],
+      "eid_mismatch_files": [
+        "EXP-20260918-C1.md",
+        "EXP-20260918-C2.md",
+        "EXP-20260918-C3.md",
+        "EXP-20260918-C4.md",
+        "EXP-20260918-C5.md",
+        "EXP-20260918-C6.md"
+      ],
+      "unreconciled_files": [
+        "EXP-009-20260925-TRPC-REVERSE.md"
+      ],
+      "index_missing_count": 0,
+      "invariant_ok": true
+    }
+  },
+  "affected_files": [
+    "EXP-009-20260924-SSH-KEYPERM.md",
+    "EXP-009-20260925-TRPC-REVERSE.md",
+    "EXP-00C0412F.md",
+    "EXP-1BA44745.md",
+    "EXP-2026-0001.md",
+    "EXP-2026-0002.md",
+    "EXP-20260915-A1.md",
+    "EXP-20260915-A2.md",
+    "EXP-20260915-A3.md",
+    "EXP-20260915-A4.md",
+    "EXP-20260915-A5.md",
+    "EXP-20260915-A6.md",
+    "EXP-20260915-B1.md",
+    "EXP-20260915-B2.md",
+    "EXP-20260915-B3.md",
+    "EXP-20260915-B4.md",
+    "EXP-20260916-C1.md",
+    "EXP-20260916-C2.md",
+    "EXP-20260916-C3.md",
+    "EXP-20260916-C4.md",
+    "EXP-20260916-INSTALL-1.md",
+    "EXP-20260916-INSTALL-2.md",
+    "EXP-20260916-INSTALL-3.md",
+    "EXP-20260916-RUN-1.md",
+    "EXP-20260916-RUN-2.md",
+    "EXP-20260917-C1.md",
+    "EXP-20260917-D1.md",
+    "EXP-20260917-D2.md",
+    "EXP-20260917-D3.md",
+    "EXP-20260917-DOCS-1.md",
+    "EXP-20260917-DOCS-2.md",
+    "EXP-20260917-E1.md",
+    "EXP-20260917-F1.md",
+    "EXP-20260917-G1.md",
+    "EXP-20260917-INSTALL-4.md",
+    "EXP-20260917-INSTALL-5.md",
+    "EXP-20260918-01.md",
+    "EXP-20260918-02.md",
+    "EXP-20260918-03.md",
+    "EXP-20260918-04.md",
+    "EXP-20260918-05.md",
+    "EXP-42D8F11A.md",
+    "EXP-6D722212.md",
+    "EXP-C4213ACA.md",
+    "EXP-C6A698A8.md",
+    "EXP-D4587CAE.md"
+  ],
+  "records": [
+    {
+      "file": "EXP-009-20260924-SSH-KEYPERM.md",
+      "structure": "dual_block_import",
+      "n_blocks": 2,
+      "true_eid": "EXP-009-20260924-SSH-KEYPERM",
+      "filename_stem": "EXP-009-20260924-SSH-KEYPERM",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "author",
+        "received_at",
+        "remote_addr",
+        "node_id"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-009-20260925-TRPC-REVERSE.md",
+      "structure": "no_frontmatter",
+      "n_blocks": 0,
+      "true_eid": null,
+      "filename_stem": "EXP-009-20260925-TRPC-REVERSE",
+      "eid_match": null,
+      "first_block_keys": [],
+      "last_block_keys": [],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [],
+      "in_index": "unreconciled"
+    },
+    {
+      "file": "EXP-00C0412F.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-00C0412F",
+      "filename_stem": "EXP-00C0412F",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "source_change",
+        "title",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-1BA44745.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-1BA44745",
+      "filename_stem": "EXP-1BA44745",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "source_change",
+        "title",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0001.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-2026-0001",
+      "filename_stem": "EXP-2026-0001",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "source_change",
+        "title",
+        "exported_at",
+        "lifecycle_state",
+        "sanitize_hits"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0002.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-2026-0002",
+      "filename_stem": "EXP-2026-0002",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "source_change",
+        "title",
+        "exported_at",
+        "lifecycle_state",
+        "sanitize_hits"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0012.md",
+      "structure": "exported_block_only",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0012",
+      "filename_stem": "EXP-2026-0012",
+      "eid_match": true,
+      "first_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "source_change",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "source_change",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0013.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0013",
+      "filename_stem": "EXP-2026-0013",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0014.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0014",
+      "filename_stem": "EXP-2026-0014",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0015.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0015",
+      "filename_stem": "EXP-2026-0015",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0016.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0016",
+      "filename_stem": "EXP-2026-0016",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0017.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0017",
+      "filename_stem": "EXP-2026-0017",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0018.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0018",
+      "filename_stem": "EXP-2026-0018",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0019.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0019",
+      "filename_stem": "EXP-2026-0019",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0020.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0020",
+      "filename_stem": "EXP-2026-0020",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0021.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0021",
+      "filename_stem": "EXP-2026-0021",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0022.md",
+      "structure": "multi_block_2",
+      "n_blocks": 2,
+      "true_eid": "EXP-2026-0022",
+      "filename_stem": "EXP-2026-0022",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0023.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0023",
+      "filename_stem": "EXP-2026-0023",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0024.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0024",
+      "filename_stem": "EXP-2026-0024",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0025.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0025",
+      "filename_stem": "EXP-2026-0025",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0026.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0026",
+      "filename_stem": "EXP-2026-0026",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-2026-0027.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "EXP-2026-0027",
+      "filename_stem": "EXP-2026-0027",
+      "eid_match": true,
+      "first_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "last_block_keys": [
+        "adoption_count",
+        "category",
+        "community_votes_unuseful",
+        "community_votes_useful",
+        "confidence",
+        "detection_trigger",
+        "experience_id",
+        "first_seen",
+        "fix_template",
+        "language",
+        "last_seen",
+        "lifecycle_state",
+        "occurrences",
+        "pattern",
+        "project_type",
+        "provenance",
+        "provenance_weight",
+        "root_cause",
+        "severity",
+        "source_change",
+        "source_file",
+        "tags"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260915-A1.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260915-A1",
+      "filename_stem": "EXP-20260915-A1",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260915-A2.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260915-A2",
+      "filename_stem": "EXP-20260915-A2",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260915-A3.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260915-A3",
+      "filename_stem": "EXP-20260915-A3",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260915-A4.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260915-A4",
+      "filename_stem": "EXP-20260915-A4",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260915-A5.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260915-A5",
+      "filename_stem": "EXP-20260915-A5",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260915-A6.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260915-A6",
+      "filename_stem": "EXP-20260915-A6",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260915-B1.md",
+      "structure": "dual_block_import",
+      "n_blocks": 4,
+      "true_eid": "EXP-20260915-B1",
+      "filename_stem": "EXP-20260915-B1",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260915-B2.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260915-B2",
+      "filename_stem": "EXP-20260915-B2",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260915-B3.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260915-B3",
+      "filename_stem": "EXP-20260915-B3",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260915-B4.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260915-B4",
+      "filename_stem": "EXP-20260915-B4",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260916-C1.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260916-C1",
+      "filename_stem": "EXP-20260916-C1",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260916-C2.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260916-C2",
+      "filename_stem": "EXP-20260916-C2",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260916-C3.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260916-C3",
+      "filename_stem": "EXP-20260916-C3",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260916-C4.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260916-C4",
+      "filename_stem": "EXP-20260916-C4",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260916-INSTALL-1.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260916-INSTALL-1",
+      "filename_stem": "EXP-20260916-INSTALL-1",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260916-INSTALL-2.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260916-INSTALL-2",
+      "filename_stem": "EXP-20260916-INSTALL-2",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260916-INSTALL-3.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260916-INSTALL-3",
+      "filename_stem": "EXP-20260916-INSTALL-3",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260916-RUN-1.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260916-RUN-1",
+      "filename_stem": "EXP-20260916-RUN-1",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260916-RUN-2.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260916-RUN-2",
+      "filename_stem": "EXP-20260916-RUN-2",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-A1.md",
+      "structure": "exported_block_only",
+      "n_blocks": 1,
+      "true_eid": "EXP-20260917-A1",
+      "filename_stem": "EXP-20260917-A1",
+      "eid_match": true,
+      "first_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-A2.md",
+      "structure": "exported_block_only",
+      "n_blocks": 1,
+      "true_eid": "EXP-20260917-A2",
+      "filename_stem": "EXP-20260917-A2",
+      "eid_match": true,
+      "first_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-A3.md",
+      "structure": "exported_block_only",
+      "n_blocks": 1,
+      "true_eid": "EXP-20260917-A3",
+      "filename_stem": "EXP-20260917-A3",
+      "eid_match": true,
+      "first_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-A4.md",
+      "structure": "exported_block_only",
+      "n_blocks": 1,
+      "true_eid": "EXP-20260917-A4",
+      "filename_stem": "EXP-20260917-A4",
+      "eid_match": true,
+      "first_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-B1.md",
+      "structure": "exported_block_only",
+      "n_blocks": 1,
+      "true_eid": "EXP-20260917-B1",
+      "filename_stem": "EXP-20260917-B1",
+      "eid_match": true,
+      "first_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-B2.md",
+      "structure": "exported_block_only",
+      "n_blocks": 1,
+      "true_eid": "EXP-20260917-B2",
+      "filename_stem": "EXP-20260917-B2",
+      "eid_match": true,
+      "first_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-B3.md",
+      "structure": "dual_block_import",
+      "n_blocks": 2,
+      "true_eid": "EXP-20260917-B3",
+      "filename_stem": "EXP-20260917-B3",
+      "eid_match": true,
+      "first_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-B4.md",
+      "structure": "dual_block_import",
+      "n_blocks": 2,
+      "true_eid": "EXP-20260917-B4",
+      "filename_stem": "EXP-20260917-B4",
+      "eid_match": true,
+      "first_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-C1.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260917-C1",
+      "filename_stem": "EXP-20260917-C1",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-D1.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260917-D1",
+      "filename_stem": "EXP-20260917-D1",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-D2.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260917-D2",
+      "filename_stem": "EXP-20260917-D2",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-D3.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260917-D3",
+      "filename_stem": "EXP-20260917-D3",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-DOCS-1.md",
+      "structure": "dual_block_import",
+      "n_blocks": 4,
+      "true_eid": "EXP-20260917-DOCS-1",
+      "filename_stem": "EXP-20260917-DOCS-1",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "title",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-DOCS-2.md",
+      "structure": "dual_block_import",
+      "n_blocks": 4,
+      "true_eid": "EXP-20260917-DOCS-2",
+      "filename_stem": "EXP-20260917-DOCS-2",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "title",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-E1.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260917-E1",
+      "filename_stem": "EXP-20260917-E1",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-F1.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260917-F1",
+      "filename_stem": "EXP-20260917-F1",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-G1.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260917-G1",
+      "filename_stem": "EXP-20260917-G1",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-INSTALL-4.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260917-INSTALL-4",
+      "filename_stem": "EXP-20260917-INSTALL-4",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "title",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260917-INSTALL-5.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260917-INSTALL-5",
+      "filename_stem": "EXP-20260917-INSTALL-5",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "title",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-01.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260918-01",
+      "filename_stem": "EXP-20260918-01",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "source",
+        "lifecycle_state",
+        "sanitize_hits"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-02.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260918-02",
+      "filename_stem": "EXP-20260918-02",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "source",
+        "lifecycle_state",
+        "sanitize_hits"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-03.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260918-03",
+      "filename_stem": "EXP-20260918-03",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "source",
+        "lifecycle_state",
+        "sanitize_hits"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-04.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260918-04",
+      "filename_stem": "EXP-20260918-04",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "source",
+        "lifecycle_state",
+        "sanitize_hits"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-05.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-20260918-05",
+      "filename_stem": "EXP-20260918-05",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "source",
+        "lifecycle_state",
+        "sanitize_hits"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-C1.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "FSTDD005-EXP-20260918-C1",
+      "filename_stem": "EXP-20260918-C1",
+      "eid_match": false,
+      "first_block_keys": [
+        "experience_id",
+        "title",
+        "category",
+        "severity",
+        "occurrences",
+        "pattern",
+        "root_cause",
+        "detection_trigger",
+        "fix_template",
+        "tags",
+        "language",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "title",
+        "category",
+        "severity",
+        "occurrences",
+        "pattern",
+        "root_cause",
+        "detection_trigger",
+        "fix_template",
+        "tags",
+        "language",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-C2.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "FSTDD005-EXP-20260918-C2",
+      "filename_stem": "EXP-20260918-C2",
+      "eid_match": false,
+      "first_block_keys": [
+        "experience_id",
+        "title",
+        "category",
+        "severity",
+        "occurrences",
+        "pattern",
+        "root_cause",
+        "detection_trigger",
+        "fix_template",
+        "tags",
+        "language",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "title",
+        "category",
+        "severity",
+        "occurrences",
+        "pattern",
+        "root_cause",
+        "detection_trigger",
+        "fix_template",
+        "tags",
+        "language",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-C3.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "FSTDD005-EXP-20260918-C3",
+      "filename_stem": "EXP-20260918-C3",
+      "eid_match": false,
+      "first_block_keys": [
+        "experience_id",
+        "title",
+        "category",
+        "severity",
+        "occurrences",
+        "pattern",
+        "root_cause",
+        "detection_trigger",
+        "fix_template",
+        "tags",
+        "language",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "title",
+        "category",
+        "severity",
+        "occurrences",
+        "pattern",
+        "root_cause",
+        "detection_trigger",
+        "fix_template",
+        "tags",
+        "language",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-C4.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "FSTDD005-EXP-20260918-C4",
+      "filename_stem": "EXP-20260918-C4",
+      "eid_match": false,
+      "first_block_keys": [
+        "experience_id",
+        "title",
+        "category",
+        "severity",
+        "occurrences",
+        "pattern",
+        "root_cause",
+        "detection_trigger",
+        "fix_template",
+        "tags",
+        "language",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "title",
+        "category",
+        "severity",
+        "occurrences",
+        "pattern",
+        "root_cause",
+        "detection_trigger",
+        "fix_template",
+        "tags",
+        "language",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-C5.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "FSTDD005-EXP-20260918-C5",
+      "filename_stem": "EXP-20260918-C5",
+      "eid_match": false,
+      "first_block_keys": [
+        "experience_id",
+        "title",
+        "category",
+        "severity",
+        "occurrences",
+        "pattern",
+        "root_cause",
+        "detection_trigger",
+        "fix_template",
+        "tags",
+        "language",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "title",
+        "category",
+        "severity",
+        "occurrences",
+        "pattern",
+        "root_cause",
+        "detection_trigger",
+        "fix_template",
+        "tags",
+        "language",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-C6.md",
+      "structure": "single_block",
+      "n_blocks": 1,
+      "true_eid": "FSTDD005-EXP-20260918-C6",
+      "filename_stem": "EXP-20260918-C6",
+      "eid_match": false,
+      "first_block_keys": [
+        "experience_id",
+        "title",
+        "category",
+        "severity",
+        "occurrences",
+        "pattern",
+        "root_cause",
+        "detection_trigger",
+        "fix_template",
+        "tags",
+        "language",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "title",
+        "category",
+        "severity",
+        "occurrences",
+        "pattern",
+        "root_cause",
+        "detection_trigger",
+        "fix_template",
+        "tags",
+        "language",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-C7.md",
+      "structure": "exported_block_only",
+      "n_blocks": 1,
+      "true_eid": "EXP-20260918-C7",
+      "filename_stem": "EXP-20260918-C7",
+      "eid_match": true,
+      "first_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-C8.md",
+      "structure": "exported_block_only",
+      "n_blocks": 1,
+      "true_eid": "EXP-20260918-C8",
+      "filename_stem": "EXP-20260918-C8",
+      "eid_match": true,
+      "first_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-20260918-C9.md",
+      "structure": "exported_block_only",
+      "n_blocks": 1,
+      "true_eid": "EXP-20260918-C9",
+      "filename_stem": "EXP-20260918-C9",
+      "eid_match": true,
+      "first_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [],
+      "recovered_by_last_block": [],
+      "in_index": true
+    },
+    {
+      "file": "EXP-42D8F11A.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-42D8F11A",
+      "filename_stem": "EXP-42D8F11A",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "source_change",
+        "title",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-6D722212.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-6D722212",
+      "filename_stem": "EXP-6D722212",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "source_change",
+        "title",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-C4213ACA.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-C4213ACA",
+      "filename_stem": "EXP-C4213ACA",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "source_change",
+        "title",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-C6A698A8.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-C6A698A8",
+      "filename_stem": "EXP-C6A698A8",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "source_change",
+        "title",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    },
+    {
+      "file": "EXP-D4587CAE.md",
+      "structure": "dual_block_import",
+      "n_blocks": 3,
+      "true_eid": "EXP-D4587CAE",
+      "filename_stem": "EXP-D4587CAE",
+      "eid_match": true,
+      "first_block_keys": [
+        "exported_at",
+        "sanitized"
+      ],
+      "last_block_keys": [
+        "experience_id",
+        "category",
+        "severity",
+        "occurrences",
+        "source_change",
+        "title",
+        "exported_at",
+        "sanitized",
+        "lifecycle_state"
+      ],
+      "missing_current": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "recovered_by_last_block": [
+        "experience_id",
+        "category",
+        "severity"
+      ],
+      "in_index": true
+    }
+  ]
+}

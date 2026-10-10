@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fstdd"
+# R 轴版本，须与 .fstdd/version.yaml: fstdd_version 一致（当前 3.3.8）
+version = "3.3.8"
+description = "Spec-first TDD governance toolchain (financial extension distro)"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0",
+    "jinja2>=3.1",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+
+[project.scripts]
+# 入口与 upstream/fstdd/__main__.py 一致
+fstdd = "fstdd.cli:main"
+
+[tool.setuptools]
+# 包体来自 vendored 内核目录；本仓 skills/tools/docs 不进 wheel
+package-dir = {"" = "upstream"}
+
+[tool.setuptools.packages.find]
+where = ["upstream"]
+include = ["fstdd*"]
+
+# 验收：pip install -e .[test] && fstdd --help && pytest upstream/tests
