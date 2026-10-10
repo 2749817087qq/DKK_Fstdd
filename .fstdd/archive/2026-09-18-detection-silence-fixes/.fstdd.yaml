@@ -20,7 +20,7 @@ phases:
       逐条告警且其余正常）；审计活表同步；提交 74ad408/6bd7eed/646fb0c 已推送
     status: completed
   deliver:
-    status: pending
+    status: completed
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-09-18T02:59:51+00:00'
@@ -35,7 +35,7 @@ phases:
     confirmed_evidence: D哥 对 Gate 1 回复『Please continue』确认（2026-09-18 10:45+08:00 对话），无范围调整
     status: completed
 score_confidence: null
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 0
