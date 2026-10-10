@@ -1,0 +1,26 @@
+meta:
+  capability: validate-upstream-patches
+  change_id: 2026-10-10-p0-pre-audit-baseline
+  created: '2026-10-10T12:14:43+00:00'
+  confidence: high
+requirements:
+- id: REQ-001
+  description: 对 vendored 补丁登记表做结构级检查（决策 D-1）
+  scenarios:
+  - id: SC-001
+    given: docs/UPSTREAM_PATCHES.md 存在且表头完整
+    when: 运行该检查项
+    then: SHALL 通过；若表体为空则 SHALL 通过并提示「登记项为 0」
+  - id: SC-002
+    given: 登记表某行指向的文件不存在于仓库
+    when: 运行该检查项
+    then: SHALL 失败、非零退出、输出指明缺失路径
+  - id: SC-003
+    given: docs/UPSTREAM_PATCHES.md 缺失或表头不完整
+    when: 运行该检查项
+    then: SHALL 失败、非零退出、输出「登记表缺失/表头不完整，修改 upstream/ 前必须先登记」
+non_behaviors:
+- 不比对文件哈希（D-2 切出）
+- 不扫描 upstream/ 全部文件找「未登记修改」（无基线哈希时该检测必然误报或漏报）
+integration_note: ⚠️ AMD-001（2026-10-10）：本文档 SC 原文写「运行 `fstdd validate`」，但实测 upstream/fstdd/cli/commands/validate.py 的语义是「校验单个 change 目录」，检查项注册表 CHECKS / @_register_check 位于 ci.py ⇒ 该 CLI 集成已**切出为独立 change**。本批次仅交付参考实现
+  tools/validate_upstream_patches.py（未集成）。

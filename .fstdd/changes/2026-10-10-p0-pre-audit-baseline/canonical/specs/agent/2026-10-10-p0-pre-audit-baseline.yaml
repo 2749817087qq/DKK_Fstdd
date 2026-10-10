@@ -1,0 +1,84 @@
+meta:
+  task_id: 2026-10-10-p0-pre-audit-baseline-verify
+  change_id: 2026-10-10-p0-pre-audit-baseline
+  created: '2026-10-10T12:14:56+00:00'
+  task_type: code
+  system: FSTDD 工具链（仓库打包 / vendored 补丁登记契约 / 经验库失真审计基线）
+preconditions:
+- cwd = 仓库根 E:/FSTDD/stdd-repo
+- 解释器：C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe
+- docs/UPSTREAM_PATCHES.md 与 tools/ 三脚本已落盘
+steps:
+- id: CP-1
+  description: 切片 1 packaging（SC-1/2/3）
+  action: python -m venv .venv-test && .venv-test/Scripts/pip install -e ".[test]" && .venv-test/Scripts/fstdd --help && .venv-test/Scripts/python -m pytest upstream/tests
+  assertions:
+  - type: exit_code
+    expected: 0
+  - type: stdout_contains
+    expected: usage
+- id: CP-2
+  description: 切片 2 patches-registry（SC-1/2/3）
+  action: 读 docs/UPSTREAM_PATCHES.md：表头 8 列 / 基线声明 E=3.0.5 K=3.1.0 R=3.3.8 / 待登记区含 experience.py:428
+  assertions:
+  - type: file_contains
+    expected: E=3.0.5 / K=3.1.0 / R=3.3.8
+  - type: file_contains
+    expected: experience.py:428
+- id: CP-3
+  description: 切片 3 validate 检查项（T3.1–T3.4）
+  action: python -m pytest tools/tests -q
+  assertions:
+  - type: exit_code
+    expected: 0
+- id: CP-4
+  description: 切片 4 审计基线（T4.1–T4.6）
+  action: python tools/audit_experience_baseline.py --repo . --out .fstdd/experiences/audit-2026-10-experience-baseline.json
+  assertions:
+  - type: exit_code
+    expected: 0
+  - type: json_equals
+    path: summary.affected_entries
+    expected: 46
+  - type: json_equals
+    path: summary.total_entries
+    expected: 79
+  - type: json_equals
+    path: summary.index_reconciliation.indexed_true
+    expected: 78
+  - type: json_equals
+    path: summary.index_reconciliation.invariant_ok
+    expected: true
+- id: CP-5
+  description: 未触碰范围外文件（白名单核对）
+  action: git status --short 与 git diff --name-only 逐项核对白名单
+  assertions:
+  - type: whitelist_only
+    expected:
+    - pyproject.toml
+    - docs/UPSTREAM_PATCHES.md
+    - tools/validate_upstream_patches.py
+    - tools/audit_experience_baseline.py
+    - tools/tests/test_governance_baseline.py
+- id: CP-6
+  description: 四自检（干净工作树时）
+  action: python tools/verify_rename.py / verify_eol.py / verify_skill_standards.py / verify_workbuddy_skills.py
+  assertions:
+  - type: all_pass
+    expected: true
+- id: CP-7
+  description: 变异自检（切片 3）
+  action: 把 validate_upstream_patches.py 的表头比对临时改为 7 列 → pytest tools/tests 必须变红 → 恢复
+  assertions:
+  - type: test_turns_red
+    expected: true
+expected_outcomes:
+- 干净 venv 中 pip install -e .[test] 成功、fstdd --help 退出码 0、pytest upstream/tests 全绿
+- docs/UPSTREAM_PATCHES.md 结构完整（8 列 + 基线声明 + 待登记区）
+- tools/tests 全绿；变异自检可复现变红
+- audit JSON 产出：total=79 / affected=46(58.2%) / indexed_true=78 / invariant_ok=True
+- 本 change 未触碰范围外文件；四自检全绿（干净工作树）
+known_gaps:
+- AMD-001：validate upstream-patches 检查项的 CLI 集成已切出为独立 change（本批次仅参考实现）
+- AMD-002：46 文件清单已由实跑 affected_files 生成入库（audit/affected-files-46.md）
+- 切片 1 的 wheel 内容核对（unzip -l）在本机 Windows 需改用 python -m zipfile

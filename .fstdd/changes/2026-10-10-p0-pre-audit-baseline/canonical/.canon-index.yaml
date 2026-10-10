@@ -1,0 +1,12 @@
+designs: {}
+proposals:
+  2026-10-10-p0-pre-audit-baseline: proposals/2026-10-10-p0-pre-audit-baseline.yaml
+specs:
+  agent:
+    2026-10-10-p0-pre-audit-baseline: specs/agent/2026-10-10-p0-pre-audit-baseline.yaml
+  code:
+    audit-baseline: specs/code/audit-baseline.yaml
+    patches-registry: specs/code/patches-registry.yaml
+    toolchain-packaging: specs/code/toolchain-packaging.yaml
+    validate-upstream-patches: specs/code/validate-upstream-patches.yaml
+version: '2.9'

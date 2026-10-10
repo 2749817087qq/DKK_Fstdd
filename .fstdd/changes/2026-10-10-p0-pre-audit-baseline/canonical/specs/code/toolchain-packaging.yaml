@@ -1,0 +1,25 @@
+meta:
+  capability: toolchain-packaging
+  change_id: 2026-10-10-p0-pre-audit-baseline
+  created: '2026-10-10T12:14:43+00:00'
+  confidence: high
+requirements:
+- id: REQ-001
+  description: 干净 venv 中安装本仓库后 CLI 可用、测试可跑（声明 = 行为）
+  scenarios:
+  - id: SC-001
+    given: 一个干净的 Python 3.10+ venv
+    when: 执行 `pip install -e ".[test]"`
+    then: 安装 SHALL 成功且 `fstdd --help` 正常输出（退出码 0）
+  - id: SC-002
+    given: 已按 SC-001 安装
+    when: 执行 `pytest upstream/tests`
+    then: 全部用例 SHALL 通过（与未打包直跑结果一致）
+  - id: SC-003
+    given: 已按 SC-001 安装
+    when: 执行 `python -c "import yaml, jinja2, requests; import fstdd"`
+    then: 全部导入 SHALL 成功
+boundaries:
+- 不打包 skills/ tools/ docs/（适配层不进 wheel）
+- version 字段 = R 轴 3.3.8，不得取 E/K 轴
+- '⚠️ 已存在 upstream/pyproject.toml（name=fstdd / version=3.1.0）—— 两者关系待明确（评审发现 #7）'

@@ -1,0 +1,83 @@
+# 2026-10-10-p0-pre-audit-baseline.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+#
+# ⚠️ 本 change 的 Gate 1（18:26）/ Gate 2（18:32）在**外部沙箱**完成（交付包 13 文件由 D哥 投递），
+#    本仓为**登记入库**。故 meta.status = confirmed 并记录外部确认来源，非本仓 gate 命令产出。
+
+meta:
+  change_id: "2026-10-10-p0-pre-audit-baseline"
+  title: "P0-pre 审计基线批次 —— 开箱可安装 + vendored 补丁登记契约 + 经验库失真量化基线"
+  created: "2026-10-10T12:13:36+00:00"
+  status: confirmed
+  version: "2.9"
+  gate_source: "外部沙箱（Gate 1 = 2026-10-10T18:26+08:00 / Gate 2 = 2026-10-10T18:32+08:00）；本仓登记入库"
+
+why:
+  problem: |
+    FSTDD 的核心短板是「规矩没有被可信地数据化」：经验库 79 条目中 46 条（58%）因解析器
+    `experience.py:428` 只取首个 frontmatter 块而静默丢失 experience_id / category / severity，
+    `experience stats` 的分类分布系统性失真。治理可信度是 D1 消费端分层的前提（P0-pre 前置的理由），
+    而**修复必须先有量化的修复前基线**，否则「修好了」无法证伪。同时仓库开箱不可用（默认解释器缺
+    pyyaml/jinja2/requests/pytest），且对 vendored 内核的修改尚无登记契约，直接动手会制造 fork drift。
+  evidence:
+    observed_at: "2026-10-10T19:35:51+08:00"
+    observed_base_git_sha: "0c8d2de8b5e904b55931eb3183438cd910e35197"
+    details: |
+      真实仓库只读实跑（命令）：
+        python tools/audit_experience_baseline.py --repo . \
+               --out .fstdd/experiences/audit-2026-10-experience-baseline.json
+      输出摘要：total_entries=79 / dual_block_entries=47 / affected_entries=46（58.2%）/
+               field_loss_counts={experience_id:46, category:46, severity:46}
+      索引对账（修复 load_index_keys 后）：indexed_true=78 / indexed_false_files=[] /
+               unreconciled_files=['EXP-009-20260925-TRPC-REVERSE.md'] / invariant_ok=True
+      产物：.fstdd/experiences/audit-2026-10-experience-baseline.json（71,984 B）
+
+what_changes:
+  - description: "pyproject.toml：声明运行时依赖（pyyaml/jinja2/requests）与 [test] extra（pytest），打包 upstream/fstdd，fstdd console script 指向 fstdd.cli:main"
+  - description: "docs/UPSTREAM_PATCHES.md：vendored 补丁登记表（单一事实源）"
+  - description: "tools/audit_experience_baseline.py：只读审计脚本（量化经验库元数据失真）"
+  - description: "在真实仓库实跑审计，产出 audit-2026-10-experience-baseline.json 修复前基线并归档"
+  - description: "tools/validate_upstream_patches.py + tools/tests/test_governance_baseline.py：validate upstream-patches 检查项的参考实现与测试（⚠️ CLI 集成已按 AMD-001 切出）"
+
+capabilities:
+  new:
+    - name: "toolchain-packaging"
+      description: "FSTDD 可 pip install -e .[test] 开箱运行"
+    - name: "governance-trust"
+      description: "经验库失真从「听说 58%」变为「可复现的量化基线」"
+  modified: []
+
+success_criteria:
+  - "SC-1 干净 venv pip install -e .[test] 后 fstdd --help 正常、pytest upstream/tests 全绿（实机执行）"
+  - "SC-2 docs/UPSTREAM_PATCHES.md 存在且含登记表头；fstdd validate 对「upstream/ 未登记修改」报非零（⚠️ 检查项 CLI 集成已按 AMD-001 切出为独立 change；本批次交付登记表 + 参考实现）"
+  - "SC-3 审计脚本在真实仓库实跑成功（退出码 0），产出 audit JSON"
+  - "SC-4 audit JSON 中 affected_files 与 46 文件清单逐一对账（清单已按 AMD-002 随包入库：audit/affected-files-46.md）"
+  - "SC-5 audit JSON 含 category_distribution_current_parser 与 true 两组分布，作为 stats 修复后的对比基准"
+
+non_goals:
+  - "experience.py:428 解析器修复本身（Phase 1.1 修复批次，依赖本基线）"
+  - "experience reindex --fix-frontmatter 存量归一化"
+  - "list/stats 只读化（脏索引修复）"
+  - "CRLF 收口 / archive 两阶段 / ci 三面三数（P0-pre 其余子项）"
+  - "D1–D5 任何消费端/权限/集成工作"
+  - "validate upstream-patches 检查项的 CLI 集成（AMD-001：切出为独立 change）"
+
+# 范围修正记录（D哥 2026-10-10 dialog 裁定；不改动上方 Gate 冻结的 SC 原文，仅登记修正）
+scope_amendments:
+  - id: "AMD-001"
+    date: "2026-10-10"
+    by: "D哥（dialog 裁定）"
+    what: "切片 3「validate upstream-patches 检查项集成」移出本 change，切为独立 change"
+    why: |
+      ① design §3.3 要求把检查项挂到 upstream/fstdd/ 的 validate 命令组，与 proposal Impact 表
+         「upstream/fstdd/ 零修改」直接矛盾；
+      ② 实测 upstream/fstdd/cli/commands/validate.py 的语义是「校验单个 change 目录」，
+         检查项注册表 CHECKS / @_register_check 实际位于 upstream/fstdd/cli/commands/ci.py（10 项）
+         ⇒ spec 描述的挂载点与代码语义不符。
+    residual: "tools/validate_upstream_patches.py 作为**独立工具**落盘，未集成进任何 CLI 命令组"
+  - id: "AMD-002"
+    date: "2026-10-10"
+    by: "D哥（dialog 裁定）"
+    what: "T4.5 对账所需的「46 文件清单」补入库"
+    why: "原判据引用的清单在交付包与全仓均无实体（grep 0 命中）⇒ 判据不可核；且与实跑数量同名构成循环论证"
+    residual: "已由实跑 audit JSON 的 affected_files 生成并入库：audit/affected-files-46.md"

@@ -1,0 +1,27 @@
+meta:
+  change_id: 2026-10-10-p0-pre-audit-baseline
+  summarized_at: '2026-10-10T12:15:15+00:00'
+  source: 落盘前评审 + D哥 dialog 裁定
+  total: 2
+  scope_amendments: 2
+adjustments:
+- id: AMD-001
+  type: scope_cut
+  decided_by: D哥（dialog 2026-10-10）
+  title: 切片 3「validate upstream-patches 检查项集成」切出为独立 change
+  capability: validate-upstream-patches
+  reason: ① design.md §3.3 要求把检查项挂到 upstream/fstdd/ 的 validate 命令组，与 proposal.md Impact 表「upstream/fstdd/ 零修改」直接矛盾；② 实测 upstream/fstdd/cli/commands/validate.py 的语义是「校验单个 change 目录」（需 change 名，找不到即 exit
+    1），检查项注册表 CHECKS / @_register_check 实际位于 upstream/fstdd/cli/commands/ci.py（10 项）⇒ spec 描述的挂载点与代码语义不符。
+  residual_state: tools/validate_upstream_patches.py 作为独立工具已落盘，未集成进任何 CLI 命令组
+  follow_up: 另立 change 处理集成（须先解决 proposal 的 upstream 零修改声明）
+  evidence: upstream/fstdd/cli/commands/validate.py（128 行，无 CHECKS）· ci.py:13 `CHECKS = []`、:16 `_register_check`
+- id: AMD-002
+  type: artifact_added
+  decided_by: D哥（dialog 2026-10-10）
+  title: T4.5 对账所需的「46 文件清单」补入库
+  capability: audit-baseline
+  reason: 原判据（proposal SC-4）引用的「团队已收口的 46 文件清单」在交付包与全仓均无实体（grep 0 命中）⇒ 判据不可核；且与实跑数量同名构成循环论证。
+  residual_state: 已由实跑 audit JSON 的 summary.affected_files 生成入库：audit/affected-files-46.md（46 条，与 affected_entries 一致）
+  follow_up: T4.5 对账现可执行：以该清单为参照实体逐条核对
+  evidence: audit/affected-files-46.md · .fstdd/experiences/audit-2026-10-experience-baseline.json
+note: 本 change 的 Gate 1/Gate 2 在外部沙箱完成；本仓为登记入库。上表为 D哥 2026-10-10 dialog 裁定。

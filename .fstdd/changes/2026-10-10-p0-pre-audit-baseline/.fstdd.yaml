@@ -1,0 +1,55 @@
+change_id: 2026-10-10-p0-pre-audit-baseline
+complexity_score: null
+current_phase: build
+design_adjustments:
+  count: 2
+last_modified: '2026-10-10T12:15:15+00:00'
+mode: standard
+phases:
+  understand:
+    status: completed
+    confirmed_at: '2026-10-10T10:26:00+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 外部沙箱确认（Gate 1 = 2026-10-10T18:26+08:00）；本仓登记入库
+  spec:
+    status: completed
+    confirmed_at: '2026-10-10T10:32:00+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 外部沙箱确认（Gate 2 = 2026-10-10T18:32+08:00）；本仓登记入库
+  build:
+    status: in_progress
+    slices_completed:
+      '1':
+        capability: toolchain-packaging
+        status: in_progress
+        note: 工件已落盘（pyproject.toml）；端到端 venv 实装见 test-report
+      '2':
+        capability: patches-registry
+        status: done
+        artifact: docs/UPSTREAM_PATCHES.md（8 列表头 + 基线声明 + 待登记区）
+      '3':
+        capability: validate-upstream-patches
+        status: partial
+        note: 参考实现 + 测试已落盘（tools/validate_upstream_patches.py + tools/tests/，15 passed）；CLI
+          集成按 AMD-001 切出
+      '4':
+        capability: audit-baseline
+        status: done
+        artifact: .fstdd/experiences/audit-2026-10-experience-baseline.json（total=79
+          / affected=46 / indexed_true=78）
+  deliver:
+    status: pending
+score_confidence: null
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 16
+  tc_cases: 16
+  test_functions: 15
+version: '3.0'
+baseline:
+  at: '2026-10-10T10:26:00+00:00'
+  base_git_sha: 0c8d2de8b5e904b55931eb3183438cd910e35197
+  node_id: DESKTOP-TBJSBQ5
+  clock_source: system
+  established_by: backfill
