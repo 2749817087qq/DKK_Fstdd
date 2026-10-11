@@ -261,7 +261,18 @@ def main() -> None:
     p_exp_retire.add_argument("experience_id", help="经验 ID（如 EXP-2026-0001）")
     p_exp_retire.add_argument("--reason", help="废弃原因")
     # V2.9: extract/review/share/search
-    p_exp_extract = exp_subs.add_parser("extract", help="从 test-report 自动提取经验草稿", parents=[parent])
+    p_exp_extract = exp_subs.add_parser("extract", help="从 change 留痕源自动提取经验草稿", parents=[parent])
+    p_exp_extract.add_argument("--source", choices=["test-report", "design-adjustments", "adjudication"],
+                               help="抽取源（默认 test-report）")
+    p_exp_extract.add_argument("--all", action="store_true", help="抽取全部三类源并去重合并")
+    exp_subs.add_parser("auto-deposit", help="DELIVER 期非交互自动沉淀（honor FSTDD_NO_SHARE）", parents=[parent])
+    p_exp_sync = exp_subs.add_parser("sync", help="与第一方 fstdd-hub 同步经验（push/pull）", parents=[parent])
+    _sync_grp = p_exp_sync.add_mutually_exclusive_group()
+    _sync_grp.add_argument("--push", action="store_true", help="推送本地经验到 hub")
+    _sync_grp.add_argument("--pull", action="store_true", help="从 hub 拉取并增量合并回本地")
+    p_exp_sync.add_argument("--secure", action="store_true", help="安全档：先脱敏再混合加密后出站")
+    p_exp_sync.add_argument("--hub-dir", dest="hub_dir",
+                            help="本地目录适配器（离线 / 测试 / 手工中转）；缺省走第一方传输")
     p_exp_review = exp_subs.add_parser("review", help="交互式审核经验草稿", parents=[parent])
     p_exp_share = exp_subs.add_parser("share", help="一键共享经验到社区", parents=[parent])
     p_exp_share.add_argument("experience_id", help="经验 ID")

@@ -1,0 +1,9 @@
+# 经验库中心节点同步（自动沉淀 + h…
+
+<!-- source_hash: dd73…
+<!-- generated_: 2026-…
+<!-- canonical: canoni…yaml -->
+
+## What Changes
+
+- 扩展 experience extr…md 基础上，新增 design-adjustments.md 与 adjudication-log.tsv 两类源

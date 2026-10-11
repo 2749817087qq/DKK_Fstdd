@@ -1,4 +1,6 @@
 capabilities:
+  archive-state-consistency:
+    specs: specs/archive-state-consistency/spec.md
   artifact-templates:
     specs: specs/artifact-templates/spec.md
   audit-errata:
@@ -11,6 +13,8 @@ capabilities:
     specs: specs/build-quality-verification/spec.md
   canon-dual-track:
     specs: specs/canon-dual-track/spec.md
+  canonical-hash-integrity:
+    specs: specs/canonical-hash-integrity/spec.md
   canonical-in-workspace:
     specs: specs/canonical-in-workspace/spec.md
   caveman-compressor:
@@ -19,6 +23,8 @@ capabilities:
     specs: specs/change-dir-resolution/spec.md
   change-isolation:
     specs: specs/change-isolation/spec.md
+  ci-check-accuracy:
+    specs: specs/ci-check-accuracy/spec.md
   clock-alignment:
     specs: specs/clock-alignment/spec.md
   code:
@@ -31,12 +37,18 @@ capabilities:
     specs: specs/detection-voice/spec.md
   distributed-task-coordination:
     specs: specs/distributed-task-coordination/spec.md
+  dry-run-fidelity:
+    specs: specs/dry-run-fidelity/spec.md
   eol-governance:
     specs: specs/eol-governance/spec.md
   evidence-provenance:
     specs: specs/evidence-provenance/spec.md
   except-audit:
     specs: specs/except-audit/spec.md
+  experience-center-node-sync:
+    specs: specs/experience-center-node-sync/spec.md
+  experience-io-contract:
+    specs: specs/experience-io-contract/spec.md
   finance-failure-modes-c4:
     specs: specs/finance-failure-modes-c4/spec.md
   finance-quality-failure-modes:
@@ -49,6 +61,10 @@ capabilities:
     specs: specs/guard-hook-input-robustness/spec.md
   guard-scope-default-binding:
     specs: specs/guard-scope-default-binding/spec.md
+  inbox-api-only-write:
+    specs: specs/inbox-api-only-write/spec.md
+  inbox-deploy:
+    specs: specs/inbox-deploy/spec.md
   inbox-review-sync:
     specs: specs/inbox-review-sync/spec.md
   install-source-single:
@@ -63,6 +79,14 @@ capabilities:
     specs: specs/mutation-testing/spec.md
   phase-gate-path-scope:
     specs: specs/phase-gate-path-scope/spec.md
+  proposal-extraction-fidelity:
+    specs: specs/proposal-extraction-fidelity/spec.md
+  quarantine-opt-in-safety:
+    specs: specs/quarantine-opt-in-safety/spec.md
+  release-tooling-accuracy:
+    specs: specs/release-tooling-accuracy/spec.md
+  repo-hygiene:
+    specs: specs/repo-hygiene/spec.md
   scan-coverage:
     specs: specs/scan-coverage/spec.md
   server-bare-repo-mirror:
@@ -73,19 +97,25 @@ capabilities:
     specs: specs/silent-except-guard/spec.md
   skill-engineering-standards:
     specs: specs/skill-engineering-standards/spec.md
+  test-suite-portability:
+    specs: specs/test-suite-portability/spec.md
   time-baseline:
     specs: specs/time-baseline/spec.md
   timestamp-normalization:
     specs: specs/timestamp-normalization/spec.md
   understand-phase-finance-redlines:
     specs: specs/understand-phase-finance-redlines/spec.md
+  upstream-baseline-alignment:
+    specs: specs/upstream-baseline-alignment/spec.md
+  version-nomenclature:
+    specs: specs/version-nomenclature/spec.md
   yagni-ladder-gate:
     specs: specs/yagni-ladder-gate/spec.md
   独立命名空间:
     specs: specs/独立命名空间/spec.md
 changes:
-  2026-09-18-inbox-api-only-write:
-    phase: understand
+  2026-10-10-p0-pre-audit-baseline:
+    phase: build
     status: in_progress
   _batch:
     phase: unknown

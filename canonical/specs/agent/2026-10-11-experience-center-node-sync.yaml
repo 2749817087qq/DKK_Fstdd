@@ -1,0 +1,116 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）
+# capability: experience-center-node-sync
+# 对应 code spec: canonical/specs/code/2026-10-11-experience-center-node-sync.yaml (REQ-001..006 / SC-001..024)
+# BUILD 期逐 CP 校验，每个 CP 对应 code spec 中若干 SC。
+
+meta:
+  task_id: "experience-center-node-sync"
+  change_id: "2026-10-11-experience-center-node-sync"
+  task_type: code
+  system: "FSTDD 经验库中心节点同步：复用 share_experience.py（第一方 fstdd-hub scp/inbox）+ kg_sync 增量合并 + cred-relay RSA-3072 混合加密"
+  preconditions:
+    - "P0-pre change 已确认（Gate 2 通过），base = d67c9b1，工作树干净"
+    - "cred-relay 密钥对已存在：E:/FSTDD/.secrets/cred-relay/{k_priv.pem,k_pub.pem}"
+    - "fstdd-hub SSH 可达（ssh_alias fstdd-hub，D:/id_ed25519），fstdd-inbox 目录可写"
+    - "夹具 change 已准备：含 test-report.md + design-adjustments.md + adjudication-log.tsv 三类源"
+
+steps:
+  # ── C1 / REQ-001 ──
+  - id: CP-1
+    description: "扩展 experience extract 源（design-adjustments + adjudication-log），保留 test-report 路径"
+    action: "编辑 upstream/fstdd/cli/commands/experience.py 的 _cmd_extract，增加 --source design-adjustments / adjudication / --all 分支"
+    assertions:
+      - type: exit_code
+        expected: 0
+  - id: CP-2
+    description: "契约测试：三类源抽取产出 > 0 且 test-report 路径无回归（SC-001..005）"
+    action: "pytest upstream/tests/commands/test_experience_extract_sources.py"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "passed"
+
+  # ── C2 / REQ-002 ──
+  - id: CP-3
+    description: "新增非交互 auto-deposit 并接进 fstdd-deliver；FSTDD_NO_SHARE=1 跳过（SC-006..009）"
+    action: "fstdd experience auto-deposit   # 默认态（无 FSTDD_NO_SHARE）"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "deposited"
+  - id: CP-4
+    description: "FSTDD_NO_SHARE=1 静默跳过断言"
+    action: "FSTDD_NO_SHARE=1 fstdd experience auto-deposit"
+    assertions:
+      - type: stdout_contains
+        expected: "skipped"
+
+  # ── C3 / REQ-003 ──
+  - id: CP-5
+    description: "中心节点 push 复用 share_experience（SC-010）"
+    action: "fstdd experience sync --push"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "pushed"
+  - id: CP-6
+    description: "第二节点 pull 增量合并 + 收敛 + 幂等（SC-011..014）"
+    action: "pytest upstream/tests/commands/test_experience_sync.py && fstdd experience sync --pull   # 第二次幂等"
+    assertions:
+      - type: exit_code
+        expected: 0
+  - id: CP-7
+    description: "dry-run 不写不传（SC-014）"
+    action: "fstdd experience sync --pull --dry-run"
+    assertions:
+      - type: stdout_contains
+        expected: "dry-run"
+
+  # ── C4 / REQ-004 ──
+  - id: CP-8
+    description: "cred-relay 混合加密 round-trip 字节一致 + OAEP 参数锁定（SC-015..019）"
+    action: "pytest upstream/tests/commands/test_exp_crypto.py   # 仿 cred-relay selftest T1/T3"
+    assertions:
+      - type: exit_code
+        expected: 0
+  - id: CP-9
+    description: "安全档 push/pull 端到端（含 318B 超限走混合）"
+    action: "fstdd experience sync --push --secure && fstdd experience sync --pull --secure"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "secure"
+
+  # ── C5 / REQ-005 ──
+  - id: CP-10
+    description: "冲突策略：updated_at LWW + 冲突日志，不静默覆盖（SC-020..022）"
+    action: "pytest upstream/tests/commands/test_sync_conflict.py"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "passed"
+
+  # ── SC6 / REQ-006 ──
+  - id: CP-11
+    description: "第三方外发审计：_cmd_share_single 禁用状态不变 + 无新第三方域名（SC-023/024）"
+    action: "grep -nE 'leonai42|hzddyy' upstream/fstdd/cli/commands/experience.py && 源码第三方域名审计"
+    assertions:
+      - type: stdout_contains
+        expected: "leonai42"
+  - id: CP-12
+    description: "工作树干净（索引不被写脏，沿用 consolidation 教训）"
+    action: "git -C E:/FSTDD/stdd-repo status --short"
+    assertions:
+      - type: diff_empty
+        expected: true
+
+rollback:
+  steps:
+    - "git -C E:/FSTDD/stdd-repo checkout -- upstream/fstdd/cli/commands/experience.py tools/ _exp_crypto.py   # 回退代码改动"
+    - "hub 端 fstdd-inbox 中本变更新增的经验文件人工删除（scp 拉回前状态不可自动回滚，记录在交付说明）"
+    - "本地新增测试文件随代码回退一并 checkout；经验库草稿若已入库则手工移出 .fstdd/experiences"

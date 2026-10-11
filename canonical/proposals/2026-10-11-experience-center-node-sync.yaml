@@ -1,0 +1,113 @@
+# 2026-10-11-experience-center-node-sync.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-10-11-experience-center-node-sync"
+  title: "经验库中心节点同步（自动沉淀 + hub 聚合 + 双模安全）"
+  created: "2026-10-10T21:53:52+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    经验库当前是 per-project / per-agent-platform 的孤立存储。一台机跑 3 个 agent
+    平台时，每个平台各自存一份经验库，导致多副本、互相漂移（本次
+    2026-10-10-experience-library-consolidation 已收拾 4 副本 / 23 漂移的残局，但根因
+    未改，下次还会长）。此外经验收集是触发式 / 手动的：DELIVER 阶段不会自动沉淀经验，
+    默认 FSTDD_NO_SHARE 还跳过了静默上传，库几乎不增长。
+  motivation: |
+    无线互联时代应走中心节点（hub-and-spoke）：让多平台 / 多机的经验汇聚到第一方
+    fstdd-hub 这一处，而不是各存各的分叉；同时让 DELIVER 自动沉淀经验。安全敏感者
+    opt-in 加密通道；普通用户默认开放同步（能用就好）。框架已硬规定「经验不外发第三
+    方」，故中心必须是第一方 hub，与现有政策无冲突。
+  evidence:
+    observed_at: "2026-10-11T03:36:00+08:00"
+    observed_base_git_sha: "d67c9b1"
+    details: |
+      观测自刚归档的 2026-10-10-experience-library-consolidation（HEAD=d67c9b1）：收敛前
+      4 副本 / 179 文件 / ~90 唯一 eid， adjudication-log 记录 23 处 eid 漂移。框架
+      experience.py 中 _cmd_share_single 已永久禁用 leonai42/stdd-experiences 与
+      hzddyy.com 外发，并指向 tools/share_experience.py（目标=自有仓库、强制脱敏）；
+      experience extract 已能从 test-report.md 抽 draft；experience pull 已有 registry
+      拉取骨架；cred-relay 已有 RSA-3072 OAEP-SHA256/MGF1-SHA256 密钥对与 selftest。
+
+what_changes:
+  - id: C1
+    description: "扩展 experience extract 的抽取源：在现有 test-report.md 基础上，新增 design-adjustments.md 与 adjudication-log.tsv 两类源；不破坏现有 test-report 抽取路径。"
+    type: modified
+  - id: C2
+    description: "新增非交互式自动沉淀入口（auto-deposit），接进 DELIVER 阶段；尊重 FSTDD_NO_SHARE=1 总开关（置位则跳过，延续现有静默上传政策）。"
+    type: new
+  - id: C3
+    description: "新增中心节点同步能力：push 本地经验到第一方 fstdd-hub 的 experiences 托管仓，pull/merge 远端回本地；基于 git（复用现有 server 远端 / hub 托管仓），幂等、可重入（复用 _index_lock / _rebuild_index 的并发安全逻辑）。"
+    type: new
+  - id: C4
+    description: "新增 opt-in 安全档：安全模式下用 cred-relay RSA-3072 OAEP-SHA256/MGF1-SHA256（混合加密：RSA 包裹随机 AES 密钥，AES 加密正文，因 318B 载荷上限）加密经验载荷后再 push；pull 时解密还原。默认（开放）模式不走加密，零密钥即可同步。"
+    type: new
+  - id: C5
+    description: "新增同步冲突策略：同 eid 多节点编辑 → 以 updated_at 末写胜 + 显式冲突日志，不静默覆盖。"
+    type: new
+
+capabilities:
+  new:
+    - name: "experience-center-sync"
+      description: "fstdd experience sync [--push|--pull|--dry-run] [--secure]，对接第一方 fstdd-hub 托管仓，幂等合并本地与远端经验。"
+    - name: "experience-auto-deposit"
+      description: "DELIVER 期非交互抽取 + 入库（sources=test-report + design-adjustments + adjudication-log），honor FSTDD_NO_SHARE；产物一律 lifecycle=discovered 待人工 promote。"
+  modified:
+    - name: "experience-extract"
+      description: "抽取源由 test-report.md 扩至 design-adjustments.md + adjudication-log.tsv（C1），保持现有 test-report 路径不变。"
+
+constraints:
+  - "严禁 reintroduce 第三方外发（沿用 _cmd_share_single 永久禁用状态，注释与禁用逻辑保持不变）。"
+  - "必须 honor FSTDD_NO_SHARE=1 总开关；自动沉淀默认不 shared / 不外发。"
+  - "RSA 参数必须显式 rsa_oaep_md:sha256 与 rsa_mgf1_md:sha256，否则 MGF1 默认 sha1 会导致解密失败（cred-relay selftest T3b 已验证）。"
+  - "自动沉淀产物一律 lifecycle=discovered，由人后续 promote，绝不自动 shared。"
+  - "不改动 hub 服务端代码，仅使用其 git / API 能力。"
+
+stakeholders:
+  - "FSTDD001–006 + 009 各节点（经验的生产者与消费者）"
+  - "K（经验库归口端，裁决归属）"
+  - "D哥（生产变更最终裁决）"
+
+risk_areas:
+  - capability: "experience-center-sync"
+    risk: "合并冲突 / 并发写：两节点同时改同一 eid 可能互相覆盖或产生脏数据。"
+    mitigation: "updated_at 末写胜策略 + 显式冲突日志；复用现有 _index_lock 与 _rebuild_index 的并发安全逻辑。"
+  - capability: "experience-auto-deposit"
+    risk: "误抽噪声：自动从设计偏离 / 裁定日志抽经验，可能混入低质条目。"
+    mitigation: "产物统一 lifecycle=discovered + 置信阈值，由人在 promote 环节人工审；绝不自动外发。"
+  - capability: "_exp_crypto"
+    risk: "RSA 参数错配导致密文解不开，安全档静默失效。"
+    mitigation: "契约测试（仿 cred-relay selftest 的 T1 回环 + T3 参数敏感性）锁定 OAEP-SHA256/MGF1-SHA256。"
+
+non_goals:
+  - "不建第三方社区 registry；不改永久禁用的 share 路径。"
+  - "不自动 shared / 外发经验到任何第三方。"
+  - "不改动 fstdd-hub 服务端代码（仅用其 git / API）。"
+  - "本变更不做经验内容质量评分模型（仅做 discovered 草稿与冲突策略）。"
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: true
+    financial: false
+    cross_system: true
+
+anchoring:
+  # 锚定等级 L3：proposal.risk_assessment.safety_critical=true ⇒ 强制 ≥L3；
+  # cross_system=true ⇒ ≥L2；取严约束 ⇒ L3。spec/agent/test-plan 均按 L3 严谨度撰写。
+  level: L3
+  reference_changes: []
+  anchor_implementations:
+    - "upstream/fstdd/cli/commands/experience.py"
+    - "tools/share_experience.py"
+    - "E:/FSTDD/.secrets/cred-relay/"
+
+success_criteria:
+  - "SC1：experience extract / auto-deposit 能从 test-report + design-adjustments + adjudication-log 三类源产出 discovered 草稿（夹具 change 含三类源，断言产出条数 > 0）。"
+  - "SC2：DELIVER 触发自动沉淀；FSTDD_NO_SHARE=1 时跳过（开关两种态各断言一次）。"
+  - "SC3：sync 两节点经第一方 hub 收敛——A push → B pull 后 B 库 == A 库；重跑幂等（无新变更）。"
+  - "SC4：安全档 round-trip——cred-relay RSA-3072 OAEP-SHA256/MGF1-SHA256 混合加密 → 解密内容逐字节一致（仿 selftest 的 T1 / T3 参数敏感性断言）。"
+  - "SC5：默认开放模式无密钥也能完成 sync（能用就好）。"
+  - "SC6：不引入任何第三方外发；_cmd_share_single 禁用状态与注释保持不变（grep 断言）。"

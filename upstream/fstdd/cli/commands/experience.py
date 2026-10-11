@@ -966,49 +966,211 @@ def _index_remove_entry(index: dict, eid: str, old_state: str) -> None:
 
 
 
-def _cmd_extract(args, exp_dir):
-    """Auto-extract experience drafts from test-report.md of current change."""
-    from ..utils import read_config
-    project_root = Path.cwd()
-    changes_dir = project_root / ".fstdd" / "changes"
-    if not changes_dir.exists():
-        print("  No changes/ directory, skipping extraction.")
-        return
-    candidates = []
+# ── 抽取源（V3.3.9 扩展：C1 / REQ-001）──────────────────────────────────
+# 原实现只认 test-report.md；现扩至三类 DELIVER 留痕源。
+_EXTRACT_SOURCES = ("test-report", "design-adjustments", "adjudication")
+
+_SOURCE_FILES = {
+    "test-report": "test-report.md",
+    "design-adjustments": "design-adjustments.md",
+    "adjudication": "adjudication-log.tsv",
+}
+
+_SOURCE_ALIASES = {
+    "test-report": "test-report",
+    "test_report": "test-report",
+    "design-adjustments": "design-adjustments",
+    "design_adjustments": "design-adjustments",
+    "adjudication": "adjudication",
+    "adjudication-log": "adjudication",
+    "adjudication_log": "adjudication",
+}
+
+# 设计偏离「调整类型」→ 失败模式类别的映射（首个命中的关键词生效）。
+_ADJ_TYPE_CATEGORY = (
+    ("scenario", "coverage_vacuum"),
+    ("覆盖", "coverage_vacuum"),
+    ("接口", "contract_gap"),
+    ("契约", "contract_gap"),
+    ("技术方案", "cross_system_mismatch"),
+    ("设计", "cross_system_mismatch"),
+    ("规格", "spec_ambiguity"),
+    ("spec", "spec_ambiguity"),
+)
+
+_ADJ_HEADING_RE = re.compile(r"^###\s+调整\s*(\d+)\s*[:：]?\s*(.*)$", re.MULTILINE)
+_ADJ_FIELD_RE = re.compile(r"^\s*[-*]\s*\*\*(.+?)\*\*\s*[:：]\s*(.*)$")
+
+
+def _resolve_extract_sources(args) -> list:
+    """从 args 解析抽取源；默认（无 --source/--all）= 仅 test-report（向后兼容）。"""
+    if getattr(args, "all", False):
+        return list(_EXTRACT_SOURCES)
+    src = getattr(args, "source", None)
+    if src:
+        return [_SOURCE_ALIASES.get(str(src).strip().lower(), "test-report")]
+    return ["test-report"]
+
+
+def _adj_category(text: str) -> str:
+    """把设计偏离的「调整类型/标题」映射到失败模式类别。"""
+    low = (text or "").lower()
+    for kw, cat in _ADJ_TYPE_CATEGORY:
+        if kw in low:
+            return cat
+    return "spec_ambiguity"
+
+
+def _parse_design_adjustments(text: str) -> list:
+    """解析 design-adjustments.md：汇总表（严重程度/调整类型）+ `### 调整 N:` 小节。"""
+    meta = {}
+    for line in text.splitlines():
+        s = line.strip()
+        if not s.startswith("|"):
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if len(cells) >= 4 and re.fullmatch(r"\d+", cells[0]):
+            meta[cells[0]] = cells  # [num, 调整类型, 涉及文档, 严重程度, 调整阶段, 影响TC, 用户已知]
+
+    heads = list(_ADJ_HEADING_RE.finditer(text))
+    patterns = []
+    for i, m in enumerate(heads):
+        num, title = m.group(1), m.group(2).strip()
+        end = heads[i + 1].start() if i + 1 < len(heads) else len(text)
+        body = text[m.end():end]
+        fields = {}
+        for line in body.splitlines():
+            fm = _ADJ_FIELD_RE.match(line)
+            if fm:
+                fields[fm.group(1).strip()] = fm.group(2).strip()
+        cells = meta.get(num, [])
+        adj_type = (cells[1] if len(cells) > 1 else "") or fields.get("调整类型", "")
+        sev_raw = (cells[3] if len(cells) > 3 else "") or fields.get("严重程度", "")
+        severity = "high" if re.search(r"major|严重|高", sev_raw, re.IGNORECASE) else "medium"
+        patterns.append({
+            "category": _adj_category(f"{adj_type} {title}"),
+            "pattern": f"[设计偏离] {title}",
+            "root_cause": fields.get("调整原因", ""),
+            "detection_trigger": fields.get("原始设计", "") or "design-adjustment",
+            "fix_template": fields.get("调整内容", ""),
+            "occurrences": 1,
+            "severity": severity,
+            "tags": ["design-adjustment"],
+            "language": "python",
+            "source_file": "design-adjustments.md",
+        })
+    return patterns
+
+
+def _parse_adjudication_log(text: str) -> list:
+    """解析 adjudication-log.tsv：`eid \\t decision \\t versions=N \\t from=[...]`，按 eid 去重。"""
+    patterns = []
+    seen = set()
+    for line in text.splitlines():
+        s = line.rstrip()
+        if not s.strip() or s.lstrip().startswith("#"):
+            continue
+        cells = s.split("\t")
+        if len(cells) < 2:
+            continue
+        eid, decision = cells[0].strip(), cells[1].strip()
+        if not eid or eid in seen:
+            continue
+        seen.add(eid)
+        rest = " ".join(c.strip() for c in cells[2:]).strip()
+        vm = re.search(r"versions=(\d+)", rest)
+        versions = int(vm.group(1)) if vm else 1
+        patterns.append({
+            "category": "cross_system_mismatch",
+            "pattern": f"[多节点漂移] {eid}: {decision} ({rest})".strip(),
+            "root_cause": "同一 eid 在多节点/多平台存在多份不一致副本",
+            "detection_trigger": "adjudication-log",
+            "fix_template": f"按裁决 {decision} 收敛副本",
+            "occurrences": versions,
+            "severity": "high" if versions >= 3 else "medium",
+            "tags": ["adjudication", "multi-node-drift"],
+            "language": "python",
+            "source_file": "adjudication-log.tsv",
+            "experience_id": eid,
+        })
+    return patterns
+
+
+def _extract_sources(change_dir: Path, sources: list) -> list:
+    """从 change 目录按源列表抽取 pattern（缺失源静默跳过）。"""
+    patterns = []
+    for src in sources:
+        fname = _SOURCE_FILES.get(src)
+        if not fname:
+            continue
+        fp = change_dir / fname
+        if not fp.exists():
+            continue
+        try:
+            text = fp.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if src == "test-report":
+            patterns.extend(_parse_test_report(text))
+            patterns.extend(_parse_test_anomalies(text))
+        elif src == "design-adjustments":
+            patterns.extend(_parse_design_adjustments(text))
+        elif src == "adjudication":
+            patterns.extend(_parse_adjudication_log(text))
+    return patterns
+
+
+def _dedup_patterns(patterns: list) -> list:
+    """按 experience_id（有则优先）或 pattern 文本去重，保持首次出现顺序。"""
+    out, seen = [], set()
+    for p in patterns:
+        key = (p.get("experience_id") or p.get("pattern", "")).strip().lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(p)
+    return out
+
+
+_TRUTHY = ("1", "true", "yes", "on")
+
+
+def _share_disabled() -> bool:
+    """静默上传总开关：`FSTDD_NO_SHARE` 优先，`.fstdd/config.d/experience.yaml`
+    的 `share.silent.enabled` 次之（语义与 ``tools/share_experience.py`` 一致）。"""
+    if os.environ.get("FSTDD_NO_SHARE", "").strip().lower() in _TRUTHY:
+        return True
+    try:
+        cfg = Path.cwd() / ".fstdd" / "config.d" / "experience.yaml"
+        if cfg.is_file():
+            data = yaml.safe_load(cfg.read_text(encoding="utf-8")) or {}
+            silent = (data.get("share") or {}).get("silent") or {}
+            return not bool(silent.get("enabled", True))
+    except (OSError, yaml.YAMLError):
+        pass
+    return False
+
+
+def _find_change_dir(changes_dir: Path, wanted_files: list):
+    """在 .fstdd/changes 下按目录名倒序找第一个含任一目标源文件的 change。"""
     for d in sorted(changes_dir.iterdir(), reverse=True):
         if d.name.startswith("_") or d.name.startswith("."):
             continue
-        tr = d / "test-report.md"
-        if tr.exists():
-            candidates.append((d, tr))
-    if not candidates:
-        print("  No test-report.md found in current change, skipping.")
-        return
-    change_dir, test_report = candidates[0]
-    print(f"  Extracting from {change_dir.name}/test-report.md ...")
-    try:
-        text = test_report.read_text(encoding="utf-8")
-    except Exception:
-        print("  Cannot read test-report.md, skipping.")
-        return
-    patterns = _parse_test_report(text)
-    test_anomalies = _parse_test_anomalies(text)
-    patterns.extend(test_anomalies)
-    filtered = [p for p in patterns
-                if p["severity"] in ("high", "critical", "medium") or p.get("occurrences", 1) >= 2]
-    skipped = len(patterns) - len(filtered)
-    if not filtered:
-        print(f"  No patterns to deposit. ({len(patterns)} found, {skipped} low-value skipped)")
-        return
-    exp_dir_path = Path(exp_dir)
-    exp_dir_path.mkdir(parents=True, exist_ok=True)
-    config = read_config(project_root)
-    proj_lang = config.get("project", {}).get("language", "python")
+        if any((d / f).exists() for f in wanted_files):
+            return d
+    return None
+
+
+def _write_drafts(patterns: list, change_dir: Path, exp_dir_path: Path, proj_lang: str) -> int:
+    """把 patterns 落盘为 lifecycle=discovered 草稿，返回条数。
+
+    eid 取自索引 ``last_id``（而非文件计数）—— 库内存在空洞时用计数会重号覆盖既有条目。
+    """
     today = datetime.now().strftime("%Y-%m-%d")
-    existing = _iter_experience_files(exp_dir_path)
-    next_num = len(existing) + 1
+    index = _load_index(exp_dir_path)
+    next_num = int(index.get("last_id", 0) or 0) + 1
     count = 0
-    for p in filtered:
+    for p in patterns:
         eid = f"EXP-{datetime.now().year}-{next_num:04d}"
         next_num += 1
         frontmatter = {
@@ -1029,14 +1191,140 @@ def _cmd_extract(args, exp_dir):
         }
         body = f"# {p['pattern']}\n\nCategory: {CATEGORY_LABELS.get(p['category'], p['category'])}\n\nRoot Cause: {p.get('root_cause', 'TBD')}\n\nDetection: {p.get('detection_trigger', 'auto-detected')}\n\nFix: {p.get('fix_template', 'TBD')}"
         fm_yaml = yaml.dump(frontmatter, allow_unicode=True, default_flow_style=False)
-        file_content = f"---\n{fm_yaml}---\n\n{body}"
-        (exp_dir_path / f"{eid}.md").write_text(file_content, encoding="utf-8")
+        (exp_dir_path / f"{eid}.md").write_text(f"---\n{fm_yaml}---\n\n{body}", encoding="utf-8")
         count += 1
-    _load_index(exp_dir)
+    _load_index(exp_dir_path)
+    return count
+
+
+def _cmd_extract(args, exp_dir):
+    """Auto-extract experience drafts from the current change's留痕源。
+
+    源由 ``--source`` / ``--all`` 决定，默认 ``test-report``（向后兼容，SC-001/SC-005）。
+    """
+    from ..utils import read_config
+    project_root = Path.cwd()
+    changes_dir = project_root / ".fstdd" / "changes"
+    if not changes_dir.exists():
+        print("  No changes/ directory, skipping extraction.")
+        return
+
+    sources = _resolve_extract_sources(args)
+    wanted = [_SOURCE_FILES[s] for s in sources]
+    change_dir = _find_change_dir(changes_dir, wanted)
+    if change_dir is None:
+        print(f"  No source file found in current change ({', '.join(wanted)}), skipping.")
+        return
+
+    print(f"  Extracting from {change_dir.name} ({', '.join(sources)}) ...")
+    patterns = _dedup_patterns(_extract_sources(change_dir, sources))
+    filtered = [p for p in patterns
+                if p["severity"] in ("high", "critical", "medium") or p.get("occurrences", 1) >= 2]
+    skipped = len(patterns) - len(filtered)
+    if not filtered:
+        print(f"  No patterns to deposit. ({len(patterns)} found, {skipped} low-value skipped)")
+        return
+    exp_dir_path = Path(exp_dir)
+    exp_dir_path.mkdir(parents=True, exist_ok=True)
+    config = read_config(project_root)
+    proj_lang = config.get("project", {}).get("language", "python")
+    count = _write_drafts(filtered, change_dir, exp_dir_path, proj_lang)
     print(f"  Generated {count} draft(s) (lifecycle=discovered)")
     if skipped > 0:
         print(f"  {skipped} low-value pattern(s) skipped")
     print("  Run 'fstdd experience review' to confirm drafts")
+
+
+def _cmd_auto_deposit(args, exp_dir):
+    """DELIVER 期**非交互**自动沉淀（C2 / REQ-002）。
+
+    与 ``extract`` 的差别：① 默认抽取**全部三类源**；② 绝不调用交互式 ``input()``；
+    ③ 尊重 ``FSTDD_NO_SHARE`` / ``share.silent.enabled`` 总开关（置位即静默跳过）；
+    ④ 产物一律 ``lifecycle=discovered``，绝不自动 promote / 外发。
+    """
+    from ..utils import read_config
+    if _share_disabled():
+        print("  auto-deposit skipped (FSTDD_NO_SHARE / share disabled)")
+        return
+    project_root = Path.cwd()
+    changes_dir = project_root / ".fstdd" / "changes"
+    if not changes_dir.exists():
+        print("  No changes/ directory, skipping auto-deposit.")
+        return
+
+    sources = list(_EXTRACT_SOURCES)
+    wanted = [_SOURCE_FILES[s] for s in sources]
+    change_dir = _find_change_dir(changes_dir, wanted)
+    if change_dir is None:
+        print("  No source file found in current change, skipping auto-deposit.")
+        return
+
+    patterns = _dedup_patterns(_extract_sources(change_dir, sources))
+    filtered = [p for p in patterns
+                if p["severity"] in ("high", "critical", "medium") or p.get("occurrences", 1) >= 2]
+    if not filtered:
+        print("  No patterns to deposit.")
+        return
+    exp_dir_path = Path(exp_dir)
+    exp_dir_path.mkdir(parents=True, exist_ok=True)
+    config = read_config(project_root)
+    proj_lang = config.get("project", {}).get("language", "python")
+    count = _write_drafts(filtered, change_dir, exp_dir_path, proj_lang)
+    print(f"  deposited {count} draft(s) (lifecycle=discovered, 待人工 promote)")
+
+
+def _cmd_sync(args, exp_dir):
+    """中心节点同步（C3 / REQ-003）：``--push`` / ``--pull`` / ``--dry-run`` / ``--secure``。
+
+    传输与合并解耦：``--hub-dir`` 给定时走**本地目录适配器**（离线 / 测试 / 手工中转）；
+    否则走**第一方传输**（push = ``tools/share_experience.py``；pull = scp hub ``fstdd-inbox``）。
+    """
+    from . import _exp_sync
+    exp_dir_path = Path(exp_dir)
+    action = getattr(args, "action", None)
+    if action not in ("push", "pull"):
+        action = "pull" if getattr(args, "pull", False) else "push"
+    dry = bool(getattr(args, "dry_run", False))
+    hub = getattr(args, "hub_dir", None)
+    secure = bool(getattr(args, "secure", False))
+    conflict_log = exp_dir_path.parent / "sync-conflicts.tsv"
+
+    if action == "push":
+        n = len(_exp_sync.load_entries(exp_dir_path))
+        if dry:
+            print(f"  dry-run: would push {n} entrie(s) to first-party hub (secure={secure})")
+            return
+        ok, reason = _exp_sync.push_bundle(exp_dir_path, hub_dir=hub, secure=secure)
+        print(f"  {'pushed' if ok else 'push FAILED'}: {n} entrie(s) — {reason}")
+        if not ok:
+            sys.exit(1)
+        return
+
+    # pull
+    if dry:
+        print("  dry-run: would fetch from first-party hub and merge (no writes, no fetch)")
+        return
+    if hub:
+        snapshot = Path(hub)
+        temp_snapshot = None
+    else:
+        snapshot = Path(tempfile.mkdtemp(prefix="fstdd-sync-incoming-"))
+        temp_snapshot = snapshot
+        ok, reason = _exp_sync.fetch_bundle(snapshot, hub_dir=None)
+        if not ok:
+            _exp_sync.cleanup_dir(snapshot)
+            print(f"  pull FAILED: {reason}")
+            sys.exit(1)
+    try:
+        if secure:
+            n = _exp_sync.decrypt_incoming(snapshot)
+            print(f"  secure: decrypted {n} entrie(s)")
+        stats = _exp_sync.sync_pull(exp_dir_path, snapshot, conflict_log_path=conflict_log)
+    finally:
+        if temp_snapshot is not None:
+            _exp_sync.cleanup_dir(temp_snapshot)
+    print(f"  pulled: +{stats['added']} new, ~{stats['updated']} updated, "
+          f"={stats['kept']} kept, {len(stats['conflicts'])} conflict(s)")
 
 
 def _parse_test_report(text):
@@ -1321,7 +1609,7 @@ def cmd_experience(args: argparse.Namespace) -> None:
     # `--dry-run`：写子命令只预览、不落盘（list / stats / search 等读子命令不受影响）
     _WRITE_SUBCOMMANDS = {
         "add", "export", "pull", "verify", "deposit",
-        "retire", "extract", "review", "share", "curate",
+        "retire", "extract", "review", "share", "curate", "auto-deposit",
     }
     if subcommand in _WRITE_SUBCOMMANDS and dry_run_preview(args, f"experience {subcommand}"):
         return
@@ -1344,6 +1632,10 @@ def cmd_experience(args: argparse.Namespace) -> None:
         _cmd_retire(args, exp_dir)
     elif subcommand == "extract":
         _cmd_extract(args, exp_dir)
+    elif subcommand == "auto-deposit":
+        _cmd_auto_deposit(args, exp_dir)
+    elif subcommand == "sync":
+        _cmd_sync(args, exp_dir)
     elif subcommand == "review":
         _cmd_review(args, exp_dir)
     elif subcommand == "share":
@@ -1355,5 +1647,5 @@ def cmd_experience(args: argparse.Namespace) -> None:
         cmd_curate(args)
     else:
         print(f" 未知子命令: {subcommand}")
-        print(" 可用: list, add, stats, export, pull, verify, deposit, retire, extract, review, share, search, curate")
+        print(" 可用: list, add, stats, export, pull, verify, deposit, retire, extract, auto-deposit, sync, review, share, search, curate")
         sys.exit(1)

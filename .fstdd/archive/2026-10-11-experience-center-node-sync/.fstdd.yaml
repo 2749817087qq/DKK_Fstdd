@@ -1,0 +1,78 @@
+baseline:
+  at: '2026-10-10T21:55:33+00:00'
+  base_git_sha: d67c9b175a53e250cb0330310ff47677f42e428d
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-11-experience-center-node-sync
+complexity_score: 16
+current_phase: build
+design_adjustments:
+  count: 0
+last_modified: '2026-10-11T05:11:35+00:00'
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-10-11T05:11:35+00:00'
+mode: thorough
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-11T09:43:10+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: Gate 3（2026-10-11-experience-center-node-sync）确认
+    slices_completed:
+      '1':
+        new_tests: 5
+        status: done
+        tc_coverage: 5/5
+        verified_at: '2026-10-11T05:16:45+00:00'
+      '2':
+        new_tests: 4
+        status: done
+        tc_coverage: 4/4
+        verified_at: '2026-10-11T05:22:30+00:00'
+      '3':
+        new_tests: 5
+        status: done
+        tc_coverage: 5/5
+        verified_at: '2026-10-11T05:20:44+00:00'
+      '4':
+        new_tests: 5
+        status: done
+        tc_coverage: 5/5
+        verified_at: '2026-10-11T05:25:00+00:00'
+      '5':
+        new_tests: 3
+        status: done
+        tc_coverage: 3/3
+        verified_at: '2026-10-11T05:25:00+00:00'
+      '6':
+        new_tests: 3
+        status: done
+        tc_coverage: 2/2
+        verified_at: '2026-10-11T05:21:45+00:00'
+    status: completed
+  deliver:
+    status: completed
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-11T03:39:04+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认（用户 Gate 2 回复：确认）
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-10T21:55:33+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认（Gate 1 草稿确认）
+    status: completed
+score_confidence: preliminary
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 24
+  tc_cases: 24
+  test_functions: 26
+version: '3.0'

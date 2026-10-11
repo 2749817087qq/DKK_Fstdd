@@ -1,0 +1,101 @@
+# pending-adjustments.yaml — BUILD 期设计偏离登记（Part B / B4）
+# change: 2026-10-11-experience-center-node-sync
+# 说明：长程模式下自动记录并继续；Gate 3 前汇总为 design-adjustments.yaml
+
+meta:
+  change_id: "2026-10-11-experience-center-node-sync"
+  updated_at: "2026-10-11T05:52:00+00:00"
+  total: 4
+  major: 1
+  minor: 3
+
+adjustments:
+  - id: ADJ-001
+    type: design_change
+    severity: major
+    capability: experience-center-node-sync
+    slice: 3
+    title: "正文层 AEAD 由 AES-256-GCM 改为 AES-256-CTR + HMAC-SHA256（encrypt-then-MAC）"
+    original_design: |
+      design.md 决策 4 / spec SC-015：安全档用「RSA-3072 OAEP-SHA256 包裹随机 AES-256 密钥 +
+      **AES-GCM** 加密正文」的混合加密。
+    actual: |
+      正文层改为 **AES-256-CTR + HMAC-SHA256**（encrypt-then-MAC，MAC 覆盖 header||CT）；
+      RSA-OAEP-SHA256 包裹 AES 密钥的混合结构**不变**。
+    reason: |
+      ① 本运行环境 `openssl enc` **不支持 AEAD**（实测 `openssl enc -aes-256-gcm` →
+      `enc: AEAD ciphers not supported`，openssl 3.5.7）；
+      ② `cryptography` 库在本环境为**空壳命名空间包**（`import cryptography` 可过，
+      `cryptography.hazmat.*` 直接 ModuleNotFoundError）；尝试 `pip install` 修复被沙箱
+      批量删除守卫拦截（`SAFE_DELETE_BULK_GUARD_ERROR`）。
+      ⇒ 在「零新依赖 + 复用项目既有 openssl 链路」的约束下，CTR+HMAC 是与 GCM 等价的
+      机密性+完整性构造（GCM 本身就是 CTR + GHASH 认证）。
+    impact: |
+      spec SC-015 措辞中的「AES-GCM」应改述为「AEAD 等价构造（AES-256-CTR + HMAC-SHA256）」；
+      SC-016 / SC-018 不受影响（round-trip / 混合结构不变）。
+    affected_tc: [TC-ESEC-001, TC-ESEC-002, TC-ESEC-004]
+    decided_by: "long-range auto-record（预授权 A②：大偏离自动记录并继续）"
+    user_known: false   # 待 Gate 3 显式披露
+
+  - id: ADJ-002
+    type: spec_correction
+    severity: minor
+    capability: experience-center-node-sync
+    slice: 3
+    title: "design.md 引用的「省略 rsa_mgf1_md 会因默认 sha1 而解密失败」在 openssl 3.5.7 上不成立"
+    original_design: |
+      design.md 决策 4「关键坑（来自 cred-relay selftest.sh T3b）」：OAEP 必须显式
+      rsa_oaep_md:sha256 **且** rsa_mgf1_md:sha256，否则 MGF1 默认 sha1 导致解密失败。
+    actual: |
+      实测 openssl 3.5.7：省略 `rsa_mgf1_md` 时 MGF1 **默认跟随** `rsa_oaep_md`（=sha256），
+      解密**成功**。旁证：`E:/FSTDD/.workbuddy-ai/tmp/credtest/t3b.out` 为 83 字节非空
+      （即 T3b 当时实际是 FAIL），而 `t3a.out` 为 0 字节（sha1 OAEP 解密被拒 = PASS）。
+    reason: openssl 版本行为差异（3.x 起 MGF1 默认值跟随 OAEP 摘要；旧版为 sha1）。
+    impact: |
+      参数锁定契约改为以「sha1 OAEP 摘要解密必须失败」为判据（TC-ESEC-003）；
+      实现侧仍**显式**指定 sha256 + MGF1 sha256（跨版本互操作防御），故代码不变。
+    affected_tc: [TC-ESEC-003]
+    decided_by: "long-range auto-record（预授权 A①/②）"
+    user_known: false
+
+  - id: ADJ-003
+    type: scope_narrowing
+    severity: minor
+    capability: experience-center-node-sync
+    slice: 4
+    title: "pull 腿未实现「inbox GET 端点优先」，实际为 scp 兜底 + 本地目录适配器"
+    original_design: |
+      design.md 决策 2：pull 主传输 = inbox 服务器的 GET 端点（与 push 的 POST 端点对称）；
+      兜底 = scp 从 `/home/ubuntu/fstdd-inbox` 拉取。design.md 风险表已自认「hub GET 端点形态未确认」。
+    actual: |
+      `_exp_sync.fetch_bundle` 实现两条路径：① `hub_dir=<path>` 本地目录适配器
+      （离线 / 测试 / 手工中转）；② 缺省 = `scp fstdd-hub:/home/ubuntu/fstdd-inbox/*`。
+      **未实现 inbox HTTP GET 端点**（该端点不存在于现网，需 hub 侧新增）。
+    reason: |
+      hub 的 inbox 是目录 + POST 写入端点，**没有** GET 读取端点（只读通道从未建立）；
+      新建 GET 端点属于 hub 侧改动，超出本 change 的 upstream 范围。
+    impact: |
+      pull 在真实环境依赖 SSH/scp 可达；无 SSH 时可用 `--hub-dir` 走离线中转。
+      SC-011 的「增量合并」语义不受影响（合并层与传输层解耦）。
+    affected_tc: [TC-ECNS-002, TC-ECNS-003]
+    decided_by: "long-range auto-record（预授权 A③：技术阻塞走 workaround）"
+    user_known: false
+
+  - id: ADJ-004
+    type: scope_narrowing
+    severity: minor
+    capability: experience-center-node-sync
+    slice: 4
+    title: "合并实现了 ADD / UPDATE（updated_at LWW），未实现 kg_sync 的 DEPRECATE"
+    original_design: |
+      design.md 决策 5 / Architecture：复用 `kg_sync.sync()` 的 ADD/UPDATE/DEPRECATE + dry_run 范式。
+    actual: |
+      `_exp_sync.merge_entries` 实现 ADD（新 eid 落盘）与 UPDATE（updated_at 末写胜 + 冲突日志）；
+      **未实现 DEPRECATE**（远端标记 retired 时同步退役本地条目）。
+    reason: |
+      FSTDD 经验库的 retire 是本地显式操作（`experience retire`），且当前 hub 聚合快照
+      不含「退役指令」语义；实现 DEPRECATE 需先定义远端退役协议，超出本 change 范围。
+    impact: 合并的收敛性与幂等性不受影响；退役传播列为后续迭代项。
+    affected_tc: [TC-ECNS-002, TC-ECNS-004]
+    decided_by: "long-range auto-record（预授权 A③）"
+    user_known: false

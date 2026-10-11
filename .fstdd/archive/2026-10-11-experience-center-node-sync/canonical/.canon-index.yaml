@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-11-experience-center-node-sync: proposals/2026-10-11-experience-center-node-sync.yaml
+specs:
+  agent:
+    2026-10-11-experience-center-node-sync: specs/agent/2026-10-11-experience-center-node-sync.yaml
+  code:
+    2026-10-11-experience-center-node-sync: specs/code/2026-10-11-experience-center-node-sync.yaml
+version: '2.9'

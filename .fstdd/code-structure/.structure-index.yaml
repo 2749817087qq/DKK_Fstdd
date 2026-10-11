@@ -1,7 +1,7 @@
 meta:
-  last_updated: '2026-10-10T18:39:52+00:00'
+  last_updated: '2026-10-11T09:44:10+00:00'
   modules: {}
-  total_changes: 22
+  total_changes: 23
 modules:
   adjudication-log.tsv:
     changes:
@@ -23,6 +23,7 @@ modules:
     - 2026-10-07-tool-defect-fixes
     - 2026-10-07-change-dir-resolution-unify
     - 2026-10-10-experience-library-consolidation
+    - 2026-10-11-experience-center-node-sync
   tools/test_verify_notices.py:
     changes:
     - 2026-09-19-notices-authenticity-gate

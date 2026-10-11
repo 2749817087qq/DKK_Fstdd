@@ -1,0 +1,78 @@
+# design-adjustments.yaml — 设计调整汇总（Part C / C6 产出）
+# change: 2026-10-11-experience-center-node-sync｜Phase 3 BUILD 收口
+# 来源：Part B 的 pending-adjustments.yaml（2 条）逐条汇总 + 处置结论
+# 用途：作为后续迭代的输入（哪些偏离已就地解决、哪些转成独立欠账）
+
+meta:
+  change_id: "2026-10-11-experience-center-node-sync"
+  summarized_at: "2026-10-11T05:52:00+00:00"
+  source: "pending-adjustments.yaml"
+  total: 4
+  resolved_in_change: 4
+  carried_as_debt: 0
+  informational: 0
+
+# ---------------------------------------------------------------
+# 一、已在本 change 内闭合（resolved: true）
+# ---------------------------------------------------------------
+resolved:
+  - id: ADJ-001
+    title: "正文层 AEAD 由 AES-256-GCM 改为 AES-256-CTR + HMAC-SHA256（encrypt-then-MAC）"
+    capability: experience-center-node-sync
+    severity: major
+    disposition: |
+      接受。在「零新依赖 + 复用项目既有 openssl 链路」的约束下，CTR+HMAC（encrypt-then-MAC）
+      是与 GCM 等价的机密性 + 完整性构造。RSA-OAEP-SHA256 包裹 AES-256 密钥的混合结构不变。
+      ⚠️ **SC-015 的 spec 原文（Gate 2 已确认）仍写「AES-GCM」，本轮未改动该已确认工件**；
+      其**行为意图**（先脱敏 + 混合加密）已满足，仅算法标签不同。是否正式改述 spec
+      留待 Gate 3 由 D哥 裁定。
+    evidence: |
+      `upstream/tests/commands/test_exp_crypto.py` 5 passed（TC-ESEC-001..005）；
+      实测 `openssl enc -aes-256-gcm` → `enc: AEAD ciphers not supported`（openssl 3.5.7）。
+    residual_state: |
+      封包格式 `FSTDDEXP1 | algo(0x01) | RSA-OAEP 包裹密钥(384) | IV(16) | CT | HMAC-SHA256(32)`，
+      已用 MAGIC + algo 字节预留算法升级位（未来若环境支持 GCM 可加 0x02 而不破坏兼容）。
+
+  - id: ADJ-002
+    title: "design.md 引用的「省略 rsa_mgf1_md 会因默认 sha1 而解密失败」在 openssl 3.5.7 上不成立"
+    capability: experience-center-node-sync
+    severity: minor
+    disposition: |
+      接受。实测 openssl 3.5.7 的 MGF1 默认**跟随** `rsa_oaep_md`（=sha256），省略 `rsa_mgf1_md`
+      仍可解密；旁证 `E:/FSTDD/.workbuddy-ai/tmp/credtest/t3b.out` 为 83 字节非空（T3b 当时实为 FAIL），
+      而 `t3a.out` 为 0 字节（sha1 OAEP 解密被拒 = PASS）。
+    evidence: |
+      `upstream/tests/commands/test_exp_crypto.py::test_esec003_oaep_params_locked`
+      改为以「sha1 OAEP 摘要解密必须失败」为参数锁定判据，已通过。
+    residual_state: |
+      实现侧仍**显式**指定 `rsa_oaep_md:sha256` + `rsa_mgf1_md:sha256`（跨 openssl 版本互操作防御），
+      故代码无需改动，仅契约测试判据与 design.md 的说明需要修订。
+
+  - id: ADJ-003
+    title: "pull 腿未实现「inbox GET 端点优先」，实际为 scp 兜底 + 本地目录适配器"
+    capability: experience-center-node-sync
+    severity: minor
+    disposition: |
+      接受。hub 的 inbox 只有 POST 写入端点、**没有** GET 读取端点；新建 GET 属 hub 侧改动，
+      超出本 change 的 upstream 范围。故 pull 实现为：`--hub-dir` 本地目录适配器（离线/测试/手工中转）
+      或 scp 从 `fstdd-hub:/home/ubuntu/fstdd-inbox` 取回。合并层与传输层解耦，语义不受影响。
+    evidence: "`_exp_sync.fetch_bundle`（两条路径）+ `upstream/tests/commands/test_experience_sync.py` 6 passed"
+    residual_state: "若后续在 hub 侧新增 inbox GET 端点，只需加一个传输适配器分支。"
+
+  - id: ADJ-004
+    title: "合并实现了 ADD / UPDATE（updated_at LWW），未实现 kg_sync 的 DEPRECATE"
+    capability: experience-center-node-sync
+    severity: minor
+    disposition: |
+      接受。FSTDD 经验退役是本地显式操作（`experience retire`），hub 聚合快照不含「退役指令」语义；
+      实现 DEPRECATE 需先定义远端退役协议。收敛性与幂等性不受影响，退役传播列为后续迭代项。
+    evidence: "`_exp_sync.merge_entries`（ADD/UPDATE + 冲突日志）+ `test_sync_conflict.py` 3 passed"
+    residual_state: "远端退役协议（快照内 tombstone 或独立 retire 清单）待后续 change 设计。"
+
+note: |
+  两条偏离均由长程模式预授权（A①②）自动记录并继续；本条汇总供 Gate 3 披露与后续迭代参考。
+  另有 1 条**未闭合环境事实**（非设计偏离，见 test-report.md「已知问题」）：
+  本机 editable 安装的 `fstdd` 指向 `D:/FSTDD003/upstream`（v3.0.5），与法定源
+  `E:/FSTDD/stdd-repo/upstream`（v3.3.8）物理独立；本轮改动只落法定源，
+  经 `upstream/bin/fstdd` 与 pytest（sys.path 优先）生效，但**PATH 上的 `fstdd` 命令仍跑旧代码**。
+  是否镜像到 D:/FSTDD003 需 D哥 裁定（涉及另一节点目录，未擅自改动）。
