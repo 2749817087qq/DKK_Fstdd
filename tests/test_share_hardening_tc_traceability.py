@@ -16,8 +16,25 @@ import re
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-CHANGE_DIR = REPO / ".fstdd" / "changes" / "2026-10-11-share-hardening-audit-fixes"
 TEST_TREES = (REPO / "tests", REPO / "upstream" / "tests")
+
+
+def _change_dir() -> Path:
+    """change 目录可能在 ``changes/``（在办）或 ``archive/``（已归档）。
+
+    2026-10-12 修复：本 change 已 DELIVER 归档，原实现硬编码 ``changes/`` 路径
+    ⇒ 归档后 3 个用例全部 ``FileNotFoundError``。追溯性必须在归档后仍然成立。
+    （同款缺陷本 change 已为上一 change 的 experience_sync 追溯测试修过，见 ADJ-005②。）
+    """
+    name = "2026-10-11-share-hardening-audit-fixes"
+    for base in ("changes", "archive"):
+        p = REPO / ".fstdd" / base / name
+        if p.is_dir():
+            return p
+    return REPO / ".fstdd" / "changes" / name
+
+
+CHANGE_DIR = _change_dir()
 
 # 冻结的计划 TC 清单（与 test-plan.md 一致）：
 #   · 22 个本变更 TC（TC-SEG-001..012 + TC-ISR-001..010）
