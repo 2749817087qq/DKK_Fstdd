@@ -136,7 +136,7 @@
 
 #### Scenario: SC-020
 
-- **GIVEN** 向上遍历 50 层仍未找到 `FSTDD.md`/`STDD.md` + `bin/` 的环境
+- **GIVEN** 向上遍历 50 层仍未找到 `FSTDD.md`（或其改名前的旧标记文件）+ `bin/` 的环境
 - **WHEN** 调用源根解析
 - **THEN** SHALL 抛出含深度信息的 `RuntimeError`，SHALL NOT 无限循环
 

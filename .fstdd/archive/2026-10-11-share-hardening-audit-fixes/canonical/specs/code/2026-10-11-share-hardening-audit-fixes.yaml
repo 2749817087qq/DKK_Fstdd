@@ -175,7 +175,7 @@ requirements:
       - id: SC-020
         confidence: medium
         evidence: "C6：正常仓库 ≤5 层，50 为极端上限"
-        given: "向上遍历 50 层仍未找到 `FSTDD.md`/`STDD.md` + `bin/` 的环境"
+        given: "向上遍历 50 层仍未找到 `FSTDD.md`（或其改名前的旧标记文件）+ `bin/` 的环境"
         when: "调用源根解析"
         then: "SHALL 抛出含深度信息的 `RuntimeError`，SHALL NOT 无限循环"
 
