@@ -1,7 +1,7 @@
 meta:
-  last_updated: '2026-10-11T09:44:10+00:00'
+  last_updated: '2026-10-12T12:30:27+00:00'
   modules: {}
-  total_changes: 23
+  total_changes: 24
 modules:
   adjudication-log.tsv:
     changes:
@@ -24,15 +24,58 @@ modules:
     - 2026-10-07-change-dir-resolution-unify
     - 2026-10-10-experience-library-consolidation
     - 2026-10-11-experience-center-node-sync
+    - 2026-10-11-share-hardening-audit-fixes
+  pending-adjustments.yaml` / `design-adjustments.yaml:
+    changes:
+    - 2026-10-11-share-hardening-audit-fixes
+  slices.md` / `tasks.md` / `phase-context.md` / `test-report.md:
+    changes:
+    - 2026-10-11-share-hardening-audit-fixes
+  ? tools/install_workbuddy_skills.py` — `strip_frontmatter` 逐行扫描、`_render_template`（StrictUndefined）、三常量外置为模板
+    + 回落、去重复 `REPO_ROOT
+  : changes:
+    - 2026-10-11-share-hardening-audit-fixes
+  ? tools/install_workbuddy_skills.py`：`TEMPLATES_DIR`、`_render_template`、`_SECURITY_NOTE_DELIVER_FALLBACK`、`_SECURITY_BLOCK_DELIVER_FALLBACK`、`_UPGRADE_DUTY_FALLBACK`、`_POLICY_CTX
+  : changes:
+    - 2026-10-11-share-hardening-audit-fixes
+  ? tools/share_experience.py` — 3 条脱敏规则、`OUTBOUND_RESIDUAL_RE` 同源、`_validate_remote_path`（白名单
+    + 拒 `..` + 拒前导 `-`）、`_check_token_file_permissions`、`SCP_SYNTAX_RE` 重命名、`publish(pre_staged=)
+  : changes:
+    - 2026-10-11-share-hardening-audit-fixes
+  ? tools/share_experience.py`：`_REMOTE_PATH_OK_RE`、`_validate_remote_path`、`_check_token_file_permissions`、`SCP_SYNTAX_RE`（原
+    `SCP_LIKE_RE`）、`publish(pre_staged=)
+  : changes:
+    - 2026-10-11-share-hardening-audit-fixes
+  tools/templates/security_block_deliver.md.j2:
+    changes:
+    - 2026-10-11-share-hardening-audit-fixes
+  tools/templates/security_note_deliver.md.j2:
+    changes:
+    - 2026-10-11-share-hardening-audit-fixes
+  tools/templates/upgrade_duty.md.j2:
+    changes:
+    - 2026-10-11-share-hardening-audit-fixes
   tools/test_verify_notices.py:
     changes:
     - 2026-09-19-notices-authenticity-gate
   tools/verify_notices.py:
     changes:
     - 2026-09-19-notices-authenticity-gate
+  tools/verify_workbuddy_skills.py`：`SMOKE_TIMEOUT`、`_smoke_timeout:
+    changes:
+    - 2026-10-11-share-hardening-audit-fixes
   upstream/fstdd/cli/commands/guard.py:
     changes:
     - 2026-09-25-guard-phase-path-scope
+  upstream/fstdd/cli/utils.py` — `MAX_SOURCE_DEPTH` + `_find_source_root():
+    changes:
+    - 2026-10-11-share-hardening-audit-fixes
+  upstream/fstdd/cli/utils.py`：`MAX_SOURCE_DEPTH`、`_find_source_root:
+    changes:
+    - 2026-10-11-share-hardening-audit-fixes
   upstream/tests/commands/test_guard.py:
     changes:
     - 2026-09-25-guard-phase-path-scope
+  upstream/tests/test_silent_share.py` — publish 测试桩 3 处同步 `pre_staged:
+    changes:
+    - 2026-10-11-share-hardening-audit-fixes

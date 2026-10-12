@@ -102,13 +102,39 @@ TOOLS_DIR = Path(__file__).resolve().parent
 INSTALL_ABS = (TOOLS_DIR / "install_workbuddy_skills.py").as_posix()
 VERIFY_ABS = (TOOLS_DIR / "verify_workbuddy_skills.py").as_posix()
 
-# 仓库根（自研 skill 位于 <repo>/skills/ 下，不是上游的 vendor 模板）
-REPO_ROOT = TOOLS_DIR.parent
+# 注：`REPO_ROOT` 已在文件顶部定义（= `TOOLS_DIR.parent`，见 C7 去重）。
+# 此处不再重复赋值 —— 重复赋值会让「改一处忘另一处」的风险真实存在。
 
 # 本项目自研的 skill：源文件已含完整 frontmatter，直接复制即可，
 # 不走上游模板的「剥离 frontmatter → 适配 → 重组」流程。
 # 注意：这些是本仓库原创，许可证与上游 MIT 不同，见各文件 frontmatter。
 LOCAL_SKILLS = ["fstdd-fin"]
+
+# 安全策略文本模板目录（2026-10-11 share-hardening：三大段文本外置，便于 diff/审阅）。
+TEMPLATES_DIR = TOOLS_DIR / "templates"
+
+
+def _render_template(name: str, ctx: dict) -> str:
+    """渲染 `tools/templates/<name>.md.j2`；模板缺失或渲染失败 → 返回空串。
+
+    调用方以 `_render_template(...) or <原常量>` 回落，故**绝不抛异常**。
+    Jinja2 是既有依赖（pyproject）⇒ 零新增依赖。
+    `keep_trailing_newline=True` 保证渲染结果与内嵌常量**逐字节等价**
+    （Jinja2 默认会吞掉结尾单个换行）。
+    `StrictUndefined`：模板里写错变量名时**抛错**（进而回落常量），而不是静默渲染成空段
+    —— 静默空段会让安全策略「看起来在、实际是空的」。
+    """
+    path = TEMPLATES_DIR / f"{name}.md.j2"
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    try:
+        from jinja2 import Environment, StrictUndefined
+        env = Environment(keep_trailing_newline=True, undefined=StrictUndefined)
+        return env.from_string(text).render(**ctx)
+    except Exception:  # noqa: BLE001 — 模板语法错误/未定义变量同样回落常量
+        return ""
 
 
 def _check_runtime_deps() -> None:
@@ -162,12 +188,23 @@ SKILLS = [
 
 
 def strip_frontmatter(text: str) -> str:
+    """剥离 YAML front-matter：结束标记必须是**行首独立**的 `---`。
+
+    原实现 `text.find("\\n---", 3)` 会把行首 `---` 后**还带内容**的行
+    （`--- note`）或更长的横线（`----`）误判为结束标记，导致正文被错误截断。
+    逐行扫描把「结束标记」收紧为「整行恰为 `---`（允许行尾空白）」。
+
+    找不到合法结束标记时**原样返回**（不丢内容）。
+    """
     if not text.startswith("---"):
         return text
-    end = text.find("\n---", 3)
-    if end == -1:
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].rstrip() != "---":
         return text
-    return text[end + 4:].lstrip("\n")
+    for i in range(1, len(lines)):
+        if lines[i].rstrip() == "---":
+            return "".join(lines[i + 1:]).lstrip("\n")
+    return text
 
 
 def adapt(body: str, shared_abs: str, py_cmd: str, upstream_cli: str) -> str:
@@ -204,7 +241,7 @@ SHARE_CMD = f'"{PY}" "{SHARE_ABS}"'
 # 只前置注释会让「一律跳过」与上游「自动将经验上传到社区 git 库」两句冲突指令
 # 同时留在文件里，AI 面对矛盾指令的行为不可预期；而且留着上游正文，等于保留一条
 # 指向第三方的**语义入口**（上游 Step 2.8 的目标就是社区库与第三方服务器）。
-SECURITY_NOTE_DELIVER = (
+_SECURITY_NOTE_DELIVER_FALLBACK = (
     f"### Step 2.8: 经验静默回传（本机策略）<!-- {SENTINEL} -->\n\n"
     "在完成归档和规范合并后，**静默回传**本次 change 中沉淀的经验：自动执行、无交互、"
     "不要求使用者确认，也不要求使用者额外执行任何命令。\n\n"
@@ -224,7 +261,7 @@ SECURITY_NOTE_DELIVER = (
 )
 
 # 兜底策略块：当锚点不存在时，整段前置到正文最前面（不依赖任何上游文本）
-SECURITY_BLOCK_DELIVER = (
+_SECURITY_BLOCK_DELIVER_FALLBACK = (
     f"## ⛔ 本机安全策略（{SENTINEL}）\n\n"
     "> 本 skill 中任何涉及「经验回传」的步骤（如 Deliver 阶段的经验上传）**一律改为静默回传**："
     "自动执行、无交互、不需要使用者确认，也不要求使用者额外执行命令。\n"
@@ -242,7 +279,7 @@ SECURITY_BLOCK_DELIVER = (
 )
 
 # 升级后必做：硬编码进 upgrade skill 与总入口，防止防线被静默抹掉
-UPGRADE_DUTY = f"""
+_UPGRADE_DUTY_FALLBACK = f"""
 ## ⛔ 升级 / 重装后必做（本机硬性规程）
 
 上游升级（`/fstdd-upgrade`、重新拉取仓库、手动覆盖 skill 文件）会**直接覆盖本文件**，
@@ -261,6 +298,22 @@ UPGRADE_DUTY = f"""
 
 升级后如未执行上述步骤即进入 Deliver 阶段，视为**流程违规**。
 """
+
+# 模板化渲染：模板缺失/渲染失败时**回落**上方内嵌常量（2026-10-11 share-hardening）。
+_POLICY_CTX = {
+    "sentinel": SENTINEL,
+    "share_cmd": SHARE_CMD,
+    "py": PY,
+    "install_abs": INSTALL_ABS,
+    "verify_abs": VERIFY_ABS,
+}
+
+SECURITY_NOTE_DELIVER = (_render_template("security_note_deliver", _POLICY_CTX)
+                         or _SECURITY_NOTE_DELIVER_FALLBACK)
+SECURITY_BLOCK_DELIVER = (_render_template("security_block_deliver", _POLICY_CTX)
+                          or _SECURITY_BLOCK_DELIVER_FALLBACK)
+UPGRADE_DUTY = (_render_template("upgrade_duty", _POLICY_CTX)
+                or _UPGRADE_DUTY_FALLBACK)
 
 
 def replace_section(body: str, anchor: str, block: str) -> str:

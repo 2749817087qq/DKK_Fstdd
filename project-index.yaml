@@ -91,6 +91,8 @@ capabilities:
     specs: specs/scan-coverage/spec.md
   server-bare-repo-mirror:
     specs: specs/server-bare-repo-mirror/spec.md
+  share-hardening-audit-fixes:
+    specs: specs/share-hardening-audit-fixes/spec.md
   share-outbound-sanitize:
     specs: specs/share-outbound-sanitize/spec.md
   silent-except-guard:

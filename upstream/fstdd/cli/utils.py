@@ -45,12 +45,18 @@ def resolve_stdd_path(project_root, subdir):
     if old_path.exists(): return old_path
     return new_path
 
-def get_stdd_source() -> Path:
-    global STDD_SOURCE
-    if STDD_SOURCE is not None:
-        return STDD_SOURCE
-    p = Path(__file__).resolve().parent
-    while True:
+# 源根向上查找的最大层数。正常仓库从 cli/utils.py 到根不超过 5 层；
+# 50 是极端安全上限，用于防止符号链接循环导致无限遍历（2026-10-11 share-hardening）。
+MAX_SOURCE_DEPTH = 50
+
+
+def _find_source_root(start: Path, max_depth: int = MAX_SOURCE_DEPTH) -> Path:
+    """从 start 向上查找 FSTDD 源根（含 FSTDD.md/STDD.md 且含 bin/ 目录）。
+
+    超过 max_depth 层仍找不到 ⇒ 抛含深度信息的 RuntimeError（不无限循环）。
+    """
+    p = start
+    for _ in range(max_depth):
         # 改名兼容：FSTDD.md（新）优先，STDD.md（旧）回退。
         # 此前只认 STDD.md，改名后任何未预设 STDD_SOURCE 的调用路径都会
         # RuntimeError（测试直接 import cmd_init 即触发）。
@@ -61,6 +67,17 @@ def get_stdd_source() -> Path:
                 "Cannot find FSTDD source root (FSTDD.md or STDD.md not found)"
             )
         p = p.parent
+    raise RuntimeError(
+        f"Cannot find FSTDD source root within {max_depth} levels "
+        f"(depth limit reached from {start}; possible symlink loop)"
+    )
+
+
+def get_stdd_source() -> Path:
+    global STDD_SOURCE
+    if STDD_SOURCE is not None:
+        return STDD_SOURCE
+    return _find_source_root(Path(__file__).resolve().parent)
 
 
 def read_config(project_root: Path) -> Dict[str, Any]:

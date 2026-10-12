@@ -33,10 +33,35 @@ PLATFORM=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --yes) AUTO_YES=1 ;;
-    --py) PY="${2:-}" ; shift ;;
-    --py=*) PY="${1#*=}" ;;
-    --platform) PLATFORM="${2:-}" ; shift ;;
-    --platform=*) PLATFORM="${1#*=}" ;;
+    --py)
+      # 缺参 / 后接另一选项 ⇒ 显式失败。原实现 `${2:-}` 为空会把空值静默传给
+      # test_python，错误信息不指向根因（2026-10-11 share-hardening）。
+      if [[ -z "${2:-}" || "${2:-}" == -* ]]; then
+        echo "[FAIL] --py 需要一个 Python 解释器路径（用法: --py /path/to/python）"
+        exit 2
+      fi
+      PY="$2" ; shift ;;
+    --py=*)
+      PY="${1#*=}"
+      if [[ -z "$PY" ]]; then
+        echo "[FAIL] --py= 后需要 Python 解释器路径"
+        exit 2
+      fi ;;
+    --platform)
+      if [[ -z "${2:-}" || "${2:-}" == -* ]]; then
+        echo "[FAIL] --platform 需要一个平台名（workbuddy / claude-code / trae）"
+        exit 2
+      fi
+      PLATFORM="$2" ; shift ;;
+    --platform=*)
+      PLATFORM="${1#*=}"
+      if [[ -z "$PLATFORM" ]]; then
+        echo "[FAIL] --platform= 后需要平台名"
+        exit 2
+      fi ;;
+    *)
+      # 原实现静默忽略未知参数，使用者以为生效了（2026-10-11 share-hardening）。
+      echo "[WARN] 未知参数: $1（已忽略）" ;;
   esac
   shift
 done

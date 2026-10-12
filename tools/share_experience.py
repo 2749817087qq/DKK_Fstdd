@@ -42,7 +42,7 @@ GIT_BASE = os.environ.get("FSTDD_GIT_BASE", "https://github.com").rstrip("/")
 API_BASE = os.environ.get("FSTDD_API_BASE", "https://api.github.com").rstrip("/")
 
 
-SCP_LIKE_RE = re.compile(r"^(?:[\w.-]+@)?[\w.-]+:(?!/)(?!//)\S+$")
+SCP_SYNTAX_RE = re.compile(r"^(?:[\w.-]+@)?[\w.-]+:(?!/)(?!//)\S+$")
 
 
 def is_local_path(s: str) -> bool:
@@ -71,7 +71,7 @@ def git_remote(repo: str, token: str = "") -> str:
     """
     if re.match(r"^(https?|ssh|git|file)://", repo) or is_local_path(repo):
         return repo
-    if SCP_LIKE_RE.match(repo):                  # git@host:owner/name
+    if SCP_SYNTAX_RE.match(repo):                # git@host:owner/name
         return repo
 
     # GIT_BASE 本身是本地路径：直接把 owner/name 拼成本地远端，
@@ -90,6 +90,55 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 EXP_DIR = REPO_ROOT / ".fstdd" / "experiences"
 ARCHIVE_DIR = REPO_ROOT / ".fstdd" / "archive"
 OUT_DIR = REPO_ROOT / "experiences"
+
+
+# ---------------------------------------------------------------------------
+# 出站参数校验（2026-10-11 share-hardening）
+# ---------------------------------------------------------------------------
+# 合法形态：/home/ubuntu/fstdd-inbox、fstdd-hub、FSTDD003、user@host:/srv/x。
+# 拒绝：空格 / ; / | / 反引号 / $ / ( ) / 重定向 / 换行 / 上跳段（..）。
+_REMOTE_PATH_OK_RE = re.compile(r"[\w.@:/-]+")
+
+
+def _validate_remote_path(value: str, label: str) -> tuple[bool, str]:
+    """scp 目标参数白名单校验（防命令注入 + 路径上跳 + 选项注入）。
+
+    `remote_dir` / `ssh_alias` / `FSTDD_NODE_ID` 三者均来自环境变量，
+    原实现直接拼进 scp 目标字符串 ⇒ 命令注入面。用**白名单**而非转义：
+    scp 的 `host:path` 语法中引号语义复杂，白名单更可验证。
+
+    ⚠️ 前导 `-` 必须显式拒绝：白名单字符集含 `-`，若不拦，`FSTDD_SSH_ALIAS=-F/tmp/evil`
+    会被 ssh/scp 当作**选项**解析（`-F` 可加载攻击者配置 ⇒ `ProxyCommand` 本地命令执行）。
+    """
+    v = value or ""
+    if not v:
+        return False, f"{label} 为空，已拒绝"
+    if v.startswith("-"):
+        return False, f"{label} 不得以 `-` 开头（会被 ssh/scp 当作选项），已拒绝：{v[:40]!r}"
+    if not _REMOTE_PATH_OK_RE.fullmatch(v):
+        return False, f"{label} 含非法字符，已拒绝（白名单 [\\w.@:/-]）：{v[:40]!r}"
+    if v.startswith("..") or ".." in v.split("/"):
+        return False, f"{label} 含上跳路径段（..），已拒绝：{v[:40]!r}"
+    return True, ""
+
+
+def _check_token_file_permissions(path: Path, label: str) -> None:
+    """读取 token 文件前检查权限，过宽则告警（**仅告警，不阻断**）。
+
+    EXP FSTDD005-EXP-20260918-C6：明文落盘到 0644 位置会导致全量吊销。
+    直接拒绝读取会让既有用户突然无法工作 ⇒ 告警 + 文档引导是更安全的迁移路径。
+    Windows 的 `st_mode` 不含 POSIX 权限位，直接跳过。
+    """
+    if os.name == "nt":
+        return
+    try:
+        mode = os.stat(path).st_mode
+    except OSError:
+        return
+    if mode & 0o077:
+        print("[WARN] %s 权限过宽（%o）：建议 `chmod 600 %s`"
+              % (label, mode & 0o777, path))
+
 
 # 关闭开关的持久配置（`share.silent.enabled`，缺省 true）
 CONFIG_PATH = REPO_ROOT / ".fstdd" / "config.d" / "experience.yaml"
@@ -147,6 +196,20 @@ SANITIZE_RULES: list[tuple[re.Pattern, str, str]] = [
     (re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----"),
      "<PRIVATE_KEY>", "私钥"),
     (re.compile(r"\bBearer\s+[A-Za-z0-9._\-]{20,}"), "Bearer <TOKEN>", "Bearer 令牌"),
+    # 凭证类补充（2026-10-11 share-hardening）：三类高价值形态。
+    # 注意：大小写不敏感一律走 `re.compile(pat, re.IGNORECASE)`，**绝不内联 `(?i)`** ——
+    # 交付件正是把内联 (?i) 写进多段拼接串的中间，导致 Python 3.11+ import 即崩
+    # （re.PatternError: global flags not at the start of the expression）。
+    (re.compile(r"\baws_secret_access_key\b\s*[=:]\s*['\"]?([A-Za-z0-9/+=]{40})['\"]?",
+                re.IGNORECASE),
+     r"aws_secret_access_key=<AWS_SECRET>", "AWS Secret Access Key"),
+    (re.compile(r"([?&](?:api[_-]?key|token|password|secret|access[_-]?token)=)"
+                r"([^&\s\"'<>]+)", re.IGNORECASE),
+     r"\1<REDACTED>", "URL 认证参数"),
+    # SSH 私钥路径必须先于下方 POSIX 家目录规则（否则绝对路径会先被吞成 <PATH>）
+    (re.compile(r"(?:~|/(?:home|Users|root)/[^\s/]+)?/\.ssh/"
+                r"(?:id_rsa|id_ecdsa|id_ed25519|id_dsa|authorized_keys|known_hosts)\b"),
+     "<SSH_KEY_PATH>", "SSH 私钥路径"),
     # 邮箱
     (re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.]{2,}\b"), "<EMAIL>", "邮箱"),
     # IPv4
@@ -167,6 +230,13 @@ SANITIZE_RULES: list[tuple[re.Pattern, str, str]] = [
 # 服务端（fstdd-inbox-server）判据：re.compile(r"/(?:home|Users)/[^\s/]+")，命中即拒。
 # 上层 sanitize() 拦住之后，第二层「开没开」天然不可观测（EXP FSTDD005-EXP-20260918-C4），
 # 故把判据抽为本模块常量，供测试**直接断言常量本身**。
+#
+# 2026-10-11 share-hardening：与 SANITIZE_RULES 的 3 条新规则**同源对齐**（EXP-2026-0013：
+# 声明形态与实现必须覆盖同一组形态）。大小写不敏感走 `re.IGNORECASE` 参数，**绝不内联 `(?i)`**。
+# 新增形态中凡「脱敏后会被替换成 `<占位符>`」的（目前是 URL 认证参数），一律带 `(?!<)` 负向前视，
+# 否则脱敏后的 `?token=<REDACTED>` 会被误判为残余，导致正常条目在 stage 阶段被整条剔除；
+# AWS Secret / SSH 路径两条因判据本身要求「40 位 base64」「/\.ssh/<具体文件名>」，
+# 占位符天然不命中，无需前视（EXP-2026-0033）。
 OUTBOUND_RESIDUAL_RE = re.compile(
     r"/(?:home|Users)/[^\s/]+"
     r"|\bgh[pousr]_[A-Za-z0-9]{16,}\b"
@@ -175,6 +245,11 @@ OUTBOUND_RESIDUAL_RE = re.compile(
     r"|\bAKIA[0-9A-Z]{16}\b"
     r"|-----BEGIN [A-Z ]*PRIVATE KEY-----"
     r"|\bBearer\s+[A-Za-z0-9._\-]{20,}"
+    r"|\baws_secret_access_key\b\s*[=:]\s*['\"]?[A-Za-z0-9/+=]{40}"
+    r"|[?&](?:api[_-]?key|token|password|secret|access[_-]?token)=(?![<\s])[^&\s\"'<>]+"
+    r"|(?:~|/(?:home|Users|root)/[^\s/]+)?/\.ssh/"
+    r"(?:id_rsa|id_ecdsa|id_ed25519|id_dsa|authorized_keys|known_hosts)",
+    re.IGNORECASE,
 )
 
 
@@ -298,6 +373,7 @@ def find_token() -> str:
             return v
     cand = REPO_ROOT.parent / ".workbuddy-ai" / "tmp" / ".gh_token"
     if cand.exists():
+        _check_token_file_permissions(cand, "GitHub token 文件")
         return cand.read_text(encoding="utf-8").strip()
     return ""
 
@@ -333,6 +409,7 @@ def inbox_token() -> str:
     cand = REPO_ROOT.parent / ".fstdd-inbox-token"
     try:
         if cand.exists():
+            _check_token_file_permissions(cand, "inbox token 文件")
             return cand.read_text(encoding="utf-8").strip()
     except OSError:  # noqa: BLE001
         pass
@@ -618,6 +695,15 @@ def _scp_dir(out_dir: Path,
     失败语义：SSH 不通 / 远端目录不可写 → 返回 (False, reason)，
       调用方应该降级到 publish_via_inbox 或 publish_via_pr。
     """
+    # 0. 出站参数校验（必须在任何 subprocess 之前）——防命令注入
+    node_id = os.environ.get("FSTDD_NODE_ID", "local")
+    for _value, _label in ((ssh_alias, "ssh_alias"),
+                           (remote_dir, "remote_dir"),
+                           (node_id, "FSTDD_NODE_ID")):
+        _ok, _err = _validate_remote_path(_value, _label)
+        if not _ok:
+            return False, _err
+
     # 1. 快速可达性检查（ssh -o ConnectTimeout=5 alias echo OK）
     r = subprocess.run(
         ["ssh", "-o", "ConnectTimeout=5", ssh_alias, "echo", "OK"],
@@ -635,7 +721,6 @@ def _scp_dir(out_dir: Path,
 
     # 3. 构造批次子目录（FSTDD003-experiences-YYYYMMDD-HHMMSS）
     batch = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    node_id = os.environ.get("FSTDD_NODE_ID", "local")
     batch_dir = f"{remote_dir}/{node_id}-experiences-{batch}"
 
     # 4. scp 整个 out_dir（含 EXP-*.md + SUBMIT.md + README.md）
@@ -882,7 +967,8 @@ def is_permission_error(msg: str) -> bool:
     return any(h in (msg or "").lower() for h in PERMISSION_HINTS)
 
 
-def publish(out_dir: Path, repo: str, token: str = "") -> tuple[bool, str]:
+def publish(out_dir: Path, repo: str, token: str = "",
+            pre_staged: bool = False) -> tuple[bool, str]:
     """把导出的经验包推送到目标（scp / GitHub / inbox endpoint 三选一）。
 
     优先级：
@@ -891,18 +977,29 @@ def publish(out_dir: Path, repo: str, token: str = "") -> tuple[bool, str]:
       3. GitHub fork+PR — 需 token，有写权限时走直推
 
     旧调用（传 token 且希望直推 GitHub）不受影响。
+
+    ``pre_staged=True``：调用方**已自行脱敏**（如 `silent_share()` 先经
+    `prepare_entries()`），故跳过内部 `stage_sanitized()`，且**不清理**传入目录
+    —— 传入目录属于调用方，原实现无条件 `rmtree(staged_dir)` 会误删。默认 False。
     """
     # 优先级 1: scp（不需任何凭证，纯 SSH）
     ssh_alias = os.environ.get("FSTDD_SSH_ALIAS", "fstdd-hub")
     remote_dir = os.environ.get("FSTDD_INBOX_DIR", "/home/ubuntu/fstdd-inbox")
-    ok, reason = publish_via_scp(out_dir, ssh_alias, remote_dir)
+    if pre_staged:
+        ok, reason = _scp_dir(out_dir, ssh_alias, remote_dir)
+    else:
+        ok, reason = publish_via_scp(out_dir, ssh_alias, remote_dir)
     if ok:
         return True, reason
     print(f"[降级] scp 不可用（{reason}），尝试其他通道...")
 
     # 优先级 2: GitHub（需 token）
     if token:
-        staged_dir, _skipped = stage_sanitized(out_dir)
+        if pre_staged:
+            staged_dir, cleanup_staged = Path(out_dir), False
+        else:
+            staged_dir, _skipped = stage_sanitized(out_dir)
+            cleanup_staged = True
         tmp = Path(tempfile.mkdtemp(prefix="exp_publish_"))
         try:
             url = git_remote(repo, token)
@@ -943,10 +1040,14 @@ def publish(out_dir: Path, repo: str, token: str = "") -> tuple[bool, str]:
             return True, ""
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
-            shutil.rmtree(staged_dir, ignore_errors=True)
+            if cleanup_staged:
+                shutil.rmtree(staged_dir, ignore_errors=True)
 
     # 优先级 3: inbox POST
-    ok, reason = publish_via_inbox(out_dir, inbox_url())
+    if pre_staged:
+        ok, reason = _post_inbox_dir(out_dir, inbox_url())
+    else:
+        ok, reason = publish_via_inbox(out_dir, inbox_url())
     if ok:
         return True, reason
     return False, reason
@@ -991,10 +1092,16 @@ def silent_share(args) -> int:
         token = find_token()
         if token:
             target = "github"
-            ok, reason = publish(OUT_DIR, args.repo, token)
+            # OUT_DIR 的内容已经过 prepare_entries(True) 脱敏 ⇒ pre_staged=True：
+            # 避免二次脱敏误伤占位符，且不清理调用方目录（2026-10-11 share-hardening）。
+            # 注：无 token 分支（publish_via_inbox）与 PR 降级分支（publish_via_pr）
+            # 仍走各自的 stage_sanitized —— 它们是独立出站入口，脱敏不可绕过（EXP-2026-0017）。
+            ok, reason = publish(OUT_DIR, args.repo, token, pre_staged=True)
             if not ok and not args.direct and is_permission_error(reason):
                 print("无写权限，降级为 fork + Pull Request")
                 ok = publish_via_pr(OUT_DIR, args.repo, token)
+                if ok:
+                    reason = ""      # 降级成功：清掉上游失败原因，避免审计写成「success + 403」
         else:
             target = "endpoint"
             ok, reason = publish_via_inbox(OUT_DIR, inbox_url())

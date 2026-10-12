@@ -1,0 +1,121 @@
+meta:
+  change_id: "2026-10-11-share-hardening-audit-fixes"
+  summarized_at: "2026-10-11T16:35:00+00:00"
+  source: "pending-adjustments.yaml"
+  total: 7
+  resolved_in_change: 7
+  carried_as_debt: 0
+  major: 0
+  minor: 7
+
+# ---------------------------------------------------------------
+# 本 change 内已闭合（resolved: true）—— 均为 Minor，无 Major
+# ---------------------------------------------------------------
+resolved:
+  - id: ADJ-001
+    title: "_validate_remote_path 白名单由 `^[\\w./-]+$` 放宽为 `[\\w.@:/-]`，并显式拒绝 `..` 段"
+    capability: share-egress-hardening
+    severity: minor
+    disposition: |
+      接受并收紧。设计给出的字符集有两处不足（实现期实测）：
+      ① 未含 `@` / `:` ⇒ 合法形态 `user@host` 会被误拒（ssh 别名允许带用户名）；
+      ② `../etc` **能通过** `^[\\w./-]+$`（`.` 与 `/` 均在集合内）⇒ 无法拦路径上跳，
+         而 SC-006 明确要求 `../etc` 被拒。
+      最终实现：白名单 `[\\w.@:/-]` + **显式段级判据**（拒绝 `..` 段）+ `fullmatch`
+      （而非 `match` + `$`，消除「尾随换行被 `$` 放行」的注入面）。
+    evidence: |
+      `tests/test_share_hardening.py` TC-SEG-006（8 个注入样例全部拒绝，含 `../etc`）
+      + TC-SEG-007（4 个合法样例全部放行，含 `user@host:/srv/x`）+ TC-SEG-006b（`_scp_dir` 入口拦截）。
+    residual_state: |
+      白名单为**显式集合**：未来若出现新合法形态（如带端口 `host:22`），
+      需同步补测正例 —— 已写入经验 EXP-2026-0032。
+
+  - id: ADJ-002
+    title: "源根深度上限抽为独立函数 `_find_source_root(start, max_depth)`"
+    capability: install-script-robustness
+    severity: minor
+    disposition: |
+      接受。design 决策 8 的「`while True` → `for _ in range(50)`」内联写法**不可测**：
+      真实仓库根总能在 ≤5 层内命中，深度上限分支永远走不到。
+      抽出 `_find_source_root(start, max_depth=MAX_SOURCE_DEPTH)` 后可用合成深目录 +
+      小 `max_depth` 精确验证超限分支。
+    evidence: |
+      TC-ISR-008（`max_depth=3` + 8 层深目录 ⇒ RuntimeError 含深度信息）
+      + TC-ISR-008b（正常深度内正确定位源根，无回归）。
+    residual_state: "无。`get_stdd_source()` 语义与返回值不变。"
+
+  - id: ADJ-003
+    title: "CLI 冒烟超时值可由 `FSTDD_SMOKE_TIMEOUT` 覆盖（默认仍 30s）"
+    capability: install-script-robustness
+    severity: minor
+    disposition: |
+      接受。默认值保持 30s（SC-017 判据不变）；提供环境变量覆盖是为了让慢机器/CI
+      不必改代码即可放宽，避免「环境慢 ⇒ 冒烟误判 FAIL」。
+    evidence: "TC-ISR-005 断言默认 `timeout == 30` 且超时返回 `(False, 含「超时」)`。"
+    residual_state: "无。"
+
+  - id: ADJ-004
+    title: "`silent_share()` 调用点改为 `publish(..., pre_staged=True)`；测试桩 **3 处** 同步"
+    capability: share-egress-hardening
+    severity: minor
+    disposition: |
+      接受（属预授权 A②「改接口语义，自动记录并继续」）。
+      不传 `pre_staged=True` 则该参数在生产中形同虚设。
+      design 只预期「同步 1 处测试桩」，实测需同步 **3 处**：
+      `fake_publish`、403 降级 `lambda o, r, t`、010c 凭据回显 `lambda o, r, t`。
+      交付件只修了 1 处 ⇒ `test_silent_share.py` 3 红。
+    evidence: |
+      TC-SEG-009（`pre_staged=True` 不调 `stage_sanitized`、不删传入目录）
+      + TC-SEG-010（默认形态行为不变）+ TC-SEG-011（`test_silent_share.py` 23 passed）
+      + TC-SEG-012（`git_remote` 语义不变）。
+    residual_state: |
+      `inbox_pull.py` 的 3 位置参数调用不受影响（新参数带默认值）。
+      同类「新增可选参数必须全仓搜测试桩」的教训已写入 ADJ-004 说明。
+
+  - id: ADJ-005
+    title: "附带修复：刷新裸 except 审计活表 + 修上一 change 追溯测试的归档路径"
+    capability: install-script-robustness
+    severity: minor
+    disposition: |
+      接受（计划外，由 TC-ISR-010「不回归」驱动）。两者都是**已存在的回归失败**：
+      ① 本 change 改 `upstream/fstdd/cli/utils.py` 使该文件 2 处吞异常点行号位移 17 > ±5 容差
+         ⇒ `test_aud_002` / `test_grd_001` 红。按既有机制新建 change 级活表
+         `audit/except-points.yaml`（承接 25 点，指纹未变，仅刷行号 106→123 / 119→136）。
+      ② 上一 change 的 `tests/test_experience_sync_tc_traceability.py` 硬编码
+         `.fstdd/changes/<change>`；该 change 已 DELIVER 归档 ⇒ 3 用例 FileNotFoundError。
+         其 DELIVER 前的全量回归早于 archive，故问题在本次才首次暴露。
+    evidence: "复跑 `test_except_audit.py` + `test_guard_silent_except.py` → 11 passed；追溯测试 → 3 passed。"
+    residual_state: |
+      ⚠️ **框架级启示（建议另立 change）**：任何「按 change 名硬编码路径」的测试/工具，
+      都必须在归档后仍然成立 —— 本仓应统一走 `finder.find_change_dir(..., include_archive=True)`
+      式回退（change-dir-resolution 已在上游命令侧统一，测试侧未覆盖）。
+
+  - id: ADJ-006
+    title: "C12 的 `# noqa: E501` 不落地（判据在本仓错配），改用块注释满足同一意图"
+    capability: install-script-robustness
+    severity: minor
+    disposition: |
+      不接受字面实现。实测 `# noqa: E501` 会触发 `RUF100 Unused noqa directive (non-enabled: E501)`
+      —— 本仓 ruff 未启用 E501 且该行不超长，加 noqa 会**新增一条 lint 违规**。
+      C12 的目的（让维护者知道为何拆开拼接）已由 `tools/_skill_install_env.py` 中
+      `UPSTREAM_CLI` 上方的块注释完整达成，故按目的落地、按字面登记偏离。
+    evidence: "ruff 实测：`X = \"a\" + \"b\"  # noqa: E501` → RUF100。"
+    residual_state: "无。"
+  - id: ADJ-007
+    title: "`code-structure-delta.md` 由 CLI 生成后人工补全（CLI 自动段判据过窄）"
+    capability: install-script-robustness
+    severity: minor
+    disposition: |
+      接受（框架工具长期缺陷，非本 change 引入）。`fstdd structure delta` 只输出 change 目录内
+      1 行 `caveman_summary.txt`，与实际 7 改 + 6 新增不符；上一 change 同形。
+      已在其后人工补全变更文件清单 / 产出物清单 / 新增公共符号，并标注来源与原因。
+    evidence: "对比 `2026-10-11-experience-center-node-sync/code-structure-delta.md` 同为 1 行。"
+    residual_state: |
+      ⚠️ **框架级启示（建议另立 change）**：`structure delta` 的判据应基于 `git diff --name-only`
+      或 AST 扫描，而非 change 目录内的产物文件。
+
+note: |
+  0 条 Major 偏离；无需用户裁决的接口/语义破坏性变更。
+  ADJ-001 是对 design 决策 2 判据的**实质修订**（字符白名单 → 字符白名单 + 段级判据 + 拒前导 `-`），
+  虽定级 Minor（不改变对外接口与成功判据），建议 Gate 3 时一并过目。
+  C1 三路评审的发现项处置（含 1 项 medium 真实注入面修复）见 `test-report.md` §六。

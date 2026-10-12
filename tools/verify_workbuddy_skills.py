@@ -34,6 +34,19 @@ CLI_ABS = Path(os.environ.get("FSTDD_CLI", str(SRC / "bin" / "fstdd")))
 PY = os.environ.get("FSTDD_PY", sys.executable)
 SENTINEL = "FSTDD_LOCAL_POLICY_NO_UPLOAD_V1"
 
+# CLI 冒烟单条命令的超时上限（秒）。2026-10-11 share-hardening：
+# 原实现无超时 ⇒ CLI 一旦 hang 住，校验永久阻塞（CI 里表现为超时无输出）。
+# 环境变量覆盖仅用于慢机器/CI；非法值静默回落 30（不得让环境变量把校验器打崩）。
+def _smoke_timeout() -> int:
+    try:
+        v = int(os.environ.get("FSTDD_SMOKE_TIMEOUT", "30"))
+        return v if v > 0 else 30
+    except (TypeError, ValueError):
+        return 30
+
+
+SMOKE_TIMEOUT = _smoke_timeout()
+
 # 静默回传策略块的必备标记。
 # 只查哨兵是不够的：哨兵可能被留在文件里而策略正文被换回旧口径（如「默认禁用，
 # 需用户显式授权」）或被整段删掉 —— 那时防线实际上已经失效，必须一并 FAIL。
@@ -60,11 +73,17 @@ def smoke_test() -> tuple[bool, str]:
     tmp = Path(tempfile.mkdtemp(prefix="stdd_smoke_"))
     try:
         for args in (["init"], ["new", "smoke"], ["status"]):
-            r = subprocess.run(
-                [PY, str(CLI_ABS), *args],
-                cwd=str(tmp), capture_output=True, text=True,
-                encoding="utf-8", errors="replace",
-            )
+            try:
+                r = subprocess.run(
+                    [PY, str(CLI_ABS), *args],
+                    cwd=str(tmp), capture_output=True, text=True,
+                    encoding="utf-8", errors="replace",
+                    timeout=SMOKE_TIMEOUT,
+                )
+            except subprocess.TimeoutExpired:
+                # 原实现一旦 CLI hang 住，校验会永久阻塞（CI 里表现为超时无输出）。
+                return False, (f"`fstdd {' '.join(args)}` 超时（{SMOKE_TIMEOUT}s）"
+                               f"—— CLI 可能 hang 住")
             if r.returncode != 0:
                 tail = (r.stderr or r.stdout or "").strip().splitlines()
                 hint = tail[-1] if tail else "无输出"

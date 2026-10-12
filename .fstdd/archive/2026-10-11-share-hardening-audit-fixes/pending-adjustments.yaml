@@ -1,0 +1,130 @@
+meta:
+  change_id: "2026-10-11-share-hardening-audit-fixes"
+  updated_at: "2026-10-11T16:30:00+00:00"
+  total: 7
+  major: 0
+  minor: 7
+  source: "Phase 3 BUILD 实现期（长程模式自动记录）+ C1 评审处置"
+
+adjustments:
+  - id: ADJ-001
+    title: "_validate_remote_path 白名单由 `^[\\w./-]+$` 放宽为 `[\\w.@:/-]`，并显式拒绝 `..` 路径段"
+    severity: minor
+    stage: "Phase 3 / Slice 2"
+    design_ref: "design.md 决策 2"
+    original: "只放行 `^[\\w./-]+$`"
+    actual: "白名单扩为 `[\\w.@:/-]`（容纳 `user@host` 形态的 ssh_alias），并额外拒绝 `..` 段"
+    reason: |
+      设计给出的字符集有两处不足（实现期实测）：
+      ① `@` / `:` 未包含 ⇒ 合法形态 `user@host` 会被误拒（ssh 别名允许带用户名）；
+      ② `../etc` **能通过** `^[\\w./-]+$`（`.` 与 `/` 都在集合内）⇒ 无法拦路径上跳，
+         而 SC-006 明确要求 `../etc` 被拒。故必须显式加 `..` 段判据。
+    impact: "TC-SEG-006 / TC-SEG-007 的判据不变；仅实现细节收紧/放宽。"
+    affected_tc: [TC-SEG-006, TC-SEG-007]
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false
+
+  - id: ADJ-002
+    title: "源根深度上限抽为独立函数 `_find_source_root(start, max_depth)`"
+    severity: minor
+    stage: "Phase 3 / Slice 5"
+    design_ref: "design.md 决策 8"
+    original: "`while True` → `for _ in range(50)`（内联在 `get_stdd_source()` 中）"
+    actual: "抽出 `_find_source_root(start, max_depth=MAX_SOURCE_DEPTH)`，`get_stdd_source()` 调用它"
+    reason: |
+      内联写法**不可测**：真实仓库根总能在 ≤5 层内命中，深度上限分支永远走不到，
+      无法在不篡改真实文件系统的前提下断言「超限抛含深度的 RuntimeError」。
+      抽函数后可用合成深目录 + 小 `max_depth` 精确验证（TC-ISR-008）。
+    impact: "无行为变更（`get_stdd_source()` 语义与返回值不变）。"
+    affected_tc: [TC-ISR-008]
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false
+
+  - id: ADJ-003
+    title: "CLI 冒烟超时值可由 `FSTDD_SMOKE_TIMEOUT` 覆盖（默认仍 30s）"
+    severity: minor
+    stage: "Phase 3 / Slice 5"
+    design_ref: "design.md 决策 7"
+    original: "固定 `timeout=30`"
+    actual: "`SMOKE_TIMEOUT = int(os.environ.get(\"FSTDD_SMOKE_TIMEOUT\", \"30\"))`"
+    reason: |
+      默认值保持 30s（SC-017 判据不变）；提供环境变量覆盖是为了让慢机器/CI
+      不必改代码即可放宽，避免「环境慢 → 冒烟误判 FAIL」。
+    impact: "TC-ISR-005 断言 `timeout == 30`（默认值）仍成立。"
+    affected_tc: [TC-ISR-005]
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false
+
+  - id: ADJ-004
+    title: "`silent_share()` 调用点改为 `publish(..., pre_staged=True)`（3 处测试桩同步）"
+    severity: minor
+    stage: "Phase 3 / Slice 3"
+    design_ref: "design.md 决策 4"
+    original: "只描述 `publish()` 新增参数与「必做配套：同步测试桩」"
+    actual: |
+      生产调用点 `silent_share()` 改为 `pre_staged=True`；测试桩共 **3 处** 需同步
+      （设计只预期 1 处）：`fake_publish`、403 降级 `lambda o, r, t`、010c 凭据回显 `lambda o, r, t`。
+    reason: |
+      不传 `pre_staged=True` 则该参数在生产中形同虚设（设计意图无法落地）。
+      交付件只修了 1 处桩 ⇒ 3 红；实测另有 2 处 lambda 桩同样需要加参数。
+    impact: "TC-SEG-009 / TC-SEG-011；`inbox_pull.py` 的 3 位置参数调用不受影响。"
+    affected_tc: [TC-SEG-009, TC-SEG-011]
+    decided_by: "long-range auto-record（预授权 A②：改接口语义）"
+    user_known: false
+
+  - id: ADJ-005
+    title: "附带修复：刷新裸 except 审计活表 + 修上一 change 追溯测试的归档路径"
+    severity: minor
+    stage: "Phase 3 / Part C（回归阻塞）"
+    design_ref: "无（计划外，TC-ISR-010「不回归」驱动）"
+    original: "不在本 change 计划内"
+    actual: |
+      ① 新建 `.fstdd/changes/2026-10-11-share-hardening-audit-fixes/audit/except-points.yaml`
+         （承接 25 点；`upstream/fstdd/cli/utils.py` 2 处行号位移 106→123 / 119→136，指纹未变）；
+      ② `tests/test_experience_sync_tc_traceability.py` 的 change 目录解析改为
+         `changes/` → `archive/` 回退（上一 change 归档后硬编码路径失效 ⇒ 3 用例 FileNotFoundError）。
+    reason: |
+      两者都是**已存在的回归失败**（非本 change 引入），但不修则「全量无新增失败」不成立：
+      ① 本 change 改 `utils.py` 导致审计表行号漂移 17 > ±5 容差 ⇒ test_aud_002 / test_grd_001 红；
+      ② 上一 change 的追溯测试在归档后才首次被全量跑到（其 DELIVER 前的全量回归早于 archive）。
+    impact: "修复后 test_aud_002 / test_grd_001 / 追溯测试 3 例全绿。"
+    affected_tc: [TC-ISR-010]
+    decided_by: "long-range auto-record（预授权 A①/③：技术阻塞绕过）"
+    user_known: false
+
+  - id: ADJ-006
+    title: "C12 的 `# noqa: E501` **不落地**：该判据在本仓不适用，改用块注释满足同一意图"
+    severity: minor
+    stage: "Phase 3 / Part C（C1 文档评审处置）"
+    design_ref: "proposal.md C12 / design.md 决策 9"
+    original: "`tools/_skill_install_env.py`：`UPSTREAM_CLI = \"std\" + \"d\"` 拼接行补 `# noqa: E501` 注释（说明拆开拼接是绕开 verify_rename 裸旧名扫描）"
+    actual: |
+      **不加** `# noqa: E501`；保留并强化既有的块注释（已在 `tools/_skill_install_env.py`
+      `UPSTREAM_CLI` 上方，逐句说明「拆开拼接是为绕开 verify_rename.py 的裸旧名令牌扫描」）。
+    reason: |
+      实测（本机 ruff）：`# noqa: E501` 会触发 **`RUF100 Unused noqa directive (non-enabled: E501)`**
+      —— 本仓 ruff 未启用 E501（该行本身也不超长），加 noqa 反而**新增一条 lint 违规**。
+      即：C12 的判据（加 noqa 令牌）与其目的（让后人知道为什么这样写）在本仓错配；
+      目的已由既有块注释完整达成，故按目的落地、按字面登记偏离。
+    evidence: "实测 `printf 'X = \"a\" + \"b\"  # noqa: E501' > /tmp/p.py && ruff check /tmp/p.py` → RUF100。"
+    impact: "零代码行为变更；避免引入新的 lint 违规。"
+    affected_tc: []
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false
+
+  - id: ADJ-007
+    title: "`code-structure-delta.md` 由 CLI 生成后**人工补全**（CLI 自动段判据过窄）"
+    severity: minor
+    stage: "Phase 3 / Part C（C1 文档评审处置）"
+    design_ref: "无（框架工具缺陷，历史 change 同形）"
+    original: "`fstdd structure delta <change>` 应列出本 change 的代码结构变化"
+    actual: |
+      CLI 只输出 1 行 `- caveman_summary.txt`（change 目录内的自身产物），与本 change
+      实际的 7 改 + 6 新增严重不符。已在其后**人工补全**变更文件清单、产出物清单与
+      新增/变更公共符号。上一 change（`2026-10-11-experience-center-node-sync`）的
+      delta 同样是 1 行 ⇒ 属**框架工具长期缺陷**，非本 change 引入。
+    reason: "结构 delta 是 BUILD 产出物之一，不能只留一行占位；工具输出不可信时以 `git status` / `git diff --stat` 为准并标注来源。"
+    impact: "无代码影响；提升交付物可读性。"
+    affected_tc: []
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false

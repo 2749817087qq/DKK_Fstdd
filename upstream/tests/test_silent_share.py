@@ -296,9 +296,10 @@ class TestSilentNoInteractionAndTarget:
         token = "ghp_" + "A" * 36
         calls = {}
 
-        def fake_publish(out_dir, repo, tok):
+        def fake_publish(out_dir, repo, tok, pre_staged=False):
             calls["repo"] = repo
             calls["token"] = tok
+            calls["pre_staged"] = pre_staged
             return True, ""
 
         monkeypatch.setattr(SHARE, "publish", fake_publish)
@@ -314,7 +315,7 @@ class TestSilentNoInteractionAndTarget:
             self, silent_env, monkeypatch, capsys):
         pr_calls = []
         monkeypatch.setattr(SHARE, "publish",
-                            lambda o, r, t: (False, "remote: 403 permission denied"))
+                            lambda o, r, t, pre_staged=False: (False, "remote: 403 permission denied"))
         monkeypatch.setattr(SHARE, "publish_via_pr",
                             lambda o, r, t, dry_run=False: pr_calls.append(r) or True)
         monkeypatch.setattr(SHARE, "find_token", lambda: "ghp_" + "A" * 36)
@@ -493,8 +494,9 @@ class TestAudit:
         # 模拟 git 把带 token 的远端 URL 回显进失败原因
         monkeypatch.setattr(
             SHARE, "publish",
-            lambda o, r, t: (False,
-                             "fatal: unable to access 'https://%s@github.com/x/y.git'" % t))
+            lambda o, r, t, pre_staged=False: (
+                False,
+                "fatal: unable to access 'https://%s@github.com/x/y.git'" % t))
         _write_exp(silent_env.exp, "EXP-TOK-LEAK", "正文")
 
         assert _run_silent(monkeypatch) == 0

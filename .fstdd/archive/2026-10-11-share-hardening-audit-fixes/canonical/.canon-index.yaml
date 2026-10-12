@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-11-share-hardening-audit-fixes: proposals/2026-10-11-share-hardening-audit-fixes.yaml
+specs:
+  agent:
+    2026-10-11-share-hardening-audit-fixes: specs/agent/2026-10-11-share-hardening-audit-fixes.yaml
+  code:
+    2026-10-11-share-hardening-audit-fixes: specs/code/2026-10-11-share-hardening-audit-fixes.yaml
+version: '2.9'

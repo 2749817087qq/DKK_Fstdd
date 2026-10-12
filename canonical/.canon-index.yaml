@@ -19,6 +19,7 @@ proposals:
   2026-10-07-tool-defect-fixes: proposals/2026-10-07-tool-defect-fixes.yaml
   2026-10-10-experience-library-consolidation: proposals/2026-10-10-experience-library-consolidation.yaml
   2026-10-11-experience-center-node-sync: proposals/2026-10-11-experience-center-node-sync.yaml
+  2026-10-11-share-hardening-audit-fixes: proposals/2026-10-11-share-hardening-audit-fixes.yaml
 specs:
   agent:
     2026-09-19-notices-authenticity-gate: specs/agent/2026-09-19-notices-authenticity-gate.yaml
@@ -35,6 +36,7 @@ specs:
     2026-10-07-tool-defect-fixes: specs/agent/2026-10-07-tool-defect-fixes.yaml
     2026-10-10-experience-library-consolidation: specs/agent/2026-10-10-experience-library-consolidation.yaml
     2026-10-11-experience-center-node-sync: specs/agent/2026-10-11-experience-center-node-sync.yaml
+    2026-10-11-share-hardening-audit-fixes: specs/agent/2026-10-11-share-hardening-audit-fixes.yaml
     inbox-api-only-write: specs/agent/inbox-api-only-write.yaml
     inbox-deploy: specs/agent/inbox-deploy.yaml
   code:
@@ -48,6 +50,7 @@ specs:
     2026-10-04-github-mirror-secret-remediation: specs/code/2026-10-04-github-mirror-secret-remediation.yaml
     2026-10-10-experience-library-consolidation: specs/code/2026-10-10-experience-library-consolidation.yaml
     2026-10-11-experience-center-node-sync: specs/code/2026-10-11-experience-center-node-sync.yaml
+    2026-10-11-share-hardening-audit-fixes: specs/code/2026-10-11-share-hardening-audit-fixes.yaml
     archive-state-consistency: specs/code/archive-state-consistency.yaml
     audit-errata: specs/code/audit-errata.yaml
     build-quality-verification: specs/code/build-quality-verification.yaml

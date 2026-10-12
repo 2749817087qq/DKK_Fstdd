@@ -1,0 +1,204 @@
+# spec.yaml — 行为规格（Canonical YAML）
+# capability: share-hardening-audit-fixes（umbrella，覆盖 3 个 capability：share-egress-hardening /
+#             install-script-robustness / fstdd-fin）
+# 对应 Proposal: canonical/proposals/2026-10-11-share-hardening-audit-fixes.yaml (C1–C12, SC1–SC10)
+# 锚定等级：L3（proposal.risk_assessment.safety_critical=true ⇒ 强制 ≥L3）
+
+meta:
+  capability: "share-hardening-audit-fixes"
+  change_id: "2026-10-11-share-hardening-audit-fixes"
+  created: "2026-10-11T10:20:00+00:00"
+  confidence: high
+
+requirements:
+  # ─────────────── C1：脱敏规则补漏 + 第二层防线同源（share-egress-hardening）───────────────
+  - id: REQ-001
+    capability: "share-egress-hardening"
+    description: "SANITIZE_RULES 新增 3 类凭证脱敏规则，且 OUTBOUND_RESIDUAL_RE 出站自检同源对齐"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "C1：AWS Secret Access Key（40 字符 base64，带 aws_secret_access_key 上下文）"
+        given: "一段含 `aws_secret_access_key = <40 字符 base64>` 的文本"
+        when: "调用 `sanitize(text)`"
+        then: "SHALL 把该值替换为占位符 `<AWS_SECRET>`"
+      - id: SC-002
+        confidence: high
+        evidence: "C1：URL 认证参数（?api_key= / ?token= / ?password= 等）"
+        given: "一段含 `https://host/path?token=abc123&x=1` 的文本"
+        when: "调用 `sanitize(text)`"
+        then: "SHALL 抹掉该查询参数的值（不残留 `abc123`）"
+      - id: SC-003
+        confidence: high
+        evidence: "C1：SSH 私钥路径（~/.ssh/id_rsa 等）"
+        given: "一段含 `~/.ssh/id_rsa` 与 `/home/u/.ssh/id_ed25519` 的文本"
+        when: "调用 `sanitize(text)`"
+        then: "SHALL 把两处路径替换为占位符 `<SSH_KEY_PATH>`"
+      - id: SC-004
+        confidence: high
+        evidence: "C1 + 交付件 critical：OUTBOUND_RESIDUAL_RE 内联 (?i) 导致 import 崩；EXP FSTDD005-EXP-20260918-C4 第二层防线必须直接断言"
+        given: "本仓 `tools/share_experience.py`（Python 3.13）"
+        when: "import 该模块"
+        then: "SHALL 成功导入（`OUTBOUND_RESIDUAL_RE` 可编译），且该正则对上述三类新增形态均 `search` 命中"
+      - id: SC-005
+        confidence: high
+        evidence: "C1 回归约束：脱敏不得误伤正常内容"
+        given: "既有 `tests/test_share_publish_sanitize.py` 的全部夹具"
+        when: "运行该测试文件"
+        then: "SHALL 全部通过（含 `test_stage_keeps_benign_identifiers`）"
+
+  # ─────────────── C2：scp 目标输入校验（share-egress-hardening）───────────────
+  - id: REQ-002
+    capability: "share-egress-hardening"
+    description: "新增 _validate_remote_path()，对 remote_dir / ssh_alias / FSTDD_NODE_ID 做白名单校验，防 scp 目标命令注入"
+    scenarios:
+      - id: SC-006
+        confidence: high
+        evidence: "C2：三者来自环境变量，原代码直接拼进 scp 目标"
+        given: "含 shell 元字符的候选值（如 `a; rm -rf /`、`a|b`、`` a`b ``、`a$(x)`、`a b`、`../etc`）"
+        when: "调用 `_validate_remote_path(value, label)`"
+        then: "SHALL 返回 `(False, <含 label 的错误信息>)`"
+      - id: SC-007
+        confidence: high
+        evidence: "C2：合法值形态为 /home/ubuntu/fstdd-inbox、fstdd-hub、FSTDD003"
+        given: "合法值 `/home/ubuntu/fstdd-inbox`、`fstdd-hub`、`FSTDD003`"
+        when: "调用 `_validate_remote_path(value, label)`"
+        then: "SHALL 返回 `(True, \"\")`"
+
+  # ─────────────── C3：token 文件权限告警（share-egress-hardening）───────────────
+  - id: REQ-003
+    capability: "share-egress-hardening"
+    description: "新增 _check_token_file_permissions()：token 文件权限过宽时告警，仅警告不阻断，Windows 跳过"
+    scenarios:
+      - id: SC-008
+        confidence: medium
+        evidence: "C3 + EXP FSTDD005-EXP-20260918-C6（明文落盘 0644 ⇒ 全量吊销）；设计决策 3 明确不阻断"
+        given: "POSIX 环境下权限为 0644 的 token 文件"
+        when: "调用 `_check_token_file_permissions(path, label)`"
+        then: "SHALL 输出含 `[WARN]` 与 `chmod 600` 的提示，且 SHALL NOT 抛异常或中断调用方"
+
+  # ─────────────── C4/C5：publish pre_staged + 重命名（share-egress-hardening）───────────────
+  - id: REQ-004
+    capability: "share-egress-hardening"
+    description: "publish() 新增 pre_staged 参数：跳过内部二次脱敏且不清理传入目录；默认行为不变；同步测试桩"
+    scenarios:
+      - id: SC-009
+        confidence: high
+        evidence: "C4：silent_share 已 stage_sanitized，二次脱敏会误伤占位符"
+        given: "out_dir 内容已脱敏，`pre_staged=True`，且有可用 token 触发 GitHub 分支"
+        when: "调用 `publish(out_dir, repo, token, pre_staged=True)`"
+        then: "SHALL NOT 再次调用 `stage_sanitized`，且 SHALL NOT 删除 out_dir"
+      - id: SC-010
+        confidence: high
+        evidence: "C4 向后兼容约束"
+        given: "以 3 个位置参数调用 `publish(out_dir, repo, token)`（如 inbox_pull.py 的调用形态）"
+        when: "调用"
+        then: "SHALL 行为与改动前一致（内部 staging + 内部清理）"
+      - id: SC-011
+        confidence: high
+        evidence: "交付件 ② 号缺陷：新调用点未同步测试桩 ⇒ test_silent_share 3 红"
+        given: "更新测试桩后的 `upstream/tests/test_silent_share.py`"
+        when: "运行该测试文件"
+        then: "SHALL 全部通过（交付件版本为 3 failed / 80 passed）"
+      - id: SC-012
+        confidence: high
+        evidence: "C5：SCP_LIKE_RE → SCP_SYNTAX_RE，仅模块内 2 处引用"
+        given: "改动后的 `tools/share_experience.py`"
+        when: "import 并调用 `git_remote(\"git@host:owner/name\")`"
+        then: "SHALL 原样返回该 scp 形态字符串（语义不变），且模块内不再有 `SCP_LIKE_RE` 标识"
+
+  # ─────────────── C7：strip_frontmatter 逐行扫描（install-script-robustness）───────────────
+  - id: REQ-005
+    capability: "install-script-robustness"
+    description: "strip_frontmatter() 改逐行扫描：只在行首恰为 `---` 处收尾，找不到则返回原文"
+    scenarios:
+      - id: SC-013
+        confidence: high
+        evidence: "C7：原 `find(\"\\n---\", 3)` 遇到 frontmatter 内含 `---` 会错位截断"
+        given: "frontmatter 内含一行 `---`（如多文档 YAML）的输入"
+        when: "调用 `strip_frontmatter(text)`"
+        then: "SHALL 在**第二个**行首独立 `---` 处收尾，正文不被截断"
+      - id: SC-014
+        confidence: medium
+        evidence: "C7 边界"
+        given: "以 `---` 开头但全文再无行首 `---` 的输入"
+        when: "调用 `strip_frontmatter(text)`"
+        then: "SHALL 原样返回输入（不丢内容）"
+
+  # ─────────────── C7/C8：安全策略模板化（install-script-robustness）───────────────
+  - id: REQ-006
+    capability: "install-script-robustness"
+    description: "安全策略三大段文本外置为 tools/templates/*.md.j2（Jinja2 渲染），模板缺失时回落原常量"
+    scenarios:
+      - id: SC-015
+        confidence: high
+        evidence: "C8：3 个新模板；SC9 要求哨兵在位"
+        given: "`tools/templates/` 下三个 `.j2` 模板存在"
+        when: "运行 `install_workbuddy_skills.py --platform workbuddy` 后检查产出的 SKILL.md"
+        then: "SHALL 含哨兵 `FSTDD_LOCAL_POLICY_NO_UPLOAD_V1`，且安全策略段落文本与模板化前等价"
+      - id: SC-016
+        confidence: medium
+        evidence: "C7 fallback 设计：`_render_template` 缺文件返回空串并回落常量"
+        given: "模板文件缺失"
+        when: "调用 `_render_template(<缺失名>, ctx)`"
+        then: "SHALL 返回空字符串（调用方据此回落原常量，不抛异常）"
+
+  # ─────────────── C9/C10：超时与参数校验（install-script-robustness）───────────────
+  - id: REQ-007
+    capability: "install-script-robustness"
+    description: "verify_workbuddy_skills 的 CLI 冒烟加 30s 超时；install.sh 对 --py/--platform 做参数校验"
+    scenarios:
+      - id: SC-017
+        confidence: medium
+        evidence: "C9：原实现 hang 即永久阻塞"
+        given: "CLI 冒烟子进程 hang 住（模拟）"
+        when: "运行 `verify_workbuddy_skills.py` 的冒烟检查"
+        then: "SHALL 在超时（30s）内返回 `(False, <含「超时」字样的原因>)`，SHALL NOT 无限阻塞"
+      - id: SC-018
+        confidence: high
+        evidence: "C10：`--py` 缺参时 `${2:-}` 为空会静默传空值"
+        given: "以 `--py` 结尾（无参数）调用 `install.sh`"
+        when: "解析参数"
+        then: "SHALL 输出 `[FAIL]` 并以退出码 2 结束"
+      - id: SC-019
+        confidence: medium
+        evidence: "C10：未知参数原本静默忽略"
+        given: "传入未知参数 `--nope`"
+        when: "解析参数"
+        then: "SHALL 输出含「未知参数」的 `[WARN]` 且不中断"
+
+  # ─────────────── C6：源根查找深度上限（install-script-robustness）───────────────
+  - id: REQ-008
+    capability: "install-script-robustness"
+    description: "upstream/fstdd/cli/utils.py 源根查找加最大深度 50，防符号链接循环无限遍历"
+    scenarios:
+      - id: SC-020
+        confidence: medium
+        evidence: "C6：正常仓库 ≤5 层，50 为极端上限"
+        given: "向上遍历 50 层仍未找到 `FSTDD.md`/`STDD.md` + `bin/` 的环境"
+        when: "调用源根解析"
+        then: "SHALL 抛出含深度信息的 `RuntimeError`，SHALL NOT 无限循环"
+
+  # ─────────────── C11：金融红线补充（fstdd-fin）───────────────
+  - id: REQ-009
+    capability: "fstdd-fin"
+    description: "skills/fstdd-fin/SKILL.md 补充 3 条：费率/限额版本化、灾备 RTO/RPO、并发幂等键测试方法"
+    scenarios:
+      - id: SC-021
+        confidence: high
+        evidence: "C11：三处文本补充"
+        given: "`skills/fstdd-fin/SKILL.md`"
+        when: "检索文件内容"
+        then: "SHALL 含「费率/限额变更必须版本化配置」、「RTO」、「RPO」、「并发幂等键冲突」四处关键措辞"
+
+  # ─────────────── C12 + 全局：不回归 ───────────────
+  - id: REQ-010
+    capability: "install-script-robustness"
+    description: "本变更不引入回归：全量 pytest 无新增失败"
+    scenarios:
+      - id: SC-022
+        confidence: high
+        evidence: "SC10：全量 pytest（upstream/tests + 根 tests）"
+        given: "改动后的仓库"
+        when: "运行 `pytest upstream/tests tests`"
+        then: "SHALL 无新增失败（唯一允许的失败为 `test_a6_no_stray_untracked_files` 结构性红，提交后转绿）"
