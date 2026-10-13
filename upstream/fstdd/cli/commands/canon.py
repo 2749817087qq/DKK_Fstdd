@@ -35,11 +35,23 @@ def _resolve_change_dir(project_root: Path, change_name: str) -> Path:
     return project_root / ".fstdd" / "changes" / change_name
 
 
+def _root_canonical_dir(project_root: Path) -> Path:
+    """根 canonical 的唯一定义点（仓库根 ``canonical/``）。
+
+    D1（change 2026-10-12-canon-merge-command）：此前「根 canonical 在哪」有两个互不一致的定义 ——
+    ``_get_canon_dir(None)`` 返回 ``.fstdd/canonical``，而实践（DELIVER 手工合并、``canon verify``）
+    用的是仓库根 ``canonical/``。后者才是真身（74 个被跟踪文件、活跃维护），前者是
+    ``canon init --project-level`` 遗留的 0 文件空骨架。统一收口到此函数，
+    顺带修好 ``canon generate --all`` / ``_generate_one`` 项目级回退分支扫空目录的缺陷。
+    """
+    return project_root / "canonical"
+
+
 def _get_canon_dir(project_root: Path, change_name: str = None) -> Path:
-    """Get canonical directory. Defaults to changes/<change>/canonical/ (V2.9)."""
+    """Get canonical directory."""
     if change_name:
         return _resolve_change_dir(project_root, change_name) / "canonical"
-    return project_root / ".fstdd" / "canonical"
+    return _root_canonical_dir(project_root)  # D1：原为 project_root / ".fstdd" / "canonical"
 
 
 def _find_current_change(project_root: Path) -> str:
@@ -519,6 +531,163 @@ def _flatten_keys(data: dict, prefix: str = "") -> set:
     return keys
 
 
+def _safe_meta(yaml_file: Path) -> dict:
+    """安全读取 YAML 的 meta（解析失败返回空，不崩）。"""
+    try:
+        return yaml.safe_load(yaml_file.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return {}
+
+
+def _merge_index_section(index: dict, item: dict) -> dict:
+    """把一条合并项登记进根索引（proposals 顶层；agent/code 在 specs 下）。"""
+    sec = item["index_section"]
+    if sec == "proposals":
+        index.setdefault("proposals", {})[item["index_key"]] = item["index_val"]
+    else:  # agent / code -> specs.<sec>
+        index.setdefault("specs", {}).setdefault(sec, {})[item["index_key"]] = item["index_val"]
+    return index
+
+
+def _build_merge_plan(src_canon: Path, root_canon: Path) -> list:
+    """枚举源三类文件并决策每个目标的动作（WRITE / SKIP / CONFLICT / SKIP-MISSING）。
+
+    D2 命名三分法：proposal/agent 以 ``meta.change_id`` 命名，code 以 ``meta.capability`` 命名；
+    唯一依据是源文件元数据。缺字段 => SKIP-MISSING（告警 + 跳过，不静默改名）。
+    """
+    plan = []
+    for kind, src_sub, idx_sec, meta_key in (
+        ("proposal", "proposals", "proposals", "change_id"),
+        ("agent", "specs/agent", "agent", "change_id"),
+        ("code", "specs/code", "code", "capability"),
+    ):
+        src_dir = src_canon / src_sub
+        if not src_dir.is_dir():
+            continue
+        for yf in sorted(src_dir.glob("*.yaml")):
+            if not yf.is_file():
+                continue
+            meta = _safe_meta(yf)
+            inner = meta.get("meta") or {}
+            name = inner.get(meta_key) or meta.get(meta_key)
+            if not name:
+                plan.append({
+                    "status": "SKIP-MISSING",
+                    "src": yf, "kind": kind,
+                    "reason": f"{kind} 源缺 meta.{meta_key}（跳过，不静默改名）",
+                })
+                continue
+            dst = root_canon / src_sub / f"{name}.yaml"
+            if dst.exists():
+                if dst.read_bytes() == yf.read_bytes():
+                    status = "SKIP"
+                else:
+                    status = "CONFLICT"
+            else:
+                status = "WRITE"
+            plan.append({
+                "status": status, "src": yf, "dst": dst, "kind": kind,
+                "index_section": idx_sec, "index_key": name,
+                "index_val": f"{src_sub}/{name}.yaml",
+            })
+    return plan
+
+
+def _load_index(index_path: Path) -> dict:
+    if index_path.exists():
+        try:
+            return yaml.safe_load(index_path.read_text(encoding="utf-8")) or {}
+        except Exception:
+            return {}
+    return {"version": "2.9", "proposals": {}, "designs": {}, "specs": {"code": {}, "agent": {}}}
+
+
+def _save_index(index_path: Path, index: dict):
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index_path.write_text(
+        yaml.safe_dump(index, allow_unicode=True, sort_keys=True, default_flow_style=False),
+        encoding="utf-8", newline="",
+    )
+
+
+def cmd_canon_merge(args):
+    """合并一个 change 的 canonical 到根 canonical/（DELIVER 自动步骤）。
+
+    设计决策（change 2026-10-12-canon-merge-command）：
+    D2 命名三分法（唯一依据 = 源文件 meta）；D3 幂等（同值不动作 / 异值报错不覆盖）；
+    D4 ``--dry-run`` 复用 ``_dryrun``（只预览不落盘）；D5 change 名走 ``_resolve_change_dir``
+    （统一入口 + 穿越防护，不自建拼接）；D6 归档 change 可用（include_archive=True）；
+    D8 失败即响（非 0 退出 + 说明已写 / 未写哪些，不留半成品）。
+    """
+    project_root = Path.cwd()
+    change_name = args.change_name
+    if not change_name:
+        change_name = _find_current_change(project_root)
+    if not change_name:
+        print("  找不到 change：未指定且当前无在办 change")
+        sys.exit(1)
+
+    # D5：经统一入口解析源目录（含 archive 回退；穿越防护在 finder._resolve_in 内）
+    src_change_dir = _resolve_change_dir(project_root, change_name)
+    src_canon = src_change_dir / "canonical"
+    if not src_canon.is_dir():
+        print(f"  找不到 change 的 canonical 目录：{src_canon}（change 名解析不到或该 change 无 canonical）")
+        sys.exit(1)
+
+    # D1：根 canonical 唯一定义点
+    root_canon = _root_canonical_dir(project_root)
+    root_canon.mkdir(parents=True, exist_ok=True)
+    index_path = root_canon / ".canon-index.yaml"
+
+    plan = _build_merge_plan(src_canon, root_canon)
+
+    # D4：--dry-run 只预览不落盘
+    if dry_run_requested(args):
+        print(f"  [dry-run] canon merge {change_name} 预览（不修改文件系统）：")
+        for item in plan:
+            st = item["status"]
+            if st in ("WRITE", "SKIP", "CONFLICT"):
+                print(f"    {st:8s} -> {item['dst'].relative_to(project_root).as_posix()}")
+            else:
+                print(f"    {st:8s} {item['reason']}")
+        return
+
+    # 执行合并
+    index = _load_index(index_path)
+    written, skipped, conflicts, missing = [], [], [], []
+    for item in plan:
+        st = item["status"]
+        if st == "WRITE":
+            item["dst"].parent.mkdir(parents=True, exist_ok=True)
+            item["dst"].write_bytes(item["src"].read_bytes())
+            index = _merge_index_section(index, item)
+            written.append(item["dst"].relative_to(project_root).as_posix())
+        elif st == "SKIP":
+            index = _merge_index_section(index, item)
+            skipped.append(item["dst"].relative_to(project_root).as_posix())
+        elif st == "CONFLICT":
+            conflicts.append(item["dst"].relative_to(project_root).as_posix())
+        else:  # SKIP-MISSING
+            missing.append(item["reason"])
+
+    _save_index(index_path, index)
+
+    # D8：汇总 + 退出码
+    print(f"  canon merge {change_name}：WRITE {len(written)} / SKIP {len(skipped)} / "
+          f"CONFLICT {len(conflicts)} / SKIP-MISSING {len(missing)}")
+    for w in written:
+        print(f"    + 写入 {w}")
+    for s in skipped:
+        print(f"    = 跳过（已存在且一致）{s}")
+    for c in conflicts:
+        print(f"    ! 冲突（已存在且内容不同，未覆盖）{c}")
+    for m in missing:
+        print(f"    ? 跳过（{m}）")
+
+    if conflicts or missing:
+        sys.exit(1)
+
+
 def _dispatch(args):
     """Route to appropriate canon subcommand."""
     if args.subcommand == "init":
@@ -527,6 +696,8 @@ def _dispatch(args):
         cmd_canon_generate(args)
     elif args.subcommand == "verify":
         cmd_canon_verify(args)
+    elif args.subcommand == "merge":
+        cmd_canon_merge(args)
     else:
         print(f"  Unknown canon subcommand: {args.subcommand}")
         sys.exit(1)

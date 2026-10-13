@@ -309,6 +309,8 @@ def main() -> None:
     p_canon_gen.add_argument("--all", action="store_true", help="生成所有 change 的 Human View")
     p_canon_verify = canon_subs.add_parser("verify", help="验证双轨一致性", parents=[parent])
     p_canon_verify.add_argument("change_name", help="change 名称")
+    p_canon_merge = canon_subs.add_parser("merge", help="合并 change 的 canonical 到根 canonical/", parents=[parent])
+    p_canon_merge.add_argument("change_name", nargs="?", help="change 名称（默认: 最近的 change）")
 
     # V2.7: index — Project-level index management
     p_index = subparsers.add_parser("index", help="项目索引管理 (V2.7)", parents=[parent])
