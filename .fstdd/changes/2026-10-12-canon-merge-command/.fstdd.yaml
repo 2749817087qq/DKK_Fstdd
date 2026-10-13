@@ -1,0 +1,38 @@
+baseline:
+  at: '2026-10-12T13:55:58+00:00'
+  base_git_sha: 34f11b50a22725af2ad45f2b7663fa535f332b66
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-12-canon-merge-command
+complexity_score: 7
+current_phase: build
+design_adjustments:
+  count: 0
+last_modified: '2026-10-13T03:42:54+00:00'
+mode: standard
+phases:
+  build:
+    status: in_progress
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-13T03:41:52+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 继续
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-12T13:55:58+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 1 ① Gate 1 回「确认」；2 ③ Gate 1 回「确认」
+    status: completed
+score_confidence: preliminary
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

@@ -1,0 +1,124 @@
+meta:
+  capability: canon-merge-automation
+  change_id: "2026-10-12-canon-merge-command"
+  title: canonical 合并自动化
+  created: "2026-10-13T01:55:00+08:00"
+  status: draft
+requirements:
+- id: REQ-001
+  title: 命令存在且可预览（--dry-run 不写盘）
+  description: "`fstdd canon merge <change>` 子命令必须存在；传入 `--dry-run` 时只打印将发生的写操作，不修改文件系统。"
+  scenarios:
+  - id: SC-001
+    given: 一个含 canonical/ 三类文件的 change（在办或已归档）
+    when: 以 `--dry-run` 执行 `fstdd canon merge <change>`
+    then: 命令 SHALL 以退出码 0 结束并打印「将写入哪些目标文件、索引如何变化」的决策清单，且 SHALL
+      NOT 创建或修改任何文件（执行前后 `git status --porcelain` 逐字一致）
+    confidence: high
+    evidence: design.md D4（复用 commands/_dryrun.py，v3.3.7 已统一 78 个写点）
+- id: REQ-002
+  title: 根 canonical 路径为单一事实源
+  description: 「根 canonical 在哪里」必须有且只有一个定义点，且指向仓库根的 canonical/。
+  scenarios:
+  - id: SC-002
+    given: 项目根目录下存在仓库根 `canonical/`（含 proposals/ 与 specs/）
+    when: 查询根 canonical 路径（`_get_canon_dir(root)` 无 change_name，或 `_root_canonical_dir(root)`）
+    then: 两者 SHALL 返回**同一**路径且 SHALL 等于 `<project_root>/canonical`，SHALL NOT 返回 `.fstdd/canonical`
+    confidence: high
+    evidence: design.md D1；观测 6（仓库根 canonical/ 有 74 个被跟踪文件，.fstdd/canonical/ 为 0 个的空骨架；改前
+      _get_canon_dir(None) 返回后者）
+- id: REQ-003
+  title: 幂等：同值不动作、异值报错、不覆盖
+  description: 连续执行两次不得产生差异；目标已存在且内容不同时必须报错而非静默覆盖。
+  scenarios:
+  - id: SC-003
+    given: 已成功执行过一次 `canon merge <change>`（目标文件与源逐字节相同、索引条目已登记）
+    when: 再次执行 `fstdd canon merge <change>`（不带 --dry-run）
+    then: 第二次 SHALL 以退出码 0 结束，且 `git diff` SHALL 为空（无任何新变更），已存在的目标文件 SHALL
+      NOT 被重写
+    confidence: high
+    evidence: design.md D3（内容逐字节相同则 SKIP-identical）
+  - id: SC-003b
+    given: 根 canonical 中某目标文件已存在，且内容与源**不同**（如根侧有过人工修订）
+    when: 执行 `fstdd canon merge <change>`
+    then: 命令 SHALL 以**非 0** 退出码结束，SHALL NOT 覆盖该目标文件，并 SHALL 在输出中说明冲突文件路径与「已写
+      / 未写哪些」
+    confidence: high
+    evidence: design.md D3 + D8；反覆盖的理由：覆盖会静默销毁根侧人工修正
+- id: REQ-004
+  title: 命名口径：三分法，唯一依据是源文件元数据
+  description: 目标文件名只能由源文件内的 meta.change_id / meta.capability 决定；缺字段时告警并跳过，不得静默改名或启发式推断。
+  scenarios:
+  - id: SC-005
+    given: 源 proposals/<change>.yaml 与 specs/agent/<change>.yaml 只有 meta.change_id；specs/code/<cap>.yaml
+      有 meta.capability
+    when: 执行 `fstdd canon merge <change>`
+    then: proposal 与 agent spec SHALL 以 meta.change_id 为目标文件名，code spec SHALL 以 meta.capability
+      为目标文件名，且 SHALL NOT 由人工或命令行参数决定
+    confidence: high
+    evidence: design.md D2；观测 7 量化（proposals 21/21、agent 16/18、code 23/34）
+  - id: SC-005b
+    given: 某个源文件**缺少**其对应的元数据字段（如 code spec 无 meta.capability）
+    when: 执行 `fstdd canon merge <change>`
+    then: 命令 SHALL 为该文件输出含文件路径的**告警**并将其**跳过**，SHALL NOT 静默改名、SHALL
+      NOT 据内容推断名字；退出码 SHALL 为非 0（因为有未合并项）
+    confidence: medium
+    evidence: design.md D2 缺字段则告警加跳过 + D8 失败即响。中置信度：退出码取值需在 Phase 3 固化
+- id: REQ-005
+  title: 归档 change 必须可用
+  description: DELIVER 的时序是先归档再合并，故 merge 必须能解析已归档 change 的 canonical。
+  scenarios:
+  - id: SC-006
+    given: 目标 change 已通过 `fstdd archive` 归档到 `.fstdd/archive/<change>/`
+    when: 执行 `fstdd canon merge <change>`
+    then: 命令 SHALL 正确定位到 archive/<change>/canonical/ 并完成合并，SHALL NOT 以「已归档」为由拒绝
+    confidence: high
+    evidence: design.md D6（用 find_change_dir(include_archive=True)，不用 require_active_change_dir）
+- id: REQ-006
+  title: upstream 修改必须先登记
+  description: 本 change 修改 vendored 内核，动手前必须在 docs/UPSTREAM_PATCHES.md 表体正式登记。
+  scenarios:
+  - id: SC-007
+    given: "`docs/UPSTREAM_PATCHES.md` 表体在改动前为空（仅「待登记」区 2 条）"
+    when: 本 change 的 upstream 改动落地时
+    then: 表体 SHALL 含本 change 的登记行，且 8 列（文件 / 行号 / 修改原因 / 关联上游 issue-PR /
+      登记日期 / 登记人 / 预期回退版本）SHALL 全部非空；「待登记」区既有两条 SHALL 原样保留
+    confidence: high
+    evidence: design.md D7；该文件自称「单一事实源，必须先于修改在此登记」
+- id: REQ-007
+  title: 不破坏既有行为
+  description: canon init / generate / verify 的行为与既有测试不得被破坏；CLI 解析面不得回归。
+  scenarios:
+  - id: SC-008
+    given: 本 change 的全部改动已落地
+    when: 跑既有 canon 相关测试 + 全量根级与框架侧测试 + CLI 冒烟（--help / init / new / status）
+    then: 上述测试 SHALL 0 failed（既有失败须逐条归因）；除 --dry-run 外不得有行为变化
+    confidence: high
+    evidence: design.md D1 风险缓解；Gate 1 约束「不得破坏既有 canon init/generate/verify 的行为与测试」
+- id: REQ-008
+  title: 输入校验与统一入口（安全边界）
+  description: change 名来自用户输入，必须经统一解析入口且内置穿越防护；不得自建解析器。
+  scenarios:
+  - id: SC-009
+    given: 用户传入含路径分隔符或 `..` 的 change 名（如 ../../x、a/b）
+    when: 执行 `fstdd canon merge <that name>`
+    then: 命令 SHALL 以非 0 退出码结束并报「找不到 change」，SHALL NOT 解析到 changes/ 或
+      archive/ 之外的任何路径，SHALL NOT 写入任何文件
+    confidence: high
+    evidence: design.md D5；finder._resolve_in:11-18 已内置该拒绝（EXP-2026-0027/0032 的教训落地处）
+  - id: SC-009b
+    given: 用户传入**合法**的 change 名（含连字符、点、数字，如 2026-10-12-test-teardown-resilience）
+    when: 执行 `fstdd canon merge <that name>`
+    then: 命令 SHALL 正常解析并合并，不得因输入校验过紧而误拒
+    confidence: high
+    evidence: EXP-2026-0032 的 fix_template 明确要求「同时准备合法形态必须放行的正例，否则收紧了却误拒」
+- id: REQ-009
+  title: 判据必须落到函数体（防假合规）
+  description: 测试必须断言 merge 路径**调用**了统一解析入口，而非仅在模块顶部 import。
+  scenarios:
+  - id: SC-010
+    given: "`canon.py` 的源码"
+    when: 检查 merge 相关函数体内是否出现对 find_change_dir / _resolve_change_dir 的**调用**
+    then: SHALL 存在该调用；且 SHALL NOT 存在第二套自行拼接 `.fstdd/changes/<name>` 的解析逻辑
+    confidence: high
+    evidence: EXP-2026-0026（判据锚点是模块级符号出现则模块可 import 了统一入口却从不调用，造成假阴性）

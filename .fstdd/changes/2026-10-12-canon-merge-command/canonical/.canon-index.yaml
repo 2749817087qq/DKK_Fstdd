@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-12-canon-merge-command: proposals/2026-10-12-canon-merge-command.yaml
+specs:
+  agent:
+    2026-10-12-canon-merge-command: specs/agent/2026-10-12-canon-merge-command.yaml
+  code:
+    canon-merge-automation: specs/code/canon-merge-automation.yaml
+version: '2.9'
