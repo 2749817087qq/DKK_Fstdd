@@ -371,3 +371,61 @@ monkeypatch 用法正确（`setitem` 只改字典值、teardown 必还原）· T
 | 多版本测试 | N/A | 配置列 3.10–3.12，本机仅 3.13.12 |
 | 覆盖率 | 诊断 | **`tests/conftest.py` 76%**（见 §1.1）；`fail_under: 0`，仅诊断；未覆盖项均为幂等/防御分支或基线既有 helper |
 | 十四类失败模式 | ✅ | 17 ✅ / 1 ⚠️ / 5 ⏭（非金融） |
+
+---
+
+## 十四、DELIVER 收口与交付后复验（Phase 4）
+
+> 本节由 Phase 4 DELIVER 执行时补入，记录「提交后复跑」值（与 §八 的「提交前」值分开，便于对照）。
+
+### 14.1 DELIVER 动作
+
+| 步骤 | 动作 | 结果 |
+|---|---|---|
+| Step 0 | 版本自检 | 项目 `fstdd_version 3.3.8` ≥ 技能 `3.0.5` ⇒ 无漂移告警 |
+| Step 2.5 前 | `structure delta` | CLI 仅输出 1 行（已知缺陷，欠账③）⇒ 已恢复**人工补全版**（52 行，含 CLI 原始输出留档） |
+| Step 1 | `archive` | ✅ `archive/2026-10-12-test-teardown-resilience/`（17 文件）；`phases.deliver.status=completed` |
+| Step 2 | canonical 合并 | ✅ 手工并入 **3 个 YAML**（proposal 用 change_id 名；code spec 用 capability 名 `test-teardown-resilience.yaml`；agent spec 用 change_id 名）+ 索引 3 条 |
+| Step 2 | `canon verify` | ✅ **2/2**（DC-HASH / DC-FIELD） |
+| Step 2.5 后 | `structure merge` | ✅ 并入 `.fstdd/code-structure/index.md` |
+| Step 3 | git commit | ✅ `6053ed2`（主提交，36 文件）+ `e6c0b9e`（提交后自检发现的拼写修正，2 文件） |
+| Step 3 | git tag | ⏳ **未创建** —— 本 change 未升版；版本/发布批次待 D哥 定（见下） |
+| Step 3 | git push | ⛔ **未执行**（规程：不自动 push，由 D哥 决定何时 push） |
+| Step 2.8/2.9 | 经验静默回传 + 知识图谱同步 | ⏸ **未执行** —— 属外部写入，按项目边界须 D哥 单独授权（见下） |
+
+### 14.2 提交后四自检（复跑值）
+
+| 自检 | 结果 |
+|---|---|
+| `tools/verify_eol.py` | **7/7 通过** |
+| `tools/verify_skill_standards.py` | **7/7 通过** |
+| `tools/verify_rename.py` | **8/8 通过** |
+| `tools/verify_workbuddy_skills.py` | **PASS**（+ 6 条 WARN：`~/.workbuddy/skills` 下的影子副本，无功能影响） |
+
+> ⚠️ `verify_eol` 的 TC-EOL-005（「索引零内容变更」）要求**工作树与 HEAD 一致**。
+> 首次复跑时因「主提交后、拼写修正前」有未提交改动而 FAIL ⇒ **该 FAIL 是流程信号而非缺陷**，
+> 提交 `e6c0b9e` 后即恢复 7/7。同理 `verify_rename` 的 TC-RENAME-006 内嵌调用也随之一同恢复。
+
+### 14.3 提交后测试复跑
+
+| 项 | 结果 |
+|---|---|
+| 根 `tests/` 全量 | **230 passed / 6 skipped / 0 failed**（与提交前一致） |
+| `upstream/tests -k a6` | **3 passed**（「在办 change 未跟踪文件」哨兵未被 ③ 触发） |
+| 工作树 | 仅剩 `?? .fstdd/changes/2026-10-12-canon-merge-command/`（③ 的在办目录，Phase 1） |
+
+### 14.4 提交后自检发现并已修的 1 个缺陷（诚实留档）
+
+| 发现 | 内容 | 处置 |
+|---|---|---|
+| `verify_rename` TC-RENAME-002 FAIL | `canonical/proposals/2026-10-12-test-teardown-resilience.yaml:2` 写 `` `stdd canon generate` ``，而工具已更名为 `fstdd`（仓库内既有文件均为 `fstdd`） | ✅ 已修（`e6c0b9e`），根 canonical 与归档副本同步；复跑 **8/8** |
+
+> 这条**只有提交后才跑得出来**（主提交把它带进了被扫描面），是「提交后必须复跑自检」的又一实证。
+
+### 14.5 仍待 D哥 决定的三件事
+
+| # | 事项 | 说明 |
+|---|---|---|
+| 1 | **git tag / 版本批次** | 本 change 未升版（`fstdd_version` 仍 3.3.8）。是否随 ③ 一起走 3.3.9 发布批次？（此前挂着的问题：发 / 只补 `[Unreleased]` / 暂不动） |
+| 2 | **经验静默回传 + 知识图谱同步**（DELIVER Step 2.8/2.9） | 属**外部写入**，按项目边界（执行权未下放）须 D哥 单独授权；且 `FSTDD-F` token 不可达可能使其降级 |
+| 3 | **git push** | 三远端（origin / local / server）均未推；钩子镜像 `server` 可用，但 origin 直推仍受 443 阻断 |
