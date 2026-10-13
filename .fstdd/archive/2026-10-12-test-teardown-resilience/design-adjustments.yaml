@@ -1,0 +1,223 @@
+meta:
+  change_id: "2026-10-12-test-teardown-resilience"
+  summarized_at: "2026-10-13T01:3x:00+08:00"
+  source: "pending-adjustments.yaml"
+  total: 11
+  resolved_in_change: 10
+  carried_as_debt: 1
+  major: 2
+  minor: 9
+
+# ---------------------------------------------------------------
+# 本 change 内已闭合（resolved: true）—— 2 Major + 7 Minor
+# ---------------------------------------------------------------
+resolved:
+  - id: ADJ-008
+    title: "🔴【blocker 修复】删除入口由 3 个扩为 **6 个**：+ `os.rmdir` / `pathlib.Path.unlink` / `pathlib.Path.rmdir`"
+    capability: test-teardown-resilience
+    severity: major
+    disposition: |
+      接受并扩容。原设计的包装面**漏掉根因①**：shim（sitecustomize.py:1281）把
+      `pathlib.Path.unlink` 直接换成 `_safe_path_unlink`，而后者在**非 bypass 分支**
+      直接 `_try_trash()`（:1237），**不经过 `os.unlink`**。
+      而 design.md:29 点名的失败点 `test_verify_notices_default_safe.py:90` 的 `target.unlink()`
+      目标位于 `REPO/tools/_quarantine`（**仓库内**）—— 正是未覆盖路径。
+      ⇒ 若不修，本 change 的核心主张（「在不改 `upstream/` 的前提下兜住根因①」）**不成立**。
+      同时把端到端判据改为**具判别性**的形式（用非 bypass 的仓库内路径 + 包装面结构核对），
+      因为 `tmp_path` 走 shim 的 bypass 分支，即使漏包 `Path.unlink` 也会通过（假绿）。
+    evidence: |
+      shim `:1224-1237` / `:1281` 源码核对；
+      环境探针 `pathlib.Path.unlink.__name__` = `_safe_path_unlink`；
+      修复后 `test_ttr_001_all_delete_surfaces_are_wrapped` 与
+      `test_ttr_001_e2e_path_unlink_repo_internal` 通过，且会话汇总行出现
+      `E:\FSTDD\stdd-repo\tests\.ttr-probe-never-created.tmp`（仓库内路径）；
+      全量 **225 passed / 6 skipped**。
+    residual_state: |
+      已闭合。**新增经验 EXP-2026-0034**（shim 替换 Path.unlink）与 **EXP-2026-0036**（取样偏差）。
+
+  - id: ADJ-001
+    title: "D1a 中立根取**系统临时根本身**（原设计的因果方向被实证推翻）"
+    capability: test-teardown-resilience
+    severity: major
+    disposition: |
+      接受修正。原设计 D1a 的表述是「让 pytest 的临时路径**不落在**被守卫管控/放行的目录里」——
+      **方向反了**。shim 的 bypass 判据是「路径位于 `_os_tmp_dirs` **之下**」（:1096 / :1027-1040），
+      而 `_os_tmp_dirs` 于 shim import 期由 `tempfile.gettempdir()` 固化（:805-825）。
+      ⇒ **落在系统临时根之下 = 被放行（安全）**；**迁出 = 反而撞守卫**。
+      另有第二重风险：若另建**子目录**，子进程会继承 `TMP=<子目录>` 并在其 import 期把
+      `_os_tmp_dirs` 固化为 `[子目录]` ⇒ `--basetemp`（在系统临时根下）脱离 bypass，
+      子进程内删除由「原生删除」变为「移入回收站」——属**新引入的行为变化**。
+      最终实现：归一为 `tempfile.gettempdir()` 本身 + `tempfile.tempdir = None` 清缓存。
+    evidence: |
+      shim `:805-825` / `:1027-1040` / `:1096-1099` 源码核对；
+      `test_ttr_006_stays_inside_shim_bypass_root`（核心不变式）通过；
+      全量 225 passed / 6 skipped（含依赖 TMP 的既有用例）。
+    residual_state: |
+      已闭合。净效果 = 补齐 `TMPDIR`（Windows 默认缺失）+ 归一三变量 + 固化不变式；**不迁移目录**。
+      **新增经验 EXP-2026-0035**（bypass 判据与 `_os_tmp_dirs` 固化）。
+
+  - id: ADJ-002
+    title: "D2 包装体改为**调用时查表**取原实现（而非闭包捕获）"
+    capability: test-teardown-resilience
+    severity: minor
+    disposition: |
+      接受。闭包捕获会让端到端判据**无法驱动**（测试无法替换被包装的原实现）⇒
+      只能退化为「只测纯函数」，无法证明真实删除入口经由包装层。
+    evidence: "TC-TTR-001 由 2 个纯函数用例升级为 10 个（含 5 个端到端 + 2 个结构核对）。"
+    residual_state: "无。"
+
+  - id: ADJ-003
+    title: "`tests/test_verify_notices_default_safe.py` 用例数 6 → 7"
+    capability: test-teardown-resilience
+    severity: minor
+    disposition: |
+      接受。仅改 `mkdir(exist_ok=True)` 而不加用例，则该改动**无判据保护**；
+      test-plan 案例 3.1 本就要求「预先创建 notices 目录再运行」。
+    evidence: "`test_tc_qis_003c_mkdir_tolerates_preexisting_dir`（RED 阶段实测抛 `FileExistsError`）。"
+    residual_state: "无。"
+
+  - id: ADJ-004
+    title: "TC-TTR-005 增加**源码级结构断言**（剥注释后扫描宽捕获）"
+    capability: test-teardown-resilience
+    severity: minor
+    disposition: |
+      接受。不剥注释会误报（说明性注释含这些字样）；并把裸 `except:` 纳入扫描
+      （它比 `except Exception` 更宽，原判据遗漏）。
+    evidence: "`test_ttr_005_no_broad_catch_in_source`（正则含 `except\\s*:`）。"
+    residual_state: "无。"
+
+  - id: ADJ-005
+    title: "修正 TC-TTR-006 一致性用例的**空转弱点**"
+    capability: test-teardown-resilience
+    severity: minor
+    disposition: |
+      接受。RED 阶段实测：原写法用 `if os.environ.get(v)` 过滤未设置项，
+      导致 `TMPDIR` 缺失时**跳过并空转通过** —— 即待修 bug 恰被测试自身的过滤逻辑掩盖（假绿）。
+      本 change 的目标正是消除「假绿/不可判」，故必须修掉判据自身的这种形态。
+    evidence: "该用例在 RED 阶段由「空转通过」变为「如实失败」。"
+    residual_state: "无。"
+
+  - id: ADJ-006
+    title: "【已更正】「`Path.unlink` 经由 `os.unlink`」的结论只在**无 shim 环境**成立"
+    capability: test-teardown-resilience
+    severity: minor
+    disposition: |
+      更正。初版结论来自**未经 shim 的裸 python 进程**（取样偏差）；在 shim 生效环境下
+      `pathlib.Path.unlink` 已被直接替换，非 bypass 分支不经 `os.unlink`。
+      保留原记录并显式更正，以免后人据错误结论再次缩小包装面。
+    evidence: "`python -c \"import pathlib; print(pathlib.Path.unlink.__name__)\"` → `_safe_path_unlink`。"
+    residual_state: "已由 ADJ-008 承接；**新增经验 EXP-2026-0036**（取样偏差）。"
+
+  - id: ADJ-007
+    title: "session 汇总除一行外，逐条列出被捕获目标路径（截断 20 + 省略提示）"
+    capability: test-teardown-resilience
+    severity: minor
+    disposition: |
+      接受。便于定位被守卫中断的**具体**目标；仍不改 `exitstatus`（见 note 中的不采纳项）。
+    evidence: "汇总行实测输出 10 条目标路径（含仓库内探针路径）。"
+    residual_state: "`targets` 列表**无上限**（捕获本身罕见：3 次全量运行中为 0）—— 已评估，暂不加 cap。"
+
+  - id: ADJ-009
+    title: "文档一致性修正：映射表错位 + 数字滞后 + 状态列/矩阵/元数据"
+    capability: test-teardown-resilience
+    severity: minor
+    disposition: |
+      接受。design.md 映射表把 **C4 误映射到 SC-007**（应为 SC-006）且遗漏 **C3** 行；
+      design.md / test-plan.md 仍记 163 行 / 204 用例 / 6 用例；
+      test-plan 的 9 个 TC 状态列与执行矩阵全为未完成态；
+      `.fstdd.yaml` 的 `traceability` 三项为 0；`code-structure-delta.md` 只有 1 行。
+      已全部修正（映射表 7 行、343 行、225 用例、7 用例、状态列/矩阵 ✅、
+      `traceability = {7, 9, 21}`、delta 人工补全）。
+    evidence: "`wc -l tests/conftest.py` = 372；全量 226 passed / 6 skipped。"
+    residual_state: "无。"
+
+  - id: ADJ-011
+    title: "新增「自测隔离」夹具：自测刻意触发的捕获不得污染会话汇总"
+    capability: test-teardown-resilience
+    severity: minor
+    disposition: |
+      接受（**实跑发现**）。本 change 的自测用例**刻意注入** SystemExit 桩，不是守卫真的拦了删除；
+      原实现下每次全量都会把约 10 次自测注入报成「会话共捕获 N 次删除守卫中断」——
+      汇总**失真**（其语义是「守卫触发」），真信号被噪声淹没（告警疲劳）。
+      新增 autouse 夹具 `_isolate_delete_guard_selftest`，仅对 `test_teardown_resilience_*` 用例
+      在用后还原 `DELETE_GUARD_STATS`；其余用例零影响。
+    evidence: |
+      修复前：全量运行汇总行出现 **1 次**（列出 ~10 条自测注入路径）；
+      修复后：单跑 5 个相关文件 **28 passed 且汇总行 0 次**。
+      判据 `test_ttr_004b_selftest_isolation_is_wired` 守护夹具接线。
+    residual_state: |
+      已闭合。⚠️ 已知边界：若**真实**守卫触发恰好发生在自测用例执行期间，其计数会被一并还原
+      （自测断言本就只关心自身增量）—— 概率极低且影响仅为「少报一次」，可接受。
+      ⇒ 该隔离的**副作用**（汇总函数变为零覆盖）由 **ADJ-012** 处置。
+
+  - id: ADJ-012
+    title: "补 `pytest_sessionfinish`（会话汇总）判据 —— 该函数因 ADJ-011 变为**零覆盖**"
+    capability: test-teardown-resilience
+    severity: minor
+    disposition: |
+      接受（**覆盖率诊断发现**）。ADJ-011 的自测隔离让会话结束时 `captured == 0`
+      ⇒ `pytest_sessionfinish` **提前返回、永不执行** ⇒ D3 的「汇总必须可见」这一核心交付物
+      **零测试保护**。新增 4 个用例直接驱动该 hook（最小 session 替身）：
+      无捕获时静默 / 有捕获时列前缀+计数+逐条目标 / 超 20 条给省略提示 / 无 reporter 时退化 warning。
+    evidence: |
+      `--cov=conftest`：新增前 **66%**（`240-255` 全缺）→ **75%**（`240-255` 覆盖）→ 加退化分支后 **76%**。
+      单跑 5 文件 **32 passed**；余缺项均为既有 helper（`295-372`）或幂等/防御分支（`85`/`136-143`/`154`）。
+    residual_state: |
+      已闭合。余下未覆盖项均属**防御/幂等分支**或**基线既有 helper**，已在 `test-report.md` §一/§八 说明。
+
+# ---------------------------------------------------------------
+# 结转欠账（carried_as_debt: true）—— 全部位于 upstream/，Gate 1 non_goal
+# ---------------------------------------------------------------
+carried_as_debt:
+  - id: ADJ-010
+    title: "框架级欠账 ×3（须先 `docs/UPSTREAM_PATCHES.md` 登记，另立 change）"
+    capability: test-teardown-resilience
+    severity: minor
+    disposition: |
+      **不在本 change 修**（`upstream/` 属 vendored 内核，Gate 1 non_goal）。登记三条：
+      ① `upstream/fstdd/cli/commands/experience.py:241` —— `os.remove(lock_path)` 的
+         `except OSError` **抓不到 `SystemExit`** ⇒ 锁释放点让进程被杀（EXP-2026-0029 的根因）。
+         ⚠️ 本 change 的 D2 包装已在**行为上**兜住它（框架调用也经包装），但**语义欠账未清**。
+      ② `upstream/fstdd/cli/commands/ci.py:397-413` —— `check_and_count` 的 docstring 写
+         「per scenario」，实现却是**全文件累计** `**AND**` 计数 ⇒ Scenario 多于 5 个即误报
+         「AND 超限」。本 change 实测为**假警告**（7 个 Scenario 各 1 条 ⇒ 累计 6 > 5）。
+         同族缺陷亦见 `validate.py:67-70`。
+      ③ `fstdd structure delta` 只输出 change 目录内的 `caveman_summary.txt` 一行
+         ⇒ `code-structure-delta.md` 必须人工补全（上一 change 同形）。
+    evidence: |
+      `ci check-failures` 输出（2 条警告之一即 ②）；
+      `code-structure-delta.md` 的 CLI 原始段（③）；
+      shim/源码行号核对（①）。
+    residual_state: |
+      ⚠️ **能力边界**：本 change 交付后「守卫触发导致的门禁抖动」应消失（D2 行为上兜住 ①），
+      但 ①②③ 的**语义修复**仍欠账 —— 建议与 ③ canon merge 同类，走
+      `docs/UPSTREAM_PATCHES.md` 登记后另立 change。
+      **新增经验 EXP-2026-0037**（② 的假警告）。
+
+note: |
+  ⚠️ 各条 `evidence` 中的测试数/行数是**该次实测时的快照**；最终值见 `test-report.md`
+  （**230 passed / 6 skipped**；`tests/conftest.py` 372 行；本 change 新增 26 个测试函数）。
+
+  2 条 Major（ADJ-001 / ADJ-008）+ 9 条 Minor 在本 change 内闭合；1 条结转欠账（ADJ-010）。
+  · **ADJ-008 是 blocker 级修复**：原包装面漏掉根因①，不修则核心主张不成立。**建议 Gate 3 重点过目**。
+  · **ADJ-001 推翻了 design 决策 1 的因果方向**（「不落在被放行的目录里」→ 实为「必须留在系统临时根之下」），
+    依据是 shim 源码 + 实测。**建议 Gate 3 一并过目**。
+
+  ### C1 三路评审的发现与处置（共 1 blocker + 4 major + 6 minor/nit）
+
+  | # | 来源 | 级别 | 发现 | 处置 |
+  |---|---|---|---|---|
+  | 1 | 代码 | **blocker** | 包装面漏 `pathlib.Path.unlink`（shim 直接替换，非 bypass 分支不经 `os.unlink`） | ✅ 已修（ADJ-008，扩为 6 入口 + 判别性判据） |
+  | 2 | 代码 | major | 端到端判据用 `tmp_path` ⇒ 走 bypass 分支 ⇒ 假绿 | ✅ 已修（改仓库内探针 + 包装面结构核对） |
+  | 3 | 代码 | major | `pytest_sessionfinish` 不改 `exitstatus` ⇒ 「绿而残留」 | ❌ **明确不采纳**（见下） |
+  | 4 | 代码 | major | `_pick_neutral_base()` 回退到 `~/.cache` 会脱离 bypass 集 | ✅ 已修（改为归一到系统临时根，并加不变式判据，ADJ-001） |
+  | 5 | 测试 | major | `test_ttr_006_tmp_dir_is_writable` 非判别性（系统临时区同样可写） | ✅ 已修（加「必须等于中立根」断言） |
+  | 6 | 文档 | major | design.md 映射表 C4↔SC-007 错位、遗漏 C3 行 | ✅ 已修（ADJ-009） |
+  | 7 | 文档 | major | 数字/状态列/矩阵/元数据滞后 | ✅ 已修（ADJ-009） |
+  | 8–13 | 三路 | minor/nit | `os.remove is os.unlink` 不变式被打破、无 `functools.wraps`、汇总无省略提示、`_DELETE_GUARD_ORIGINALS` 兼作哨兵、`#` 剥注释法、TC-007 断言表述 | ✅ 已修 5 项 / ⚪ 记录 1 项（`os.remove is os.unlink`：已 grep 确认仓库内无依赖；保持两个独立包装体以便 monkeypatch 分别驱动，属**有意取舍**） |
+
+  **不采纳项的理由（#3）**：让「捕获次数 > 0」把 `exitstatus` 置 1，会使失败数重新依赖
+  「守卫是否恰好触发」⇒ **正是本 change 要消除的非确定性**，与 SC-006（可判性）直接冲突。
+  design 决策 3 的契约是「**可见**」（告警 + 黄色汇总行），而非「判红」；
+  且决策 1 已明确「删除失败 = 目标已不存在或未删掉，对测试语义无害」。
+  故本项按设计意图驳回，并已在 `conftest.pytest_sessionfinish` 的 docstring 中写明理由。

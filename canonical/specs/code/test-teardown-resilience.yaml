@@ -1,0 +1,84 @@
+# spec.yaml — 行为规格（Canonical YAML，AI 主读文档）
+# capability: test-teardown-resilience
+# change: 2026-10-12-test-teardown-resilience
+
+meta:
+  capability: "test-teardown-resilience"
+  change_id: "2026-10-12-test-teardown-resilience"
+  created: "2026-10-12T14:10:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-001
+    description: "韧性层 —— 测试进程内的删除原语在被沙箱守卫打断（SystemExit）时不中断收尾，且该打断可见、可计数；真实异常不得被吞"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "observed_at=2026-10-12T13:32:56+00:00 source=@34f11b5 实测：shim sitecustomize.py:848 `raise SystemExit(1)`；pytest 9.1.1 的 TEST_OUTCOME 不含 BaseException ⇒ fixture 收尾中断（design.md Context ①）"
+        given: "测试进程已通过 conftest 包装 os.remove / os.unlink / shutil.rmtree（安装点 pytest_configure）"
+        when: "被包装的原实现抛出 SystemExit（模拟守卫拦截）"
+        then: "wrapper SHALL 捕获该 SystemExit 并将其降级为告警，SHALL NOT 向上抛出"
+        and:
+          - "调用方（pytest fixture teardown 或框架代码）SHALL 继续执行后续收尾步骤"
+      - id: SC-002
+        confidence: high
+        evidence: "EXP-2026-0014（关键路径 except Exception: pass 静默降级）+ KG-092（钩子失败 exit 0 且不上报告警 ⇒ 失败静默腐烂）"
+        given: "wrapper 捕获了一次 SystemExit"
+        when: "检查测试会话输出"
+        then: "SHALL 出现包含被捕获删除目标路径的 warning，且会话结束 SHALL 输出捕获次数汇总（不得静默）"
+        and:
+          - "汇总行 SHALL 便于与真实回归区分（含固定前缀，如 [teardown-resilience]）"
+      - id: SC-003
+        confidence: high
+        evidence: "proposal SC3 反向守卫；design.md D4（只放行 SystemExit，其余照抛）"
+        given: "被包装的原实现抛出真实异常（非 SystemExit，如 PermissionError）"
+        when: "调用被包装的删除原语"
+        then: "wrapper SHALL 原样抛出该异常，使调用方/测试照常失败（SHALL NOT 吞掉）"
+        and:
+          - "wrapper SHALL NOT 使用 `except Exception` 或 `except BaseException` 宽捕获"
+
+  - id: REQ-002
+    description: "规避层 —— 测试期的临时目录落在仓库外的中立目录，减少命中守卫触发条件"
+    scenarios:
+      - id: SC-004
+        confidence: medium
+        evidence: "EXP-2026-0029 fix_template「把 TMP/TEMP 指向中立目录」；EXP-2026-0030「TMP/TEMP 指向 agent runtime 目录会让 Guard 放行/误判」"
+        given: "pytest 会话启动（pytest_configure 已执行）"
+        when: "读取测试进程内的 TMP / TEMP / TMPDIR"
+        then: "SHALL 指向一个存在于仓库之外的目录，且该目录 SHALL 可写"
+        and:
+          - "该设置 SHALL 仅在测试进程内生效，SHALL NOT 写入仓库配置或影响生产"
+
+  - id: REQ-003
+    description: "症状末端加固 —— 受影响测试对「目录已存在」具备鲁棒性"
+    scenarios:
+      - id: SC-005
+        confidence: high
+        evidence: "observed_at=2026-10-12T13:32:56+00:00 source=@34f11b5 实测：tests/test_verify_notices_default_safe.py:95 与 :263 的 d.mkdir() 在残留时抛 FileExistsError(WinError 183)"
+        given: "tests/test_verify_notices_default_safe.py 的目标临时目录已存在（上一轮残留）"
+        when: "运行该测试文件的任一用例"
+        then: "SHALL 不抛 FileExistsError，测试 SHALL 继续按其断言执行"
+
+  - id: REQ-004
+    description: "可判性 —— 全量门禁结果对守卫是否触发不敏感"
+    scenarios:
+      - id: SC-006
+        confidence: medium
+        evidence: "observed_at=2026-10-12T13:32:56+00:00 source=@34f11b5 实测：连跑 2 次 `pytest tests -q --basetemp=<每次全新>` 均 204 passed / 6 skipped；而含守卫触发时主理人与门神分别得 5 failed/1 error 与 4 failed/17 errors"
+        given: "守卫未触发"
+        when: "连续运行 3 次全量 `pytest tests -q -p no:cacheprovider`（每次全新 basetemp）"
+        then: "3 次的 failed 数与 errors 数 SHALL 完全一致"
+        and:
+          - "在守卫未触发的前提下，failed 与 errors SHALL 均为 0"
+
+  - id: REQ-005
+    description: "范围边界 —— 本 change 不触碰 vendored 内核"
+    scenarios:
+      - id: SC-007
+        confidence: high
+        evidence: "proposal non_goals「不修改 upstream/ 下任何文件」；design.md D5"
+        given: "本 change 的全部改动"
+        when: "执行 `git diff --name-only`（相对本 change 起点）"
+        then: "SHALL NOT 包含 `upstream/` 下的任何文件"
+        and:
+          - "改动 SHALL 限于 `tests/` 与 `.fstdd/changes/2026-10-12-test-teardown-resilience/`"

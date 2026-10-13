@@ -1,0 +1,144 @@
+# 2026-10-12-test-teardown-resilience.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-10-12-test-teardown-resilience"
+  title: "测试收尾韧性 —— 让 fixture teardown 不被沙箱删除守卫的 SystemExit 打断"
+  created: "2026-10-12T13:32:39+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    门禁数**不可判**：同一 HEAD、同一命令，不同执行者拿到不同的失败数。
+    实测（2026-10-12 闭合度验证）：主理人跑 `pytest tests upstream/tests/test_repo_home.py`
+    得 **5 failed / 1 error**，质量门神跑同一命令得 **4 failed / 17 errors** —— 差异全因沙箱
+    的 `safe-delete` 守卫是否触发。
+
+    根因链（已逐环坐实）：
+      ① 沙箱 shim（**仓外**）在删除失败时 `raise SystemExit(1)`
+         —— `D:/Program Files/WorkBuddyAI/resources/app.asar.unpacked/cli/vendor/shim/sitecustomize.py:848`；
+      ② 该异常若落在 pytest **fixture teardown** 的 `Path.unlink()` / `shutil.rmtree()` 里；
+      ③ pytest 的 `TEST_OUTCOME` 元组**不含 `BaseException`** ⇒ `SystemExit` 不被捕获
+         ⇒ **fixture 收尾中断**（后续 teardown 步骤被跳过）；
+      ④ 后果：临时目录未被清理 / 测试间状态被污染 ⇒ 后续测试在
+         `d.mkdir()`（无 `exist_ok`）上抛 `FileExistsError`
+         （实测点：`tests/test_verify_notices_default_safe.py:95` 与 `:263`）。
+
+    危害不是「多几个红」，而是**判据失效**：抖动会把**真红**淹在噪声里，也会把**假红**当真问题
+    消耗排查；且 DELIVER 的放行判据（「全量 0 failed」）在抖动下**无法被客观回答**。
+  motivation: |
+    本仓规程要求「全量 0 failed 才可 tag」，而门禁数抖动使该判据**不可执行** ——
+    2026-10-12 的发布放行就卡在这个不确定性上（需靠「隔离复跑 + 全新 basetemp」人工排除噪声）。
+    治本必须**在仓内**做（shim 属外部程序，不改），使测试对「守卫触发」具备韧性。
+  evidence:
+    observed_at: "2026-10-12T13:32:56+00:00"
+    observed_base_git_sha: "34f11b50a22725af2ad45f2b7663fa535f332b66"
+    details: |
+      【观测 1｜同命令不同结果】`pytest tests upstream/tests/test_repo_home.py`
+        · 主理人（21:0x）：5 failed / 215 passed / 9 skipped / 1 error
+        · 门神（21:1x）：4 failed / 199 passed / 9 skipped / 17 errors
+        差异项随守卫触发而变，**非代码差异**。
+
+      【观测 2｜守卫未触发时是确定的】连跑 `pytest tests -q --basetemp=<每次全新>`
+        · 第 1 次：204 passed, 6 skipped, 6 warnings in 292.06s
+        · 第 2 次：204 passed, 6 skipped, 6 warnings in 215.49s
+        ⇒ 守卫不触发时结果稳定；**抖动的唯一来源是守卫**。
+
+      【观测 3｜受影响测试的隔离特征】`tests/test_verify_notices_default_safe.py`
+        · 单跑 4 次全绿；守卫触发时才 `1 failed + 1 error`
+        · 失败点固定为 `_mk_hit_dir()` 的 `d.mkdir()`（L95）与 L263 同形写法
+        · 同因另致 `tests/test_share_publish_sanitize.py`（非本 change 文件）13 errors
+
+      【观测 4｜根因在仓外，不可直接修】
+        shim `sitecustomize.py:848` `raise SystemExit(1)`；同文件 L858/L872/L877 为
+        `[SAFE_DELETE_BULK_GUARD_ERROR]` 的三种上报形态（helper-unavailable / state lock timeout / exit N）。
+
+what_changes:
+  - id: C1
+    description: |
+      `tests/conftest.py` 增加 **teardown 韧性层**：在 pytest 的收尾阶段捕获
+      `BaseException`（含 `SystemExit`），使其**不中断 fixture teardown**，
+      同时以**可见方式**（warning / 报告项）暴露 —— 不得静默吞掉。
+      实现形态在 Phase 2 定（候选：`pytest_runtest_makereport` hook 包裹 / 自定义
+      `pytest_exception_interact` / 对 `shutil.rmtree`+`Path.unlink` 的受控包装）。
+    type: modified
+  - id: C2
+    description: |
+      `tests/test_verify_notices_default_safe.py` 的 2 处 `d.mkdir()`（L95 / L263）
+      改为对「目录已存在」鲁棒（`exist_ok=True`）—— 使测试不因上一测试的残留而失败。
+    type: modified
+  - id: C3
+    description: |
+      新增回归测试：**以 monkeypatch 模拟 shim 抛 `SystemExit`**，断言
+      「① fixture teardown 不被中断；② 该异常可见（非静默）；③ 后续测试不受污染」。
+      使本 change 的判据**不依赖环境是否恰好触发守卫**（可在任意环境稳定复现）。
+    type: new
+  - id: C4
+    description: |
+      在 change 的 `test-report.md` 中记录**确定性判定法**（连跑 N 次全量的 failed/errors
+      是否一致），作为门禁可判性的证据留痕。
+    type: new
+
+capabilities:
+  new:
+    - name: "test-teardown-resilience"
+      description: |
+        测试收尾对**外部删除守卫**的韧性：fixture teardown 在遭遇 `SystemExit`（来自仓外 shim）
+        时仍能完成收尾、不污染后续测试，且异常可见。
+  modified: []
+
+constraints:
+  - "根因在**仓外**（WorkBuddyAI 的 shim）⇒ 本 change 只做**仓内韧性**，**不得**声称已修复 shim"
+  - "**不得**为绕过守卫而关闭/削弱 safe-delete 语义（不得全局 monkeypatch 掉安全删除）"
+  - "改动限 `tests/` 与 change 文档；**不得触碰 `upstream/`**（vendored 内核）"
+  - "韧性层**不得静默**：捕获的异常必须以 warning 或报告项可见，否则会掩盖真实 teardown 缺陷"
+  - "判定法不得依赖环境是否触发守卫（须能用 monkeypatch 稳定复现）"
+
+stakeholders:
+  - "D哥（工程负责人）—— 门禁可判性是发布放行的前提"
+  - "FSTDD 交付流程（DELIVER 的「全量 0 failed 才可 tag」判据）"
+  - "后续所有 change 的执行者 —— 门禁数抖动会持续消耗排查成本"
+
+risk_areas:
+  - capability: "test-teardown-resilience"
+    risk: "把 teardown 异常一律吞掉 ⇒ 掩盖**真实**的 fixture 收尾缺陷（如资源泄漏、文件未清理）"
+    mitigation: |
+      ① 只针对 `SystemExit`（不吞 `Exception` 子类）；
+      ② 只在**收尾阶段**生效；
+      ③ 必须**可见**（warning + 测试报告中列出被吞的次数与位置）；
+      ④ 补一条反向测试：真实的 teardown 异常仍须导致失败。
+  - capability: "test-teardown-resilience"
+    risk: "`tests/conftest.py` 影响**全部根级测试**，改错会面状污染"
+    mitigation: "改动保持最小且集中；跑全量根级测试 + 与改动前逐项对比 failed/errors 数"
+  - capability: "test-teardown-resilience"
+    risk: "本 change 治的是**症状链**（③④），shim（①②）仍在 ⇒ 守卫仍会失败并告警"
+    mitigation: "在 proposal 与 test-report 明确**能力边界**；shim 侧问题另行上报 WorkBuddyAI"
+
+non_goals:
+  - "修改 shim / WorkBuddyAI 安装目录下的任何文件"
+  - "关闭、放宽或绕过 safe-delete 守卫的删除语义"
+  - "修改 `upstream/` 下任何文件（含 vendored 内核与框架侧测试）"
+  - "修复 `test_share_publish_sanitize.py` 等**具体文件**的红（它们只是同因受害者；本 change 治共性机制）"
+  - "给 fstdd 补 `canon merge` 命令（另一独立 change）"
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L1
+  reference_changes: []
+  anchor_implementations: []
+
+success_criteria:
+  - "SC1 模拟 `SystemExit`（monkeypatch）时，受影响测试的 fixture teardown **不被中断**（收尾步骤全部执行）"
+  - "SC2 被捕获的 `SystemExit` **可见**：测试报告中出现明确的 warning/条目（不得静默）"
+  - "SC3 反向守卫：真实的 teardown 异常（非 SystemExit）**仍须导致测试失败**"
+  - "SC4 `tests/test_verify_notices_default_safe.py` 在「目标目录已存在」时**不再** `FileExistsError`"
+  - "SC5 连续 3 次全量 `pytest tests` 的 **failed / errors 数完全一致**（确定性）"
+  - "SC6 本 change **未触碰 `upstream/`**（`git diff --name-only` 白名单核对）"
+  - "SC7 全量根级测试在守卫未触发时为 **0 failed / 0 errors**（与改动前一致）"

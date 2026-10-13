@@ -1,0 +1,79 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML，AI 主读文档）
+# change: 2026-10-12-test-teardown-resilience
+# 用途：Phase 3 BUILD 收口与 Gate 3 前的**可执行验证**清单（非 TDD 用例，而是端到端检查点）
+
+meta:
+  task_id: "2026-10-12-test-teardown-resilience-verify"
+  change_id: "2026-10-12-test-teardown-resilience"
+  created: "2026-10-12T14:12:00+00:00"
+  task_type: code
+  system: "FSTDD 根级测试套件（tests/）对沙箱 safe-delete 守卫的收尾韧性"
+  preconditions:
+    - "cwd = 仓库根 E:/FSTDD/stdd-repo"
+    - "解释器：C:/Users/Administrator/.workbuddy-ai/binaries/python/envs/default/Scripts/python.exe"
+    - "tests/conftest.py 已含韧性层（pytest_configure 安装点）"
+    - "tests/test_verify_notices_default_safe.py 的两处 d.mkdir() 已改为 exist_ok=True"
+
+steps:
+  - id: CP-1
+    description: "韧性层捕获 SystemExit 且不向上抛（REQ-001 / SC-001）"
+    action: "pytest tests -q -k teardown_resilience_capture -p no:cacheprovider"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "passed"
+
+  - id: CP-2
+    description: "捕获可见：warning 含被捕获路径 + session 汇总计数（REQ-001 / SC-002）"
+    action: "pytest tests -q -k teardown_resilience_visibility -p no:cacheprovider -W always"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "teardown-resilience"
+
+  - id: CP-3
+    description: "反向守卫：真实异常照抛（REQ-001 / SC-003）"
+    action: "pytest tests -q -k teardown_resilience_real_exception -p no:cacheprovider"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "passed"
+
+  - id: CP-4
+    description: "TMP/TEMP 指向仓库外中立目录且可写（REQ-002 / SC-004）"
+    action: "pytest tests -q -k teardown_resilience_tmp_neutral -p no:cacheprovider"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-5
+    description: "受影响测试对目录已存在鲁棒（REQ-003 / SC-005）"
+    action: "pytest tests/test_verify_notices_default_safe.py -q -p no:cacheprovider"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "passed"
+
+  - id: CP-6
+    description: "确定性：连跑 3 次全量，failed/errors 数一致（REQ-004 / SC-006）"
+    action: "连续 3 次 `pytest tests -q -p no:cacheprovider --basetemp=<每次全新>` 并比对汇总行"
+    assertions:
+      - type: diff_empty
+        expected: true
+
+  - id: CP-7
+    description: "范围边界：未触碰 upstream/（REQ-005 / SC-007）"
+    action: "git diff --name-only"
+    assertions:
+      - type: diff_empty
+        expected: true
+
+rollback:
+  steps:
+    - "git checkout -- tests/conftest.py tests/test_verify_notices_default_safe.py"
+    - "若已新增测试文件：git clean -f tests/test_teardown_resilience*.py"
+    - "回退后跑 `pytest tests -q` 确认恢复到改动前的 204 passed / 6 skipped（守卫未触发时）"

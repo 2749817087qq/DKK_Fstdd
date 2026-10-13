@@ -1,0 +1,68 @@
+audit_amendments:
+- amended_actor: user
+  amended_at: '2026-10-13T00:17:44+00:00'
+  amended_by: dialog
+  amended_by_tool_version: '3.0'
+  amended_evidence: 确认
+  gate: 3
+  idempotency_key: 2026-10-12-test-teardown-resilience:gate3:36f33adaf0942634
+  original_confirmed_actor: ai
+  original_confirmed_at: '2026-10-13T00:16:01+00:00'
+  original_confirmed_by: dialog
+  original_confirmed_evidence: ' подтверч'
+baseline:
+  at: '2026-10-12T13:55:57+00:00'
+  base_git_sha: 34f11b50a22725af2ad45f2b7663fa535f332b66
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-12-test-teardown-resilience
+complexity_score: 6
+current_phase: deliver
+design_adjustments:
+  count: 0
+last_modified: '2026-10-13T00:18:59+00:00'
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-10-12T16:24:52+00:00'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-13T00:16:01+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: ' подтверч'
+    slices_completed:
+      S1:
+        new_tests: 20
+        tc_coverage: TC-TTR-001,TC-TTR-002,TC-TTR-003,TC-TTR-004,TC-TTR-005
+        verified_at: '2026-10-13T00:18:56+00:00'
+      S2:
+        new_tests: 6
+        tc_coverage: TC-TTR-006,TC-TTR-007
+        verified_at: '2026-10-13T00:18:56+00:00'
+    status: completed
+  deliver:
+    status: completed
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-12T14:47:48+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-12T13:55:57+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 1 ① Gate 1 回「确认」；2 ③ Gate 1 回「确认」
+    status: completed
+score_confidence: preliminary
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 7
+  tc_cases: 9
+  test_functions: 26
+version: '3.0'

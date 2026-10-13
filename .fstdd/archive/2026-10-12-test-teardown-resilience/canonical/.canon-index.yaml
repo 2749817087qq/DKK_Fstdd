@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-12-test-teardown-resilience: proposals/2026-10-12-test-teardown-resilience.yaml
+specs:
+  agent:
+    2026-10-12-test-teardown-resilience: specs/agent/2026-10-12-test-teardown-resilience.yaml
+  code:
+    test-teardown-resilience: specs/code/test-teardown-resilience.yaml
+version: '2.9'

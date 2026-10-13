@@ -1,0 +1,272 @@
+meta:
+  change_id: "2026-10-12-test-teardown-resilience"
+  updated_at: "2026-10-13T01:3x:00+08:00"
+  total: 11
+  major: 2
+  minor: 9
+  source: "Phase 3 BUILD 实现期（长程模式自动记录）+ C1 三路评审处置 + Part C 实跑发现"
+
+adjustments:
+  - id: ADJ-001
+    title: "D1a 中立根取**系统临时根本身**（原设计隐含「另建中立目录」，被实证推翻）"
+    severity: major
+    stage: "Phase 3 / Slice 2"
+    design_ref: "design.md 决策 1（D1a）"
+    original: |
+      「把 TMP/TEMP/TMPDIR 指向仓库外的中立目录（规避 ①：让 pytest 的临时路径
+      **不落在被守卫管控/放行的目录里**）」—— 初版实现取专用子目录 `<系统临时根>/fstdd-pytest-tmp`。
+    actual: "归一为 `tempfile.gettempdir()` 即**系统临时根本身**，不另建子目录；并保留 `tempfile.tempdir = None` 清缓存。"
+    reason: |
+      🔴 **实证推翻了原设计的因果方向**（读 shim 源码 + 实测）：
+      · `_should_bypass_safe_delete`（shim sitecustomize.py:1096）的判据是
+        「路径是否位于 `_os_tmp_dirs` **之下**」（`_is_under_root`，:1027-1040）；
+      · `_os_tmp_dirs` 于 **shim import 期**由 `tempfile.gettempdir()` 固化（:805-825）。
+      ⇒ **落在系统临时根之下 = 被守卫放行（安全）**；**迁出系统临时根 = 反而撞守卫**。
+      即：原设计「不落在被放行的目录里」是**反向**的。
+      另外，专用子目录还有第二个风险：**子进程**会继承 `TMP=<子目录>` 并在其 shim import 期
+      把 `_os_tmp_dirs` 固化为 `[子目录]` ⇒ `--basetemp`（在系统临时根下）**脱离 bypass**，
+      使子进程内的删除由「原生删除」变成「移入回收站」，属**新引入的行为变化**。
+    impact: |
+      TC-TTR-006 的核心判据由「专用目录名」改为「**中立根 == 系统临时根**」（见 ADJ-005 同族）。
+      净效果 = 补齐 `TMPDIR`（Windows 默认缺失）+ 归一三变量 + 明确不变式；**不迁移目录**。
+    evidence: |
+      shim:1096-1099 / 1027-1040 / 805-825 源码核对；
+      `test_ttr_006_stays_inside_shim_bypass_root` 通过；
+      全量 225 passed / 6 skipped（含依赖 TMP 的既有用例）。
+    affected_tc: [TC-TTR-006]
+    decided_by: "long-range auto-record（预授权 A①：小设计偏离自动记录并继续）"
+    user_known: false
+
+  - id: ADJ-002
+    title: "D2 包装体改为**调用时查表**取原实现（而非闭包捕获）"
+    severity: minor
+    stage: "Phase 3 / Slice 1"
+    design_ref: "design.md 决策 2（D2）"
+    original: "包装 `os.remove`/`os.unlink`/`shutil.rmtree`，捕获 SystemExit（未指定原实现的引用方式）"
+    actual: "包装体在**调用时**从 `_DELETE_GUARD_ORIGINALS[key]` 取原实现，而非在包装时用闭包捕获。"
+    reason: |
+      闭包捕获会让**端到端判据无法驱动** —— 测试无法把「被包装的原实现」替换为抛 SystemExit 的桩，
+      于是只能退化为「只测纯函数」，无法证明真实 `Path.unlink()` / `os.remove` 确实经由包装层。
+    impact: "TC-TTR-001 由「纯函数语义」升级为「纯函数 + 端到端接线」判据。"
+    affected_tc: [TC-TTR-001, TC-TTR-002]
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false
+
+  - id: ADJ-003
+    title: "`tests/test_verify_notices_default_safe.py` 用例数 6 → 7（新增 TC-TTR-007 用例）"
+    severity: minor
+    stage: "Phase 3 / Slice 2"
+    design_ref: "design.md 决策 6（D6）/ test-plan.md 案例 3.1"
+    original: "test-plan §1.3 记该文件 6 个用例；TC-TTR-007 只改 2 处 `mkdir`"
+    actual: "新增 `test_tc_qis_003c_mkdir_tolerates_preexisting_dir`（预置 `notices/` 已存在，断言不抛 FileExistsError）"
+    reason: |
+      仅改 `mkdir(exist_ok=True)` 而不加用例，则该改动**无判据保护**；
+      test-plan 案例 3.1 的「预期结果」本就要求「预先创建 notices 目录再运行」。
+    impact: "该文件用例数 6 → 7；TC-TTR-007 由本用例承载。"
+    affected_tc: [TC-TTR-007]
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false
+
+  - id: ADJ-004
+    title: "TC-TTR-005 增加**源码级结构断言**（剥注释后扫描宽捕获）"
+    severity: minor
+    stage: "Phase 3 / Slice 1"
+    design_ref: "test-plan.md 案例 1.5"
+    original: "「断言 conftest 源码不含 `except Exception` / `except BaseException`」"
+    actual: "实现为 `test_ttr_005_no_broad_catch_in_source`：**逐行剥离 `#` 注释后**再正则扫描，并把裸 `except:` 一并纳入。"
+    reason: |
+      不剥注释会**误报**（说明性注释里会出现这些字样）；裸 `except:` 是比 `except Exception` 更宽的形态，原判据遗漏。
+    impact: "TC-TTR-005 判据更严；行为判据（PermissionError / KeyboardInterrupt 照抛）不变。"
+    affected_tc: [TC-TTR-005]
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false
+
+  - id: ADJ-005
+    title: "修正 TC-TTR-006 一致性用例的**空转弱点**（RED 期发现）"
+    severity: minor
+    stage: "Phase 3 / Slice 2"
+    design_ref: "test-plan.md 案例 2.1"
+    original: "`resolved = {v: ... for v in VARS if os.environ.get(v)}`"
+    actual: "先断言三个变量**均已设置**，再比对一致性（去掉 `if os.environ.get(v)` 过滤）。"
+    reason: |
+      RED 阶段实测：原写法在 `TMPDIR` 未设置时**跳过该项并空转通过** —— 即「TMPDIR 缺失」
+      这一待修 bug 恰被测试自身的过滤逻辑掩盖，是典型的**假绿**。
+    impact: "该用例在 RED 阶段由「空转通过」变为「如实失败」。"
+    affected_tc: [TC-TTR-006]
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false
+
+  - id: ADJ-006
+    title: "【已修正】「`Path.unlink` 经由 `os.unlink`」的结论只在**无 shim 环境**成立"
+    severity: minor
+    stage: "Phase 3 / Slice 1（侦察）"
+    design_ref: "design.md 风险表「shim 的拦截层比 os.remove 更底层」"
+    original: |
+      初版记录称：实测（Python 3.13.12）`os.remove is os.unlink` 为 True，
+      `Path.unlink()` 与 `shutil.rmtree()` 内部删除均经由 `os.unlink`，
+      ⇒ 包装 `os.unlink` 一处即覆盖根因①与 rmtree 内部删除。
+    actual: |
+      ⚠️ **该结论在 shim 生效环境下不成立**（本机 PYTHONPATH 已含 shim）：
+      shim `:1281` **直接替换** `pathlib.Path.unlink` 为 `_safe_path_unlink`，
+      其非 bypass 分支直接 `_try_trash()`（:1237），**不经过 `os.unlink`**。
+      初版结论来自**未经 shim 的裸 python 进程**，属取样偏差。
+    reason: |
+      这正是 C1 代码评审报出的 **blocker**（见 ADJ-008）。此处保留原记录并显式更正，
+      以免后人据错误结论再次缩小包装面。
+    evidence: "`python -c \"import pathlib; print(pathlib.Path.unlink.__name__)\"` → `_safe_path_unlink`（shim 生效）"
+    impact: "直接导致 ADJ-008 的包装面扩容。"
+    affected_tc: [TC-TTR-001]
+    decided_by: "long-range auto-record（C1 评审发现后更正）"
+    user_known: false
+
+  - id: ADJ-007
+    title: "session 汇总除一行外，额外**逐条列出**被捕获目标路径（截断 20 条 + 省略提示）"
+    severity: minor
+    stage: "Phase 3 / Slice 1"
+    design_ref: "design.md 决策 3（D3）"
+    original: "会话结束输出一行汇总（前缀 + 捕获次数）"
+    actual: "`pytest_sessionfinish` 在汇总行后追加 `  - <target>` 列表；超过 20 条时输出 `… 其余 N 条省略`。"
+    reason: "便于定位被守卫中断的**具体**删除目标；仅测试进程内，不影响生产。"
+    impact: "TC-TTR-004 的可见性判据由本实现支撑。"
+    affected_tc: [TC-TTR-004]
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false
+
+  - id: ADJ-008
+    title: "🔴【blocker 修复】删除入口由 3 个**扩为 6 个**：+ `os.rmdir` / `pathlib.Path.unlink` / `pathlib.Path.rmdir`"
+    severity: major
+    stage: "Phase 3 / Part C（C1 代码评审发现）"
+    design_ref: "design.md 决策 2（D2）"
+    original: "只包装 `os.remove` / `os.unlink` / `shutil.rmtree`"
+    actual: "扩为 6 个入口，并新增**包装面结构核对**判据（`test_ttr_001_all_delete_surfaces_are_wrapped`）。"
+    reason: |
+      🔴 **原包装面漏掉根因①**：shim `:1281` 把 `pathlib.Path.unlink` 直接换成 `_safe_path_unlink`，
+      而后者在**非 bypass 分支**（仓库内路径走的正是这一支）直接 `_try_trash()`（:1237），
+      **不经过 `os.unlink`** ⇒ 只包装 `os.*` 无法捕获该路径上的 SystemExit。
+      design.md:29 点名的失败点 `test_verify_notices_default_safe.py:90` 的 `target.unlink()`
+      目标位于 `REPO/tools/_quarantine`（**仓库内**）⇒ 正是未覆盖路径。
+    evidence: |
+      shim:1224-1237 / 1281 源码核对；
+      `pathlib.Path.unlink.__name__` = `_safe_path_unlink`（shim 生效环境实测）；
+      修复后 `test_ttr_001_all_delete_surfaces_are_wrapped` 与
+      `test_ttr_001_e2e_path_unlink_repo_internal`（非 bypass 路径）通过，
+      且汇总行出现仓库内路径 `E:\FSTDD\stdd-repo\tests\.ttr-probe-never-created.tmp`。
+    impact: "TC-TTR-001 判据由 3 入口扩为 6 入口；端到端判据改用具判别性的**非 bypass 路径**。"
+    affected_tc: [TC-TTR-001]
+    decided_by: "long-range auto-record（预授权 A①；评审发现项）"
+    user_known: false
+
+  - id: ADJ-009
+    title: "文档一致性修正：design.md 映射表错位 + 数字滞后 + 状态列/矩阵/元数据"
+    severity: minor
+    stage: "Phase 3 / Part C（C1 文档评审发现）"
+    design_ref: "无（文档缺陷）"
+    original: |
+      design.md 决策↔What Changes↔SC 映射表把 **C4 误映射到 SC-007**（应为 SC-006）且**遗漏 C3 行**；
+      design.md / test-plan.md 仍记 `tests/conftest.py` 163 行、`tests/` 204 用例、
+      notices 文件 6 用例；test-plan 的 9 个 TC「当前状态」列全为 ❌；执行矩阵全为 🔴；
+      `.fstdd.yaml` 的 `traceability` 三项为 0；`code-structure-delta.md` 只有 1 行。
+    actual: |
+      映射表改为 7 行（含 C3；C4 → SC-006 + SC-007）；
+      数字更新为 343 行 / 225 用例 / 7 用例；9 个 TC 状态列与矩阵更新为 ✅（含文件与用例数）；
+      `traceability = {spec_scenarios: 7, tc_cases: 9, test_functions: 21}`；
+      `code-structure-delta.md` 人工补全（并注明 CLI 自动段过窄，见 ADJ-010）。
+    reason: "文档是 Gate 3 的审阅对象；数字与状态滞后会让审阅者据错误信息判断。"
+    evidence: "全量 225 passed / 6 skipped（实测）；`wc -l tests/conftest.py` = 343。"
+    impact: "无代码影响。"
+    affected_tc: []
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false
+
+  - id: ADJ-010
+    title: "框架级欠账登记（**不在本 change 修**，须先 `UPSTREAM_PATCHES` 登记后另立 change）"
+    severity: minor
+    stage: "Phase 3 / Part C"
+    design_ref: "design.md 决策 5（D5）"
+    original: "D5 要求把「② 的 `except OSError` 不覆盖 `SystemExit`」登记为独立欠账。"
+    actual: |
+      共登记 3 条（全部位于 `upstream/`，Gate 1 non_goal ⇒ 本 change 不修）：
+      ① `upstream/fstdd/cli/commands/experience.py:241` —— `os.remove(lock_path)` 的
+         `except OSError` **抓不到 `SystemExit`** ⇒ 锁释放点会让进程被杀（EXP-2026-0029 根因）。
+         本 change 的 D2 包装在**行为上**兜住了它（框架调用也经包装），但**语义欠账未清**。
+      ② `upstream/fstdd/cli/commands/ci.py:397-413` —— `check_and_count` 的 docstring 写
+         「per scenario」，实现却是**全文件累计** `**AND**` 计数 ⇒ 只要 spec 的 Scenario 多于 5 个
+         就误报「AND 超限」。本 change 实测：7 个 Scenario 各 1 条 ⇒ 累计 6 > 5 ⇒ **假警告**
+         （`ci check-failures` 的 2 条警告之一）。
+      ③ `fstdd structure delta` 只输出 change 目录内的 `caveman_summary.txt` 一行
+         ⇒ `code-structure-delta.md` 必须人工补全（上一 change 同形）。
+    reason: "三者均为框架缺陷，修法涉及 vendored 内核语义决策，应由独立 change 承载。"
+    evidence: "`ci check-failures` 输出；`code-structure-delta.md` 的 CLI 原始段；shim/源码行号核对。"
+    impact: "本 change 交付后**抖动应消失**（D2 在行为上兜住 ①），但 ①②③ 的语义修复仍欠账。"
+    affected_tc: [TC-TTR-009]
+    decided_by: "long-range auto-record（预授权 A①；D5 要求）"
+    user_known: false
+
+  - id: ADJ-011
+    title: "新增「自测隔离」夹具：本 change 自测用例刻意触发的捕获**不得**污染会话汇总"
+    severity: minor
+    stage: "Phase 3 / Part C（实跑发现）"
+    design_ref: "design.md 决策 3（D3：可见性契约）"
+    original: "D3 只要求「捕获必须可见（告警 + 计数 + 汇总）」，未区分捕获的来源。"
+    actual: |
+      新增 autouse 夹具 `_isolate_delete_guard_selftest`：仅对 `test_teardown_resilience_*`
+      用例，在**用后还原** `DELETE_GUARD_STATS`（计数 + 目标列表）。
+    reason: |
+      🔴 **实跑发现的失真**：本 change 的 16 个自测用例**刻意注入** SystemExit 桩
+      （monkeypatch 原实现），并非沙箱守卫真的拦了删除。原实现下，每次全量运行的
+      `pytest_sessionfinish` 都会把约 10 次自测注入报成「会话共捕获 N 次删除守卫中断」——
+      **汇总行失真**，真信号被噪声淹没（与 KG-092「失败静默腐烂」相对的另一端：
+      **告警疲劳**）。
+      这不是「多打几行日志」，而是**如实性问题**：汇总的语义是「守卫触发」，自测注入不属于该语义。
+    evidence: |
+      修复前：全量运行汇总行出现 **1 次**（列出 ~10 条自测注入路径）；
+      修复后：单跑 5 个相关文件 **28 passed 且汇总行出现 0 次**（无真实守卫触发 ⇒ 汇总不打印）。
+      另加判据 `test_ttr_004b_selftest_isolation_is_wired`（守护夹具接线：移除 autouse 即失败）。
+    impact: |
+      `tests/conftest.py` 新增 1 个 autouse 夹具；`tests/test_teardown_resilience_visibility.py`
+      由 2 → 3 个用例；本 change 新增测试函数 21 → **22**（全量 226）。
+    affected_tc: [TC-TTR-004]
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false
+
+  - id: ADJ-012
+    title: "补 `pytest_sessionfinish`（会话汇总）判据 —— 该函数因 ADJ-011 变为**零覆盖**"
+    severity: minor
+    stage: "Phase 3 / Part C（覆盖率诊断发现）"
+    design_ref: "design.md 决策 3（D3：可见性契约）"
+    original: "D3 的「会话汇总」只有行为描述，无判据（TC-004 原只覆盖计数与告警文本）。"
+    actual: |
+      新增 4 个用例直接驱动 `pytest_sessionfinish`（以最小 session 替身注入 `terminalreporter`）：
+      ① 无捕获时**不得**输出；② 有捕获时输出「前缀 + 计数 + 逐条目标路径」；
+      ③ 超 20 条时输出「其余 N 条省略」；④ 取不到 `terminalreporter` 时**退化为 warning**（不得静默丢弃）。
+    reason: |
+      🔴 **覆盖率诊断实测**：`pytest_sessionfinish` 的函数体**完全未被覆盖** —— 因为 ADJ-011 的
+      自测隔离让会话结束时 `captured == 0`，该函数**提前返回、永不执行**。
+      ⇒ D3 的「汇总必须可见」这一**核心交付物当时无任何测试保护**，属本 change 主题
+      （「不得静默」）自身的反讽缺口。
+    evidence: |
+      `--cov=conftest` 实测：新增判据前 **66%**（`240-255` 全缺）→ 加 004c 系列后 **75%**（`240-255` 覆盖）
+      → 加 ④ 后退化分支亦覆盖，最终 **76%**（余缺项均为既有 helper 或幂等/防御分支）。
+      单跑 5 文件 **32 passed**。
+    impact: |
+      `tests/test_teardown_resilience_visibility.py` 由 3 → **7** 个用例；
+      本 change 新增测试函数 22 → **26**（全量 230）。
+    affected_tc: [TC-TTR-004]
+    decided_by: "long-range auto-record（预授权 A①）"
+    user_known: false
+
+note: |
+  ⚠️ **读法说明**：各 ADJ 的 `evidence` 中的测试数/行数是**该次实测时的快照**。
+  后续调整会改变这些数字（ADJ-012 之后：**230 passed / 6 skipped**；`tests/conftest.py` **372 行**；
+  本 change 新增 **26** 个测试函数）。以 `test-report.md` 的最终值为准。
+
+  **2 条 Major（ADJ-001 / ADJ-008）+ 10 条 Minor**。
+  · ADJ-008 是 **blocker 级修复**：原包装面**漏掉根因①**，若不修则本 change 的核心主张不成立
+    （仓库内路径的 `Path.unlink()` 仍会抛 SystemExit）。已补判别性判据。
+  · ADJ-001 推翻了 design 决策 1 的**因果方向**（「不落在被放行的目录里」→ 实为「必须留在系统临时根之下」），
+    依据是 shim 源码 + 实测；属**设计假设被实证纠正**，建议 Gate 3 时一并过目。
+  · ADJ-006 保留初版错误结论并显式更正，作为「取样偏差」的教训留档。
+  · C1 三路评审（代码/测试/文档）共报 1 blocker + 4 major + 6 minor/nit；
+    处置：blocker 已修（ADJ-008）、major 中 3 项已修（ADJ-001 / ADJ-007 / 判据强化）、
+    1 项 **明确不采纳**（见 `test-report.md` §六「评审发现与处置」—— 「捕获即置 exitstatus=1」
+    会重新引入非确定性，与 SC-006 冲突）。

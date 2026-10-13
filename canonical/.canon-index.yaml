@@ -20,6 +20,7 @@ proposals:
   2026-10-10-experience-library-consolidation: proposals/2026-10-10-experience-library-consolidation.yaml
   2026-10-11-experience-center-node-sync: proposals/2026-10-11-experience-center-node-sync.yaml
   2026-10-11-share-hardening-audit-fixes: proposals/2026-10-11-share-hardening-audit-fixes.yaml
+  2026-10-12-test-teardown-resilience: proposals/2026-10-12-test-teardown-resilience.yaml
 specs:
   agent:
     2026-09-19-notices-authenticity-gate: specs/agent/2026-09-19-notices-authenticity-gate.yaml
@@ -37,6 +38,7 @@ specs:
     2026-10-10-experience-library-consolidation: specs/agent/2026-10-10-experience-library-consolidation.yaml
     2026-10-11-experience-center-node-sync: specs/agent/2026-10-11-experience-center-node-sync.yaml
     2026-10-11-share-hardening-audit-fixes: specs/agent/2026-10-11-share-hardening-audit-fixes.yaml
+    2026-10-12-test-teardown-resilience: specs/agent/2026-10-12-test-teardown-resilience.yaml
     inbox-api-only-write: specs/agent/inbox-api-only-write.yaml
     inbox-deploy: specs/agent/inbox-deploy.yaml
   code:
@@ -70,6 +72,7 @@ specs:
     repo-hygiene: specs/code/repo-hygiene.yaml
     scan-coverage: specs/code/scan-coverage.yaml
     test-suite-portability: specs/code/test-suite-portability.yaml
+    test-teardown-resilience: specs/code/test-teardown-resilience.yaml
     upstream-baseline-alignment: specs/code/upstream-baseline-alignment.yaml
     version-nomenclature: specs/code/version-nomenclature.yaml
     yagni-ladder-gate: specs/code/yagni-ladder-gate.yaml

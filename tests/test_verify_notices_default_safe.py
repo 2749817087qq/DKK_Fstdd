@@ -92,7 +92,7 @@ def quarantine_guard():
 
 def _mk_hit_dir(tmp_path: Path) -> Path:
     d = tmp_path / "notices"
-    d.mkdir()
+    d.mkdir(exist_ok=True)  # TC-TTR-007：对上一轮残留目录具备鲁棒性（不得抛 FileExistsError）
     (d / CRED_FILE).write_text(_credential_notice(), encoding="utf-8", newline="")
     (d / PLAIN_FILE).write_text(_plain_notice(), encoding="utf-8", newline="")
     _empty_manifest(d)
@@ -257,10 +257,24 @@ def test_tc_qis_003_json_contract_five_keys_default(tmp_path, quarantine_guard):
     assert SYNTHETIC_TOKEN not in proc.stdout, "would_quarantine 不得回显凭证字面值"
 
 
+def test_tc_qis_003c_mkdir_tolerates_preexisting_dir(tmp_path):
+    """TC-TTR-007（change 2026-10-12-test-teardown-resilience）：
+    目标目录已存在时不得抛 FileExistsError —— 症状末端加固。
+
+    场景：沙箱删除守卫曾中断收尾、留下残留目录；下一轮 `d.mkdir()` 会撞 FileExistsError。
+    故 `_mk_hit_dir` 的 `mkdir` 必须带 `exist_ok=True`。
+    """
+    pre = tmp_path / "notices"
+    pre.mkdir()  # 模拟上一轮中断遗留的残留目录
+    d = _mk_hit_dir(tmp_path)  # 若内部 mkdir 无 exist_ok ⇒ 在此抛 FileExistsError（本用例真正判据）
+    assert d.is_dir(), f"_mk_hit_dir 未返回可用的 notices 目录：{d}"
+    assert d == pre, f"_mk_hit_dir 应复用已存在的 notices 目录：{d} != {pre}"
+
+
 def test_tc_qis_003b_would_quarantine_empty_without_hits(tmp_path, quarantine_guard):
     """无命中项时 would_quarantine 为空、退出码 0（不得把「无命中」也报成告警）。"""
     d = tmp_path / "clean"
-    d.mkdir()
+    d.mkdir(exist_ok=True)  # TC-TTR-007：同上，残留目录不得导致 FileExistsError
     (d / PLAIN_FILE).write_text(_plain_notice(), encoding="utf-8", newline="")
     _empty_manifest(d)
 
