@@ -1,6 +1,6 @@
 # 测试收尾韧性 —— 让 fixture teardown 不被沙箱删除守卫的 SystemExit 打断
 
-<!-- source_hash: 0bb6c66a83534845 -->
+<!-- source_hash: be9febec942f7387 -->
 <!-- generated_at: 2026-10-12T13:55:57+00:00 -->
 <!-- canonical: canonical/proposals/2026-10-12-test-teardown-resilience.yaml -->
 
