@@ -429,3 +429,7 @@ monkeypatch 用法正确（`setitem` 只改字典值、teardown 必还原）· T
 | 1 | **git tag / 版本批次** | 本 change 未升版（`fstdd_version` 仍 3.3.8）。是否随 ③ 一起走 3.3.9 发布批次？（此前挂着的问题：发 / 只补 `[Unreleased]` / 暂不动） |
 | 2 | **经验静默回传 + 知识图谱同步**（DELIVER Step 2.8/2.9） | 属**外部写入**，按项目边界（执行权未下放）须 D哥 单独授权；且 `FSTDD-F` token 不可达可能使其降级 |
 | 3 | **git push** | 三远端（origin / local / server）均未推；钩子镜像 `server` 可用，但 origin 直推仍受 443 阻断 |
+
+> **追加（全部 4 个提交后的终态复跑）**：根 `tests/` 全量 **230 passed / 6 skipped / 0 failed**（245.87s）；
+> 四自检 eol 7/7 · skill_standards 7/7 · rename 8/8 · workbuddy_skills PASS(+6 WARN)；
+> `canon verify` **2/2** · `ci check-failures` **0 错误** · `test_a6` 3 passed。
