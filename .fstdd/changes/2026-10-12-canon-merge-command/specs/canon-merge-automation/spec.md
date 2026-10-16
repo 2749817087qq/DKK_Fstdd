@@ -12,13 +12,13 @@
 - **WHEN** 以 `--dry-run` 执行 `fstdd canon merge <change>`
 - **THEN** 命令 SHALL 以退出码 0 结束并打印「将写入哪些目标文件、索引如何变化」的决策清单，且 SHALL NOT 创建或修改任何文件（执行前后 `git status --porcelain` 逐字一致）
 
-### Requirement: 「根 canonical 在哪里」必须有且只有一个定义点，且指向仓库根的 canonical/。
+### Requirement: 「merge 写目标的根 canonical」与「项目级 canonical（canon init/generate 依赖）」是两个不同用途的目录，各自有显式定义点，不互相混用。
 
 #### Scenario: SC-002
 
-- **GIVEN** 项目根目录下存在仓库根 `canonical/`（含 proposals/ 与 specs/）
-- **WHEN** 查询根 canonical 路径（`_get_canon_dir(root)` 无 change_name，或 `_root_canonical_dir(root)`）
-- **THEN** 两者 SHALL 返回**同一**路径且 SHALL 等于 `<project_root>/canonical`，SHALL NOT 返回 `.fstdd/canonical`
+- **GIVEN** 项目根目录下存在仓库根 `canonical/`（含 proposals/ 与 specs/）与项目级 `.fstdd/canonical/`
+- **WHEN** 分别查询 `_root_canonical_dir(root)`（merge 写目标）与 `_get_canon_dir(root)`（无 change_name，项目级）
+- **THEN** `_root_canonical_dir(root)` SHALL 返回 `<project_root>/canonical`（仓库根）；`_get_canon_dir(root)` 无 change_name 时 SHALL 返回 `<project_root>/.fstdd/canonical`（项目级），SHALL NOT 返回仓库根
 
 ### Requirement: 连续执行两次不得产生差异；目标已存在且内容不同时必须报错而非静默覆盖。
 

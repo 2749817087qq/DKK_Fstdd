@@ -1,7 +1,7 @@
 # canonical 合并自动化 —— 新增 fstdd canon merge，消除 DELIVER 的手工拷贝
 
-<!-- source_hash: 3a13eb5a65c07d95 -->
-<!-- generated_at: 2026-10-13T01:50:58+00:00 -->
+<!-- source_hash: fd2916ad4e5f37d6 -->
+<!-- generated_at: 2026-10-16T17:00:10+00:00 -->
 <!-- canonical: canonical/proposals/2026-10-12-canon-merge-command.yaml -->
 
 ## Why

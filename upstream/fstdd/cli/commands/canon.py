@@ -38,20 +38,30 @@ def _resolve_change_dir(project_root: Path, change_name: str) -> Path:
 def _root_canonical_dir(project_root: Path) -> Path:
     """根 canonical 的唯一定义点（仓库根 ``canonical/``）。
 
-    D1（change 2026-10-12-canon-merge-command）：此前「根 canonical 在哪」有两个互不一致的定义 ——
-    ``_get_canon_dir(None)`` 返回 ``.fstdd/canonical``，而实践（DELIVER 手工合并、``canon verify``）
-    用的是仓库根 ``canonical/``。后者才是真身（74 个被跟踪文件、活跃维护），前者是
-    ``canon init --project-level`` 遗留的 0 文件空骨架。统一收口到此函数，
-    顺带修好 ``canon generate --all`` / ``_generate_one`` 项目级回退分支扫空目录的缺陷。
+    D1（change 2026-10-12-canon-merge-command）：根 canonical 的**唯一**定义点（仓库根 ``canonical/``），
+    作为本 ``merge`` 命令的合并目标。
+
+    关键澄清（Phase 3 实测修正）：项目级 canonical（``.fstdd/canonical/``，``canon init
+    --project-level`` 的落点、``canon generate`` 项目级回退分支所依赖）与根 canonical
+    （``canonical/``，本 change 的合并目标、DELIVER 手工合并的写入处）是**两个不同概念**，
+    前者在真实仓库是 0 文件的空骨架、后者是 74 文件的活跃真身。本函数**只**服务于 ``merge``，
+    **不改** ``_get_canon_dir(None)`` 的返回值（那是项目级，动它会被现有 canon 测试判红）。
     """
     return project_root / "canonical"
 
 
 def _get_canon_dir(project_root: Path, change_name: str = None) -> Path:
-    """Get canonical directory."""
+    """Get canonical directory.
+
+    - 有 change_name：返回该 change 级 canonical（``changes/<change>/canonical/``）。
+    - 无 change_name：返回**项目级** canonical（``.fstdd/canonical/``），这是
+      ``canon init --project-level`` 的落点与 ``canon generate`` 的项目级回退分支所依赖的。
+      注意：项目级 canonical 与「根 canonical（仓库根 ``canonical/``，本 change 的合并目标）」
+      是**两回事**，不可混同 —— 见 ``_root_canonical_dir``。
+    """
     if change_name:
         return _resolve_change_dir(project_root, change_name) / "canonical"
-    return _root_canonical_dir(project_root)  # D1：原为 project_root / ".fstdd" / "canonical"
+    return project_root / ".fstdd" / "canonical"
 
 
 def _find_current_change(project_root: Path) -> str:
@@ -532,10 +542,13 @@ def _flatten_keys(data: dict, prefix: str = "") -> set:
 
 
 def _safe_meta(yaml_file: Path) -> dict:
-    """安全读取 YAML 的 meta（解析失败返回空，不崩）。"""
+    """安全读取 YAML 的 meta（解析失败返回空，不崩）。
+
+    仅捕获具体异常（OSError / YAMLError）；其它异常（如编程错误）不应被吞掉。
+    """
     try:
         return yaml.safe_load(yaml_file.read_text(encoding="utf-8")) or {}
-    except Exception:
+    except (OSError, yaml.YAMLError):
         return {}
 
 
@@ -594,12 +607,20 @@ def _build_merge_plan(src_canon: Path, root_canon: Path) -> list:
 
 
 def _load_index(index_path: Path) -> dict:
-    if index_path.exists():
-        try:
-            return yaml.safe_load(index_path.read_text(encoding="utf-8")) or {}
-        except Exception:
-            return {}
-    return {"version": "2.9", "proposals": {}, "designs": {}, "specs": {"code": {}, "agent": {}}}
+    """读取根索引。
+
+    - 文件不存在：返回空结构（首次合并）。
+    - 文件存在但解析失败：**报错退出，绝不静默返回空 dict** —— 否则 ``_save_index``
+      会把空结构写回，静默清空根 canonical 的全部现有条目（数据丢失，违反 D8 fail-loud）。
+      仅捕获具体异常（OSError / YAMLError），其它异常如实上抛。
+    """
+    if not index_path.exists():
+        return {"version": "2.9", "proposals": {}, "designs": {}, "specs": {"code": {}, "agent": {}}}
+    try:
+        return yaml.safe_load(index_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as e:
+        print(f"  根索引解析失败（不静默重置，避免覆盖现有条目）：{index_path} ({e})")
+        sys.exit(1)
 
 
 def _save_index(index_path: Path, index: dict):

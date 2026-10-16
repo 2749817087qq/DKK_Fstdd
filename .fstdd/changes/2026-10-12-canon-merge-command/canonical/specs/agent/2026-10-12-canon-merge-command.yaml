@@ -26,13 +26,14 @@ steps:
   - 后者 exit 0 且含 --dry-run 说明
   expected: merge 出现在 canon 子命令列表
 - id: CP-003
-  name: 根 canonical 路径单一事实源（SC-002）
+  name: 根 canonical 路径（merge 写目标）独立定义点（SC-002）
   commands:
-  - python -c "from fstdd.cli.commands import canon as c; from pathlib import Path; r=Path('.'); a=c._get_canon_dir(r); b=c._root_canonical_dir(r); print(a); print(b); assert a==b==r/'canonical', (a,b)"
+  - python -c "from fstdd.cli.commands import canon as c; from pathlib import Path; r=Path('.'); a=c._get_canon_dir(r); b=c._root_canonical_dir(r); print('project-level:', a); print('root-for-merge:', b); assert a==r/'.fstdd'/'canonical', a; assert b==r/'canonical', b; assert a!=b, ('两者应分离', a, b)"
   assertions:
-  - 两个入口返回同一路径
-  - 该路径 == <repo>/canonical
-  expected: 一致且为仓库根 canonical/
+  - _get_canon_dir(r)（无 change_name）== <repo>/.fstdd/canonical（项目级，canon init/generate 依赖）
+  - _root_canonical_dir(r) == <repo>/canonical（仓库根，merge 写目标）
+  - 两者路径不同（刻意分离，不混用）
+  expected: 项目级 canonical 与根 canonical 各自正确、互不干扰
 - id: CP-004
   name: --dry-run 零写入（SC-001）
   commands:

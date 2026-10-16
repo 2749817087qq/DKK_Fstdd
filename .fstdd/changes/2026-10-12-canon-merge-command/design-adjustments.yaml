@@ -1,0 +1,26 @@
+meta:
+  change_id: 2026-10-12-canon-merge-command
+  created: 2026-10-13T23:55:00+08:00
+  count: 1
+adjustments:
+- id: ADJ-001
+  severity: minor
+  decision_ref: D1
+  title: 根 canonical 路径决策在 Phase 3 实现时被证伪并回退
+  original: |
+    D1 初稿将「根 canonical 路径收口为单一事实源」落实为：把 `_get_canon_dir(None)` 改为委托新增的
+    `_root_canonical_dir`（指向仓库根 canonical/），并描述为「修掉 `_get_canon_dir` 指空骨架的错位、
+    顺带修好 canon generate --all 扫空目录的缺陷」。
+  actual: |
+    Phase 3 实现后跑全量 upstream 测试暴露 2 个 canon 回归（test_canon_init_creates_directories /
+    test_canon_generate_creates_human_view）。证实 `_get_canon_dir(None)` 指 `.fstdd/canonical` 是
+    **项目级 canonical 的正确语义**（被 canon init --project-level 与 generate --all 依赖），不是缺陷。
+    最终回退该改动：保留 `_get_canon_dir(None)` 的项目级语义，仅新增独立的 `_root_canonical_dir` 供 merge 写目标。
+  impact: |
+    design.md D1 段（加「实现修订」注）、code spec SC-002、agent spec CP-003、test-plan 功能 1 与回归矩阵、
+    phase-context、proposal 观测 6 均已同步修正；审计表 refreshed_reason 始终为「不动后者」（与最终代码一致）。
+    代码最终态：`_get_canon_dir(None)` -> `.fstdd/canonical`（项目级）；`_root_canonical_dir(root)` -> 仓库根
+    `canonical/`（merge 写目标）；两者分离、互不干扰。
+  lesson: |
+    对「两个目录指向不一致」的直觉要先验证每一侧是否各自有依赖，不能想当然「合并为一个」。
+    EXP-2026-0026 的「单一事实源」教训应落实为「每个用途一个显式定义点」，而非强行合一。

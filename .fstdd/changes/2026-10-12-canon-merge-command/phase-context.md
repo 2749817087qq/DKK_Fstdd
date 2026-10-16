@@ -24,8 +24,8 @@
 ## Phase 2: SPEC (completed 2026-10-13T02:1x+08:00)
 
 ### 关键技术决策
-- **D1 根 canonical 路径收口为单一事实源**：新增 `_root_canon_dir()`；`_get_canon_dir(None)` 委托它
-  （原返回 `.fstdd/canonical` 空骨架 ⇒ `canon generate --all` 扫空目录的既有缺陷，顺带修好）
+- **D1 根 canonical 写目标独立定义点**：新增 `_root_canonical_dir()`（仓库根 `canonical/`，供 merge 写目标）；`_get_canon_dir(None)` **保持不变**（项目级 `.fstdd/canonical`，被 canon init/generate 依赖）
+  （初稿曾让 `_get_canon_dir(None)` 委托 `_root_canonical_dir`，暴露 2 个 canon 回归后已回退；详见 design.md D1 实现修订 / design-adjustments.yaml ADJ-001）
 - **D2 命名三分法**：proposal/agent spec 用 `meta.change_id`；code spec 用 `meta.capability`；
   缺字段 ⇒ 告警 + 跳过（不静默改名、不启发式推断）
 - **D3 幂等**：同值 SKIP-identical / **异值报错不覆盖**（覆盖会毁根侧人工修正）
@@ -42,12 +42,12 @@
 - **EXP-2026-0034**（shim 替换 `Path.unlink`）—— 提醒 merge 只写不删，不加清理动作
 
 ### 已知坑点 / 注意事项
-- 🔴 **两个根 canonical**：仓库根 `canonical/` 是真身（74 个被跟踪文件），`.fstdd/canonical/` 是空骨架（0 个）。
-  `_get_canon_dir(None)` 原指空骨架 ⇒ D1 必修。
+- 🔴 **两个根 canonical**：仓库根 `canonical/` 是 DELIVER 真身（74 个被跟踪文件），`.fstdd/canonical/` 是项目级目录（测试里是有内容的，真实仓库是空骨架）。两者用途不同、刻意分离。
+  `_get_canon_dir(None)` 指项目级 `.fstdd/canonical` 是**正确语义**（非缺陷）；D1 只新增根级 `_root_canonical_dir` 供 merge，不动前者。
 - ⚠️ 写 YAML 时**以反引号开头的标量值必须加双引号**，否则 `found character '`' that cannot start any token`。
 
 ### 未解决问题（待 Phase 3 验证）
-- D1 改了 `_get_canon_dir(None)` ⇒ `canon init --project-level` 落点从 `.fstdd/canonical/` 变为仓库根 ⇒ 需靠既有 canon 测试兜底。
+- D1 初稿曾改 `_get_canon_dir(None)` 指向仓库根，破坏 canon init/generate 测试；**已回退**（保留项目级语义，仅新增 `_root_canonical_dir`）⇒ 风险解除，最终代码无此回归面。
 - SC-005b 的退出码取值（0 vs 非 0）—— 设计定「非 0」，Phase 3 与 D哥 确认后固化。
 
 ### 产出物清单

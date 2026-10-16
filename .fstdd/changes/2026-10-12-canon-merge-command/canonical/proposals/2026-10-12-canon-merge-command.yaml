@@ -33,7 +33,7 @@ why:
       \  ⇒ 另证：根 `canonical/specs/code/` 中 `repo-hygiene.yaml`（文件名=capability）与\n    `2026-10-11-share-hardening-audit-fixes.yaml`（文件名=change_id）**并存**，确认口径分裂属实。\n\n\n【观测 6｜两个根 canonical 目录，代码指向错的那个（Phase\
       \ 2 实拍，2026-10-13）】\n· 仓库根 `canonical/`：**74 个被 git 跟踪的文件**（proposals 21 / specs.code 34 / specs.agent 18）—— **这是真正的根 canonical**，DELIVER 手工合并一直写这里。\n· `.fstdd/canonical/`：`designs` / `proposals`\
       \ / `specs` 三个**空**子目录，**0 个被跟踪文件、无提交历史** —— 陈旧空骨架（`canon init --project-level` 的产物）。\n· \U0001F534 而 `canon.py:38` 的 `_get_canon_dir(project_root)`（无 change_name 时）**返回 `.fstdd/canonical`** ⇒ `canon\
-      \ generate --all` 与 `_generate_one` 的「项目级回退」分支扫的是空目录。属既有缺陷，本 change 的 `merge` 必须以**仓库根 `canonical/`** 为唯一目标，并把「根 canonical 路径」收口为单一事实源。\n\n【观测 7｜命名惯例量化（Phase 2 实拍，① DELIVER 后刷新）】\n· `canonical/proposals/`：21\
+      \ generate --all` 与 `_generate_one` 的「项目级回退」分支扫的是空目录。**这不是代码缺陷**：`_get_canon_dir(None)` 指项目级 canonical 是正确语义（被 init/generate 依赖）。本 change 的 `merge` 以仓库根 `canonical/` 为写目标，通过**新增独立**的 `_root_canonical_dir()` 定义该路径，不动 `_get_canon_dir`。\n\n【观测 7｜命名惯例量化（Phase 2 实拍，① DELIVER 后刷新）】\n· `canonical/proposals/`：21\
       \ 个，**100% change_id 命名**。\n· `canonical/specs/agent/`：18 个，**16 个 change_id（89%）** + 2 个 capability（`inbox-api-only-write` / `inbox-deploy`）。\n· `canonical/specs/code/`：34 个，**23 个 capability（68%）**\
       \ vs 11 个 change_id（32%）—— capability 命名是主流且占比在升（① DELIVER 又新增 1 个 capability 名）。\n⇒ 印证 C2 的「三分法」：proposal / agent spec 用 `meta.change_id`，code spec 用 `meta.capability`。"
 what_changes:

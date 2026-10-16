@@ -17,16 +17,15 @@ requirements:
     confidence: high
     evidence: design.md D4（复用 commands/_dryrun.py，v3.3.7 已统一 78 个写点）
 - id: REQ-002
-  title: 根 canonical 路径为单一事实源
-  description: 「根 canonical 在哪里」必须有且只有一个定义点，且指向仓库根的 canonical/。
+  title: 根 canonical 路径（merge 写目标）有独立定义点
+  description: 「merge 写目标的根 canonical」与「项目级 canonical（canon init/generate 依赖）」是两个不同用途的目录，各自有显式定义点，不互相混用。
   scenarios:
   - id: SC-002
-    given: 项目根目录下存在仓库根 `canonical/`（含 proposals/ 与 specs/）
-    when: 查询根 canonical 路径（`_get_canon_dir(root)` 无 change_name，或 `_root_canonical_dir(root)`）
-    then: 两者 SHALL 返回**同一**路径且 SHALL 等于 `<project_root>/canonical`，SHALL NOT 返回 `.fstdd/canonical`
+    given: 项目根目录下存在仓库根 `canonical/`（含 proposals/ 与 specs/）与项目级 `.fstdd/canonical/`
+    when: 分别查询 `_root_canonical_dir(root)`（merge 写目标）与 `_get_canon_dir(root)`（无 change_name，项目级）
+    then: `_root_canonical_dir(root)` SHALL 返回 `<project_root>/canonical`（仓库根）；`_get_canon_dir(root)` 无 change_name 时 SHALL 返回 `<project_root>/.fstdd/canonical`（项目级），SHALL NOT 返回仓库根
     confidence: high
-    evidence: design.md D1；观测 6（仓库根 canonical/ 有 74 个被跟踪文件，.fstdd/canonical/ 为 0 个的空骨架；改前
-      _get_canon_dir(None) 返回后者）
+    evidence: design.md D1（实现修订）；观测 6（仓库根 canonical/ 有 74 个被跟踪文件；.fstdd/canonical/ 在测试里是有内容的项目级目录，在真实仓库是空骨架）；Phase 3 实测 `_get_canon_dir(None)` 指 `.fstdd/canonical` 是正确语义（改指仓库根会破坏 test_canon_init/generate）
 - id: REQ-003
   title: 幂等：同值不动作、异值报错、不覆盖
   description: 连续执行两次不得产生差异；目标已存在且内容不同时必须报错而非静默覆盖。

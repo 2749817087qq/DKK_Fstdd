@@ -3,7 +3,7 @@
 对应 TC
 -------
 - TC-CMA-001  --dry-run 不写盘（git status 逐字一致）
-- TC-CMA-002  根 canonical 路径单一事实源（_get_canon_dir(None) / _root_canonical_dir 都指向仓库根 canonical/）
+- TC-CMA-002  根 canonical 路径单一事实源（_root_canonical_dir 指向仓库根 canonical/；_get_canon_dir(None) 是项目级 .fstdd/canonical/，两者不可混同）
 - TC-CMA-003  幂等：连续两次，第二次无新变更（SKIP-identical，exit 0）
 - TC-CMA-003b 冲突（目标已存在且内容不同）→ 非 0 退出且 SHALL NOT 覆盖
 - TC-CMA-004  命名三分法：proposal/agent 用 meta.change_id，code 用 meta.capability（唯一依据是元数据）
@@ -133,11 +133,14 @@ def test_root_canonical_single_source(tmp_path):
         pass
     root = tmp_path / "proj2"
     root.mkdir()
-    got = canon_mod._get_canon_dir(root)
-    direct = canon_mod._root_canonical_dir(root)
-    assert direct == root / "canonical", f"应为仓库根 canonical/，实为 {direct}"
-    assert got == root / "canonical", f"_get_canon_dir(None) 应委托到根 canonical/，实为 {got}"
-    assert got != root / ".fstdd" / "canonical", "不得指向空骨架 .fstdd/canonical"
+    # 设计澄清（Phase 3 实测修正）：项目级 canonical（.fstdd/canonical/，canon init
+    # --project-level 落点、generate 项目级回退依赖）与根 canonical（canonical/，merge 目标）
+    # 是**两回事**，不可混同。
+    got = canon_mod._get_canon_dir(root)                       # 无 change_name -> 项目级
+    direct = canon_mod._root_canonical_dir(root)               # merge 目标 -> 仓库根
+    assert got == root / ".fstdd" / "canonical", f"项目级应为 .fstdd/canonical/，实为 {got}"
+    assert direct == root / "canonical", f"根 canonical 应为仓库根 canonical/，实为 {direct}"
+    assert got != direct, "项目级与根 canonical 不得混同（这是 D1 修正前踩的坑）"
 
 
 # ---- TC-CMA-003：幂等 ----

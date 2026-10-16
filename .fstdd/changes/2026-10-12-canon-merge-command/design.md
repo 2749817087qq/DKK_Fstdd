@@ -71,36 +71,47 @@ DELIVER 的 canonical 合并没有 CLI 命令，全靠人工拷贝。实测（Ph
 
 ## Decisions
 
-### 1. 根 canonical 路径收口为**单一事实源**，并修掉 `_get_canon_dir(None)` 的错位
+### 1. 根 canonical 路径：**新增** `_root_canonical_dir` 作为 merge 写目标，不动 `_get_canon_dir`
 
 **方案**：新增模块级函数 `_root_canonical_dir(project_root) -> Path`，**唯一**返回
-`project_root / "canonical"`（仓库根）；把 `_get_canon_dir(project_root)` 的
-无 `change_name` 分支改为**委托**它：
+`project_root / "canonical"`（仓库根），专供 `merge` 命令写目标使用。
+`_get_canon_dir(project_root)`（无 `change_name` 分支）**保持**返回项目级 `.fstdd/canonical`，
+**不改动**（见下方「实现修订」）。
 
 ```python
 def _root_canonical_dir(project_root: Path) -> Path:
-    """根 canonical 的唯一定义点（仓库根 canonical/）。"""
+    """merge 写目标的根 canonical 唯一定义点（仓库根 canonical/）。"""
     return project_root / "canonical"
 
 
 def _get_canon_dir(project_root: Path, change_name: str = None) -> Path:
     if change_name:
         return _resolve_change_dir(project_root, change_name) / "canonical"
-    return _root_canonical_dir(project_root)      # ← 原为 .fstdd/canonical
+    return project_root / ".fstdd" / "canonical"   # 项目级 canonical：canon init --project-level / generate --all 依赖，不动
 ```
 
 **为什么**：
-- 「根 canonical 在哪」此前有**两个**互不一致的定义（`_get_canon_dir` 说 `.fstdd/canonical`，
-  实践用仓库根 `canonical/`）—— 正是 EXP-2026-0026 说的「多一份定义就多一个假合规面」。
-  收口成一个函数，`merge` / `generate --all` / `_generate_one` 回退分支**共用**同一答案。
-- 顺带修好两个既有缺陷：`canon generate --all` 与 `_generate_one` 的项目级回退不再扫空目录。
+- 仓库根 `canonical/`（74 个被跟踪文件，DELIVER 手工合并真身）与项目级 `.fstdd/canonical/`
+  （`canon init --project-level` 产物，测试里是有内容的项目级目录）是**两个不同用途**的目录，
+  **不应混为同一个函数**。`merge` 写根 canonical ⇒ 用新增的 `_root_canonical_dir`；`init`/`generate`
+  走项目级 ⇒ 用 `_get_canon_dir(None)`。EXP-2026-0026 的「单一事实源」教训在此落实为
+  「每个用途一个显式定义点」，而非「强行合并成一个函数」。
 
 **备选及排除**：
-- 备选 A：只在 `merge` 内部硬编码 `project_root / "canonical"`，不动 `_get_canon_dir`
-  —— **排除**：那会让「根 canonical 路径」出现第二份定义，与 D1 目的自相矛盾。
+- 备选 A：把 `_get_canon_dir(None)` 改为指向仓库根、与 `_root_canonical_dir` 合一 —— **排除（Phase 3 实测回归）**：
+  `canon init --project-level` 与 `canon generate --all` 的项目级回退分支依赖 `_get_canon_dir(None)` 指向
+  `.fstdd/canonical`，改动后 `test_canon_init_creates_directories` / `test_canon_generate_creates_human_view`
+  直接红。根 canonical 与项目级 canonical 必须**分离**。
 - 备选 B：把 `.fstdd/canonical/` 删掉、只保留仓库根 —— **排除**：删目录不在 Gate 1 范围
-  （non_goals：只做被问的事）；且该目录 0 个被跟踪文件，删除无收益、有风险。
+  （non_goals：只做被问的事）；且该目录在测试里是有内容的项目级目录，删除会破坏既有 canon 测试。
   **登记为欠账**（见 Risks）。
+
+> **实现修订（Phase 3 实测，2026-10-13）**：D1 初稿把 `_get_canon_dir(None)` 改为委托
+> `_root_canonical_dir`（即指向仓库根），并在 design 里描述为「修掉错位、顺带修好 generate --all 扫空目录」。
+> 实现后跑全量 upstream 测试暴露 2 个 canon 回归（`test_canon_init_creates_directories` /
+> `test_canon_generate_creates_human_view`）—— 证实 `_get_canon_dir(None)` 指 `.fstdd/canonical`
+> **是正确语义**（项目级 canonical），不是缺陷。最终回退该改动：保留 `_get_canon_dir(None)` 的项目级语义，
+> 仅新增独立的 `_root_canonical_dir` 供 merge 使用。本偏离记入 `design-adjustments.yaml` ADJ-001。
 
 ### 2. 命名口径：**三分法**，唯一依据是源文件元数据
 
@@ -214,8 +225,8 @@ fstdd canon merge <change> [--dry-run]
    │        存在且逐字节相同   → SKIP-identical（不动作）
    │        存在且内容不同     → ERROR 退出（不覆盖）
    │
-   ├─ _root_canonical_dir(root) = <repo>/canonical          ← D1 唯一定义点
-   │        └─ _get_canon_dir(None) 委托它（顺带修 generate --all 扫空目录）
+   ├─ _root_canonical_dir(root) = <repo>/canonical          ← D1 新增：merge 写目标唯一定义点
+   │        （_get_canon_dir(None) 保持项目级 .fstdd/canonical，两者分离互不干扰）
    │
    ├─ 维护 canonical/.canon-index.yaml（D3 同规则：同值不动 / 异值报错）
    │
@@ -245,9 +256,8 @@ fstdd canon merge <change> [--dry-run]
 
 | 风险 | 缓解措施 |
 |---|---|
-| **D1 改了 `_get_canon_dir(None)` 的返回值** ⇒ `canon init --project-level` 的落点从 `.fstdd/canonical/` 变为仓库根 `canonical/` | ① 该行为当前指向的是**空骨架**（0 个被跟踪文件）⇒ 实际无人依赖；② 全量根级 + 框架侧测试兜底（SC8）；③ CLI 冒烟 |
-| `.fstdd/canonical/` 空骨架仍在盘上 ⇒ 后人可能再被误导 | **登记为欠账**（删除/或加 README 说明），不在本 change 动手 |
-| `test_fstdd_matrix.py:151` 的注释与事实不符 | 同登记为欠账；本 change 的测试会以**仓库根**为准并显式断言 |
+| D1 初稿曾改 `_get_canon_dir(None)` 指向仓库根，实测破坏 `canon init`/`generate` 测试；**已回退**（保留项目级 `.fstdd/canonical` 语义），仅新增 `_root_canonical_dir` 供 merge | 回归由全量 upstream 测试 + merge 专测兜底；最终代码已无此风险 |
+| `.fstdd/canonical/` 空骨架（真实仓库）与 `test_fstdd_matrix.py:151` 注释均与事实不符 | **登记为欠账**（删除/修注释或加 README 说明），不在本 change 动手 |
 | 命名口径若选错，会把错误命名**自动化**写入根 canonical（比手工更危险） | D2 三分法有实测依据（21/16/23 计数）+ `--dry-run` 先预览 + 缺字段告警跳过；**历史存量不动**（non_goal） |
 | 改 vendored 内核 ⇒ fork drift | D7 先登记（8 列齐全，含「预期回退版本」）；改动集中在**新增函数**，既有三命令逻辑零改 |
 | 索引 `.canon-index.yaml` 三段缩进不一（proposals 2 空格 / specs 下 4 空格）⇒ 手写插行易错 | ③ 的实现用**结构化读写**（yaml.safe_load → 改 dict → dump），不按行插；同时补「读回后键数 +3」的断言 |

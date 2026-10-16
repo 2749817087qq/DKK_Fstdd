@@ -34,16 +34,16 @@
 
 ## 二、详细测试案例
 
-### 功能 1：根 canonical 路径单一事实源（REQ-002）
+### 功能 1：根 canonical 路径（merge 写目标）独立定义点（REQ-002）
 
 | 字段 | 内容 |
 |---|---|
 | **ID** | TC-CMA-001 |
 | **对应 Spec** | canon-merge-automation → SC-002 |
 | **优先级** | P0 |
-| **预置条件** | `tmp_path` 下建 `canonical/proposals` 等目录 + `.fstdd/changes/<name>/canonical/` 三类文件 + `.fstdd.yaml` |
-| **输入** | 调 `_get_canon_dir(root)` 与 `_root_canon_dir(root)` |
-| **预期结果** | 两者**同一**路径且等于 `<root>/canonical`；**不得**返回 `.fstdd/canonical` |
+| **预置条件** | `tmp_path` 下建 `canonical/proposals` 等目录 + `.fstdd/canonical/`（项目级）+ `.fstdd/changes/<name>/canonical/` 三类文件 + `.fstdd.yaml` |
+| **输入** | 分别调 `_root_canonical_dir(root)`（merge 写目标）与 `_get_canon_dir(root)`（无 change_name，项目级） |
+| **预期结果** | `_root_canonical_dir(root)` == `<root>/canonical`（仓库根）；`_get_canon_dir(root)` 无 change_name 时 == `<root>/.fstdd/canonical`（项目级）；两者不同、各有用途 |
 | **当前状态** | ❌ 测试缺（Phase 3 新建） |
 
 ### 功能 2：dry-run 零写入（REQ-001）
@@ -193,9 +193,9 @@
 
 | 风险区域 | 本 change 改动 | 已有回归保护 | 风险等级 |
 |---|---|---|---|
-| `_get_canon_dir(None)` 返回值 | 改指仓库根 `canonical/` | 全量两侧测试 + TC-CMA-001 | 🟡 中 |
-| `canon init --project-level` 落点 | 随上一条变为仓库根 | CLI 冒烟 + 既有 canon 测试 | 🟡 中 |
-| `canon generate --all` / `_generate_one` 回退 | 扫到**真**根 canonical（原为空） | 既有 canon 测试 | 🟢 低（由坏变好） |
+| `_get_canon_dir(None)` 返回值 | **不改**（保持项目级 `.fstdd/canonical`，正确语义） | TC-CMA-001 + 既有 canon 测试 | 🟢 低（初稿的破坏性改动已回退） |
+| `canon init --project-level` 落点 | 保持 `.fstdd/canonical/`（不动） | CLI 冒烟 + 既有 canon 测试 | 🟢 低 |
+| `canon generate --all` / `_generate_one` 回退 | 仍走项目级 `.fstdd/canonical`（非仓库根） | 既有 canon 测试 | 🟢 低 |
 | `cli/__init__.py` 解析面 | 新增一个子命令 | CLI 冒烟 | 🟢 低 |
 | 真实 `canonical/` 被测试污染 | fixture 隔离（tmp_path） | TC-CMA-010 + 人工核对 `git status` | 🟡 中 |
 | `upstream/`（vendored 内核） | 修改 canon.py + cli/__init__.py | UPSTREAM_PATCHES 登记（TC-CMA-008） | 🟡 中 |
@@ -214,8 +214,9 @@
 | `fstdd canon --help` 仅 init/generate/verify；canon.py 532 行无 merge 函数 | 2026-10-12T13:45+00:00 | 34f11b5 | Phase 1 侦察 |
 | 根 canonical YAML 数：proposals 21 / specs.code 34 / specs.agent 18（共 73） | 2026-10-13T01:50+08:00 | 34f11b5 | `ls canonical/**/*.yaml` |
 | 归档区累计 207 个 canonical YAML | 2026-10-12T13:45+00:00 | 34f11b5 | `find .fstdd/archive -name '*.yaml'` |
-| 两个根 canonical：仓库根 74 个被跟踪 vs `.fstdd/canonical/` 0 个 | 2026-10-13T01:52+08:00 | 34f11b5 | `git ls-files` 两侧对照 |
-| `_get_canon_dir(None)` 返回 `.fstdd/canonical` | 2026-10-13T01:52+08:00 | 34f11b5 | canon.py:38-42 只读核对 |
+| 两个根 canonical：仓库根 74 个被跟踪 vs `.fstdd/canonical/` 0 个（真实仓库；测试里后者有内容） | 2026-10-13T01:52+08:00 | 34f11b5 | `git ls-files` 两侧对照 |
+| `_get_canon_dir(None)` 返回 `.fstdd/canonical`（项目级，正确语义；被 canon init/generate 依赖） | 2026-10-13T01:52+08:00 | 34f11b5 | canon.py 只读核对；Phase 3 证实改指仓库根会破坏既有 canon 测试 |
+| D1 初稿改 `_get_canon_dir(None)` → 仓库根，暴露 2 个 canon 回归，已回退（仅新增 `_root_canonical_dir`） | 2026-10-13T23:50+08:00 | a0ea5d6 | upstream/tests 全量回归 + design.md D1 实现修订 |
 | 命名量化：proposals 21/21 change_id；agent 16/18 change_id；code 23/34 capability | 2026-10-13T01:53+08:00 | 34f11b5 | `ls` + 元数据读取 |
 | `finder._resolve_in` 已拒 `..`/分隔符 | 2026-10-13T01:54+08:00 | 34f11b5 | finder.py:11-18 只读核对 |
 | UPSTREAM_PATCHES 表体为空（仅待登记 2 条） | 2026-10-12T13:45+00:00 | 34f11b5 | Phase 1 侦察 |
