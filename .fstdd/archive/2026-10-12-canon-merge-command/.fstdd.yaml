@@ -6,21 +6,25 @@ baseline:
   node_id: DESKTOP-TBJSBQ5
 change_id: 2026-10-12-canon-merge-command
 complexity_score: 7
-current_phase: build
+current_phase: deliver
 design_adjustments:
   count: 0
-last_modified: '2026-10-13T04:13:08+00:00'
+last_modified: '2026-10-16T17:27:45+00:00'
 mode: standard
 phases:
   build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-16T17:11:07+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 继续
     slices_completed:
       S1:
         new_tests: 12
         tc_coverage: TC-CMA-001,TC-CMA-002,TC-CMA-003,TC-CMA-003b,TC-CMA-004,TC-CMA-004b,TC-CMA-005,TC-CMA-006,TC-CMA-006b,TC-CMA-007,TC-CMA-008,TC-CMA-009
         verified_at: '2026-10-13T04:13:07+00:00'
-    status: in_progress
+    status: completed
   deliver:
-    status: pending
+    status: completed
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-10-13T03:41:52+00:00'
@@ -34,7 +38,7 @@ phases:
     confirmed_evidence: 1 ① Gate 1 回「确认」；2 ③ Gate 1 回「确认」
     status: completed
 score_confidence: preliminary
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 0

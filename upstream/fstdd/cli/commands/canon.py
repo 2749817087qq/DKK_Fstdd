@@ -542,14 +542,17 @@ def _flatten_keys(data: dict, prefix: str = "") -> set:
 
 
 def _safe_meta(yaml_file: Path) -> dict:
-    """安全读取 YAML 的 meta（解析失败返回空，不崩）。
+    """安全读取 YAML 的 meta（解析失败返回带 __parse_error__ 哨兵的 dict，不崩、不静默）。
 
     仅捕获具体异常（OSError / YAMLError）；其它异常（如编程错误）不应被吞掉。
+    解析失败时返回 ``{"__parse_error__": "<type>: <msg>"}``，让上层把「解析失败」与
+    「缺字段」区分开（否则会误报为 SKIP-MISSING 缺 meta.xxx，误导排查，违反 EXP-2026-0026）。
     """
     try:
-        return yaml.safe_load(yaml_file.read_text(encoding="utf-8")) or {}
-    except (OSError, yaml.YAMLError):
-        return {}
+        data = yaml.safe_load(yaml_file.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as e:
+        return {"__parse_error__": f"{type(e).__name__}: {e}"}
+    return data if isinstance(data, dict) else {}
 
 
 def _merge_index_section(index: dict, item: dict) -> dict:
@@ -581,6 +584,13 @@ def _build_merge_plan(src_canon: Path, root_canon: Path) -> list:
             if not yf.is_file():
                 continue
             meta = _safe_meta(yf)
+            if "__parse_error__" in meta:
+                plan.append({
+                    "status": "PARSE-ERROR",
+                    "src": yf, "kind": kind,
+                    "reason": f"{kind} 源文件 YAML 解析失败（非「缺字段」）：{meta['__parse_error__']}",
+                })
+                continue
             inner = meta.get("meta") or {}
             name = inner.get(meta_key) or meta.get(meta_key)
             if not name:
@@ -675,7 +685,7 @@ def cmd_canon_merge(args):
 
     # 执行合并
     index = _load_index(index_path)
-    written, skipped, conflicts, missing = [], [], [], []
+    written, skipped, conflicts, missing, parse_errors = [], [], [], [], []
     for item in plan:
         st = item["status"]
         if st == "WRITE":
@@ -688,6 +698,8 @@ def cmd_canon_merge(args):
             skipped.append(item["dst"].relative_to(project_root).as_posix())
         elif st == "CONFLICT":
             conflicts.append(item["dst"].relative_to(project_root).as_posix())
+        elif st == "PARSE-ERROR":
+            parse_errors.append(item["reason"])
         else:  # SKIP-MISSING
             missing.append(item["reason"])
 
@@ -695,7 +707,7 @@ def cmd_canon_merge(args):
 
     # D8：汇总 + 退出码
     print(f"  canon merge {change_name}：WRITE {len(written)} / SKIP {len(skipped)} / "
-          f"CONFLICT {len(conflicts)} / SKIP-MISSING {len(missing)}")
+          f"CONFLICT {len(conflicts)} / SKIP-MISSING {len(missing)} / PARSE-ERROR {len(parse_errors)}")
     for w in written:
         print(f"    + 写入 {w}")
     for s in skipped:
@@ -704,8 +716,10 @@ def cmd_canon_merge(args):
         print(f"    ! 冲突（已存在且内容不同，未覆盖）{c}")
     for m in missing:
         print(f"    ? 跳过（{m}）")
+    for pe in parse_errors:
+        print(f"    X 解析失败（{pe}）")
 
-    if conflicts or missing:
+    if conflicts or missing or parse_errors:
         sys.exit(1)
 
 

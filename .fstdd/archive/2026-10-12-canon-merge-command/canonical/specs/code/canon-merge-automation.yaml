@@ -23,7 +23,7 @@ requirements:
   - id: SC-002
     given: 项目根目录下存在仓库根 `canonical/`（含 proposals/ 与 specs/）与项目级 `.fstdd/canonical/`
     when: 分别查询 `_root_canonical_dir(root)`（merge 写目标）与 `_get_canon_dir(root)`（无 change_name，项目级）
-    then: `_root_canonical_dir(root)` SHALL 返回 `<project_root>/canonical`（仓库根）；`_get_canon_dir(root)` 无 change_name 时 SHALL 返回 `<project_root>/.fstdd/canonical`（项目级），SHALL NOT 返回仓库根
+    then: "`_root_canonical_dir(root)` SHALL 返回 `<project_root>/canonical`（仓库根）；`_get_canon_dir(root)` 无 change_name 时 SHALL 返回 `<project_root>/.fstdd/canonical`（项目级），SHALL NOT 返回仓库根"
     confidence: high
     evidence: design.md D1（实现修订）；观测 6（仓库根 canonical/ 有 74 个被跟踪文件；.fstdd/canonical/ 在测试里是有内容的项目级目录，在真实仓库是空骨架）；Phase 3 实测 `_get_canon_dir(None)` 指 `.fstdd/canonical` 是正确语义（改指仓库根会破坏 test_canon_init/generate）
 - id: REQ-003

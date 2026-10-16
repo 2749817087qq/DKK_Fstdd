@@ -291,3 +291,25 @@ def test_merge_no_regression_smoke(tmp_path):
     # CLI --help 列出 merge（解析面未回归）
     rc3, out3, _ = run_cli("canon", "--help", cwd=root)
     assert "merge" in out3, "canon --help 应列出 merge 子命令"
+
+
+# ---- TC-CMA-011：源文件 YAML 解析失败 → 明确 PARSE-ERROR，不误报「缺字段」 ----
+def test_merge_parse_error_not_mislabeled(tmp_path):
+    root = make_project_with_change(tmp_path, "cma-parse", "cap-parse")
+    # 故意把 code spec 写成非法 YAML（值以反引号开头，非合法标量）⇒ 整文件解析失败
+    code_src = (
+        root / ".fstdd" / "changes" / "cma-parse" / "canonical" / "specs" / "code" / "cma-parse.yaml"
+    )
+    code_src.write_text(
+        "meta:\n  capability: cap-parse\nrequirements:\n- id: REQ-1\n  scenarios:\n"
+        "  - id: SC-1\n    then: `broken backtick value` SHOULD FAIL PARSE\n",
+        encoding="utf-8",
+    )
+    rc, out, err = run_cli("canon", "merge", "cma-parse", cwd=root)
+    # 解析失败必须是明确的 PARSE-ERROR，且不得误报为「缺 meta.capability」
+    assert rc != 0, f"解析失败应非 0 退出: rc={rc} out={out}"
+    assert "解析失败" in out or "PARSE-ERROR" in out, f"应明确报告解析失败: out={out}"
+    assert "缺 meta.capability" not in out, f"不得误报为缺字段: out={out}"
+    # proposal/agent 不应被解析失败波及（仍正常合并）
+    assert (root / "canonical" / "proposals" / "cma-parse.yaml").exists()
+    assert (root / "canonical" / "specs" / "agent" / "cma-parse.yaml").exists()
