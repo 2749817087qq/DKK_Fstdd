@@ -1,0 +1,127 @@
+meta:
+  change_id: "2026-10-12-canon-merge-command"
+  capability: canon-merge-automation
+  title: canon merge —— 可执行验证检查点
+  created: "2026-10-13T02:05:00+08:00"
+  status: draft
+purpose: |
+  Phase 3 BUILD 收口与 Gate 3 前的**可执行验证**清单（非 TDD 用例，而是端到端检查点）。
+  每条 CP 给出：命令 / 断言 / 期望。任何一条失败即阻塞 Gate 3。
+steps:
+- id: CP-001
+  name: UPSTREAM_PATCHES 登记先于任何 upstream 改动
+  commands:
+  - grep -c "^| " docs/UPSTREAM_PATCHES.md
+  assertions:
+  - 表体（非「待登记」区）行数 >= 1
+  - 该行 8 列均非空
+  expected: 登记行存在且完整；「待登记」区既有两条原样保留
+- id: CP-002
+  name: 子命令已注册且 --help 可见
+  commands:
+  - python upstream/bin/fstdd canon --help
+  - python upstream/bin/fstdd canon merge --help
+  assertions:
+  - 前者 positional arguments 含 merge
+  - 后者 exit 0 且含 --dry-run 说明
+  expected: merge 出现在 canon 子命令列表
+- id: CP-003
+  name: 根 canonical 路径（merge 写目标）独立定义点（SC-002）
+  commands:
+  - python -c "from fstdd.cli.commands import canon as c; from pathlib import Path; r=Path('.'); a=c._get_canon_dir(r); b=c._root_canonical_dir(r); print('project-level:', a); print('root-for-merge:', b); assert a==r/'.fstdd'/'canonical', a; assert b==r/'canonical', b; assert a!=b, ('两者应分离', a, b)"
+  assertions:
+  - _get_canon_dir(r)（无 change_name）== <repo>/.fstdd/canonical（项目级，canon init/generate 依赖）
+  - _root_canonical_dir(r) == <repo>/canonical（仓库根，merge 写目标）
+  - 两者路径不同（刻意分离，不混用）
+  expected: 项目级 canonical 与根 canonical 各自正确、互不干扰
+- id: CP-004
+  name: --dry-run 零写入（SC-001）
+  commands:
+  - git status --porcelain > /tmp/st_before.txt
+  - python upstream/bin/fstdd canon merge <fixture-change> --dry-run
+  - git status --porcelain > /tmp/st_after.txt
+  assertions:
+  - diff /tmp/st_before.txt /tmp/st_after.txt 为空
+  - 命令 exit 0
+  - stdout 含写入决策清单（WRITE 条目）
+  expected: 前后逐字一致
+- id: CP-005
+  name: 首次合并生效（SC-005）
+  commands:
+  - python upstream/bin/fstdd canon merge <fixture-change>
+  assertions:
+  - canonical/proposals/<fixture-change>.yaml 存在（change_id 名）
+  - canonical/specs/agent/<fixture-change>.yaml 存在（change_id 名）
+  - canonical/specs/code/<capability>.yaml 存在（capability 名，取自 meta.capability）
+  - canonical/.canon-index.yaml 三段各新增对应条目
+  expected: 三类文件与索引全部落位
+- id: CP-006
+  name: 幂等：二次执行零差异（SC-003）
+  commands:
+  - git status --porcelain > /tmp/st_1.txt
+  - python upstream/bin/fstdd canon merge <fixture-change>
+  - git status --porcelain > /tmp/st_2.txt
+  assertions:
+  - diff /tmp/st_1.txt /tmp/st_2.txt 为空（fixture 已提交时）
+  - 命令 exit 0
+  expected: 第二次无任何新变更
+- id: CP-007
+  name: 冲突不覆盖、非 0 退出（SC-003b）
+  commands:
+  - 篡改 canonical/specs/code/<capability>.yaml 尾部加一行注释
+  - python upstream/bin/fstdd canon merge <fixture-change>
+  assertions:
+  - exit != 0
+  - 被篡改内容仍在（未被覆盖）
+  - stdout 指明冲突文件路径与已写/未写清单
+  expected: 报错而非静默覆盖
+- id: CP-008
+  name: 归档 change 可用（SC-006）
+  commands:
+  - python upstream/bin/fstdd archive <fixture-change>
+  - python upstream/bin/fstdd canon merge <fixture-change>
+  assertions:
+  - 正确定位 archive/<fixture-change>/canonical/
+  - 不以「已归档」拒绝（exit 0 或仅有可解释的冲突）
+  expected: 归档态可合并
+- id: CP-009
+  name: 输入校验双向（SC-009 / SC-009b）
+  commands:
+  - python upstream/bin/fstdd canon merge "../../x"
+  - python upstream/bin/fstdd canon merge "a/b"
+  - python upstream/bin/fstdd canon merge "<合法 change 名>"
+  assertions:
+  - 前两者 exit != 0 且报「找不到 change」，未写入任何文件
+  - 第三者正常解析（不误拒）
+  expected: 拒穿越 + 放合法
+- id: CP-010
+  name: 统一入口落到函数体（SC-010，AST 判据）
+  commands:
+  - python -c "import ast,sys; src=open('upstream/fstdd/cli/commands/canon.py',encoding='utf-8').read(); t=ast.parse(src); ..."
+  assertions:
+  - canon.py 中存在对 find_change_dir 或 _resolve_change_dir 的**函数体内调用**
+  - 不存在第二套自行拼接 .fstdd/changes/<name> 的解析逻辑
+  expected: 单一定义点被真正调用
+- id: CP-011
+  name: 合并后自证 canon verify（SC-001 关联 / proposal C4）
+  commands:
+  - python upstream/bin/fstdd canon verify <fixture-change>
+  assertions:
+  - 2/2 通过（DC-HASH / DC-FIELD）
+  expected: 双轨一致
+- id: CP-012
+  name: 既有行为不回归（SC-008）
+  commands:
+  - python -m pytest tests -q -p no:cacheprovider
+  - python -m pytest upstream/tests -q -p no:cacheprovider
+  - python upstream/bin/fstdd --help && python upstream/bin/fstdd canon init --help
+  assertions:
+  - 两侧测试 failed 数与改动前基线一致（0 或逐条归因）
+  - CLI 三冒烟 exit 0
+  expected: 无新增失败
+rollback:
+- 若 Phase 3 发现风险不可接受：git revert 本 change 的提交即可（改动集中在新增函数 + 一个既有函数的两行委托）
+- 根 canonical 的写入可由 git 直接还原（无外部副作用）
+fixture_note: |
+  <fixture-change> 由 Phase 3 的测试自行构造（tmp_path 下建 .fstdd/changes/<name>/canonical 三类文件 +
+  .fstdd.yaml），不使用仓库内在办 change（避免污染真实 canonical）。

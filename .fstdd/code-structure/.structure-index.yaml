@@ -1,7 +1,7 @@
 meta:
-  last_updated: '2026-10-13T00:30:49+00:00'
+  last_updated: '2026-10-16T17:38:08+00:00'
   modules: {}
-  total_changes: 25
+  total_changes: 26
 modules:
   adjudication-log.tsv:
     changes:
@@ -26,6 +26,7 @@ modules:
     - 2026-10-11-experience-center-node-sync
     - 2026-10-11-share-hardening-audit-fixes
     - 2026-10-12-test-teardown-resilience
+    - 2026-10-12-canon-merge-command
   pending-adjustments.yaml` / `design-adjustments.yaml:
     changes:
     - 2026-10-11-share-hardening-audit-fixes

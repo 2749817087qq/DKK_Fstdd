@@ -20,6 +20,7 @@ proposals:
   2026-10-10-experience-library-consolidation: proposals/2026-10-10-experience-library-consolidation.yaml
   2026-10-11-experience-center-node-sync: proposals/2026-10-11-experience-center-node-sync.yaml
   2026-10-11-share-hardening-audit-fixes: proposals/2026-10-11-share-hardening-audit-fixes.yaml
+  2026-10-12-canon-merge-command: proposals/2026-10-12-canon-merge-command.yaml
   2026-10-12-test-teardown-resilience: proposals/2026-10-12-test-teardown-resilience.yaml
 specs:
   agent:
@@ -38,6 +39,7 @@ specs:
     2026-10-10-experience-library-consolidation: specs/agent/2026-10-10-experience-library-consolidation.yaml
     2026-10-11-experience-center-node-sync: specs/agent/2026-10-11-experience-center-node-sync.yaml
     2026-10-11-share-hardening-audit-fixes: specs/agent/2026-10-11-share-hardening-audit-fixes.yaml
+    2026-10-12-canon-merge-command: specs/agent/2026-10-12-canon-merge-command.yaml
     2026-10-12-test-teardown-resilience: specs/agent/2026-10-12-test-teardown-resilience.yaml
     inbox-api-only-write: specs/agent/inbox-api-only-write.yaml
     inbox-deploy: specs/agent/inbox-deploy.yaml
@@ -56,6 +58,7 @@ specs:
     archive-state-consistency: specs/code/archive-state-consistency.yaml
     audit-errata: specs/code/audit-errata.yaml
     build-quality-verification: specs/code/build-quality-verification.yaml
+    canon-merge-automation: specs/code/canon-merge-automation.yaml
     canonical-hash-integrity: specs/code/canonical-hash-integrity.yaml
     change-dir-resolution: specs/code/change-dir-resolution.yaml
     ci-check-accuracy: specs/code/ci-check-accuracy.yaml
