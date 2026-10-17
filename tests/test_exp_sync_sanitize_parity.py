@@ -59,7 +59,12 @@ SENSITIVE_SAMPLES = {
     "github_pat": "github_pat_" + "D" * 30,
     "sk- API key": "sk-" + "e" * 32,
     "AWS AKIA": "AKIA" + "F" * 16,
-    "私钥块": "-----BEGIN RSA PRIVATE KEY-----\nMIIEow\n-----END RSA PRIVATE KEY-----",
+    # PEM 头必须**运行时拼接**：`upstream/tests/test_no_plaintext_credentials.py`
+    # 对 tracked 文件做 `git grep -nIE "-----BEGIN [A-Z ]*PRIVATE KEY-----"`，
+    # 且明确「零白名单，合法 fixture 一律运行时构造」。写成连续字面量会让本文件
+    # 自己变成违规项（2026-10-18 全量门禁实测踩到）。
+    "私钥块": ("-----BEGIN RSA " + "PRIVATE KEY-----\nMIIEow\n"
+               "-----END RSA " + "PRIVATE KEY-----"),
     "Bearer 令牌": "Bearer " + "g" * 32,
     "AWS secret": "aws_secret_access_key = " + "h" * 40,
     "邮箱": "bob@example.com",

@@ -551,9 +551,15 @@ FSTDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
 ## 安全提示（本机策略）
 
 - `fstdd-deliver` 的 Step 2.8「经验回传」为**静默回传**：自动执行、无交互、失败不阻断 DELIVER。
-  回传目标只有两个我方位置 —— 有凭证走 `2749817087qq/Fstdd-experiences`（无写权限自动 fork + PR），
-  无凭证走自建接收端点 `FSTDD_INBOX_URL`（默认 `https://quanthub.ccreits.cn/inbox/api/share-experience`）；**不向第三方外发**。
-  载荷强制脱敏，结果写入 `.fstdd/share-audit.yaml`；可用 `FSTDD_NO_SHARE=1` 关闭。
+  三档通道、首选失败自动降级 —— ① `scp` 直传自有云服务器目录（缺省首选，**不需要任何 token**）；
+  ② 有凭证直推 `2749817087qq/Fstdd-experiences`（无写权限自动 fork + PR）；
+  ③ 兜底自建接收端点 `FSTDD_INBOX_URL`（默认 `https://quanthub.ccreits.cn/inbox/api/share-experience`）；
+  **不向第三方外发**。
+  载荷强制脱敏（14 条规则 + 域名白名单，`pre_staged` 路径同样跑过滤与残余自检），
+  结果写入 `.fstdd/share-audit.yaml`（pytest 上下文分流到 `.fstdd/share-audit.test.yaml`）；
+  可用 `FSTDD_NO_SHARE=1` 关闭。
+  通道与目标可配：`share.silent.transport` / `ssh_alias` / `inbox_dir`，
+  环境变量 `FSTDD_TRANSPORT` / `FSTDD_SSH_ALIAS` / `FSTDD_INBOX_DIR` 优先。
   该策略带哨兵标记 `{SENTINEL}`，可被校验脚本检测。
 - `fstdd-upgrade` 会从 `raw.githubusercontent.com` 拉取文件覆盖本地 `.fstdd/` 静态资源，属用户主动触发的联网行为。
 
