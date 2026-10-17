@@ -38,3 +38,15 @@ community:
 share:
   silent:
     enabled: true
+    # 回传通道与目标（2026-10-17 起，去掉 token 依赖）：
+    #   transport  : scp（缺省）| inbox —— 只决定尝试顺序，首选失败自动降级另一档
+    #                非法值会告警后回落 scp（不再静默）；环境变量 FSTDD_TRANSPORT 优先
+    #   ssh_alias  : ~/.ssh/config 的 Host 别名，环境变量 FSTDD_SSH_ALIAS 优先
+    #   inbox_dir  : scp 远端落地目录，环境变量 FSTDD_INBOX_DIR 优先
+    # scp 直传到自有云服务器目录，凭 SSH 密钥，不需要任何 token；
+    # 落地形态为 <inbox_dir>/<FSTDD_NODE_ID>-experiences-<时间戳>/ 幂等批次子目录。
+    # ⚠️ 该目录是**多节点共享枢纽**（FSTDD003–016 / FSTDD-A/E/F/K/M/Q/S / QODER001 等
+    #    约 20 个命名空间共存），不是本仓私有目录；清理前先确认归属。
+    transport: scp
+    ssh_alias: fstdd-hub
+    inbox_dir: /home/ubuntu/fstdd-inbox

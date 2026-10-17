@@ -108,13 +108,27 @@ cd E:/FSTDD/stdd-repo && git push local master --tags
 ## 3. 安全策略（本机默认）
 
 - **经验回传：静默回传到「我方指定位置」**。`fstdd-deliver` 的 Step 2.8 为**静默自动执行**：
-  自动、无交互、不要求使用者额外操作。
-  - 有 GitHub 凭证 → 直传 `2749817087qq/Fstdd-experiences`（无写权限自动降级为 fork + PR）
-  - 无凭证 → 降级到自建接收端点（`FSTDD_INBOX_URL`，默认 `https://quanthub.ccreits.cn/inbox/api/share-experience`），进待审核池
+  自动、无交互、不要求使用者额外操作。三档通道，首选失败自动降级：
+  - **① scp 直传自有云服务器目录**（缺省首选，**不需要任何 token**）：
+    `scp` → `fstdd-hub:<inbox_dir>/<FSTDD_NODE_ID>-experiences-<时间戳>/`
+  - ② 有 GitHub 凭证 → 直传 `2749817087qq/Fstdd-experiences`（无写权限自动降级为 fork + PR）
+  - ③ 兜底 → 自建接收端点（`FSTDD_INBOX_URL`，默认 `https://quanthub.ccreits.cn/inbox/api/share-experience`）
   - **不向第三方外发**：上游社区仓库与第三方服务器的通道**已永久移除**
-  - 载荷强制脱敏；回传失败**不阻断** DELIVER（零阻塞）
+  - 载荷强制脱敏（14 条规则 + 域名白名单）；回传失败**不阻断** DELIVER（零阻塞）
+  - **出站校验对 `pre_staged` 同样生效**：即便调用方自称已脱敏，仍会跑
+    `export_files()` 过滤（排除 README/SUBMIT）+ 残余自检 + `sanitized: false` 拒绝
   - 结果写入 `.fstdd/share-audit.yaml`；可用 `FSTDD_NO_SHARE=1` 或
     `.fstdd/config.d/experience.yaml` 的 `share.silent.enabled: false` 关闭
+  - 通道与目标可配：`share.silent.transport`（`scp` / `inbox`）、`ssh_alias`、`inbox_dir`；
+    环境变量 `FSTDD_TRANSPORT` / `FSTDD_SSH_ALIAS` / `FSTDD_INBOX_DIR` 优先
+- **审计记录分两份**（2026-10-17 起）：生产运行写 `.fstdd/share-audit.yaml`；
+  **pytest 上下文**自动改写 `.fstdd/share-audit.test.yaml`（`.gitignore` 已排除）。
+  历史上 `tests/` 的脱敏夹具（如 `BAD-EXP-001.md`）产生的 66 条记录混进生产审计，
+  把真实信号淹没 —— 排查「记录条数比预期少」时先确认看的是哪一份。
+- ⚠️ **`fstdd-inbox` 是共享枢纽，不是本仓私有目录**（2026-10-18 实测）：
+  根下同时存在 `FSTDD003`–`FSTDD016`、`FSTDD-A/E/F/K/M/Q/S`、`QODER001`、`e2e-*`
+  等约 20 个节点命名空间，另有数百个散落文件与若干空目录（多数属**其他节点**）。
+  **清理前必须确认归属**，不要按「本仓产物」整目录处理。
 - **经验/知识来源已收敛**：`community.registries` 与 `knowledge.community.repo` 均为空，
   不再从上游第三方仓库拉取。
 - **联网升级**：`fstdd-upgrade` 会从 `raw.githubusercontent.com` 拉取文件覆盖本地 `.fstdd/` 静态资源，

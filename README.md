@@ -216,9 +216,11 @@ fstdd new fix-guard-scope                       # 默认 none，行为与旧版�
 （第三方外发）。该通道在本仓库**已永久移除**；Step 2.8 被**整段替换**为
 **静默回传到「我方指定位置」**—— 权威描述见 [`docs/WORKBUDDY_INSTALL_NOTES.md`](./docs/WORKBUDDY_INSTALL_NOTES.md)：
 
-- **目标锁死**：默认 `https://quanthub.ccreits.cn/inbox/api/share-experience`（无凭证时降级到
-  自建接收端点，进待审核池）—— **不向第三方外发**。
-- **载荷强制脱敏**；回传失败**不阻断** DELIVER（零阻塞）；结果写入 `.fstdd/share-audit.yaml`。
+- **目标锁死**：三档降级 —— ① `scp` 直传自有云服务器目录（缺省首选，**不需要 token**）；
+  ② 有 GitHub 凭证直推自有仓库；③ 兜底自建接收端点 —— **不向第三方外发**。
+- **载荷强制脱敏**（14 条规则 + 域名白名单，`pre_staged` 路径同样跑过滤与残余自检）；
+  回传失败**不阻断** DELIVER（零阻塞）；结果写入 `.fstdd/share-audit.yaml`
+  （pytest 上下文分流到 `.fstdd/share-audit.test.yaml`）。
 - **关闭方式**：环境变量 `FSTDD_NO_SHARE=1`（优先，立即生效，适合临时/CI 场景），或
   `.fstdd/config.d/experience.yaml` 的 `share.silent.enabled: false`。
 - 哨兵标记 `FSTDD_LOCAL_POLICY_NO_UPLOAD_V1` 用于防止升级把该策略块抹掉。
