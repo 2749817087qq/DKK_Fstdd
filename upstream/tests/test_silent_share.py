@@ -178,6 +178,12 @@ def silent_env(tmp_path, monkeypatch):
     monkeypatch.setattr(SHARE, "INBOX_RETRY", 0)
     # 本机存在 ../.workbuddy-ai/tmp/.gh_token，不切断就会真的去推 GitHub
     monkeypatch.setattr(SHARE, "find_token", lambda: "")
+    # scp 通道在本套件中一律视为不可用：silent_share() 自 2026-10-17 起统一走
+    # publish() 的三档降级（scp 优先于 endpoint），不切断就会真的把测试经验
+    # scp 到生产云服务器。本套件的职责是验证 endpoint 兜底通道，故显式禁用 scp，
+    # 而不是依赖「生产 SSH 是否恰好可达」这一外部环境状态。
+    monkeypatch.setattr(SHARE, "publish_via_scp",
+                        lambda *a, **k: (False, "test: scp 通道在本套件中禁用"))
     for var in ("GITHUB_TOKEN", "PUSH_TOKEN", "GH_TOKEN",
                 "FSTDD_NO_SHARE", "FSTDD_INBOX_URL", "EXP_REPO"):
         monkeypatch.delenv(var, raising=False)
@@ -418,7 +424,7 @@ class TestZeroBlocking:
     def test_tc_cas_008c_silent_survives_internal_exception(
             self, silent_env, monkeypatch, capsys):
         """内部异常也必须被吞掉并写审计，而不是把 DELIVER 带崩。"""
-        def boom(out_dir, url):
+        def boom(out_dir, url, pre_staged=False):
             raise RuntimeError("模拟端点库内部崩溃")
 
         monkeypatch.setattr(SHARE, "publish_via_inbox", boom)

@@ -269,10 +269,14 @@ def test_outbound_scp_transfers_staged_content(tmp_path, monkeypatch):
     def _run(cmd, **kw):
         r = _R()
         if cmd[0] == "scp":
-            src = Path(cmd[2].rstrip("/*"))
-            seen["src"] = src
+            # argv 形如 ["scp","-r","--",*files,"host:batch_dir/"]：
+            # `--` 是选项终止符（2026-10-18 审计 F6），源文件在它之后、目标之前。
+            args = list(cmd)
+            tail = args[args.index("--") + 1:] if "--" in args else args[2:]
+            file_list = tail[:-1]
+            seen["src"] = Path(file_list[0]).parent
             seen["content"] = "\n".join(
-                p.read_text(encoding="utf-8") for p in sorted(src.glob("*.md")))
+                Path(p).read_text(encoding="utf-8") for p in sorted(file_list))
         elif cmd[0] == "ssh" and "wc -l" in cmd[-1]:
             r.stdout = "2\n"
         return r
@@ -350,6 +354,10 @@ def test_silent_share_zero_block_and_audit(tmp_path, monkeypatch):
     monkeypatch.setattr(se, "collect_local", lambda: [{
         "id": "EXP-X", "fm": {"experience_id": "EXP-X", "title": "t"},
         "body": "见 /home/ubuntu/x.md\n", "source": "EXP-X.md"}])
+    # 两条出站通道都在测试中禁用：否则 silent_share 无 token 时会真的
+    # ssh/scp 到生产云服务器（2026-10-17 起 scp 成为首选档），结果不再可复现。
+    # 只替换公开包装器 —— publish() 现统一走它们（EXP-2026-0017 收口不变量）。
+    monkeypatch.setattr(se, "publish_via_scp", lambda *a, **k: (False, "stub scp 禁用"))
     monkeypatch.setattr(se, "publish_via_inbox", lambda *a, **k: (False, "stub 失败"))
     rc = se.silent_share(_silent_args())
     assert rc == 0

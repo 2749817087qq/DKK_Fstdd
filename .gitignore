@@ -16,6 +16,8 @@ upstream/.fstdd/backup/*/.stdd/experiences/
 
 # 经验回传审计记录：append-only，属本机运行态（含本机路径），不入库
 .fstdd/share-audit.yaml
+# 测试运行时的审计分流副本（share_experience.py 在 pytest 上下文自动改写到此）
+.fstdd/share-audit.test.yaml
 
 # 经验索引锁：属**本机运行态**，绝不该入库
 # ⚠️ 2026-09-26 修正：该文件曾被跟踪，而 experience.py 每次 `experience list`
