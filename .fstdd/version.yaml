@@ -1,10 +1,28 @@
 # FSTDD 本地版本声明（F 仓 / stdd-repo）
 # 发行版口径：fstdd_version（须 = .fstdd/config.d/project.yaml 的 stdd_version）
 # vendored 上游内核口径：upstream_version（= upstream/ 内核，见 upstream/CHANGELOG.md 与 upstream/pyproject.toml）
-fstdd_version: "3.3.8"
+fstdd_version: "3.3.9"
 upstream_version: "3.1.0"
-released_at: "2026-10-09T17:40:00+08:00"
+released_at: "2026-10-17T08:00:00+08:00"
 changelog: |
+  v3.3.9 — DELIVER 自动化版（新增 fstdd canon merge 命令）
+
+  交付（1 change：2026-10-12-canon-merge-command，归档 + 根 canonical 并入 3 文件 + canon verify 2/2 + structure merge）：
+  - canon-merge-automation（NEW）：新增 `fstdd canon merge <change>` 命令，自动化 FSTDD DELIVER 阶段
+    「手工合并 change 的 canonical 到仓库根 canonical/」缺口（此前 ① 收口须手工拷贝 + 插索引）。
+    WRITE / SKIP（已存在且一致）/ CONFLICT（已存在且不同，拒绝覆盖）三态判决；命名三分法
+    （proposal/agent 用 change_id、code 用 capability）；新增 PARSE-ERROR 状态（YAML 解析失败
+    区别于「缺字段」，防误判 SKIP-MISSING）；遍历拒绝 `..`/分隔符穿越 + 合法正例必放行；失败即响
+    （非 0 退出 + 已写/未写明细）。
+  - 根 canonical 路径收口为单一函数 `_root_canonical_dir`（D1 修复两个根 canonical 错位，
+    顺带修 `canon generate --all` 扫空目录）。
+  - 防复发：AST 契约扫描（凡「接受 change 名」命令必走统一入口）+ 真实归档 change 行为断言；
+    新增 test_canon_merge.py 13 用例（含 PARSE-ERROR 双向判据 TC-CMA-011）。
+
+  质量：`canon verify` ③ 2/2；既有 canon 测试 70 collected / 68 passed / 2 skipped / 0 failed；
+  13/13 merge 测试全绿；四自检 rename 8/8、eol 7/7、skill_standards 7/7、workbuddy_skills PASS。
+  经验：固化 EXP-2026-0026（判据须落函数体）/ 0027/0032（路径穿越 + 合法正例）/ 0034（merge 只写不删）；知识图谱 +13 节点。
+
   v3.3.8 — 归档生命周期收口版（change 目录解析统一 + 归档/恢复状态自洽）
 
   交付（1 change：2026-10-07-change-dir-resolution-unify，归档 + 根 canonical 并入 4 文件 +

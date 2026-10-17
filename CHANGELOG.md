@@ -10,6 +10,24 @@
 
 ## [Unreleased]
 
+## [3.3.9] — 2026-10-17
+
+**主题**：DELIVER 自动化 —— 新增 `fstdd canon merge` 命令，自动化归档 change 的 canonical 合并到仓库根
+
+**规模**：1 change（`2026-10-12-canon-merge-command`）｜1 capability（NEW `canon-merge-automation`）｜**13/13 TC**｜新增 13 测试函数 / 1 文件
+
+### 新增
+
+- **`fstdd canon merge <change>`**：自动化 FSTDD DELIVER 阶段「手工合并 change 的 canonical 到仓库根 `canonical/`」缺口（此前 ① 收口须手工拷贝 + 插索引）。
+  WRITE / SKIP（已存在且一致）/ CONFLICT（已存在且不同，拒绝覆盖）三态判决；命名三分法（proposal/agent 用 `change_id`、code 用 `capability`）；新增 **PARSE-ERROR** 状态（YAML 解析失败区别于「缺字段」，防误判 `SKIP-MISSING`）；遍历拒绝 `..`/分隔符路径穿越 + 合法正例必放行；失败即响（非 0 退出 + 已写/未写明细）。
+  根 canonical 路径收口为单一函数 `_root_canonical_dir`（修复两个根 canonical 错位，顺带修 `canon generate --all` 扫空目录）。
+
+### 质量
+
+- `canon verify` ③ 2/2；既有 canon 测试 70 collected / 68 passed / 2 skipped / 0 failed；13/13 merge 测试全绿。
+- 四自检 rename 8/8、eol 7/7、skill_standards 7/7、workbuddy_skills PASS。
+- 经验：固化 EXP-2026-0026 / 0027 / 0032 / 0034；知识图谱 +13 节点。
+
 ## [3.3.8] — 2026-10-09
 
 **主题**：归档生命周期收口 —— change 目录解析统一 + 归档/恢复状态自洽

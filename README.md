@@ -443,10 +443,11 @@ python tools/share_experience.py --export
 ## 11. 版本与文档（**文档导航**）
 
 ### 版本历史
-**当前版本：`3.3.8`** ｜ 完整更新日志见 **[`CHANGELOG.md`](./CHANGELOG.md)**
+**当前版本：`3.3.9`** ｜ 完整更新日志见 **[`CHANGELOG.md`](./CHANGELOG.md)**
 
 | 版本 | 日期 | 主题（一句话） | 值不值得升 |
 |---|---|---|---|
+| **3.3.9** | 2026-10-17 | **DELIVER 自动化** —— 新增 `fstdd canon merge <change>` 命令，自动化归档 change 的 canonical 合并到仓库根 `canonical/`（`canon verify` ③ 2/2、13/13 merge 测试全绿） | ✅ **必升** —— 消 DELIVER 阶段手工合并 canonical 的易错步骤（此前须手工拷贝 + 插索引） |
 | **3.3.8** | 2026-10-09 | **归档生命周期收口** —— 5 个模块的 change 目录解析器统一走 `finder`（读路径支持归档）；归档 change 的**写操作统一拒绝并指路 `rollback`**（`gate amend-audit` 除外）；`archive` 归档即闭合 `deliver` 相位；`rollback` 保留原相位 | ✅ **必升** —— 修复前对已归档 change 报「change 不存在」（误导文案）；且 `rollback` 会把 `current_phase` 重置为 `understand`、与 `phases.*.status` 自相矛盾，继续推进会**回到错误相位** |
 | **3.3.7** | 2026-10-07 | **工具链契约保真（声明 = 行为）** —— 6 处「工具骗人」缺陷：`--dry-run` 被静默忽略、经验索引被写成 CRLF、`extract-proposal` 恒空、`ci` (d) 误判 60% 的 test-plan、`experience list --format json` 崩溃、`verify_notices` 默认移走文件 | ✅ **必升** —— 前两项会**静默改变状态 / 移走文件**；第 4 项把门禁变成噪声（43 份 test-plan 误判 26→0） |
 | **3.3.6** | 2026-10-07 | **遗留债务清理（门禁可信度）** —— 测试套件与运行环境编码解耦（双环境结果逐字一致）+ 发布清单失真纠错 + 版本断言去硬编码 + `_scratch/`（20 MB）退索引 | ✅ **必升** —— 此前门禁结果会随控制台代码页变红/变绿（「本地绿、CI 红」），且发布清单漏跑仓库根 `tests/` |
