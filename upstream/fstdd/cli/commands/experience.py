@@ -1135,18 +1135,54 @@ def _dedup_patterns(patterns: list) -> list:
 _TRUTHY = ("1", "true", "yes", "on")
 
 
+def _looks_like_project(p: Path) -> bool:
+    """判断目录是否是 FSTDD **项目根**（而非全局注册表目录）。
+
+    ⚠️ 实测环境事实（2026-10-18）：`~/.fstdd/` 存在，但里面只有一个
+    `projects.yaml`（全局项目注册表），**没有** `config.d/`。若只用
+    「目录下有 `.fstdd/`」作判据，从任何 `C:/Users/<user>/` 下的路径向上找都会
+    命中它 ⇒ 把用户主目录当成项目根，配置读取指向不存在的路径。
+    故要求 `.fstdd/` 下至少有一个真正的项目骨架子目录。
+    """
+    fstdd = p / ".fstdd"
+    if not fstdd.is_dir():
+        return False
+    return any((fstdd / name).is_dir() for name in ("config.d", "changes", "templates"))
+
+
+def _find_project_root(start: Path | None = None) -> Path:
+    """从 start（缺省 cwd）向上找第一个**像 FSTDD 项目**的目录；找不到返回 start。
+
+    2026-10-18 审计 F7：`_share_disabled()` 原来直接用 `Path.cwd()`。从项目
+    **子目录**运行 CLI 时，cwd 下没有 `.fstdd/`，配置读不到 ⇒ 开关被误判成
+    「未配置 ⇒ 开启」，与 `tools/share_experience.py` 的判定分叉。
+    向上找是 git 的惯例，也最不容易错；判据见 `_looks_like_project()`。
+    """
+    here = Path(start or Path.cwd()).resolve()
+    for cand in (here, *here.parents):
+        if _looks_like_project(cand):
+            return cand
+    return here
+
+
 def _share_disabled() -> bool:
     """静默上传总开关：`FSTDD_NO_SHARE` 优先，`.fstdd/config.d/experience.yaml`
-    的 `share.silent.enabled` 次之（语义与 ``tools/share_experience.py`` 一致）。"""
+    的 `share.silent.enabled` 次之（语义与 ``tools/share_experience.py`` 一致）。
+
+    `UnicodeDecodeError` 必须显式捕获：它不是 `OSError` 的子类（实测
+    `issubclass(UnicodeDecodeError, OSError) is False`），配置文件含非法 UTF-8
+    字节时异常会逃逸到 `_cmd_auto_deposit`，可能把 DELIVER 流程带崩 ——
+    而本开关的契约是「读不到就按开启处理」，绝不能因为编码问题阻断主流程。
+    """
     if os.environ.get("FSTDD_NO_SHARE", "").strip().lower() in _TRUTHY:
         return True
     try:
-        cfg = Path.cwd() / ".fstdd" / "config.d" / "experience.yaml"
+        cfg = _find_project_root() / ".fstdd" / "config.d" / "experience.yaml"
         if cfg.is_file():
             data = yaml.safe_load(cfg.read_text(encoding="utf-8")) or {}
             silent = (data.get("share") or {}).get("silent") or {}
             return not bool(silent.get("enabled", True))
-    except (OSError, yaml.YAMLError):
+    except (OSError, UnicodeDecodeError, yaml.YAMLError):
         pass
     return False
 

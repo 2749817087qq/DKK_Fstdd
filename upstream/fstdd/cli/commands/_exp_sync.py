@@ -179,12 +179,18 @@ def push_bundle(out_dir: Path, *, hub_dir=None, secure: bool = False,
         return True, "dry-run: 未推送"
     if hub_dir:
         hub = Path(hub_dir)
+        # 先解析脱敏器：找不到唯一事实源就整体失败，**不要**逐条降级到弱规则。
+        # 逐条降级的后果是「一部分文件被弱脱敏后落盘」，比整体失败更危险。
+        try:
+            sanitize = _load_canonical_sanitizer()
+        except RuntimeError as exc:
+            return False, str(exc)
         hub.mkdir(parents=True, exist_ok=True)
         entries = load_entries(out_dir)
         n = 0
         for eid, ent in entries.items():
-            # 出站不变量：明文档同样强制脱敏（与 share_experience 的 stage_sanitized 一致）
-            text = _sanitize_text(ent["path"].read_text(encoding="utf-8"))
+            # 出站不变量：明文档同样强制脱敏（复用 stage_sanitized 的同一实现）
+            text = sanitize(ent["path"].read_text(encoding="utf-8"), True)[0]
             if secure:
                 from ._exp_crypto import hybrid_encrypt
                 pub = (key_paths or default_key_paths())[0]
@@ -211,20 +217,63 @@ def default_key_paths(project_root=None):
     return _dkp(project_root)
 
 
-_SANITIZE_RULES = (
-    (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", "<EMAIL>"),
-    (r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "<IP>"),
-    (r"\b(?:ghp|gho|ghs|github_pat)_[A-Za-z0-9_]{20,}\b", "<TOKEN>"),
-    (r"(?i)\b(token|secret|password|passwd|api[_-]?key)\s*[:=]\s*\S+", r"\1=<REDACTED>"),
-)
+_SANITIZE_RULES = None  # 已废弃：见 _sanitize_text 的说明（2026-10-18 审计 F4）
+
+# 唯一事实源脱敏器的缓存（加载成功后才非 None）
+_CANONICAL_SANITIZE = None
+
+
+def _load_canonical_sanitizer():
+    """加载唯一事实源脱敏器：`tools/share_experience.py::sanitize`。
+
+    2026-10-18 审计 F4：本模块原自带一份 `_SANITIZE_RULES`（4 条正则），注释却写着
+    「与 share_experience 的 stage_sanitized 一致」—— **那句话是假的**。
+    15 类敏感形态对照实测 12 类漏脱敏：Windows 绝对路径、POSIX 家目录、内网域名、
+    `ghu_`/`ghr_` token、`sk-` API key、AWS AKIA、私钥块、Bearer 全部漏。
+
+    现改为**复用同一实现**，不再维护副本。找不到时**抛错而不是降级到弱规则** ——
+    弱规则出站等于静默泄露，宁可让 `push_bundle` 返回失败。
+    """
+    global _CANONICAL_SANITIZE
+    if _CANONICAL_SANITIZE is not None:
+        return _CANONICAL_SANITIZE
+
+    import importlib.util
+
+    here = Path(__file__).resolve()
+    candidates = [
+        # 仓库布局：upstream/fstdd/cli/commands/_exp_sync.py → parents[4] = 仓库根
+        here.parents[4] / "tools" / "share_experience.py",
+        # 从仓库根以 cwd 运行时（与 push_bundle 的脚本定位口径一致）
+        Path.cwd() / "tools" / "share_experience.py",
+    ]
+    for p in candidates:
+        if not p.is_file():
+            continue
+        spec = importlib.util.spec_from_file_location(
+            "fstdd_share_experience_canonical_sanitizer", p)
+        if spec is None or spec.loader is None:
+            continue
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _CANONICAL_SANITIZE = mod.sanitize
+        return _CANONICAL_SANITIZE
+
+    raise RuntimeError(
+        "未找到唯一事实源脱敏器 tools/share_experience.py —— "
+        "拒绝用弱化规则出站（会造成静默泄露）。"
+        "请确认在 FSTDD 仓库根目录运行，或安装含 tools/ 的发行包。"
+    )
 
 
 def _sanitize_text(text: str) -> str:
-    """出站不变量：任何同步出站前**必须先脱敏**（SC-015）。"""
-    out = text
-    for pat, repl in _SANITIZE_RULES:
-        out = re.sub(pat, repl, out)
-    return out
+    """出站不变量：任何同步出站前**必须先脱敏**（SC-015）。
+
+    规则唯一事实源 = `tools/share_experience.py::sanitize`
+    （14 条正则 + 域名白名单，与 `stage_sanitized()` 同一实现）。
+    """
+    clean, _hits = _load_canonical_sanitizer()(text, True)
+    return clean
 
 
 def fetch_bundle(dest_dir: Path, *, hub_dir=None) -> tuple:
