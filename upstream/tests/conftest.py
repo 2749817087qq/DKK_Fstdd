@@ -1,8 +1,32 @@
 """pytest fixtures — 提供临时文件系统和示例 change 目录。"""
+import importlib.util
+from pathlib import Path
+
 import pytest
 import yaml
-from pathlib import Path
 from datetime import date
+
+
+# ---------------------------------------------------------------------------
+# 出站守卫（2026-10-18 审计 F2）
+# ---------------------------------------------------------------------------
+# `upstream/` 有自己的 pyproject.toml ⇒ 单跑 `pytest upstream/tests/` 时 rootdir 就是
+# `upstream/`，conftest 链从它起算，**仓库根的 tests/conftest.py 根本不被加载**。
+# 于是 tests/ 里那套 ssh/scp 生产守卫对这里完全失效 —— 而本目录的
+# `test_silent_share.py` 恰恰要靠 fixture 手动禁用 scp 才不出站。
+# 规则实现只有一份（tools/pytest_egress_guard.py），两侧 conftest 各自 install()。
+def _install_egress_guard() -> None:
+    root = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location(
+        "fstdd_pytest_egress_guard", root / "tools" / "pytest_egress_guard.py")
+    if spec is None or spec.loader is None:
+        return
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.install()
+
+
+_install_egress_guard()
 
 
 @pytest.fixture

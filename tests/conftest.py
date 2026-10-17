@@ -162,6 +162,55 @@ def _neutralize_temp_env():
     return neutral
 
 
+# -------- 韧性层：出站 ssh/scp 生产环境守卫（实现见 tools/pytest_egress_guard.py）--------
+#
+# 背景（2026-10-18 实测，两次真实泄漏，且都在测试**全绿**时发生）：
+#   ① 测试的 scp 桩未切断真实传输 ⇒ 生产 /home/ubuntu/fstdd-inbox 被建出 20+ 空批次；
+#   ② 打点函数回调了**真实** `_scp_dir` ⇒ 夹具批次（EXP-SHT1.md）真 scp 到了生产。
+#
+# 实现为什么不在本文件（2026-10-18 审计 F2）：
+#   仓库有两个 pytest rootdir —— 仓库根与 `upstream/`（各有 pyproject.toml）。
+#   conftest 链从 rootdir 起算，故单跑 `pytest upstream/tests/` 时本文件**根本不被加载**
+#   （`--trace-config` 实证：只注册 upstream/tests/conftest.py）。守卫因此对
+#   `upstream/tests/test_silent_share.py` 完全失效，而那套用例恰恰依赖 fixture 手动
+#   禁用 scp 才不出站 —— 等于把安全性押在「每个 fixture 都记得写」上。
+#   现把规则抽到 tools/pytest_egress_guard.py，由 tests/ 与 upstream/tests/ 两侧
+#   conftest 各自 install()：规则只有一份、覆盖所有入口。
+#
+# 安装时机用**模块导入期**而非 pytest_configure：late-loaded 的 conftest 是否收到
+#   pytest_configure 依赖 pluggy 的内部时序，安全网不该押在那上面。
+
+def _load_egress_guard():
+    """按文件路径加载守卫模块（不污染 sys.path）。"""
+    import importlib.util
+    root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location(
+        "fstdd_pytest_egress_guard", root / "tools" / "pytest_egress_guard.py")
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(mod)
+    return mod
+
+
+EGRESS_GUARD = _load_egress_guard()
+EGRESS_GUARD.install()
+
+# 兼容别名：既有用例按旧名引用
+SUBPROCESS_GUARD_PREFIX = EGRESS_GUARD.PREFIX
+_PRODUCTION_HOSTS = EGRESS_GUARD.PRODUCTION_HOSTS
+_SSH_SCPPROGRAMS = EGRESS_GUARD.SSH_PROGRAMS
+_egress_targets = EGRESS_GUARD.egress_targets
+_is_production_egress = EGRESS_GUARD.is_production_egress
+
+
+def _subprocess_guard_summary() -> str:
+    return EGRESS_GUARD.summary()
+
+
+def _flush_subprocess_guard(session):
+    EGRESS_GUARD.flush(session)
+
+
 # -------- 平台常量 — 从 platforms.yaml 读（唯一事实源）--------
 def _load_platforms():
     """从 .fstdd/platforms.yaml 读平台定义，支持 Windows %VAR% 展开"""
@@ -227,6 +276,8 @@ def pytest_configure(config):
     _neutralize_temp_env()
     # D1b 韧性层：安装删除原语包装 —— 会话开始时生效，覆盖测试侧与框架侧的删除调用
     _install_delete_guard()
+    # D1c 出站守卫已在**模块导入期**安装（见文件顶部 EGRESS_GUARD.install()），
+    # 此处不再重复 —— 导入期安装才能覆盖 late-loaded conftest 与另一棵 rootdir。
 
 
 # -------- 会话级汇总：捕获必须可见（不得静默）--------
@@ -237,6 +288,9 @@ def pytest_sessionfinish(session, exitstatus):
     若让捕获次数影响退出码，就会把「守卫是否恰好触发」重新引入失败数 ⇒ 正是要消除的抖动。
     故这里的契约是「**可见**」而非「**判红**」：以告警 + 黄色汇总行呈现。
     """
+    # D1c：生产出站守卫 —— 命中即已在测试体内 raise，此处只做会话级可见汇总
+    _flush_subprocess_guard(session)
+
     if not DELETE_GUARD_STATS["captured"]:
         return
     line = _delete_guard_summary()
