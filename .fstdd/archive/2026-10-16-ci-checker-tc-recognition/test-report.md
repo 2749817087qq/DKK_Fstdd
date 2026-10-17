@@ -15,13 +15,13 @@
 | SC 覆盖 | **9/9**（8 项自动化 + SC-CTR-009 跨仓执行取证） |
 | 新增用例 | **+15**（test_ci 23→30、test_utils 8→14、test_diff_trace_hyphen 0→2） |
 | 受影响套件 | **54 passed**（4 文件：test_utils 14 + test_ci 30 + test_diff_trace_hyphen 2 + test_validate 8）；含 diff/trace 的 **6 文件 63 passed** |
-| 全量回归 | 相对基线 `c99ef7d`（14 failed / 859 passed / 8 skipped）**无新增失败**（真实新增 0，1 项瞬态见 §3.2） |
+| 全量回归 | 相对基线 `c99ef7d`（14 failed / 859 passed / 8 skipped）**无新增失败**（真实新增 0；1 项瞬态已于交付后转绿，见 §3.2） |
 | 静态检查 | ruff 本 change **零新增**（cli/ 128=128；5 改动文件 16=16 行号归一后逐条一致）；mypy **零新增**（80=80） |
 | C1 三路评审 | code **PASS**（0🔴/0🟠）；test **CONDITIONAL**（2🟠→已由 ADJ-006/008 处置）；docs **CONDITIONAL**（3🟠→已由 ADJ-002/007 + 文档修正处置） |
 | C3 diff 审查 | **PASS**（0🔴/0🟠）；两份独立报告并列（team-lead 复核 + code-reviewer 独立审查）；独立报告另记 2🟡：**D-01 已由 ADJ-009 修复**（Gate 3 用户裁定纳入）、D-02 交付清单登记已采纳 — 见 §八 |
 | C4 失败模式 | 14 类 **13 ✅ + 1 SKIPPED + 0 ❌**；8 类金融 **全 SKIPPED**（FINANCIAL_PROJECT=NO） |
 | C6 设计偏离 | **9 条**（ADJ-001~009），全部留痕 |
-| **总判定** | **通过**（无阻断项；1 项瞬态待 DELIVER 提交后复证） |
+| **总判定** | **通过**（无阻断项；1 项瞬态已于交付后复证转绿） |
 
 ---
 
@@ -80,7 +80,8 @@ C:/Python311/python.exe -m pytest \
 |---|---|---|
 | 基线 `c99ef7d`（干净 worktree `D:/tools/_stdd_head_baseline`） | 14 failed / 859 passed / 8 skipped | 环境性预存在失败 |
 | 修复前（仅 glob 修复，未含 C2 补丁） | 12 failed / 870 passed / 7 skipped | — |
-| 修复后（含 ADJ-009 终态，串行重跑 882.80s） | **11 failed / 878 passed / 7 skipped** | 见下方归因；此为**最终权威数值** |
+| 修复后（含 ADJ-009 终态，串行重跑 882.80s） | **11 failed / 878 passed / 7 skipped** | 提交前终态，见下方归因 |
+| **交付后（commit `d20994b`，串行 652.83s）** | **10 failed / 879 passed / 7 skipped** | `test_a6` 如预期**转绿**（ADJ-005 闭环）；10 项均为基线同名预存在 ⇒ **真实新增失败 0**。采集总数仍 896（提交未增删用例） |
 
 **增量算术自洽校验**（证明新增用例全部计入且无额外夹带）：
 
@@ -94,7 +95,7 @@ C:/Python311/python.exe -m pytest \
 **11 项失败归因**：
 
 - **10 项** 与基线失败**逐一同名** ⇒ 预存在，非本 change 引入。
-- **1 项** `test_a6_no_stray_untracked_files` ⇒ **瞬态**（ADJ-005）：该测试仅豁免 `.fstdd/changes/` 下的未跟踪项，而本 change 新增的 `upstream/tests/commands/test_diff_trace_hyphen.py` 尚未提交，故判红。**DELIVER 提交后复证转绿**（见 §十一）。
+- **1 项** `test_a6_no_stray_untracked_files` ⇒ **瞬态**（ADJ-005）：该测试仅豁免 `.fstdd/changes/` 下的未跟踪项，而本 change 新增的 `upstream/tests/commands/test_diff_trace_hyphen.py` 尚未提交，故判红。**已于交付后（commit `d20994b`）复证转绿**（见 §十一）。
 - **真实新增失败：0**。
 
 > 说明：此前记录的「11 failed / 871 passed」为 C1 补强前的中间态；ADJ-006/007/008/009 陆续补入 7 个用例后终态为 **878 passed**，失败集合与归因不变。
@@ -314,7 +315,7 @@ ruff 17 项明细均为预存在历史问题（`F401`/`F541`×/`F841`×/`E741`×
 | # | 局限 | 影响 | 处置 |
 |---|---|---|---|
 | 1 | **本仓 tests 布局假设**：覆盖检查扫 `<root>/tests/`，而本仓测试在 `upstream/tests/` | 本 change 自身的 planned TC 覆盖检查**不随 glob 修复转绿**（仍 FAIL） | Gate 2 已确认的已知局限；真实数据验收放下游仓（§5.2） |
-| 2 | **`test_a6` 瞬态红** | 全量回归中 1 项瞬态失败 | DELIVER 提交后复证（ADJ-005） |
+| 2 | ~~**`test_a6` 瞬态红**~~ **已闭环** | 全量回归中 1 项瞬态失败 | 交付后（`d20994b`）复跑 **1 passed**；全量 11F→**10F/879P/7S**（ADJ-005） |
 | 3 | **(d) 计数粒度**：`AND` 语义按 per-SC 而非 per-file | 后续若同 SC 跨多文件，计数口径需再评估 | 记录为后续改进候选（非本 change 范围） |
 | 4 | **`experience add --dry-run` 仍写盘**（CLI 缺陷，EXP-2026-0015） | 预览模式有副作用 | 记录为**新的候选 change** |
 | 5 | SC-CTR-009 跨仓依赖 | 无法自动化 | 以执行取证替代（§5.2），test-plan 已显式标注 |
