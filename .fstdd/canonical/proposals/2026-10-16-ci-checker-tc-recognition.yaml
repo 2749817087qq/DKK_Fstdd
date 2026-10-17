@@ -1,0 +1,143 @@
+# 2026-10-16-ci-checker-tc-recognition.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-10-16-ci-checker-tc-recognition"
+  title: "修复 CI 检查器两类识别缺陷：测试文件 glob 失明 + TC-ID 查重口径分裂"
+  created: "2026-10-16T22:33:00+08:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: >-
+    2026-10-16-default-free-fixture 交付期间实测暴露 FSTDD 检查器两类识别缺陷：
+    ① `check_tc_implementation_coverage`（ci.py:558）以 `rglob("test_*.py")` 扫描测试文件，
+    对连字符命名 `test-*.py`（本仓族既定约定，经 run-all.py 聚合，EXP-2026-0001）结构性失明——
+    对该 change 报「TC 实现覆盖 0/10」假 FAIL，修正 glob 后实测 9/10；
+    狼来了效应会训练用户忽略红，从而掩盖真实覆盖缺口。同一根因还见于 diff.py:99 与 trace.py:95
+    （fstdd diff 对连字符测试文件显示「未覆盖」、fstdd trace 找不到测试引用）。
+    ② `check_tcid_unique`（ci.py:317）对 test-plan.md **全文** findall TC-ID，
+    任一 ID 出现两次即 FAIL；而 validate.py:82-88 的查重只数 `| **ID** | TC-... |` **定义行**
+    （注释明示意图「两个案例不得共用同一 ID」，并说明测试执行矩阵/建议补充顺序中引用 TC-ID
+    是模板正常写法）。两检查器口径分裂（EXP-2026-0017）迫使作者把每个 TC-ID 字面压到
+    全文恰一次，否则满足 validate 的 test-plan 仍被 ci (d) 拒——文档扭曲适配工具。
+  motivation: >-
+    检查器是 STDD 门禁的公信力来源。两个修复都把检查器拉回其「声明的意图」：
+    识别面补全（两种命名都扫）、查重口径对齐（定义行），且**不放宽任何真实判据**——
+    planned TC 无任何实现仍 FAIL；两个案例定义行共用同一 ID 仍 FAIL。
+  evidence:
+    observed_at: "2026-10-16T22:30:00+08:00"
+    observed_base_git_sha: "c99ef7d17d9d46315044c13c4d633f66cb546f2d"
+    details: >-
+      ① 假 FAIL 取证：对已归档 change 2026-10-16-default-free-fixture 跑 ci check-failures，
+      TC 实现覆盖报 0/10；以相同逻辑、修正 glob（+test-*.py）复测得 9/10
+      （唯一缺失 TC-EPR-002 为 test-plan 模板 boilerplate 引用，非计划用例）。
+      ② 口径分裂取证：同 change 的 test-plan 曾因 TC-ID 全文重复被 (d) FAIL，
+      手工把每个 TC-ID 字面去重到全文恰一次后才通过（EXP-2026-0017）。
+      ③ 同根因点位取证：grep 'rglob("test_*.py")' fstdd/ → ci.py:558 / diff.py:99 / trace.py:95 三处。
+      ④ 既有测试取证：tests/commands/test_ci.py::TC-CI-008
+      （test_check_failures_detects_duplicate_tc_ids）的 fixture 正是旧全文语义的编码——
+      裸重复 TC-ID、无 `| **ID** |` 定义行；修复后该 fixture 必然转红，须同批更新并说明理由。
+      ⑤ 基线取证：cd upstream && pytest tests/commands/test_ci.py tests/commands/test_validate.py
+      → 31/31 通过（修复前后对比基线）。
+
+what_changes:
+  - id: C1
+    description: >-
+      fstdd/cli/utils.py 新增共享 helper `iter_test_files(tests_dir)`：同时产出
+      `test_*.py` 与 `test-*.py` 两种命名（两模式第 5 字符互斥，天然不会重复；
+      仍以 seen 集合防御未来模式扩张）。单一事实源，杜绝第 4 处同根因点位。
+    type: added
+  - id: C2
+    description: >-
+      ci.py `check_tc_implementation_coverage` 切换至 iter_test_files——修复项①
+      （连字符命名的测试文件不再漏扫）。判据不变：planned TC-ID 在全部测试文件中
+      均不存在仍按原阈值 FAIL/WARN。
+    type: modified
+  - id: C3
+    description: >-
+      diff.py:99 与 trace.py:95 两个同根因点位一并切换至 iter_test_files
+      （同一 glob 失明：fstdd diff 显示「未覆盖」假阴性、fstdd trace 找不到测试引用）。
+      此项为范围扩张（超出用户点名的 2 条），Gate 1 请用户明示裁定；建议采纳——
+      同根因留半根比全修更危险（下一份假报告还会再来）。
+    type: modified
+  - id: C4
+    description: >-
+      ci.py `check_tcid_unique` 查重正则由全文 `(TC-[A-Z]+-\d{3})` 改为定义行
+      `\*\*ID\*\*\s*\|\s*(TC-[A-Z]+-\d{3})`，与 validate.py:82-88 逐字一致——修复项②
+      （EXP-2026-0017）。语义收敛为 validate 注释声明的意图：两个案例定义行不得共用
+      同一 TC-ID；矩阵/补充顺序/正文中引用 TC-ID 属正常写法，不再误判。
+      代码注释引用 EXP-2026-0017 与 validate.py 对齐事实，防回归性再分裂。
+    type: modified
+  - id: C5
+    description: >-
+      tests/commands/test_ci.py：更新 TC-CI-008 fixture 至新语义（两条 `| **ID** | TC-X-001 |`
+      定义行 → FAIL），并在测试内注释说明「旧 fixture 编码旧全文语义，随 C4 同批更新」，
+      保留审计痕迹。
+    type: modified
+  - id: C6
+    description: >-
+      新增回归测试（RED→GREEN 固定）：
+      (a) 连字符 `test-hyphen.py` 承载 planned TC-ID → check_tc_implementation_coverage PASS
+      （修复前 FAIL，EXP-2026-0001 类假红）；
+      (b) planned TC-ID 在两种命名测试文件中均不存在 → 仍 FAIL（真实缺口不放松）；
+      (c) test-plan 中同一 TC-ID 在正文/矩阵多处引用但定义行恰一条 → (d) PASS（EXP-2026-0017 固化）；
+      (d) iter_test_files 单测（tests/test_utils.py）：混合目录同时含两种命名 → 全部产出且无重复。
+    type: added
+
+capabilities:
+  new:
+    - name: "ci-checker-tc-recognition"
+      description: >-
+        CI 检查器对「测试文件」与「TC-ID」的识别口径：测试文件扫描覆盖 test_*.py 与
+        test-*.py 两种命名（单一事实源 iter_test_files）；TC-ID 查重以定义行
+        （`| **ID** | TC-... |`）为口径，与 validate 对齐。真实缺口检测判据不变。
+  modified: []
+
+constraints:
+  - "不放宽真实判据：planned TC-ID 无任何测试实现仍 FAIL；两案例定义行共用 TC-ID 仍 FAIL。修复只针对识别面与口径一致性。"
+  - "ci (d) 与 validate 的查重正则必须逐字一致（同一常量或注释互引），杜绝第三次分裂。"
+  - "既有测试 TC-CI-008 的更新必须保留审计痕迹（注释说明旧语义编码来源），不得静默改绿。"
+  - "不修改 check-failures 的其他检查项（(a)(f)(g)(l) 等）与阈值（50% FAIL 线不变）。"
+  - "不改 run-all.py / 项目测试命名约定；适配检查器去适配约定，而不是反过来。"
+
+stakeholders:
+  - "STDD 使用者：ci check-failures / diff / trace 的输出可信度直接决定门禁公信力"
+  - "下游项目（如多层次agent）：其 test-plan 写法受两检查器口径夹逼，修复后回归基线恢复可信"
+
+risk_areas:
+  - capability: "ci-checker-tc-recognition"
+    risk: "glob 补全后历史存量 test-plan 的 TC-ID 被更多识别，(d) 从 FAIL 翻 PASS 的 change 被误认为质量提升"
+    mitigation: "PASS 翻转本身即修复目的（去假红）；test-report 中以「修复前后对同一 change 的复跑对比」留证，不单独作为质量结论。"
+  - capability: "ci-checker-tc-recognition"
+    risk: "定义行口径让「TC-ID 只在矩阵出现、从无案例定义行」的 test-plan 逃过查重"
+    mitigation: "validate 的「ID 行数 ≥ Scenario 数」检查与该口径同向兜底；且 (d) 的语义本就是案例级查重，不是存在性检查（存在性由 TC 实现覆盖检查负责）。"
+  - capability: "ci-checker-tc-recognition"
+    risk: "iter_test_files 若未来第三种命名模式出现又忘抽常量"
+    mitigation: "单一 helper + 单测钉死两种模式；docstring 声明「新增命名模式必须改此处」。"
+
+non_goals:
+  - "不修复 check-failures 的 TC 实现覆盖对 planned TC 集合的提取口径（全文 findall 在该检查中是有意的，本 change 只修文件识别）。"
+  - "不处理 TC-EPR-002 模板 boilerplate 被计入 planned 的问题（属多层次agent 仓 test-plan 清理，另案）。"
+  - "不改 fstdd diff / trace 的其他输出逻辑（找到测试文件后的行号/函数提取逻辑原样保留）。"
+  - "不引入新的检查项或阈值。"
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    financial_note: "无资金流/扣款/风控面；纯工具检查器行为修正。"
+    cross_system: false
+
+anchoring:
+  level: L2
+  reference_changes: []
+  anchor_implementations: []
+
+success_criteria:
+  - "RED→GREEN：新测试 (a)(c) 在修复前必败（连字符文件漏扫致覆盖不足；全文查重误判），修复后必过。"
+  - "真实判据不回退：新测试 (b)（planned TC 无实现）修复后仍 FAIL；更新后的 TC-CI-008（两定义行共用 ID）FAIL。"
+  - "既有套件：pytest tests/commands/test_ci.py tests/commands/test_validate.py 全绿（含更新后的 TC-CI-008）。"
+  - "真实数据复跑取证：对归档 change 2026-10-16-default-free-fixture 跑 ci check-failures——(d) 由 FAIL（重复 TC-ID）转 PASS，TC 实现覆盖由 0/10 转 9/10（唯一缺失为模板引用 TC-EPR-002，成因不变）。"
+  - "全仓 pytest 无新增失败（相对基线 c99ef7d）；iter_test_files 单测覆盖两种命名混合目录无重复。"

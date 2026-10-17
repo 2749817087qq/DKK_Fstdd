@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-16-ci-checker-tc-recognition: proposals/2026-10-16-ci-checker-tc-recognition.yaml
+specs:
+  agent:
+    2026-10-16-ci-checker-tc-recognition: specs/agent/2026-10-16-ci-checker-tc-recognition.yaml
+  code:
+    2026-10-16-ci-checker-tc-recognition: specs/code/2026-10-16-ci-checker-tc-recognition.yaml
+version: '2.9'

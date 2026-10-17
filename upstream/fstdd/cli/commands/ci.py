@@ -310,11 +310,17 @@ def check_files_exist(change_dir: Path, _project_root: Path) -> tuple[str, str]:
 @_register_check
 def check_tcid_unique(change_dir: Path, _project_root: Path) -> tuple[str, str]:
     """(d) Check TC-ID uniqueness in test-plan.md."""
+    from ..utils import TC_ID_DEFINITION_ROW_PATTERN
     test_plan = change_dir / "test-plan.md"
     if not test_plan.exists():
         return ("SKIP", "(d) test-plan.md 不存在，跳过 TC-ID 检查")
     content = test_plan.read_text(encoding="utf-8")
-    tc_ids = re.findall(r"(TC-[A-Z]+-\d{3})", content)
+    # REQ-CTR-002：只统计案例定义行（`| **ID** | TC-… |`），正则取
+    # utils.TC_ID_DEFINITION_ROW_PATTERN 常量（validate.py 查重为同表达式内联字面量，
+    # 两处须同步修改）。全文口径会把测试执行矩阵/补充顺序中对 TC-ID 的正常引用误判为
+    # 重复（EXP-20260917-A1：10/10 归档 change 全误报；EXP-2026-0017：下游被迫全文去重）。
+    # 本检查意图：两个案例不得共用同一 ID。
+    tc_ids = re.findall(TC_ID_DEFINITION_ROW_PATTERN, content)
     if not tc_ids:
         return ("WARN", "(d) 未找到 TC-ID")
     unique = set(tc_ids)
@@ -550,12 +556,16 @@ def check_tc_implementation_coverage(change_dir: Path, project_root: Path) -> tu
         return ("SKIP", "test-plan.md 中未找到 TC-ID")
 
     # Search for TC-IDs in test files
+    # REQ-CTR-001：经 iter_test_files 单一事实源扫描（test_*.py + test-*.py），
+    # 不再直接 rglob("test_*.py")——后者对连字符命名结构性失明（下游多层次agent
+    # 的 EXP-2026-0001 类假红；本仓同名编号为 Guard 阶段门，非此语义）。
+    from ..utils import iter_test_files
     tests_dir = project_root / "tests"
     if not tests_dir.exists():
         return ("SKIP", "tests/ 目录不存在，跳过 TC 实现覆盖检查")
 
     implemented_tcs = set()
-    for test_file in tests_dir.rglob("test_*.py"):
+    for test_file in iter_test_files(tests_dir):
         file_content = test_file.read_text(encoding="utf-8")
         for tc_id in planned_tcs:
             if tc_id in file_content:

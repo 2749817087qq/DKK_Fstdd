@@ -2,7 +2,7 @@ import logging
 import sys
 import io
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Iterator
 
 _logger: Optional[logging.Logger] = None
 STDD_SOURCE: Optional[Path] = None
@@ -44,6 +44,46 @@ def resolve_stdd_path(project_root, subdir):
     if new_path.exists(): return new_path
     if old_path.exists(): return old_path
     return new_path
+
+# 测试文件识别的单一事实源（REQ-CTR-001，change 2026-10-16-ci-checker-tc-recognition）。
+# 直接 rglob("test_*.py") 对连字符命名 test-*.py 结构性失明（下游多层次agent 的
+# EXP-2026-0001 类假红：ci 覆盖检查恒定 0/N、diff 显示「未覆盖」、trace 找不到测试引用；
+# 本仓同名编号为 Guard 阶段门，非此语义）。
+# 新增命名模式必须改此处——ci.py / diff.py / trace.py 三处调用点一律经本函数扫描。
+_TEST_FILE_PATTERNS = ("test_*.py", "test-*.py")
+
+# TC-ID 案例定义行正则（REQ-CTR-002，change 2026-10-16-ci-checker-tc-recognition）：
+# ci.py check_tcid_unique 使用本常量，杜绝 TC 计数口径再次分裂（EXP-20260917-A1：
+# 全文口径致 10/10 归档 change 误报；EXP-2026-0017：下游被迫把每个 TC-ID 字面压到全文恰一次）。
+# validate.py 的查重保留同表达式内联字面量——源码级守卫测试
+# test_c3_validate_source_uses_scoped_regex 要求其内含定义行正则；修改本常量必须
+# 同步 validate.py 内联正则（两处注释互相引用）。
+# 语义：只数 `| **ID** | TC-… |` 定义行——「两个案例不得共用同一 ID」；
+# 测试执行矩阵/补充顺序中对 TC-ID 的引用是模板正常写法，不计重复。
+TC_ID_DEFINITION_ROW_PATTERN = r"\*\*ID\*\*\s*\|\s*(TC-[A-Z]+-\d{3})"
+
+
+def iter_test_files(tests_dir: Path) -> Iterator[Path]:
+    """产出 tests_dir 下全部测试文件：test_*.py 与 test-*.py 两种命名，去重无重复。
+
+    新增命名模式必须改本函数（唯一修改点）——ci.py / diff.py / trace.py 三处调用点
+    一律经此扫描，禁止各自 rglob。
+    只产出**文件**（目录条目即使名为 test_x.py 也被跳过，防止调用方 read_text 抛
+    IsADirectoryError——rglob 本身不区分文件/目录）。
+    两模式第 5 字符互斥（_ vs -）天然不重叠；仍以 seen 集合防御未来模式扩张。
+    tests_dir 不存在时产出为空（与 rglob 对不存在目录行为一致）。
+    """
+    seen = set()
+    for pattern in _TEST_FILE_PATTERNS:
+        for test_file in tests_dir.rglob(pattern):
+            if not test_file.is_file():
+                continue
+            resolved = test_file.resolve()
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+            yield test_file
+
 
 def get_stdd_source() -> Path:
     global STDD_SOURCE
