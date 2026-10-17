@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 def cmd_trace(args: argparse.Namespace) -> None:
-    from ..utils import get_logger
+    from ..utils import get_logger, iter_test_files
     logger = get_logger()
 
     project_root = Path.cwd()
@@ -92,7 +92,10 @@ def cmd_trace(args: argparse.Namespace) -> None:
     print()
     tests_dir = project_root / "tests"
     if tests_dir.exists():
-        for test_file in tests_dir.rglob("test_*.py"):
+        # REQ-CTR-001：经 iter_test_files 扫描（test_*.py + test-*.py），
+        # 不再直接 rglob("test_*.py")——后者对连字符命名结构性失明（下游多层次agent
+        # 的 EXP-2026-0001 类假红；本仓同名编号为 Guard 阶段门，非此语义）。
+        for test_file in iter_test_files(tests_dir):
             content = test_file.read_text(encoding="utf-8")
             if tc_id in content:
                 lines = content.split("\n")

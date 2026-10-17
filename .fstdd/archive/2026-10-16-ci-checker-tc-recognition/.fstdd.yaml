@@ -1,0 +1,80 @@
+baseline:
+  at: '2026-10-16T14:42:25+00:00'
+  base_git_sha: c99ef7d17d9d46315044c13c4d633f66cb546f2d
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-1MEQDMR
+change_id: 2026-10-16-ci-checker-tc-recognition
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 9
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-10-16T23:17:00+08:00'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-17T01:39:49+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 用户于 Gate 3 选择「Gate 3 确认，进入 DELIVER（推荐）」：接受 ①SC-CTR-009 规格修正由
+      test-report 承接 ②test_a6 瞬态红提交后复证 ③3 项已知局限。D-01 已由 ADJ-009 修复并经独立复验 PASS。
+    slices_completed:
+      '1':
+        new_tests: 3
+        note: helper + ci 覆盖检查切换；RED：TC-CTR-001 行为性失败（连字符漏扫 FAIL）、TC-CTR-003 ImportError；TC-CTR-002
+          为守卫用例（修复前即过）；GREEN 34/34（ci+utils 套件）；ruff 与 HEAD 逐项一致（8 项全预存在，零新增）
+        status: done
+        tc_coverage: 3/3
+        verified_at: '2026-10-16T23:32:00+08:00'
+      '2':
+        new_tests: 3
+        note: (d) TC-ID 查重定义行口径（utils 常量 TC_ID_DEFINITION_ROW_PATTERN 供 ci.py；validate.py
+          因源码守卫测试 test_c3 保留同表达式内联字面量）+ TC-CI-008 fixture 换语义留审计注释；RED：TC-CTR-005
+          全文口径误判 AssertionError；GREEN 36/36（ci+validate）；TC-CTR-008 首版自指污染已修（getsource
+          限定+运行时拼接）；变异验证：还原全文口径→TC-CTR-005 被杀，sha256 a07d9434 还原复核过；真实数据验收：SC-CTR-007
+          10/10 归档 change (d) PASS，SC-CTR-009 下游覆盖 0/10→9/10、(d) 计数 10→6；ruff 与 HEAD
+          worktree 精确比对 9 项全预存在零新增（修正 slice1「8 项」为误计）；干净 HEAD 全量基线 14 failed/859 passed/8
+          skipped；C2 全量比对发现并修复 validate.py 常量切换破坏源码守卫测试 test_c3（回退内联，回归 design D3
+          原案）
+        status: done
+        tc_coverage: 3/3
+        verified_at: '2026-10-17T00:22:00+08:00'
+      '3':
+        new_tests: 2
+        note: diff.py/trace.py 切换 iter_test_files，全仓 rglob(test_*.py) 直扫点清零；新增 tests/commands/test_diff_trace_hyphen.py（TC-CTR-004a/b，subprocess
+          CLI）；RED 2/2（trace 无测试行、diff 测试函数列空）；GREEN 2/2 + tests/commands/ 全量 453
+          passed；下游真实确认：trace TC-DFJ-001 修复前无输出→修复后 tests\test-platform-model-discovery.py；ruff
+          与 HEAD worktree 8 项一致零新增
+        status: done
+        tc_coverage: 2/2
+        verified_at: '2026-10-17T00:28:00+08:00'
+    status: completed
+  deliver:
+    status: completed
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-16T14:48:18+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 'User confirmed Gate 2 via dialog 2026-10-16: ''确认''. 认可 3
+      REQ/9 SC/9 TC（1:1）、design 5 决策（含 TC-CI-008 换语义留痕）、C3 范围最终纳入、已知局限（本仓 tests 布局假设导致自身
+      planned TC 覆盖检查不随 glob 修复转绿，真实数据验收放下游仓）'
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-16T14:42:25+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 'User confirmed Gate 1 via dialog 2026-10-16: ''Gate 1 确认''.
+      Scope ruling C3: 用户未对建议纳入提出异议，按提案建议将 diff.py/trace.py 同根因点位一并纳入；mode=standard（覆盖敏感性：检查器语义影响门禁公信力）'
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 9
+  tc_cases: 9
+  test_functions: 12
+version: '3.0'

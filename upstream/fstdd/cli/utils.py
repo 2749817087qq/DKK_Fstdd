@@ -2,7 +2,7 @@ import logging
 import sys
 import io
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Iterator
 
 _logger: Optional[logging.Logger] = None
 STDD_SOURCE: Optional[Path] = None
@@ -44,6 +44,36 @@ def resolve_stdd_path(project_root, subdir):
     if new_path.exists(): return new_path
     if old_path.exists(): return old_path
     return new_path
+
+
+# 测试文件识别的单一事实源（REQ-CTR-001，change 2026-10-16-ci-checker-tc-recognition）。
+# 直接 rglob("test_*.py") 对连字符命名 test-*.py 结构性失明（下游多层次agent 的
+# EXP-2026-0001 类假红：ci 覆盖检查恒定 0/N、diff 显示「未覆盖」、trace 找不到测试引用）。
+# 新增命名模式必须改此处——ci.py / diff.py / trace.py 三处调用点一律经本函数扫描。
+_TEST_FILE_PATTERNS = ("test_*.py", "test-*.py")
+
+
+def iter_test_files(tests_dir: Path) -> Iterator[Path]:
+    """产出 tests_dir 下全部测试文件：test_*.py 与 test-*.py 两种命名，去重无重复。
+
+    新增命名模式必须改本函数（唯一修改点）——ci.py / diff.py / trace.py 三处调用点
+    一律经此扫描，禁止各自 rglob。
+    只产出**文件**（目录条目即使名为 test_x.py 也被跳过，防止调用方 read_text 抛
+    IsADirectoryError——rglob 本身不区分文件/目录）。
+    两模式第 5 字符互斥（_ vs -）天然不重叠；仍以 seen 集合防御未来模式扩张。
+    tests_dir 不存在时产出为空（与 rglob 对不存在目录行为一致）。
+    """
+    seen = set()
+    for pattern in _TEST_FILE_PATTERNS:
+        for test_file in tests_dir.rglob(pattern):
+            if not test_file.is_file():
+                continue
+            resolved = test_file.resolve()
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+            yield test_file
+
 
 # 源根向上查找的最大层数。正常仓库从 cli/utils.py 到根不超过 5 层；
 # 50 是极端安全上限，用于防止符号链接循环导致无限遍历（2026-10-11 share-hardening）。

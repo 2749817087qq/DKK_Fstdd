@@ -267,7 +267,8 @@ points:
   response: 放行
   detection_path: false
   justification: 版本探测读取失败 → None 版本，信息展示容错
-  line: 123
+  line: 153
+  refreshed_reason: '2026-10-17 行号 123→153（change 2026-10-16-ci-checker-tc-recognition 在 resolve_stdd_path 之后插入 iter_test_files 30 行，指纹 return None/except Exception: 未变）'
 - id: EA-025
   file: upstream/fstdd/cli/utils.py
   stmt: pass
@@ -277,4 +278,5 @@ points:
   response: 放行
   detection_path: false
   justification: version 文件 YAML 解析失败 → 继续其他探测路径
-  line: 136
+  line: 166
+  refreshed_reason: '2026-10-17 行号 136→166（同上，iter_test_files 插入 30 行位移）'

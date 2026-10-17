@@ -1,0 +1,158 @@
+# design-adjustments.yaml — Phase 3 设计偏离汇总（Canonical YAML，AI 主读文档）
+#
+# schema 说明（本文件 = 模板 meta 块 + 归档范例叙事/证据字段的并集，逐字段可审计）：
+#   顶层：change_id / created / summary（叙事）/ meta{total_adjustments, requires_re_spec, requires_re_build}
+#   条目：id / severity / type / original / actual / reason / impact / evidence / status
+# 与 .fstdd/templates/canonical/design-adjustments.yaml 的差异：保留模板 meta 语义，
+# 并将条目字段按归档范例（archive/2026-09-15-rename-to-fstdd/）的
+# original→actual→reason→impact→evidence 链路展开（模板的 adjusted≈actual、category≈type）。
+
+change_id: "2026-10-16-ci-checker-tc-recognition"
+created: "2026-10-17T08:20:00+08:00"
+summary: |
+  Phase 3 执行与 Part C 质量验证共记录 9 项偏离。其中 3 项为执行中发现的原设计缺口
+  （validate.py 单一事实源回退、TC-CTR-008 自指污染、SC-CTR-009 期望失实），1 项为记录
+  更正（ruff 计数），1 项为瞬态状态（test_a6），3 项为 C1 三路评审驱动的加固/补强
+  （helper 目录条目过滤 + diff 日志变量、常量↔字面量等价守卫、SC-CTR-007 自动化 +
+  subprocess 编码对齐 + 断言补强），1 项为 C3 评审发现并经 Gate 3 用户裁定纳入的
+  范围扩围（diff.py 第 3 份正则副本收敛 + 全仓副本守卫）。无需回到 Phase 2 重做规格，
+  无需重做 Phase 3 实现。
+
+meta:
+  total_adjustments: 9
+  requires_re_spec: false
+  requires_re_build: false
+
+adjustments:
+  - id: ADJ-001
+    severity: medium
+    type: design_change
+    original: "design.md D3：ci.py 与 validate.py 的 TC-ID 定义行正则「逐字复制」；落地中途升级为 utils.TC_ID_DEFINITION_ROW_PATTERN 共享常量（validate.py 亦切常量引用）"
+    actual: "validate.py 回退为同表达式内联字面量；ci.py 保留常量引用；utils.py/ci.py/validate.py 三处注释互相引用「须同步修改」"
+    reason: |
+      C2 全量回归比对（b2Ne34 vs HEAD 基线）发现 validate.py 的常量切换破坏仓库源码级
+      守卫测试 tests/test_cross_cutting_verification.py::TestCValidateTcIds::
+      test_c3_validate_source_uses_scoped_regex（该测试断言 validate.py 源码含定义行正则
+      字面量，防其回退到全文口径）。守卫测试属仓库既有不变量，不得为迁就实现而放宽。
+    impact: "最终实现回归 design D3 原案（validate 内联 + ci 常量，值逐字节相等，行为零变化）；代价是正则存在 2 份副本（常量 + validate 内联），新增 ADJ-007 等价守卫测试钉死同步。"
+    evidence: "复跑 pytest tests/test_cross_cutting_verification.py + ci/validate/utils = 69 passed；code-reviewer 用 ast.literal_eval 实测两处逐字节相等（c1-code-2026-10-17.md §1）"
+    status: fixed
+
+  - id: ADJ-002
+    severity: minor
+    type: test_change
+    original: "TC-CTR-008 首版实现：读整个 test_ci.py 源码断言「定义行恰 2 条 + 审计注释在位 + 旧字面零残留」"
+    actual: "改为 inspect.getsource 限定 TC-CI-008 单函数体；期望字面在运行时拼接（自指免疫）"
+    reason: |
+      首版断言被自身文本污染：docstring 内包含目标字面使 count=3≠2；断言 3 的期望字面
+      出现在断言自身源码中导致自我命中（RED 实测 AssertionError）。
+    impact: "断言范围收敛到被测函数体，检测力不变（fixture 回退旧语义 → 计数≠2 转红）；test-reviewer 运行时复核「定义行计数 2、不含自身标识」，确认自指免疫可靠。"
+    evidence: "首版 RED 实测（tests/commands/test_ci.py:639 AssertionError）；修复后 TC-CTR-008 GREEN；c1-test-2026-10-17.md §三.3"
+    status: fixed
+
+  - id: ADJ-003
+    severity: minor
+    type: boundary_discovery
+    original: "SC-CTR-009 规格（Gate 2 锁定）：下游归档 change 复现「(d) FAIL→PASS、覆盖 0/10→9/10」"
+    actual: "实测修正：(d) 修复前即 PASS（该 change 全文无重复字面），修复后计数 10→6 回归真实定义行；FAIL→PASS 实际发生在 TC 实现覆盖 0/10→9/10"
+    reason: "规格起草时把两处改善混记为同一句；执行期 HEAD CLI vs 修复 CLI 同 cwd 对比实测澄清。"
+    impact: "SC-CTR-009 的验收结论不变（覆盖检查修复效果实证），但「(d) FAIL→PASS」表述失实；按 mirror-failure-alert ADJ-007 惯例不擅改 Gate 2 已确认 canonical，由 test-report 与 Gate 3 确认项显式承接。"
+    evidence: "phase-context.md Slice 2 实测记录（HEAD CLI 输出 ✓ (d) TC-ID 唯一 (10 个) / 修复 CLI ✓ (6 个)，覆盖 ✗ 0/10 → ⚠ 9/10）；tasks.md 4.2 修正记录"
+    status: fixed
+
+  - id: ADJ-004
+    severity: trivial
+    type: doc_correction
+    original: "Slice 1 记录：ruff「8 项全预存在，零新增」；Slice 2 改为「9 项」"
+    actual: "以 HEAD worktree 逐条比对为**唯一权威口径**：5 个生产文件 16 项、7 个有 HEAD 对照的文件 17 项、新增 test_diff_trace_hyphen.py 0 项；行号归一后错误集合与 HEAD **逐条一致** ⇒ 零新增。此前「8 项」「9 项」「19 项」分别是不同选取范围/子集造成的口径混乱（「9」「10」实为 ruff 的 **fixable 子集**计数，非错误总数）。2026-10-17 两 worktree 复测终值：7 文件 17=17、5 生产文件 16=16、新文件 0"
+    reason: "三次记录分别取自不同文件范围与不同 ruff 输出行，未统一口径；且把 `[*] 9 fixable` 误当作错误总数。"
+    impact: "结论（零新增）不变，仅计数口径统一；phase-context.md 与 test-report.md §3.3 已同步为「与 HEAD 逐条比对、零新增」。"
+    evidence: "HEAD worktree（D:/tools/_stdd_head_baseline）同命令比对：cli/ 全目录 128=128（规则码分布一致）、5 生产文件 16=16、7 文件 17=17、新文件 0 项；行号归一后集合 diff 为空"
+    status: fixed
+
+  - id: ADJ-005
+    severity: minor
+    type: boundary_discovery
+    original: "验收预期：本 change 全量回归「无新增失败」"
+    actual: "test_repo_home.py::TestAWorkspaceIntegrity::test_a6_no_stray_untracked_files 失败——新测试文件 upstream/tests/commands/test_diff_trace_hyphen.py 在 BUILD 期尚为未跟踪（该测试仅豁免 .fstdd/changes/ 下的未跟踪项）"
+    reason: "该仓库卫生测试的判据是「未跟踪垃圾」，而任何新测试文件在提交前都处于未跟踪状态。"
+    impact: "BUILD 期瞬态，非行为回归；DELIVER 提交纳管后该用例应转绿（已列入 Gate 3 后复证项）。"
+    evidence: "HEAD worktree 该用例 PASS（干净检出）；b2Ne34/Okypgp 两次全量中 FAIL 且失败清单仅此一项不在基线 14 项内（除已修复的 test_c3）"
+    status: accepted
+
+  - id: ADJ-006
+    severity: minor
+    type: design_change
+    original: "REQ-CTR-001 未涉及「目录条目」与「diff 日志变量」"
+    actual: "iter_test_files 增加 is_file() 过滤（只产出文件，跳过名为 test_x.py 的目录）+ docstring 声明；diff.py:118 日志变量 py_file→test_file（原变量为上一循环泄漏，日志指向错误文件）"
+    reason: |
+      C1 code 评审 F-01/F-04：rglob 会产出目录条目（实测 is_dir()==True），ci.py:568 与
+      trace.py:98 裸 read_text 会抛 IsADirectoryError 直接崩溃；该缺陷虽为既有（原 rglob
+      同样如此），但 helper 现已是唯一事实源，一行即可根治。日志变量错误同属既有缺陷，
+      落在本 change 已修改的代码块内。
+    impact: "helper 语义收紧为「只产出文件」（与 docstring 一致）；三处调用点不再有目录条目崩溃面；行为对既有 test_*.py 产出零变化（无测试断言目录条目）。"
+    evidence: "新增 tests/test_utils.py::test_iter_test_files_skips_directory_entries；c1-code-2026-10-17.md F-01/F-04"
+    status: fixed
+
+  - id: ADJ-007
+    severity: minor
+    type: test_change
+    original: "design.md D3 假设「正则两份副本靠注释同步」"
+    actual: "新增 tests/test_utils.py::test_tc_id_pattern_matches_validate_literal：从 validate.py 源码提取内联字面量并与 utils 常量逐字节比对"
+    reason: |
+      C1 code 评审 F-03：既有守卫 test_c3 只断言「validate.py 源码含定义行正则**子串**」，
+      无法检出「常量改了、validate.py 字面量没改」的漂移（EXP-20260917-A1 复发通道）。
+      ADJ-001 回退后该通道确实存在，故以等价断言钉死（新增测试而非修改既有守卫测试）。
+    impact: "两份副本的同步由可执行断言保障；未来任一处置换会立即转红。"
+    evidence: "新增测试 GREEN；c1-code-2026-10-17.md F-03"
+    status: fixed
+
+  - id: ADJ-008
+    severity: medium
+    type: test_change
+    original: "test-plan.md：SC-CTR-007 以「执行取证」覆盖（TC-CTR-007 标注 P0 但无自动化测试）；test_diff_trace_hyphen.py::_run_cli 仅设 timeout"
+    actual: |
+      ① 新增 TestTcidUniqueArchivedCorpus::test_archived_changes_no_duplicate_tc_ids——
+      EXP-20260917-A1 取证表内 10 个归档 change 逐个直调 check_tcid_unique 断言 PASS（0 误报）；
+      ② _run_cli 对齐仓库既有 run_cli 模式（encoding="utf-8" + PYTHONIOENCODING=utf-8 + errors="replace"）；
+      ③ TC-CTR-003 补 docstring 唯一修改点断言 + 边界用例（目录条目跳过、嵌套子目录递归）；
+      ④ TC-CTR-006 补「FAIL 消息列出重复 ID」断言；
+      ⑤ 新增非模板写法 → WARN 的语义钉死用例（固定已接受的取舍，防未来误判为回归）。
+    reason: |
+      C1 test 评审 F1（🟠：P0 场景无自动化而数据在库内可读、完全可自动化）/F2（🟠：subprocess
+      未按既有模式指定编码，跨 locale/CI 有解码不稳定风险）/F3/F4（🟡：THEN 断言不完整）+
+      C1 code 评审 F-02（🟡：建议把「非模板写法 → WARN」固化为测试）。
+    impact: "自动化覆盖 7/9 → 9/9 SC（SC-CTR-009 为跨仓依赖，保留执行取证并显式标注）；新增 6 个测试（test_ci +2、test_utils +4）。"
+    evidence: "pytest tests/commands/test_ci.py tests/test_utils.py tests/commands/test_diff_trace_hyphen.py tests/commands/test_validate.py tests/test_cross_cutting_verification.py = 77 passed"
+    status: fixed
+
+  - id: ADJ-009
+    severity: minor
+    type: design_change
+    original: |
+      REQ-CTR-002 的范围是「check_tcid_unique 与 validate.py:82-88 两处口径统一」
+      （design D3「逐字复制」）；ADJ-007 的等价守卫亦只覆盖这 2 处。
+    actual: |
+      把 commands/diff.py:45 的**第 3 份**定义行正则内联副本改为引用
+      utils.TC_ID_DEFINITION_ROW_PATTERN（并在 cmd_diff 内补 import）；
+      新增全仓副本收敛守卫 upstream/tests/test_utils.py::
+      test_tc_id_definition_row_copies_confined_to_constant_and_validate ——
+      ast 扫描 upstream/fstdd/ 全部 .py 字符串字面量，断言「定义行 TC-ID 正则」
+      副本位置集合恰为 {cli/utils.py, cli/commands/validate.py} 且每份与常量逐字节相等。
+    reason: |
+      C3 独立评审发现 D-01：diff.py:45 的副本未被等价守卫覆盖 ⇒ 日后修改常量时
+      diff 的口径会静默漂移（diff 与 ci/validate 口径再次分裂，即 EXP-20260917-A1
+      的复发通道）。用户于 Gate 3 裁定「先修 D-01 再放行」⇒ 本项属**用户批准的范围扩围**。
+      该副本经取证为**预存在**（git show HEAD:...diff.py:45 已有），本 change 原未触碰。
+    impact: |
+      生产代码定义行正则副本 3 → 2（常量 + validate 内联，后者为源码级守卫测试
+      test_c3_validate_source_uses_scoped_regex 所必需）；副本集合由可执行断言钉死，
+      未来新增第 3 份副本会立即转红。行为零变化（引用与字面量逐字节等价）。
+    evidence: |
+      RED：新守卫在修复前失败（locations 含 cli/commands/diff.py）→ 修复后 GREEN；
+      行为等价：4 个含 TC 定义行的归档 change 的 fstdd diff 输出与 HEAD worktree
+      逐字节一致（28/20/18/11 行，且均正常解析出 TC-ID 行）；
+      变异验证：常量 \d{3}→\d{3,4} ⇒ 新守卫与 ADJ-007 守卫**双双转红**并报漂移，
+      utils.py sha256 3c48a16f6aafa4a6e9828d6671ced12fb7b9f5a5b88b59cb39ff4c2bc8e161c8 逐字节还原；
+      ruff 7 文件 17=17 零新增；受影响 6 套件 63 passed。
+    status: fixed
