@@ -76,6 +76,10 @@ def cmd_validate(args: argparse.Namespace) -> None:
         # 原因：test-plan 模板本身含「测试执行矩阵」与「建议补充顺序」两节，
         # 在其中引用已有 TC-ID 是正常写法；按全文计数会把这种引用误判为「重复的 TC-ID」，
         # 使模板规定的格式反而无法通过校验。本检查的意图是「两个案例不得共用同一 ID」。
+        # REQ-CTR-002：ci.py check_tcid_unique 已切换为 utils.TC_ID_DEFINITION_ROW_PATTERN
+        # 常量（与本行内正则为同一表达式，杜绝两检查器 TC 计数口径分裂）。本行保留字面量：
+        # 源码级守卫测试 test_c3_validate_source_uses_scoped_regex 要求 validate.py 内含
+        # 定义行正则；两处表达式必须同步修改（EXP-20260917-A1 / EXP-2026-0017）。
         tc_ids = re.findall(r"\*\*ID\*\*\s*\|\s*(TC-[A-Z]+-\d{3})", content)
         duplicates = [tc for tc in tc_ids if tc_ids.count(tc) > 1]
         if duplicates:

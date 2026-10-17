@@ -7,7 +7,7 @@ from pathlib import Path
 
 def cmd_diff(args: argparse.Namespace) -> None:
     from ..finder import find_change_dir
-    from ..utils import get_logger
+    from ..utils import TC_ID_DEFINITION_ROW_PATTERN, get_logger, iter_test_files
     logger = get_logger()
 
     project_root = Path.cwd()
@@ -42,7 +42,10 @@ def cmd_diff(args: argparse.Namespace) -> None:
             continue
 
         if in_table and current_case:
-            id_match = re.search(r"\*\*ID\*\*\s*\|\s*(TC-[A-Z]+-\d{3})", line)
+            # REQ-CTR-002：TC-ID 定义行口径取单一事实源常量，不再内联副本。
+            # 曾为第 3 份内联字面量（D-01）——等价守卫只覆盖 utils↔validate，
+            # 该处漂移不会被发现 ⇒ 改为引用常量，副本收敛为 2 处。
+            id_match = re.search(TC_ID_DEFINITION_ROW_PATTERN, line)
             if id_match:
                 current_case["id"] = id_match.group(1)
 
@@ -96,7 +99,10 @@ def cmd_diff(args: argparse.Namespace) -> None:
         test_func = ""
         tests_dir = project_root / "tests"
         if tests_dir.exists():
-            for test_file in tests_dir.rglob("test_*.py"):
+            # REQ-CTR-001：经 iter_test_files 扫描（test_*.py + test-*.py），
+            # 不再直接 rglob("test_*.py")——后者对连字符命名结构性失明（下游多层次agent
+            # 的 EXP-2026-0001 类假红；本仓同名编号为 Guard 阶段门，非此语义）。
+            for test_file in iter_test_files(tests_dir):
                 try:
                     fc = test_file.read_text(encoding="utf-8")
                     if tc_id in fc:
@@ -114,7 +120,7 @@ def cmd_diff(args: argparse.Namespace) -> None:
                                         break
                         break
                 except Exception:
-                    logger.debug("无法解析文件 %s", py_file.name, exc_info=True)
+                    logger.debug("无法解析文件 %s", test_file.name, exc_info=True)
 
         print(f"{title:<30} {tc_id:<18} {test_func:<22} {status}")
 

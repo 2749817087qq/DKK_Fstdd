@@ -1,6 +1,8 @@
 """Tests for stdd ci CLI command."""
-import pytest
 import argparse
+from pathlib import Path
+
+import pytest
 
 
 def _make_args(subcommand, **kwargs):
@@ -280,7 +282,13 @@ class TestCiCheckFailures:
         assert exc_info.value.code == 1
 
     def test_check_failures_detects_duplicate_tc_ids(self, tmp_path, monkeypatch):
-        """TC-CI-008: check-failures detects duplicate TC-IDs."""
+        """TC-CI-008: check-failures detects duplicate TC-IDs.
+
+        审计（SC-CTR-008，design.md Decision 4）：旧 fixture 语义随 C4 同批更新——
+        原文为「裸重复 TC-ID 字面、无定义行」，编码的是修复前的全文计数口径；
+        新语义下「两案例定义行共用同一 ID」才是重复判据（EXP-20260917-A1 / EXP-2026-0017），
+        测试意图（检测重复）不变，fixture 等价迁移到定义行口径。
+        """
         _setup_project(tmp_path)
         change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-test-change"
         change_dir.mkdir(parents=True)
@@ -289,7 +297,19 @@ class TestCiCheckFailures:
         (change_dir / "design.md").write_text("# Design", encoding="utf-8")
         (change_dir / ".fstdd.yaml").write_text("change_id: test", encoding="utf-8")
         (change_dir / "test-plan.md").write_text("""\
-TC-CASUAL-001 TC-CASUAL-001 TC-CASUAL-002 TC-CASUAL-001
+# Test Plan
+
+| **ID** | TC-CASUAL-001 |
+
+案例 A 内容
+
+| **ID** | TC-CASUAL-001 |
+
+案例 B 内容（与案例 A 共用同一 ID）
+
+| **ID** | TC-CASUAL-002 |
+
+案例 C 内容
 """, encoding="utf-8")
 
         spec_dir = change_dir / "specs" / "test-cap"
@@ -514,3 +534,181 @@ class TestCiCheckEnhanced:
         captured = capsys.readouterr()
         # Should show aggregation of all checks
         assert "通过" in captured.out or "PASS" in captured.out
+
+
+class TestTcImplementationCoverageRecognition:
+    """TC-CTR-001/002 — check-failures 的 TC 实现覆盖对连字符命名测试文件的识别（REQ-CTR-001）。
+
+    RED 目标（修复前）：
+    - TC-CTR-001：tests/ 下仅有 test-hyphen.py 承载 planned TC-ID → 覆盖检查 FAIL 0/N
+      （rglob("test_*.py") 结构性失明连字符命名，下游多层次agent EXP-2026-0001 类假红）
+    - TC-CTR-002：真实缺口（双命名均无该 TC-ID）→ 仍 FAIL（判据不放松，守卫用例）
+    """
+
+    def _setup_coverage_change(self, tmp_path, planned_tc, test_files):
+        """造一个含 test-plan（planned TC）+ tests/（指定文件名→内容）的临时项目。"""
+        _setup_project(tmp_path)
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-cov-change"
+        change_dir.mkdir(parents=True)
+        (change_dir / "test-plan.md").write_text(
+            f"# Test Plan\n| **ID** | {planned_tc} |\n", encoding="utf-8"
+        )
+        tests_dir = tmp_path / "tests"
+        tests_dir.mkdir()
+        for name, content in test_files.items():
+            (tests_dir / name).write_text(content, encoding="utf-8")
+        return change_dir
+
+    def test_tc_coverage_hyphen_named_file_recognized(self, tmp_path, monkeypatch):
+        """TC-CTR-001: 连字符 test-hyphen.py 承载 planned TC-ID → 覆盖 PASS。"""
+        change_dir = self._setup_coverage_change(
+            tmp_path, "TC-COV-001", {"test-hyphen.py": "# t\nTC-COV-001 here\n"}
+        )
+        monkeypatch.chdir(tmp_path)
+
+        from fstdd.cli.commands.ci import check_tc_implementation_coverage
+        status, msg = check_tc_implementation_coverage(change_dir, tmp_path)
+        assert status == "PASS", f"连字符命名文件被漏扫: {msg}"
+
+    def test_tc_coverage_real_gap_still_fails(self, tmp_path, monkeypatch):
+        """TC-CTR-002: planned TC-ID 双命名均无实现 → 仍 FAIL（glob 补全不放宽判据）。"""
+        change_dir = self._setup_coverage_change(
+            tmp_path,
+            "TC-COV-002",
+            {"test_other.py": "# t\nno tc here\n", "test-other2.py": "# t\nno tc here\n"},
+        )
+        monkeypatch.chdir(tmp_path)
+
+        from fstdd.cli.commands.ci import check_tc_implementation_coverage
+        status, msg = check_tc_implementation_coverage(change_dir, tmp_path)
+        assert status == "FAIL", f"真实缺口被 glob 补全掩盖: {msg}"
+
+
+class TestTcidUniqueDefinitionRow:
+    """TC-CTR-005/006 — (d) TC-ID 查重定义行口径（REQ-CTR-002，EXP-2026-0017 / EXP-20260917-A1）。
+
+    RED 目标（修复前，全文计数口径）：
+    - TC-CTR-005：同一 TC-ID 在正文/矩阵多处引用但定义行恰一条 → 被误判「重复」FAIL
+    - TC-CTR-006：两案例定义行共用同一 ID → FAIL（守卫：修复前后都必须 FAIL）
+    """
+
+    def _setup_tcid_change(self, tmp_path, plan_body):
+        _setup_project(tmp_path)
+        change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-uni-change"
+        change_dir.mkdir(parents=True)
+        (change_dir / "test-plan.md").write_text(plan_body, encoding="utf-8")
+        return change_dir
+
+    def test_tcid_unique_allows_cross_references(self, tmp_path, monkeypatch):
+        """TC-CTR-005: 多处引用 + 定义行恰一条 → PASS。"""
+        change_dir = self._setup_tcid_change(
+            tmp_path,
+            "# Test Plan\n\n执行矩阵中引用 TC-UNI-001，正文也引用 TC-UNI-001。\n\n"
+            "| **ID** | TC-UNI-001 |\n",
+        )
+        monkeypatch.chdir(tmp_path)
+
+        from fstdd.cli.commands.ci import check_tcid_unique
+        status, msg = check_tcid_unique(change_dir, None)
+        assert status == "PASS", f"多处引用被误判为重复: {msg}"
+
+    def test_tcid_unique_two_definition_rows_fail(self, tmp_path, monkeypatch):
+        """TC-CTR-006: 两案例定义行共用同一 TC-ID → FAIL（真实判据不放松）。"""
+        change_dir = self._setup_tcid_change(
+            tmp_path,
+            "# Test Plan\n\n"
+            "| **ID** | TC-UNI-002 |\n\n"
+            "另一案例\n\n"
+            "| **ID** | TC-UNI-002 |\n",
+        )
+        monkeypatch.chdir(tmp_path)
+
+        from fstdd.cli.commands.ci import check_tcid_unique
+        status, msg = check_tcid_unique(change_dir, None)
+        assert status == "FAIL", f"两定义行共用 ID 未被判重复: {msg}"
+        assert "TC-UNI-002" in msg, f"FAIL 消息未列出重复 ID: {msg}"
+
+    def test_non_template_plan_warns_not_fails(self, tmp_path, monkeypatch):
+        """语义钉死（C1 code F-02）：非模板写法（`| ID | TC-… |` 无加粗）无定义行可数
+        → (d) 返回 WARN 而非 FAIL（已知取舍：重复 ID 静默漏检由 validate 同向兜底）。
+
+        本用例固定当前语义，防未来把该行为误判为回归；如日后决定收紧，须同步
+        design.md 风险表与 SC-CTR-005/006。
+        """
+        change_dir = self._setup_tcid_change(
+            tmp_path,
+            "# Test Plan\n\n| ID | TC-UNI-003 |\n\n| ID | TC-UNI-003 |\n",
+        )
+        monkeypatch.chdir(tmp_path)
+
+        from fstdd.cli.commands.ci import check_tcid_unique
+        status, msg = check_tcid_unique(change_dir, None)
+        assert status == "WARN", f"非模板写法应 WARN（当前语义）: {status} / {msg}"
+
+
+class TestTcidUniqueArchivedCorpus:
+    """TC-CTR-007 — (d) 对 EXP-20260917-A1 取证表内 10 个归档 change 零误报（REQ-CTR-002）。
+
+    修复前（全文口径）该 10 个已过 Gate 3 的 change 全部被误报「重复 TC-ID」；
+    修复后（定义行口径）应全部 PASS。数据集取自 .fstdd/experiences/EXP-20260917-A1.md。
+    """
+
+    ARCHIVED_CHANGES = [
+        "2026-09-15-crlf-eol-governance",
+        "2026-09-15-rename-to-fstdd",
+        "2026-09-15-skill-engineering-standards",
+        "2026-09-16-contract-auto-share",
+        "2026-09-16-inbox-review-sync",
+        "2026-09-16-install-source-repo",
+        "2026-09-17-canonical-in-workspace",
+        "2026-09-17-distributed-task-coordination",
+        "2026-09-17-migrate-to-d-drive",
+        "2026-09-17-server-bare-repo-mirror",
+    ]
+
+    def test_archived_changes_no_duplicate_tc_ids(self):
+        """TC-CTR-007: 10 个归档 change 的 (d) 全部 PASS（0 误报）。"""
+        repo_root = Path(__file__).resolve().parents[3]
+        archive = repo_root / ".fstdd" / "archive"
+
+        from fstdd.cli.commands.ci import check_tcid_unique
+
+        failures = []
+        checked = 0
+        for name in self.ARCHIVED_CHANGES:
+            change_dir = archive / name
+            assert (change_dir / "test-plan.md").exists(), (
+                f"取证数据集缺失归档 change: {name}（EXP-20260917-A1 表）"
+            )
+            status, msg = check_tcid_unique(change_dir, None)
+            checked += 1
+            if status != "PASS":
+                failures.append(f"{name}: {status} {msg}")
+
+        assert checked == 10, f"数据集应覆盖 10 个 change，实际 {checked}"
+        assert failures == [], f"归档语料出现误报: {failures}"
+
+    def test_tc_ci_008_fixture_migrated_with_audit_trace(self):
+        """TC-CTR-008: TC-CI-008 fixture 已迁移到定义行口径且留审计注释（SC-CTR-008）。
+
+        审计性要求是静态属性，故对 TC-CI-008 测试源码本身断言：
+        1) fixture 恰两条 TC-CASUAL-001 定义行；
+        2) 含语义迁移审计注释；
+        3) 旧全文口径 fixture（裸重复字面、无定义行）无残留。
+        期望字面均在运行时拼接，避免断言自身源码被计入（自指免疫）。
+        """
+        import inspect
+
+        tc_ci_008_src = inspect.getsource(
+            TestCiCheckFailures.test_check_failures_detects_duplicate_tc_ids
+        )
+        definition_row = "| **ID** | " + "TC-CASUAL-001" + " |"
+        assert tc_ci_008_src.count(definition_row) == 2, (
+            "TC-CI-008 fixture 未迁移到定义行口径（应恰两条 TC-CASUAL-001 定义行）"
+        )
+        audit_marker = "旧 fixture " + "语义随 C4 同批更新"
+        assert audit_marker in tc_ci_008_src, (
+            "TC-CI-008 缺少语义迁移审计注释（SC-CTR-008）"
+        )
+        legacy = " ".join(["TC-CASUAL-001"] * 2 + ["TC-CASUAL-002", "TC-CASUAL-001"])
+        assert legacy not in tc_ci_008_src, "旧全文口径 fixture 仍残留在 TC-CI-008"
