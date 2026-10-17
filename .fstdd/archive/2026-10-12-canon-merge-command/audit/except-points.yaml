@@ -153,7 +153,7 @@ points:
   line: 535
 - id: EA-033
   file: upstream/fstdd/cli/commands/guard.py
-  refreshed_reason: 2026-10-04 行号 1203→1265（既有代码插入位移，指纹 return False/except Exception 未变）
+  refreshed_reason: 2026-10-17 行号 1265→1290（cherry-pick d833f41 V3.0.11 作用域感知 +25 行位移，指纹 return False/except Exception 未变）
   stmt: return False
   handler: 'except Exception:'
   classification: 合理容错
@@ -161,7 +161,7 @@ points:
   response: 放行
   detection_path: false
   justification: _disable_guard_hook_in 解析 settings 失败返回 False ⇒ 视作未命中不修改， dry-run 与非 dry-run 语义一致（fail-closed 不写盘），对齐 V3.0.8 guard --disable-hook 的预览/实际执行二分语义
-  line: 1265
+  line: 1290
 - id: EA-013
   file: upstream/fstdd/cli/commands/index.py
   stmt: pass
