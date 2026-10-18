@@ -270,7 +270,7 @@ def _sanitize_text(text: str) -> str:
     """出站不变量：任何同步出站前**必须先脱敏**（SC-015）。
 
     规则唯一事实源 = `tools/share_experience.py::sanitize`
-    （14 条正则 + 域名白名单，与 `stage_sanitized()` 同一实现）。
+    （15 条正则 + 域名白名单，与 `stage_sanitized()` 同一实现）。
     """
     clean, _hits = _load_canonical_sanitizer()(text, True)
     return clean

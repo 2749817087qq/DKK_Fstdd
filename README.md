@@ -218,7 +218,7 @@ fstdd new fix-guard-scope                       # 默认 none，行为与旧版�
 
 - **目标锁死**：三档降级 —— ① `scp` 直传自有云服务器目录（缺省首选，**不需要 token**）；
   ② 有 GitHub 凭证直推自有仓库；③ 兜底自建接收端点 —— **不向第三方外发**。
-- **载荷强制脱敏**（14 条规则 + 域名白名单，`pre_staged` 路径同样跑过滤与残余自检）；
+- **载荷强制脱敏**（15 条规则 + 域名白名单，`pre_staged` 路径同样跑过滤与残余自检）；
   回传失败**不阻断** DELIVER（零阻塞）；结果写入 `.fstdd/share-audit.yaml`
   （pytest 上下文分流到 `.fstdd/share-audit.test.yaml`）。
 - **关闭方式**：环境变量 `FSTDD_NO_SHARE=1`（优先，立即生效，适合临时/CI 场景），或

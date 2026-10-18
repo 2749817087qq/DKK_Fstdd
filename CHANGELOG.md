@@ -10,6 +10,50 @@
 
 ## [Unreleased]
 
+### 修复 — 经验静默回传的出站收口（2026-10-18，6 维验收审计）
+
+**背景**：静默回传从「HTTP + 节点 token」改为「SSH/scp 直传自有云服务器目录」后，
+独立审计发现「出站三关」的**最后一道闸门覆盖面小于第一道**——而它正是生产
+DELIVER 路径上唯一的内容防线。
+
+**行为变更（对外可见）**
+
+- **残余判据补齐 4 类形态**：`OUTBOUND_RESIDUAL_RE` 新增 Windows 反斜杠路径 /
+  Windows 正斜杠路径 / 邮箱 / IPv4 / 内网域名。此前 `pre_staged=True`（生产静默
+  路径）上这些形态原样出站。⚠️ **通用外网域名不加入**——`sanitize()` 故意保留
+  `PUBLIC_DOMAINS`（github.com / python.org 等），加通用域名分支会把正常经验
+  整条剔除，属设计权衡。
+- **`publish()` 改为入口单次校验**：三档通道消费同一个已校验目录，不再每档各
+  校验一次。修复「同一批剔除写 3 遍审计」（实测 4 条变 12 条）与重复 IO。
+- **`publish_via_scp` / `publish_via_inbox` / `_publish_github` 新增 `prepared`
+  参数**：显式声明「入参已是 `_prepare_outbound()` 的产物」，用于上述直通。
+  默认 `False`，既有调用方行为不变。
+- **审计记录新增 `sent_count` 字段**：本次实际出站文件数。此前审计只按本轮
+  `collect_local()` 的 id 记账，30 条历史 + 1 条新增实际送出 31 个文件却只记
+  1 条 success。
+- **`record_audit` 加跨进程写锁**：Windows 的 `O_APPEND` 非原子，实测 2 进程各写
+  100 条丢 40 条（20%）、4/8 进程丢约 9%，且无半行、无解析异常——整条静默消失。
+  POSIX 下退化为普通 append。
+- **`sanitized: false` 判据改用 `parse_frontmatter()`**：原裸正则只认「精确小写
+  无引号」，9 种变体里 7 种绕过（`"false"` / `False` / `no` / 带注释 / 缩进）。
+- **stdout 不再回显 token**：`[降级]` / `[skip]` / `[FAIL] push` 三处 print 前套
+  `_scrub`。落盘侧本已脱敏，泄露的是输出流（git 会把带 token 的远端 URL 原样
+  写进 stderr，`[:40]` 对 40 字符的 ghp_ token 等于没截）。
+- **测试出站守卫加固**：打点从 `subprocess.run` 下移到 **`Popen`**（`run`/`call`/
+  `check_call`/`check_output` 全部经由它），并支持 `shell=True` 字符串 argv
+  （`shlex.split`）与 `.exe` 后缀。此前这四种形态全部绕过。
+- **新增仓库根 `conftest.py`**：`tools/tests/` 子树此前不安装守卫。
+- **`upstream/tests/conftest.py` 补 `pytest_sessionfinish`**：单跑该子树时守卫
+  汇总行此前永不打印。
+
+**文档**
+
+- 「14 条规则」更正为 **15 条**（`len(SANITIZE_RULES)`），涉及 README / 安装说明 /
+  skill 模板 / `_exp_sync` 注释四处。
+- 工具自生成的 `SUBMIT.md` 从「两条通道」改为三档（scp 优先 / GitHub / 端点兜底）。
+- `docs/WORKBUDDY_INSTALL_NOTES.md` 补充：`fstdd-inbox` 是**约 20 个节点命名空间的
+  共享枢纽**，不是本仓私有目录，清理前须确认归属。
+
 ## [3.3.9] — 2026-10-17
 
 **主题**：DELIVER 自动化 —— 新增 `fstdd canon merge` 命令，自动化归档 change 的 canonical 合并到仓库根

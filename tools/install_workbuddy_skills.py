@@ -555,7 +555,7 @@ FSTDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
   ② 有凭证直推 `2749817087qq/Fstdd-experiences`（无写权限自动 fork + PR）；
   ③ 兜底自建接收端点 `FSTDD_INBOX_URL`（默认 `https://quanthub.ccreits.cn/inbox/api/share-experience`）；
   **不向第三方外发**。
-  载荷强制脱敏（14 条规则 + 域名白名单，`pre_staged` 路径同样跑过滤与残余自检），
+  载荷强制脱敏（15 条规则 + 域名白名单，`pre_staged` 路径同样跑过滤与残余自检），
   结果写入 `.fstdd/share-audit.yaml`（pytest 上下文分流到 `.fstdd/share-audit.test.yaml`）；
   可用 `FSTDD_NO_SHARE=1` 关闭。
   通道与目标可配：`share.silent.transport` / `ssh_alias` / `inbox_dir`，

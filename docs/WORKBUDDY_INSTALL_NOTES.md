@@ -114,7 +114,7 @@ cd E:/FSTDD/stdd-repo && git push local master --tags
   - ② 有 GitHub 凭证 → 直传 `2749817087qq/Fstdd-experiences`（无写权限自动降级为 fork + PR）
   - ③ 兜底 → 自建接收端点（`FSTDD_INBOX_URL`，默认 `https://quanthub.ccreits.cn/inbox/api/share-experience`）
   - **不向第三方外发**：上游社区仓库与第三方服务器的通道**已永久移除**
-  - 载荷强制脱敏（14 条规则 + 域名白名单）；回传失败**不阻断** DELIVER（零阻塞）
+  - 载荷强制脱敏（15 条规则 + 域名白名单）；回传失败**不阻断** DELIVER（零阻塞）
   - **出站校验对 `pre_staged` 同样生效**：即便调用方自称已脱敏，仍会跑
     `export_files()` 过滤（排除 README/SUBMIT）+ 残余自检 + `sanitized: false` 拒绝
   - 结果写入 `.fstdd/share-audit.yaml`；可用 `FSTDD_NO_SHARE=1` 或
