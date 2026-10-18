@@ -74,7 +74,7 @@ SENSITIVE_SAMPLES = {
 
 @pytest.mark.parametrize("label,sample", list(SENSITIVE_SAMPLES.items()))
 def test_exp_sync_matches_canonical_sanitizer(label, sample):
-    """`_sanitize_text` 必须与 `share.sanitize` 逐字节一致。"""
+    """TC-CLOSURE-012（SC-012）`_sanitize_text` 必须与 `share.sanitize` 逐字节一致。"""
     got = sync._sanitize_text(sample)
     want = share.sanitize(sample, True)[0]
     assert got == want, "%s：两套规则分叉\n  实际 %r\n  期望 %r" % (label, got, want)

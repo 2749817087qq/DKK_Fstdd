@@ -1,0 +1,62 @@
+meta:
+  change_id: "2026-10-18-share-egress-closure"
+  summarized_at: "2026-10-18T05:40:00+00:00"
+  source: "实现期记录（无 pending-adjustments.yaml，均为设计期决策变更）"
+  total: 3
+  resolved_in_change: 3
+  carried_as_debt: 0
+  major: 0
+  minor: 3
+
+resolved:
+  - id: ADJ-001
+    title: "守卫打点从 `subprocess.Popen` 回退到 `run` + `call`"
+    capability: test-egress-guard
+    severity: minor
+    disposition: |
+      **设计意图**：把打点下移到 `Popen`，一处覆盖 `run` / `call` / `check_call` /
+      `check_output` / `shell=True` 全部形态。
+
+      **实测否决**：`asyncio/windows_utils.py:125` 在 import 期执行
+      `class Popen(subprocess.Popen)` —— 它**继承** `subprocess.Popen`。
+      把它换成函数后不可被继承，报
+      `TypeError: function() argument 'code' must be code, not str`，
+      整个 asyncio 加载失败，全量门禁**收集期即崩**（`test_knowledge.py` ImportError）。
+
+      **最终实现**：包装 `subprocess.run` 与 `subprocess.call`。
+      `check_output` 内部调 `run`、`check_call` 内部调 `call`，二者自动覆盖。
+      直接 `Popen(...)` 成为**已知缺口**，已写进 `install()` docstring，
+      并在 `test-report.md` §六 登记。
+
+  - id: ADJ-002
+    title: "`pre_staged` 语义由「跳过整个出站收口」改为「只跳过脱敏动作」"
+    capability: share-egress-closure
+    severity: minor
+    disposition: |
+      原设计把 `pre_staged` 理解为「调用方已负责一切」，于是三个包装器
+      `return _scp_dir(out_dir, ...)` 直通。问题在于 `_scp_dir` 用 `iterdir()`
+      全量枚举，而 `OUT_DIR` 是活体经验库、`silent_share()` 不清空目录 ⇒
+      历史残留与 README/SUBMIT 一并出站。
+
+      改为：`pre_staged` 只影响「是否执行脱敏动作」，过滤 / 残余自检 /
+      `sanitized:false` 拒绝**恒执行**。新增 `_prepare_outbound()` 作为唯一出口，
+      返回的目录恒由它创建（`exp_stage_*` 或 `exp_verify_*`）。
+
+  - id: ADJ-003
+    title: "残余判据只补 4 类，**故意不采纳**「搬入通用域名正则」的建议"
+    capability: share-egress-closure
+    severity: minor
+    disposition: |
+      审计建议把 `SANITIZE_RULES` 的域名正则整段搬进 `OUTBOUND_RESIDUAL_RE`。
+
+      **不采纳**：`sanitize()` 的域名规则**故意保留** `PUBLIC_DOMAINS`
+      （github.com / python.org / pypi.org / stackoverflow.com…），
+      并把已知 TLD 的非公开域名转成 `<DOMAIN>`。若残余判据加通用域名分支，
+      正常经验文档里每一个 `github.com` 都会被判「残余」⇒ 整条剔除。
+
+      判据（EXP-20260915-B3）：**漏脱敏可补救，误脱敏不可逆。**
+
+      最终实现：只补 Windows 反斜杠/正斜杠路径、邮箱、IPv4、内网域名
+      （`local|internal|corp|lan` —— 它们必被 `sanitize()` 转成 `<DOMAIN>`，加入安全）。
+      并加**正向用例**锁死「`PUBLIC_DOMAINS` 必须放行」，防止后续有人「顺手补齐」。
+      实测：90 个经验文件在新判据下 90/90 通过，零误杀。

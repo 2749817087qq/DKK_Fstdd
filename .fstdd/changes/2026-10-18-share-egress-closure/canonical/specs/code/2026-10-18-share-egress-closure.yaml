@@ -1,0 +1,131 @@
+# spec.yaml — 行为规格（Canonical YAML）
+# capability: share-egress-closure
+# 对应 Proposal: canonical/proposals/2026-10-18-share-egress-closure.yaml (SC-1 … SC-6)
+# 锚定等级：L2（本 change 改动出站链路，但既有 EXP-2026-0017 已锁定脱敏收口不变量）
+
+meta:
+  capability: "share-egress-closure"
+  change_id: "2026-10-18-share-egress-closure"
+  created: "2026-10-18T05:33:11+00:00"
+  confidence: high
+
+requirements:
+  # ─────────────── REQ-001：出站收口对 pre_staged 同样生效 ───────────────
+  - id: REQ-001
+    capability: "share-egress-closure"
+    description: "`pre_staged=True` 只允许跳过脱敏**动作**，不得跳过出站校验"
+    scenarios:
+      - id: SC-001
+        confidence: high
+        evidence: "审计 F1（阻断）"
+        given: "一个目录，含 EXP-OK.md（sanitized:true、无敏感内容）、README.md、SUBMIT.md"
+        when: "以 `pre_staged=True` 调用 `publish_via_scp()`"
+        then: "SHALL 只送出 EXP-OK.md；README.md / SUBMIT.md 不得出站"
+      - id: SC-002
+        confidence: high
+        evidence: "审计 F1（阻断）"
+        given: "一个目录，含 `sanitized: false` 且带明文 token 的 EXP-BAD.md"
+        when: "以 `pre_staged=True` 调用 `publish_via_scp()`"
+        then: "SHALL 剔除该文件并写 `target: stage / result: skipped` 审计；若全部被剔除则返回失败、不发空批次"
+      - id: SC-003
+        confidence: high
+        evidence: "审计 F1（阻断）"
+        given: "任何 `pre_staged=True` 的调用"
+        when: "观察实际传输源目录"
+        then: "SHALL 为 `_prepare_outbound()` 新建的临时目录（`exp_verify_*`），**不得**是调用方目录"
+
+  # ─────────────── REQ-002：残余判据与脱敏规则同源 ───────────────
+  - id: REQ-002
+    capability: "share-egress-closure"
+    description: "`OUTBOUND_RESIDUAL_RE` 覆盖 `SANITIZE_RULES` 会清除的全部形态，但不误伤公开域名"
+    scenarios:
+      - id: SC-004
+        confidence: high
+        evidence: "审计 M1 / F-D1-1"
+        given: "文本含 Windows 反斜杠路径 `C:\\Users\\x\\y.txt` / Windows 正斜杠路径 / 邮箱 / IPv4 / 内网域名"
+        when: "调用 `_verify_outbound()`"
+        then: "SHALL 全部拦截（5 类形态各自命中）"
+      - id: SC-005
+        confidence: high
+        evidence: "审计 M1 修法禁区"
+        given: "文本含 `github.com` / `pypi.org` / `python.org` 等 `PUBLIC_DOMAINS`"
+        when: "调用 `_verify_outbound()`"
+        then: "SHALL 放行（`sanitize()` 故意保留公开域名；加通用域名分支会误杀正常经验）"
+
+  # ─────────────── REQ-003：审计记录真实且不膨胀 ───────────────
+  - id: REQ-003
+    capability: "share-egress-closure"
+    description: "`publish()` 三档降级只校验一次、只审计一次，并记录实际出站文件数"
+    scenarios:
+      - id: SC-006
+        confidence: high
+        evidence: "审计 M2"
+        given: "一个目录，含 N 个会被剔除的文件"
+        when: "三档通道全部失败后调用 `publish()`"
+        then: "SHALL 只产生 N 条 skipped 审计（不得 ×3），且 `_prepare_outbound()` 只被调用 1 次"
+      - id: SC-007
+        confidence: high
+        evidence: "审计 M4"
+        given: "OUT_DIR 有 30 条历史 + 本轮 1 条新增，全部通过校验"
+        when: "`silent_share()` 写成功审计"
+        then: "SHALL 记录 `sent_count: 31`（实际出站文件数），而非仅 `len(ids)=1`"
+      - id: SC-008
+        confidence: medium
+        evidence: "审计 M3"
+        given: "两个进程并发各写 100 条审计记录"
+        when: "写入完成"
+        then: "SHALL 保留 200 条（Windows 下用文件锁；POSIX 的 O_APPEND 本就原子）"
+
+  # ─────────────── REQ-004：测试出站守卫覆盖面 ───────────────
+  - id: REQ-004
+    capability: "share-egress-closure"
+    description: "守卫拦截一切经 ssh/scp/rsync 打到生产主机的调用形态，且不误伤"
+    scenarios:
+      - id: SC-009
+        confidence: high
+        evidence: "审计 D5-06 / F-D1-3"
+        given: "六种调用形态：list argv 的 run / shell=True 字符串 / check_output / call / check_call / ssh.exe"
+        when: "目标含 `fstdd-hub`"
+        then: "SHALL 全部拦截"
+      - id: SC-010
+        confidence: high
+        evidence: "审计 F-D1-3 误伤回归"
+        given: "`ssh ubuntu@fstdd-nonexistent-host.invalid ...`（上游失败分支驱动用）"
+        when: "调用 `is_production_egress()`"
+        then: "SHALL 返回 False（精确主机匹配，不认 `ubuntu@` 用户名字面量）"
+      - id: SC-011
+        confidence: high
+        evidence: "审计 D5-07 / F-D1-6"
+        given: "`pytest tools/tests/` 或 `pytest upstream/tests/` 单跑"
+        when: "会话内检查 `subprocess.run`"
+        then: "SHALL 已安装守卫（此前两处均不安装）"
+
+  # ─────────────── REQ-005：唯一事实源脱敏 ───────────────
+  - id: REQ-005
+    capability: "share-egress-closure"
+    description: "`_exp_sync._sanitize_text` 复用 `share_experience.sanitize`，不得维护弱化副本"
+    scenarios:
+      - id: SC-012
+        confidence: high
+        evidence: "审计 F4"
+        given: "17 类敏感形态样本"
+        when: "分别调用 `_exp_sync._sanitize_text()` 与 `share_experience.sanitize()`"
+        then: "SHALL 逐字节一致；且 `_SANITIZE_RULES` 必须为 None（弱化副本已删）"
+
+  # ─────────────── REQ-006：静默开关读取健壮 ───────────────
+  - id: REQ-006
+    capability: "share-egress-closure"
+    description: "`_share_disabled()` 对非法 UTF-8 配置不抛异常，且能从项目子目录找到配置"
+    scenarios:
+      - id: SC-013
+        confidence: high
+        evidence: "审计 F7"
+        given: "配置文件含非法 UTF-8 字节"
+        when: "调用 `_share_disabled()`"
+        then: "SHALL 不抛异常并返回 False（读不到 ⇒ 按开启处理）"
+      - id: SC-014
+        confidence: high
+        evidence: "审计 F7"
+        given: "cwd 为项目子目录，配置在项目根的 `.fstdd/config.d/`"
+        when: "调用 `_find_project_root()`"
+        then: "SHALL 返回项目根；且 `~/.fstdd/`（只有 projects.yaml 的全局注册表）**不得**被误判为项目根"

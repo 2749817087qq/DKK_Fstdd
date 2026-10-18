@@ -72,7 +72,7 @@ def test_missing_config_defaults_to_enabled(tmp_path, monkeypatch):
 
 
 def test_undecodable_config_does_not_raise(tmp_path, monkeypatch):
-    """配置含非法 UTF-8 字节时必须吞掉 UnicodeDecodeError，不得逃逸。
+    """TC-CLOSURE-014（SC-013）配置含非法 UTF-8 字节时必须吞掉 UnicodeDecodeError，不得逃逸。
 
     审计 F7 ① 的回归锁：`UnicodeDecodeError` 不是 `OSError` 子类，
     旧 except 元组抓不到，异常会一路冒到 `_cmd_auto_deposit`。
@@ -87,7 +87,7 @@ def test_undecodable_config_does_not_raise(tmp_path, monkeypatch):
 
 
 def test_config_found_from_subdirectory(tmp_path, monkeypatch):
-    """从项目子目录运行时也必须读到根上的配置（审计 F7 ②）。"""
+    """TC-CLOSURE-014（SC-014）从项目子目录运行时也必须读到根上的配置（审计 F7 ②）。"""
     _write_cfg(tmp_path, enabled=False)
     deep = tmp_path / "a" / "b" / "c"
     deep.mkdir(parents=True)
@@ -106,7 +106,7 @@ def test_find_project_root_falls_back_to_cwd(tmp_path, monkeypatch):
 
 
 def test_registry_only_dotfstdd_is_not_a_project_root(tmp_path, monkeypatch):
-    """只有 `projects.yaml` 的 `.fstdd/` 是全局注册表，不是项目根。
+    """TC-CLOSURE-014（SC-014）只有 `projects.yaml` 的 `.fstdd/` 是全局注册表，不是项目根。
 
     实测环境事实：`C:/Users/Administrator/.fstdd/` 只有 projects.yaml、无 config.d。
     若判据只是「目录下有 .fstdd/」，从任何用户目录下的路径向上找都会命中它，

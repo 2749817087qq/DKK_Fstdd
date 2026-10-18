@@ -1,0 +1,42 @@
+baseline:
+  at: '2026-10-17T19:17:00+00:00'
+  base_git_sha: 14a941c
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-18-share-egress-closure
+complexity_score: null
+current_phase: build
+design_adjustments:
+  count: 3
+last_modified: '2026-10-18T05:40:00+00:00'
+mode: thorough
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-18T05:32:00+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: '用户「继续」—— 授权按 6 维审计报告执行 P0/P1 全部修复；全量门禁 1326 passed / 0 failed；真实端到端 1 次'
+    status: completed
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-18T02:30:00+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: '用户「继续」—— 授权按审计报告行动清单设计修复方案（残余判据 4 类 / 单次校验 / 审计可读性 / 守卫覆盖面）'
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-17T19:17:00+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: '用户「完成从 f1-f11 的全部修复」—— 以独立审计的 11 项发现作为变更范围'
+    status: completed
+score_confidence: null
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 14
+  tc_cases: 14
+  test_functions: 97
+version: '3.0'

@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-18-share-egress-closure: proposals/2026-10-18-share-egress-closure.yaml
+specs:
+  agent:
+    2026-10-18-share-egress-closure: specs/agent/2026-10-18-share-egress-closure.yaml
+  code:
+    2026-10-18-share-egress-closure: specs/code/2026-10-18-share-egress-closure.yaml
+version: '2.9'

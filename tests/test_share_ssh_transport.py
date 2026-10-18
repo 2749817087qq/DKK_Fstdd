@@ -247,7 +247,7 @@ def test_publish_records_last_attempt_on_total_failure(tmp_path, monkeypatch):
 
 
 def test_publish_prepares_once_and_reuses_verified_dir(tmp_path, monkeypatch):
-    """publish() 在入口只做**一次**出站校验，三档消费同一个已校验目录。
+    """TC-CLOSURE-006 / TC-CLOSURE-007（SC-006 / SC-007）publish() 在入口只做**一次**出站校验，三档消费同一个已校验目录。
 
     审计 M2：旧实现每档各调一次 `_prepare_outbound()` ⇒ 同一批被剔除文件写
     3 遍审计（实测 4 条变 12 条），并重复校验 3 次。
@@ -598,13 +598,13 @@ def _import_egress_guard():
     (["scp", "a.md", "not-fstdd-hub.example.org:~/"], False),
 ])
 def test_egress_guard_matches_only_production(args, expected):
-    """守卫判据必须只拦我方生产目标，不得误伤其它程序或其它主机。"""
+    """TC-CLOSURE-010（SC-010）守卫判据必须只拦我方生产目标，不得误伤其它程序或其它主机。"""
     guard = _import_egress_guard()
     assert guard.is_production_egress(args) is expected, args
 
 
 def test_egress_guard_is_installed_in_this_session():
-    """本轮会话必须已装上守卫（两侧 conftest 任一 install() 即可）。"""
+    """TC-CLOSURE-011（SC-011）本轮会话必须已装上守卫（两侧 conftest 任一 install() 即可）。"""
     guard = _import_egress_guard()
     assert guard.is_installed(), "会话内 subprocess.run 未被守卫包装"
 
@@ -643,7 +643,7 @@ def _seed_dirty(out_dir: Path) -> Path:
 
 
 def test_pre_staged_filters_index_files_and_residual(tmp_path, monkeypatch):
-    """pre_staged=True 只跳过脱敏动作，过滤 + 残余自检 + sanitized:false 拒绝照跑。
+    """TC-CLOSURE-001 / TC-CLOSURE-004（SC-001 / SC-003）pre_staged=True 只跳过脱敏动作，过滤 + 残余自检 + sanitized:false 拒绝照跑。
 
     2026-10-18 审计 F1 的回归锁：旧实现 `return _scp_dir(out_dir, ...)` 把整个
     调用方目录交给 `iterdir()` 全量枚举，实测会把未脱敏残留与 README/SUBMIT 一起送出。
@@ -666,7 +666,7 @@ def test_pre_staged_filters_index_files_and_residual(tmp_path, monkeypatch):
 
 
 def test_pre_staged_audits_rejected_entries(tmp_path, monkeypatch):
-    """被出站校验剔除的条目必须留审计痕迹（否则「少传了什么」无从得知）。"""
+    """TC-CLOSURE-002（SC-002）被出站校验剔除的条目必须留审计痕迹（否则「少传了什么」无从得知）。"""
     out = _seed_dirty(tmp_path / "experiences")
     audit = tmp_path / "a.yaml"
     monkeypatch.setattr(se, "AUDIT_PATH", audit)
@@ -681,7 +681,7 @@ def test_pre_staged_audits_rejected_entries(tmp_path, monkeypatch):
 
 
 def test_pre_staged_refuses_when_everything_rejected(tmp_path, monkeypatch):
-    """全部被剔除时必须返回失败，不得送出一个空批次。"""
+    """TC-CLOSURE-003（SC-002）全部被剔除时必须返回失败，不得送出一个空批次。"""
     out = tmp_path / "experiences"
     out.mkdir()
     (out / "EXP-LEFTOVER.md").write_text(
@@ -717,7 +717,7 @@ def test_pre_staged_inbox_shares_the_same_gate(tmp_path, monkeypatch):
 # 8. scp argv 形态（2026-10-18 审计 F8 / F6）
 # ============================================================
 def test_scp_argv_has_double_dash_and_no_glob(tmp_path, monkeypatch):
-    """直接断言 argv 形态：无 shell glob、含 `--`、源为绝对正斜杠路径。
+    """TC-CLOSURE-009 辅助（argv 形态；守卫六形态见 test_egress_guard_*）直接断言 argv 形态：无 shell glob、含 `--`、源为绝对正斜杠路径。
 
     此前这批用例是**间接**的 —— 靠 `_fake_run` 尝试读 `dir/*` 字面路径抛异常才变红，
     一旦 `_fake_run` 改成容错实现，Windows glob 缺陷的回归检测就静默失效（审计 F8）。
@@ -868,3 +868,78 @@ def test_under_test_runner_ignores_later_sys_modules_change(monkeypatch):
     assert se._under_test_runner() is before
     monkeypatch.delitem(sys.modules, "pytest", raising=False)
     assert se._under_test_runner() is before
+
+
+# ============================================================
+# 12. 残余判据真值表 + 审计并发写（TC-CLOSURE-005 / 008）
+# ============================================================
+@pytest.mark.parametrize("text,should_block,label", [
+    (r"C:\Users\alice\secret.txt", True, "Windows 反斜杠路径"),
+    ("D:/work/private/x.md", True, "Windows 正斜杠路径"),
+    ("alice@example.com", True, "邮箱"),
+    ("10.20.30.40", True, "IPv4"),
+    ("db.internal", True, "内网域名"),
+    ("/home/ubuntu/x", True, "POSIX 家目录"),
+    ("ghp_" + "A" * 36, True, "GitHub token"),
+    # 修法禁区（审计 ADJ-003）：PUBLIC_DOMAINS 必须放行，
+    # 否则 sanitize() 保留的公开域名会把正常经验整条剔除（误杀不可逆）。
+    ("https://github.com/owner/repo", False, "公开域名 github.com"),
+    ("见 pypi.org/project/x", False, "公开域名 pypi.org"),
+    ("python.org", False, "公开域名 python.org"),
+])
+def test_residual_truth_table(tmp_path, monkeypatch, text, should_block, label):
+    """TC-CLOSURE-005（SC-004 / SC-005）残余判据真值表。
+
+    前 7 类必须拦截（审计 M1：`pre_staged=True` 时这是唯一内容防线）；
+    后 3 类是 `PUBLIC_DOMAINS`，必须放行 —— 加通用域名分支会误杀正常经验。
+    """
+    monkeypatch.setattr(se, "AUDIT_PATH", tmp_path / "a.yaml")
+    d = tmp_path / "exp"
+    d.mkdir()
+    (d / "EXP-T.md").write_text(
+        "---\nsanitized: true\n---\n" + text + "\n", encoding="utf-8")
+    allowed, _skipped = se._verify_outbound(d)
+    assert bool(not allowed) is should_block, (label, text, allowed)
+
+
+def test_audit_concurrent_writes_do_not_lose_records(tmp_path, monkeypatch):
+    """TC-CLOSURE-008（SC-008）并发写审计不得丢整条记录。
+
+    审计 M3 实测：Windows 的 `O_APPEND` 是「seek 到末尾再写」，跨进程非原子，
+    2 进程各写 100 条丢 40 条，**且无半行、无解析异常**（整条静默消失）。
+    `_append_locked()` 用 `msvcrt.locking` 锁首字节。
+    """
+    import multiprocessing as mp
+
+    audit = tmp_path / "concurrent-audit.yaml"
+    n_per_proc = 40
+    procs = [
+        mp.Process(target=_audit_writer, args=(str(audit), n_per_proc, tag))
+        for tag in ("A", "B")
+    ]
+    for p in procs:
+        p.start()
+    for p in procs:
+        p.join(timeout=60)
+    assert all(p.exitcode == 0 for p in procs), [p.exitcode for p in procs]
+
+    recs = [r for r in yaml.safe_load_all(audit.read_text(encoding="utf-8")) if r]
+    expected = n_per_proc * len(procs)
+    assert len(recs) == expected, (
+        "并发写丢记录：期望 %d 实得 %d（审计 M3 的回归锁）" % (expected, len(recs)))
+
+
+def _audit_writer(path: str, n: int, tag: str) -> None:
+    """子进程：独立 import 被测模块，向同一审计文件追加 n 条。"""
+    import importlib.util as _iul
+    spec = _iul.spec_from_file_location(
+        "se_conc_%s" % tag, REPO / "tools" / "share_experience.py")
+    mod = _iul.module_from_spec(spec)
+    sys.modules["se_conc_%s" % tag] = mod
+    spec.loader.exec_module(mod)
+    mod.AUDIT_PATH = Path(path)
+    mod.record_audit([
+        {"time": "2026-10-18T00:00:00+00:00", "experience_id": "%s-%03d" % (tag, i),
+         "target": "scp", "result": "success", "reason": ""}
+        for i in range(n)
+    ])
