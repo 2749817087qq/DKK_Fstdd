@@ -1,12 +1,12 @@
 meta:
   change_id: "2026-10-18-share-egress-closure"
-  summarized_at: "2026-10-18T05:40:00+00:00"
+  summarized_at: "2026-10-19T01:50:00+00:00"
   source: "实现期记录（无 pending-adjustments.yaml，均为设计期决策变更）"
-  total: 3
-  resolved_in_change: 3
+  total: 4
+  resolved_in_change: 4
   carried_as_debt: 0
   major: 0
-  minor: 3
+  minor: 4
 
 resolved:
   - id: ADJ-001
@@ -60,3 +60,24 @@ resolved:
       （`local|internal|corp|lan` —— 它们必被 `sanitize()` 转成 `<DOMAIN>`，加入安全）。
       并加**正向用例**锁死「`PUBLIC_DOMAINS` 必须放行」，防止后续有人「顺手补齐」。
       实测：90 个经验文件在新判据下 90/90 通过，零误杀。
+
+  - id: ADJ-004
+    title: "`test_seg011` 判 stdout 不判 returncode —— 子进程退出码被仓外 shim 污染"
+    capability: share-egress-closure
+    severity: minor
+    disposition: |
+      `test_seg011_silent_share_suite_is_green` 用子进程真跑
+      `upstream/tests/test_silent_share.py`。子进程退出时，WorkBuddyAI 宿主
+      shim（仓外 `sitecustomize.py:848`）的 safe-delete 守卫触发
+      `SAFE_DELETE_BULK_GUARD_ERROR state lock timeout` 并 `raise SystemExit(1)`
+      （根因链见 proposal `2026-10-12-test-teardown-resilience` 与
+      EXP-2026-0029）。pytest 的 `TEST_OUTCOME` 不含 `BaseException` ⇒
+      退出码被污染为 1，但 **stdout 的 pytest 结果行全绿**（`23 passed [100%]`）。
+
+      仓内韧性层（`tests/conftest.py` 的 `_install_delete_guard`）只覆盖**主进程**
+      删除原语，**覆盖不到子进程**——子进程是独立 Python 解释器，shim 在其中
+      独立加载。这是环境性、非确定性故障，非代码逻辑缺陷。
+
+      最终实现：判据改为「stdout 末行全绿（`N passed [100%]` 无 F/E）且
+      returncode≠0 时 stderr 仅含 safe-delete 噪声」方放行。真红会在 stdout 留
+      F/E，不会被掩盖。已验证：修复后聚焦套件 179 passed / 2 skipped。

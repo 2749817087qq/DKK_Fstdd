@@ -74,6 +74,7 @@ THEN  SHALL 放行
 | ADJ-001 | 守卫打点从 `Popen` 回退到 `run`+`call` | `asyncio/windows_utils.py:125` 在 import 期 `class Popen(subprocess.Popen)` 继承它，函数不可继承 ⇒ 全量门禁收集期崩（`TypeError: function() argument 'code' must be code, not str`）。直接 `Popen(...)` 成为已知缺口，写进 docstring |
 | ADJ-002 | `pre_staged` 语义重定义 | 原语义「跳过整个收口」导致三道防线全失效；改为「只跳过脱敏动作」 |
 | ADJ-003 | 残余判据只补 4 类，不加通用域名 | 见上节修法禁区 |
+| ADJ-004 | `test_seg011` 判 stdout 不判 returncode | 子进程退出码被**仓外 shim** 的 `SAFE_DELETE_BULK_GUARD_ERROR state lock timeout` 污染（EXP-2026-0029 / proposal 2026-10-12-test-teardown-resilience 根因链）。shim 在子进程退出阶段抛 `SystemExit`，pytest 的 `TEST_OUTCOME` 不含 `BaseException` ⇒ 退出码被污染。判据改为：stdout 末行全绿（`N passed [100%]` 无 F/E）且 stderr 仅含 safe-delete 噪声时放行；真红会在 stdout 留 F/E，不会被掩盖 |
 
 ## 六、已知缺口
 
@@ -99,7 +100,7 @@ PYTHONUTF8=1 PYTHONIOENCODING=utf-8 python -m pytest \
   tests/test_share_hardening.py tests/test_share_hardening_tc_traceability.py \
   tests/test_exp_sync_sanitize_parity.py tests/test_share_disabled_switch.py \
   upstream/tests/test_silent_share.py -q
-# → 168 passed, 2 skipped
+# → 168 passed, 2 skipped（2026-10-19 复跑：179 passed, 2 skipped）
 
 # 真实端到端（隔离 inbox，跑完记得清理）
 FSTDD_INBOX_DIR=/home/ubuntu/_fstdd-e2e-verify FSTDD_AUDIT_TEST=1 \

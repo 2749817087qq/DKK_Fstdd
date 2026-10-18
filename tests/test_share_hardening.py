@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -284,6 +285,13 @@ def test_seg011_silent_share_suite_is_green():
 
     交付件的 ② 号缺陷正是「`publish` 新增 pre_staged 后漏同步测试桩 ⇒ 该套件 3 红」。
     故这里不满足于「源码里有 pre_staged 字样」，而是把套件真跑一遍（子进程，隔离 cwd/env）。
+
+    判据（2026-10-19 修正，ADJ-004）：
+      子进程退出码会被**仓外 shim** 的 `SAFE_DELETE_BULK_GUARD_ERROR state lock timeout`
+      污染（EXP-2026-0029 / proposal 2026-10-12-test-teardown-resilience 已坐实根因链）。
+      该噪声**仅在子进程退出阶段**出现，stdout 的 pytest 结果行**全绿**即证明测试逻辑无碍。
+      故判 stdout 不判 returncode：returncode≠0 时，必须 stderr **仅含** safe-delete 噪声
+      且 stdout 末行显示 `[100%]` 无 `F`/`E`，方放行 —— 仍能捕获真红（真红会在 stdout 有 F/E）。
     """
     env = dict(os.environ)
     env["PYTHONUTF8"] = "1"
@@ -293,7 +301,29 @@ def test_seg011_silent_share_suite_is_green():
          "-q", "-p", "no:cacheprovider"],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
         cwd=str(ROOT), env=env)
-    assert r.returncode == 0, (r.stdout[-1500:] + r.stderr[-500:])
+
+    # 解析 stdout 末尾的 pytest 汇总行（如 `23 passed in 1.23s`）
+    tail = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
+    _GREEN_RE = re.compile(r"^\d+ passed(?: in [\d.]+s)?(?:\s+\[100%\])?\s*$")
+    suite_green = bool(_GREEN_RE.match(tail.strip())) and ("F" not in r.stdout and "E " not in r.stdout)
+
+    if r.returncode == 0:
+        assert suite_green, f"returncode=0 但 stdout 末行非全绿: {tail!r}\n{r.stdout[-800:]}"
+    else:
+        # returncode≠0：必须是 shim 噪声导致，且套件逻辑全绿，方可放行
+        stderr_noise_only = all(
+            "SAFE_DELETE" in ln or "state lock timeout" in ln or not ln.strip()
+            for ln in r.stderr.splitlines()
+        )
+        assert suite_green, (
+            f"子进程 returncode={r.returncode} 且 stdout 非全绿（真红）：\n"
+            f"--- stdout 末 1500 字 ---\n{r.stdout[-1500:]}\n"
+            f"--- stderr 末 500 字 ---\n{r.stderr[-500:]}"
+        )
+        assert stderr_noise_only, (
+            f"子进程 returncode={r.returncode}，stdout 全绿但 stderr 含非 safe-delete 噪声"
+            f"（可能掩盖真问题）：\n--- stderr ---\n{r.stderr[-800:]}"
+        )
     # 生产调用点必须真的传 pre_staged=True（否则该特性形同虚设）
     prod = (ROOT / "tools" / "share_experience.py").read_text(encoding="utf-8")
     assert "pre_staged=True" in prod
