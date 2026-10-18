@@ -424,7 +424,7 @@ class TestZeroBlocking:
     def test_tc_cas_008c_silent_survives_internal_exception(
             self, silent_env, monkeypatch, capsys):
         """内部异常也必须被吞掉并写审计，而不是把 DELIVER 带崩。"""
-        def boom(out_dir, url, pre_staged=False):
+        def boom(out_dir, url, pre_staged=False, prepared=False):
             raise RuntimeError("模拟端点库内部崩溃")
 
         monkeypatch.setattr(SHARE, "publish_via_inbox", boom)

@@ -246,31 +246,58 @@ def test_publish_records_last_attempt_on_total_failure(tmp_path, monkeypatch):
     assert out.exists(), "源目录不得被删除"
 
 
-def test_publish_only_uses_public_wrappers(tmp_path, monkeypatch):
-    """publish() 只经公开包装器出站 —— pre_staged 语义不得绕过脱敏收口。
+def test_publish_prepares_once_and_reuses_verified_dir(tmp_path, monkeypatch):
+    """publish() 在入口只做**一次**出站校验，三档消费同一个已校验目录。
 
-    2026-10-17 实测缺陷：publish() 曾在 pre_staged=True 时直调 _scp_dir /
-    _post_inbox_dir，绕开 publish_via_scp / publish_via_inbox 的 stage_sanitized
-    收口（EXP-2026-0017），测试桩也打不进私有函数。本用例双向锁定：
-      · 行为：pre_staged=True 透传给包装器，由包装器决定是否跳过 stage；
-      · 源码：publish() 正文不得再出现私有函数直调。
+    审计 M2：旧实现每档各调一次 `_prepare_outbound()` ⇒ 同一批被剔除文件写
+    3 遍审计（实测 4 条变 12 条），并重复校验 3 次。
+    审计 F1 的收口不变量仍成立：任何一档拿到的都是 `_prepare_outbound()` 的
+    产物，而不是调用方目录。
     """
-    out = _seed(tmp_path / "exp")
-    received: list[tuple] = []
+    out = _seed_dirty(tmp_path / "exp")
+    monkeypatch.setattr(se, "AUDIT_PATH", tmp_path / "a.yaml")
 
-    def _stub(d, alias, remote_dir, pre_staged=False):
-        received.append((d, pre_staged))
+    prepare_calls: list = []
+    prepared_dir: dict = {}
+    orig_prepare = se._prepare_outbound
+
+    def _spy_prepare(d, pre_staged):
+        res = orig_prepare(d, pre_staged)
+        prepare_calls.append((d, pre_staged))
+        prepared_dir["dir"] = res[0]
+        return res
+
+    monkeypatch.setattr(se, "_prepare_outbound", _spy_prepare)
+
+    channel_calls: list = []
+
+    def _stub_scp(d, alias, remote_dir, pre_staged=False, prepared=False):
+        channel_calls.append(("scp", d, prepared))
+        return False, "stub scp 失败"
+
+    def _stub_inbox(d, url, pre_staged=False, prepared=False):
+        channel_calls.append(("inbox", d, prepared))
         return True, ""
 
-    monkeypatch.setattr(se, "publish_via_scp", _stub)
-    ok, _ = se.publish(out, "owner/name", token="", pre_staged=True)
+    monkeypatch.setattr(se, "publish_via_scp", _stub_scp)
+    monkeypatch.setattr(se, "publish_via_inbox", _stub_inbox)
+
+    ok, _reason = se.publish(out, "owner/name", token="")
     assert ok
-    assert received == [(out, True)], received
+
+    # ① 只校验一次
+    assert len(prepare_calls) == 1, prepare_calls
+    # ② 所有通道拿到的都是同一个已校验目录，且声明 prepared=True
+    assert channel_calls, channel_calls
+    assert all(d is prepared_dir["dir"] for _n, d, _p in channel_calls), channel_calls
+    assert all(p is True for _n, _d, p in channel_calls), channel_calls
+    # ③ 没有任何通道拿到调用方目录
+    assert all(d.resolve() != out.resolve() for _n, d, _p in channel_calls), channel_calls
 
     import inspect
     src = inspect.getsource(se.publish)
-    assert "_scp_dir(" not in src, "不得直调 _scp_dir"
-    assert "_post_inbox_dir(" not in src, "不得直调 _post_inbox_dir"
+    assert "_scp_dir(" not in src, "publish() 不得直调 _scp_dir"
+    assert "_post_inbox_dir(" not in src, "publish() 不得直调 _post_inbox_dir"
 
 
 def test_publish_stages_when_not_pre_staged(tmp_path, monkeypatch):
@@ -590,6 +617,8 @@ def test_egress_guard_install_is_idempotent():
     guard.install()
     assert guard.is_installed() is before
     import subprocess as _sp
+    # 打点选在 run / call（check_output→run、check_call→call 自动覆盖）；
+    # Popen 不能换函数（asyncio 会 class Popen(subprocess.Popen) 继承它）
     assert _sp.run.__name__ == "_guarded_run"
 
 

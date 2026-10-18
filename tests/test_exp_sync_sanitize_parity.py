@@ -5,7 +5,7 @@
 ----
 仓库里有两条出站路径，各自脱敏：
 
-  · `tools/share_experience.py::stage_sanitized()` —— 14 条正则 + 域名白名单
+  · `tools/share_experience.py::stage_sanitized()` —— 15 条正则 + 域名白名单
   · `upstream/fstdd/cli/commands/_exp_sync.py::_sanitize_text()` —— 曾自带 4 条正则
 
 后者注释写着「与 share_experience 的 stage_sanitized 一致」，**那句话是假的**。

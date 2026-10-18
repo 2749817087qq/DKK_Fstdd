@@ -282,7 +282,22 @@ OUTBOUND_RESIDUAL_RE = re.compile(
     r"|\baws_secret_access_key\b\s*[=:]\s*['\"]?[A-Za-z0-9/+=]{40}"
     r"|[?&](?:api[_-]?key|token|password|secret|access[_-]?token)=(?![<\s])[^&\s\"'<>]+"
     r"|(?:~|/(?:home|Users|root)/[^\s/]+)?/\.ssh/"
-    r"(?:id_rsa|id_ecdsa|id_ed25519|id_dsa|authorized_keys|known_hosts)",
+    r"(?:id_rsa|id_ecdsa|id_ed25519|id_dsa|authorized_keys|known_hosts)"
+    # ── 2026-10-18 审计补齐（M1）：`SANITIZE_RULES` 能清、本判据此前抓不到的 4 类 ──
+    #
+    # `pre_staged=True` 时脱敏**动作**被跳过，本判据是唯一的内容防线；
+    # 漏一类就等于该形态在静默回传路径上裸奔（实测含 `C:\Users\...` 的文件
+    # 经真实 silent_share 出站）。补齐依据 = 「与 SANITIZE_RULES 同源对齐」。
+    #
+    # ⚠️ **通用外网域名不得加入**：`sanitize()` 故意保留 `PUBLIC_DOMAINS`
+    #    （github.com / python.org / pypi.org…），加通用域名分支会把正常经验
+    #    文档整条剔除 —— 误杀不可逆，宁可漏。
+    #    故只补内网域名（local|internal|corp|lan），它们必被 sanitize 转成 <DOMAIN>。
+    r"|[A-Za-z]:\\{1,2}(?:[^\s\"'`|<>]+\\{1,2})*[^\s\"'`|<>\\]*"      # Windows 反斜杠路径
+    r"|(?<![A-Za-z0-9])[A-Za-z]:/(?:[^\s\"'`|<>/]+/)*[^\s\"'`|<>]*"     # Windows 正斜杠路径
+    r"|\b[\w.+-]+@[\w-]+\.[\w.]{2,}\b"                                  # 邮箱
+    r"|\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"                          # IPv4
+    r"|\b(?:[\w-]+\.)+(?:local|internal|corp|lan)\b",                   # 内网域名
     re.IGNORECASE,
 )
 
@@ -570,10 +585,50 @@ def _scrub(text: str, secrets=()) -> str:
     return out
 
 
+def _append_locked(path: Path, lines: list[str]) -> None:
+    """带**跨进程锁**的 append（2026-10-18 审计 M3）。
+
+    背景：Windows 的 `O_APPEND` 语义是「seek 到末尾再写」，跨进程**非原子**。
+    实测 2 进程各写 100 条丢 40 条（20%）、4/8 进程丢约 9%，且**无半行、无解析
+    异常** —— 整条记录静默消失，比半行更难发现。而 `record_audit` 又把异常全吞，
+    丢失完全不可见。
+
+    POSIX 下 `O_APPEND` 是原子的，本函数退化为普通 append（不加锁）。
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = "".join(lines)
+    with path.open("a", encoding="utf-8", newline="\n") as f:
+        locked = False
+        if os.name == "nt":
+            import msvcrt
+            try:
+                # 锁首字节：写前 seek(0) 只影响锁的起点，"a" 模式的写入恒在末尾
+                f.seek(0, os.SEEK_SET)
+                msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
+                locked = True
+            except OSError:
+                locked = False      # 拿不到锁就退化，不能让审计写入卡住交付
+        try:
+            f.write(data)
+            f.flush()
+            try:
+                os.fsync(f.fileno())
+            except OSError:
+                pass
+        finally:
+            if locked:
+                try:
+                    f.seek(0, os.SEEK_SET)
+                    msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+                except OSError:
+                    pass
+
+
 def record_audit(records: list[dict], secrets=()) -> None:
     """append-only 追加审计记录。
 
-    每条记录只落 时间 / 经验标识 / 回传目标 / 结果 / 原因，原因先脱敏。
+    每条记录落 时间 / 经验标识 / 回传目标 / 结果 / 原因（原因先脱敏），
+    可选 `sent_count`（本次实际出站文件数，审计 M4）。
     **任何异常都吞掉** —— 审计写不进去也不得影响回传与交付（零阻塞）。
     """
     try:
@@ -586,6 +641,8 @@ def record_audit(records: list[dict], secrets=()) -> None:
                 "result": r.get("result") or "-",
                 "reason": _scrub(r.get("reason", ""), secrets),
             }
+            if r.get("sent_count") is not None:
+                rec["sent_count"] = r.get("sent_count")
             try:
                 import yaml
                 lines.append("---\n" + yaml.safe_dump(
@@ -597,9 +654,7 @@ def record_audit(records: list[dict], secrets=()) -> None:
                 lines.append("---\n" + json.dumps(rec, ensure_ascii=False) + "\n")
         if not lines:
             return
-        AUDIT_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with AUDIT_PATH.open("a", encoding="utf-8", newline="\n") as f:
-            f.writelines(lines)
+        _append_locked(AUDIT_PATH, lines)
     except Exception:  # noqa: BLE001
         pass
 
@@ -642,7 +697,9 @@ def _audit_skipped(skipped: list[str]) -> None:
     if not skipped:
         return
     for s in skipped:
-        print("      [skip] %s" % s)
+        # 先脱敏再打印：残余命中片段可能是 token 原文（审计 D5-03）。
+        # 落盘侧 record_audit 已有 _scrub，但 stdout 此前是裸的。
+        print("      [skip] %s" % _scrub(s))
     record_audit(
         [{"time": _now(), "experience_id": s.split("：", 1)[0],
           "target": "stage", "result": "skipped", "reason": s}
@@ -675,19 +732,42 @@ def _verify_outbound(out_dir: Path) -> tuple[list[Path], list[str]]:
         if m:
             skipped.append("%s：残余敏感内容 %s" % (f.name, m.group(0)[:40]))
             continue
-        if re.search(r"^sanitized:\s*false\s*$", text, flags=re.M):
+        if _declares_unsanitized(text):
             skipped.append("%s：自称未脱敏（sanitized: false），拒绝出站" % f.name)
             continue
         allowed.append(f)
     return allowed, skipped
 
 
+def _declares_unsanitized(text: str) -> bool:
+    """frontmatter 是否自称未脱敏。
+
+    2026-10-18 审计 L1：原判据是裸正则 `^sanitized:\\s*false\\s*$`，只认
+    「精确小写、无引号、行尾即结束」一种写法 —— 实测 9 种变体里 7 种绕过：
+    `"false"` / `'false'` / `False` / `FALSE` / `no`（YAML 布尔）/ 带行内注释 /
+    带缩进。内部写入方（`render()` / `--no-sanitize`）产出的都是精确形式，
+    所以自产文件不受影响；但手工放入或外部工具生成的文件会漏判。
+    改用 `parse_frontmatter()` 解析后取值，与文件读取路径口径一致。
+    """
+    fm, _body = parse_frontmatter(text)
+    if not fm:
+        return False
+    val = fm.get("sanitized")
+    if isinstance(val, bool):
+        return val is False
+    if isinstance(val, str):
+        return val.strip().strip("\"'").lower() in {"false", "no", "off", "0"}
+    return False
+
+
 def _prepare_outbound(out_dir: Path, pre_staged: bool) -> tuple[Path | None, list[str]]:
-    """产出**可出站目录** —— 三个出站包装器共用的唯一入口。
+    """产出**可出站目录** —— 四个出站包装器（scp / inbox / github / pr）共用的唯一入口。
 
     返回 `(目录, skipped)`；目录为 `None` 表示校验后无可出站文件。
     **无论哪条分支，返回的目录都由本函数创建、调用方负责 `finally` 清理**，
-    绝不返回调用方目录本身 —— 否则目录里的历史残留会一并出站（审计 F1）。
+    绝不返回调用方目录本身。注意过滤口径是「**未脱敏 / 命中残余**」，不是
+    「非本轮」—— `OUT_DIR` 里合法的历史经验仍会一并出站，这是既有语义
+    （审计 L2 指出旧注释把两者混为一谈）。
 
     · `pre_staged=False` → `stage_sanitized()`：脱敏 + 过滤 + 残余自检
     · `pre_staged=True`  → 跳过脱敏**动作**（调用方已脱敏），但过滤 / 残余自检 /
@@ -835,7 +915,8 @@ def _post_experiences(endpoint: str, body: bytes,
 def publish_via_scp(out_dir: Path,
                     ssh_alias: str = DEFAULT_SSH_ALIAS,
                     remote_dir: str = DEFAULT_INBOX_DIR,
-                    pre_staged: bool = False) -> tuple[bool, str]:
+                    pre_staged: bool = False,
+                    prepared: bool = False) -> tuple[bool, str]:
     """出站收口：先产出**校验通过的独立目录**，再走 scp。
 
     ``pre_staged=True``：调用方已自行脱敏（如 `silent_share()` 先经
@@ -843,9 +924,13 @@ def publish_via_scp(out_dir: Path,
     `OUTBOUND_RESIDUAL_RE` 残余自检、`sanitized: false` 拒绝**照跑**
     （见 `_prepare_outbound`，2026-10-18 审计 F1）。
 
-    保持本包装器为唯一入口 —— `publish()` 不得直调 `_scp_dir`，否则
-    `pre_staged` 路径会绕开这道收口（EXP-2026-0017）。
+    ``prepared=True``：`out_dir` **已经是** `_prepare_outbound()` 的产物
+    （由 `publish()` 在入口做一次校验后传入）⇒ 直通传输，不再二次校验 / 二次拷贝。
+    这是审计 M2 的修法：三档通道消费同一个已校验目录，剔除只审计一遍。
+    调用方须保证该目录来自 `_prepare_outbound()`，不得传任意目录。
     """
+    if prepared:
+        return _scp_dir(out_dir, ssh_alias, remote_dir)
     send_dir, _skipped = _prepare_outbound(out_dir, pre_staged)
     if send_dir is None:
         return False, "出站校验后无可用文件（全部被过滤 / 命中残余 / 自称未脱敏）"
@@ -943,13 +1028,18 @@ def _scp_dir(out_dir: Path,
 
 
 def publish_via_inbox(out_dir: Path, url: str,
-                      pre_staged: bool = False) -> tuple[bool, str]:
+                      pre_staged: bool = False,
+                      prepared: bool = False) -> tuple[bool, str]:
     """出站收口：先产出**校验通过的独立目录**，再 POST。
 
     ``pre_staged=True``：调用方已自行脱敏，跳过脱敏**动作**但过滤 / 残余自检 /
-    `sanitized: false` 拒绝照跑。与 `publish_via_scp` 完全对称 ——
-    保持包装器为唯一入口（2026-10-18 审计 F1）。
+    `sanitized: false` 拒绝照跑。与 `publish_via_scp` 完全对称（审计 F1）。
+
+    ``prepared=True``：`out_dir` 已是 `_prepare_outbound()` 的产物 ⇒ 直通，
+    不再二次校验 / 二次拷贝（审计 M2：三档消费同一目录，剔除只审计一遍）。
     """
+    if prepared:
+        return _post_inbox_dir(out_dir, url)
     send_dir, _skipped = _prepare_outbound(out_dir, pre_staged)
     if send_dir is None:
         return False, "出站校验后无可用文件（全部被过滤 / 命中残余 / 自称未脱敏）"
@@ -1146,7 +1236,7 @@ def _pr_dir(out_dir: Path, repo: str, token: str, dry_run: bool = False) -> bool
                            cwd=str(repo_dir), capture_output=True, text=True,
                            encoding="utf-8", errors="replace")
         if r.returncode != 0:
-            print(f"[FAIL] push 到 fork 失败: {(r.stderr or '')[:200]}")
+            print(f"[FAIL] push 到 fork 失败: {_scrub((r.stderr or '')[:200], (token,))}")
             return False
         print(f"      已推送到 {login}/{name} 分支 {branch}")
 
@@ -1181,7 +1271,8 @@ def is_permission_error(msg: str) -> bool:
 
 
 def _publish_github(out_dir: Path, repo: str, token: str,
-                    pre_staged: bool = False) -> tuple[bool, str]:
+                    pre_staged: bool = False,
+                    prepared: bool = False) -> tuple[bool, str]:
     """GitHub 通道：clone → 拷贝校验通过的产物 → commit → push（需 token）。
 
     fork+PR 降级不在这里做（`publish_via_pr`），由调用方按失败原因决定。
@@ -1189,10 +1280,17 @@ def _publish_github(out_dir: Path, repo: str, token: str,
     2026-10-18 审计 F1：旧实现在 `pre_staged=True` 时直接拷贝**调用方目录**，
     绕开了残余自检（只靠 `export_files()` 过滤 README/SUBMIT）。现统一走
     `_prepare_outbound()`，三条出站通道共享同一收口。
+
+    ``prepared=True``：`out_dir` 已是 `_prepare_outbound()` 的产物 ⇒ 直通，
+    且**不清理**该目录（所有权在 `publish()`）。
     """
-    staged_dir, _skipped = _prepare_outbound(out_dir, pre_staged)
-    if staged_dir is None:
-        return False, "出站校验后无可用文件（全部被过滤 / 命中残余 / 自称未脱敏）"
+    if prepared:
+        staged_dir, own_dir = Path(out_dir), False
+    else:
+        staged_dir, _skipped = _prepare_outbound(out_dir, pre_staged)
+        if staged_dir is None:
+            return False, "出站校验后无可用文件（全部被过滤 / 命中残余 / 自称未脱敏）"
+        own_dir = True
     tmp = Path(tempfile.mkdtemp(prefix="exp_publish_"))
     try:
         url = git_remote(repo, token)
@@ -1233,9 +1331,10 @@ def _publish_github(out_dir: Path, repo: str, token: str,
         return True, ""
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-        # staged_dir 恒由 `_prepare_outbound()` 创建（含 pre_staged 分支），
-        # 一律清理 —— 不再有「调用方目录不能删」的分支（审计 F1）。
-        shutil.rmtree(staged_dir, ignore_errors=True)
+        # 只在**本函数自己**产出 staged_dir 时清理；prepared=True 时目录归
+        # `publish()` 所有，删了会让后续通道与调用方拿到空目录。
+        if own_dir:
+            shutil.rmtree(staged_dir, ignore_errors=True)
 
 
 # publish() 最近一次**实际**使用的通道名（`scp` / `github` / `endpoint`）。
@@ -1245,6 +1344,12 @@ def _publish_github(out_dir: Path, repo: str, token: str,
 # 测试替身（fake_publish）无需改动即可继续工作；被整体替换 publish() 时该值
 # 不会被写入，调用方自动回落到预设通道名。
 PUBLISH_LAST_CHANNEL = ""
+
+# publish() 最近一次**实际出站的文件数**（审计 M4）。
+# 此前审计只按本轮 `collect_local()` 的 id 记账 ⇒ 30 条历史 + 1 条新增实际送出
+# 31 个文件，审计只留 1 条 success，回答不了「这次到底送出了什么」。
+# 与 PUBLISH_LAST_CHANNEL 同样做成模块级：不破坏 `publish()` 签名与测试替身。
+PUBLISH_SENT_COUNT = 0
 
 
 def publish(out_dir: Path, repo: str, token: str = "",
@@ -1265,49 +1370,67 @@ def publish(out_dir: Path, repo: str, token: str = "",
     `prepare_entries()`），故跳过脱敏**动作**；但过滤 / 残余自检 / `sanitized: false`
     拒绝仍由包装器内的 `_prepare_outbound()` 执行（2026-10-18 审计 F1）。默认 False。
 
-    成功后（或全失败时记最后尝试的那一档）写入模块级 `PUBLISH_LAST_CHANNEL`。
+    成功后（或全失败时记最后尝试的那一档）写入模块级 `PUBLISH_LAST_CHANNEL`；
+    `PUBLISH_SENT_COUNT` 记本次**实际出站文件数**（审计 M4：此前 30 条历史 + 1 条新增
+    送出 31 个文件，审计只记 1 条 success，回答不了「送出了什么」）。
     """
-    global PUBLISH_LAST_CHANNEL
+    global PUBLISH_LAST_CHANNEL, PUBLISH_SENT_COUNT
     PUBLISH_LAST_CHANNEL = ""
+    PUBLISH_SENT_COUNT = 0
     alias = ssh_alias()
     remote_dir = inbox_dir()
 
-    def _scp() -> tuple[bool, str]:
-        # 只走公开包装器：pre_staged 由包装器决定「是否跳过脱敏动作」，
-        # 避免 publish() 直调 _scp_dir 时把出站收口绕开。
-        return publish_via_scp(out_dir, alias, remote_dir, pre_staged=pre_staged)
+    # ── 单次校验 + 单次审计（审计 M2）──────────────────────────────────
+    # 此前每一档各调一次 `_prepare_outbound()`，三档全试 ⇒ 同一批被剔除文件
+    # 写 3 遍审计（实测 4 条变 12 条），并重复校验 3 次。
+    # 现改为在入口做**一次**，三档消费同一个已校验目录：
+    #   · 审计只写一遍（内层对已清洁目录再校验时 skipped 恒空，不产生记录）
+    #   · 文件数在这里一次算准，供 success 记录使用
+    send_dir, _skipped = _prepare_outbound(out_dir, pre_staged)
+    if send_dir is None:
+        return False, "出站校验后无可用文件（全部被过滤 / 命中残余 / 自称未脱敏）"
+    PUBLISH_SENT_COUNT = sum(1 for p in send_dir.iterdir() if p.is_file())
+    try:
+        # prepared=True：send_dir 已由入口的 _prepare_outbound() 校验过，
+        # 三档直通传输，不二次校验 / 不二次拷贝 / 不重复审计（审计 M2）。
+        def _scp() -> tuple[bool, str]:
+            return publish_via_scp(send_dir, alias, remote_dir, prepared=True)
 
-    def _inbox() -> tuple[bool, str]:
-        return publish_via_inbox(out_dir, inbox_url(), pre_staged=pre_staged)
+        def _inbox() -> tuple[bool, str]:
+            return publish_via_inbox(send_dir, inbox_url(), prepared=True)
 
-    _gh = lambda: _publish_github(out_dir, repo, token, pre_staged)  # noqa: E731
-    steps = ([("endpoint", _inbox), ("github", _gh), ("scp", _scp)]
-             if preferred_transport() == "inbox"
-             else [("scp", _scp), ("github", _gh), ("endpoint", _inbox)])
+        _gh = lambda: _publish_github(send_dir, repo, token, prepared=True)  # noqa: E731
+        steps = ([("endpoint", _inbox), ("github", _gh), ("scp", _scp)]
+                 if preferred_transport() == "inbox"
+                 else [("scp", _scp), ("github", _gh), ("endpoint", _inbox)])
 
-    last = "无可用的回传通道"
-    last_step = ""
-    for name, fn in steps:
-        if name == "github" and not token:
-            continue
-        last_step = name
-        # 通道函数必须**不得抛异常**才能保证降级语义（审计 F3）：
-        # 此前 `ok, reason = fn()` 裸调用，scp 缺失（FileNotFoundError）或网络
-        # OSError 会直接穿透 publish()，把 github / endpoint 两档一起跳过 ——
-        # 三档降级的可用性收益归零。这里把异常收敛成「该档失败」的 reason。
-        try:
-            ok, reason = fn()
-        except Exception as exc:  # noqa: BLE001 —— 通道异常一律降级，不得逃逸
-            ok, reason = False, "通道异常 %s: %s" % (type(exc).__name__, str(exc)[:160])
-        if ok:
-            PUBLISH_LAST_CHANNEL = name
-            return True, reason
-        last = reason or "未知错误"
-        print(f"[降级] {name} 不可用（{last}），尝试其他通道...")
-    # 全失败时记**最后尝试**的通道 —— 审计据此可判「死在哪一档」，
-    # 而不是笼统记成调用方预设的首选通道。
-    PUBLISH_LAST_CHANNEL = last_step
-    return False, last
+        last = "无可用的回传通道"
+        last_step = ""
+        for name, fn in steps:
+            if name == "github" and not token:
+                continue
+            last_step = name
+            # 通道函数必须**不得抛异常**才能保证降级语义（审计 F3）：
+            # 此前 `ok, reason = fn()` 裸调用，scp 缺失（FileNotFoundError）或网络
+            # OSError 会直接穿透 publish()，把 github / endpoint 两档一起跳过 ——
+            # 三档降级的可用性收益归零。这里把异常收敛成「该档失败」的 reason。
+            try:
+                ok, reason = fn()
+            except Exception as exc:  # noqa: BLE001 —— 通道异常一律降级，不得逃逸
+                ok, reason = False, "通道异常 %s: %s" % (type(exc).__name__, str(exc)[:160])
+            if ok:
+                PUBLISH_LAST_CHANNEL = name
+                return True, reason
+            last = reason or "未知错误"
+            # reason 可能带 token：git 失败时会把 https://x-access-token:<TOKEN>@host
+            # 原样写进 stderr，而 `[:40]` 对 40 字符的 ghp_ token 等于没截（审计 D5-03）。
+            print(f"[降级] {name} 不可用（{_scrub(last, (token,))}），尝试其他通道...")
+        # 全失败时记**最后尝试**的通道 —— 审计据此可判「死在哪一档」，
+        # 而不是笼统记成调用方预设的首选通道。
+        PUBLISH_LAST_CHANNEL = last_step
+        return False, last
+    finally:
+        shutil.rmtree(send_dir, ignore_errors=True)
 
 
 def silent_share(args) -> int:
@@ -1385,9 +1508,13 @@ def silent_share(args) -> int:
         print("经验静默回传: %s（目标 %s）" % ("成功" if ok else "失败", target))
         if not ok:
             print("回传失败不影响交付（零阻塞）；详见 %s" % AUDIT_PATH)
+        # 每条记录带上本次**实际出站文件数**（审计 M4）：`ids` 只是本轮新增，
+        # 而 `publish()` 送出的是「OUT_DIR 里所有通过出站校验的文件」——
+        # 两者不等时，审计读者会以为只传了 `len(ids)` 条。
         record_audit(
             [{"time": _now(), "experience_id": i, "target": target,
-              "result": "success" if ok else "failure", "reason": reason or ""}
+              "result": "success" if ok else "failure", "reason": reason or "",
+              "sent_count": PUBLISH_SENT_COUNT}
              for i in ids],
             secrets=(token,),
         )
@@ -1397,7 +1524,8 @@ def silent_share(args) -> int:
         try:
             record_audit(
                 [{"time": _now(), "experience_id": i, "target": target,
-                  "result": "failure", "reason": "异常: %s" % str(exc)[:200]}
+                  "result": "failure", "reason": "异常: %s" % str(exc)[:200],
+                  "sent_count": PUBLISH_SENT_COUNT}
                  for i in (ids or ["-"])],
             )
         except Exception:  # noqa: BLE001
@@ -1497,14 +1625,15 @@ def main() -> int:
         "python tools/share_experience.py --export --publish",
         "```",
         "",
-        "脚本自动选择通道，两条都是自动的：",
+        "脚本自动选择通道，三档都是自动的（首选失败自动降级下一档）：",
         "",
-        "1. **有 GitHub 凭证**（`GITHUB_TOKEN` 等）→ 推送到经验库；",
+        "1. **scp 直传自有云服务器目录**（缺省首选，**不需要任何 token**）；",
+        "2. **有 GitHub 凭证**（`GITHUB_TOKEN` 等）→ 推送到经验库；",
         "   若没有写权限，自动 fork + 提 Pull Request（标准贡献流程）。",
-        "2. **没有凭证** → 自动回传到 FSTDD 接收端点，进入待审核池，",
-        "   由维护者审核后同步进 GitHub 仓库。**不需要 GitHub 账号。**",
+        "3. **兜底** → 回传到 FSTDD 接收端点，进入待审核池，",
+        "   由维护者审核后同步进 GitHub 仓库。",
         "",
-        "两种情况下都无需手工操作。提交失败会自动按服务端的 `Retry-After` 退避重试。",
+        "三档都无需手工操作。提交失败会自动按服务端的 `Retry-After` 退避重试。",
         "",
         "## 方式二：只导出到本地（不发任何网络请求）",
         "",
