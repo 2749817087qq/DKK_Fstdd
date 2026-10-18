@@ -29,6 +29,36 @@ def _install_egress_guard() -> None:
 _install_egress_guard()
 
 
+_GUARD_MOD = None
+
+
+def _guard_module():
+    """返回已加载的守卫模块（供 sessionfinish 取汇总）。"""
+    global _GUARD_MOD
+    if _GUARD_MOD is None:
+        root = Path(__file__).resolve().parents[2]
+        spec = importlib.util.spec_from_file_location(
+            "fstdd_pytest_egress_guard_upstream_flush",
+            root / "tools" / "pytest_egress_guard.py")
+        if spec is not None and spec.loader is not None:
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            _GUARD_MOD = mod
+    return _GUARD_MOD
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """打印出站守卫汇总（审计 F-D1-6）。
+
+    本子树原来只 `install()` 没注册 `pytest_sessionfinish` ⇒ 单跑
+    `pytest upstream/tests/` 时「会话共拦截 N 次」永不打印；拦截虽仍生效，
+    但丢了可见性，与模块 docstring 的 flush 设计不对称。
+    """
+    mod = _guard_module()
+    if mod is not None:
+        mod.flush(session)
+
+
 @pytest.fixture
 def temp_project(tmp_path: Path) -> Path:
     """创建最小 STDD 项目骨架。"""

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""pytest 会话级**出站守卫**：禁止测试访问我方生产服务器。
+"""pytest 会话级**出站守卫**：禁止测试经 ssh/scp/rsync 访问我方生产服务器。
+
+⚠️ **覆盖面边界**：只拦子进程里的 ssh / scp / rsync 到 `PRODUCTION_HOSTS`。
+   HTTP 出站（如 `FSTDD_INBOX_URL` 指向的生产端点，走 urllib/requests）**不在
+   本守卫范围内** —— 那类测试必须自行覆写 `FSTDD_INBOX_URL` 到 loopback。
 
 为什么需要
 ----------
@@ -61,6 +65,27 @@ def _empty_stats() -> dict:
     return {"blocked": 0, "commands": []}
 
 
+def _normalize_args(args) -> list:
+    """把各种 argv 形态归一成 list。
+
+    2026-10-18 审计 D5-06/F-D1-3：旧实现 `args[0] if isinstance(args,(list,tuple))`
+    在传字符串时取到的是**首字符**（`"ssh ..."` → `"s"`），`Path("s").name` 不在
+    `SSH_PROGRAMS` 里 ⇒ 恒放行。仓库里确有 `shell=True` 字符串调用
+    （`upstream/fstdd/cli/commands/agent.py:44`、`ci.py:699`）。
+    """
+    if isinstance(args, (list, tuple)):
+        return list(args)
+    if isinstance(args, bytes):
+        args = args.decode("utf-8", "replace")
+    if isinstance(args, str):
+        import shlex
+        try:
+            return shlex.split(args, posix=True)
+        except ValueError:
+            return args.split()
+    return [args]
+
+
 def egress_targets(args) -> set[str]:
     """从 ssh/scp/rsync argv 提取候选目标主机集合（精确主机名）。
 
@@ -73,9 +98,8 @@ def egress_targets(args) -> set[str]:
     选项值如 `ConnectTimeout=5`、`StrictHostKeyChecking=no` 会作为候选进入集合，
     但精确集合匹配不会命中，无害。
     """
-    tokens = list(args) if isinstance(args, (list, tuple)) else [str(args)]
     targets: set[str] = set()
-    for tok in map(str, tokens):
+    for tok in map(str, _normalize_args(args)):
         if "@" in tok:
             tok = tok.split("@", 1)[1]
         tok = tok.split(":", 1)[0].strip()
@@ -84,57 +108,89 @@ def egress_targets(args) -> set[str]:
     return targets
 
 
+def _prog_name(args) -> str:
+    """取程序名，并剥掉 Windows 的 `.exe` 后缀。
+
+    审计 D5-06：`Path("C:/Windows/System32/OpenSSH/ssh.exe").name` = `ssh.exe`，
+    旧实现直接比对 `SSH_PROGRAMS` ⇒ 不匹配、放行。
+    """
+    norm = _normalize_args(args)
+    if not norm:
+        return ""
+    name = Path(str(norm[0])).name
+    return name[:-4] if name.lower().endswith(".exe") else name
+
+
 def is_production_egress(args) -> bool:
     """判断一条命令是否指向我方生产服务器。
 
-    程序名须为 ssh/scp/rsync，且目标主机**精确命中** `PRODUCTION_HOSTS`。
+    程序名须为 ssh/scp/rsync（`.exe` 后缀已剥），且目标主机**精确命中**
+    `PRODUCTION_HOSTS`。
     """
-    prog = args[0] if isinstance(args, (list, tuple)) else str(args)
-    prog = Path(str(prog)).name if prog else ""
-    if prog not in SSH_PROGRAMS:
+    if _prog_name(args) not in SSH_PROGRAMS:
         return False
     return bool(egress_targets(args) & PRODUCTION_HOSTS)
 
 
 def install() -> None:
-    """安装守卫（幂等，可被多个 conftest 重复调用）。"""
+    """安装守卫（幂等，可被多个 conftest 重复调用）。
+
+    打点选在 **`subprocess.run` 与 `subprocess.call`**：
+      · `check_output` 内部调 `run`，`check_call` 内部调 `call` ⇒ 二者自动覆盖；
+      · 两者都接受 list 与 `shell=True` 字符串 argv，`_normalize_args` 统一归一。
+
+    ⚠️ **已知缺口**：直接 `subprocess.Popen(...)` 不被拦截。
+    不能把 `Popen` 换成函数 —— `asyncio.windows_utils` 会 `class Popen(subprocess.Popen)`
+    在 import 期继承它，函数不可被继承（实测 `TypeError: function() argument
+    'code' must be code, not str`，整个 asyncio 无法加载）。这是取舍，不是遗漏。
+    """
     import subprocess
 
-    current = subprocess.run
-    if getattr(current, _MARK_ATTR, False):
+    if getattr(subprocess.run, _MARK_ATTR, False):
         return  # 已安装
 
-    original = current
     stats = _empty_stats()
 
-    def _guarded_run(args, *args_tail, **kwargs):
-        if is_production_egress(args):
-            stats["blocked"] += 1
-            cmd = " ".join(str(a) for a in (args if isinstance(args, (list, tuple)) else [args]))
-            stats["commands"].append(cmd[:160])
-            pytest.fail(
-                f"{PREFIX} 测试试图访问生产服务器：{stats['commands'][-1]} —— "
-                "请改用 monkeypatch 打桩"
-                "（见 tests/test_share_ssh_transport.py::_fake_run）"
-            )
-        return original(args, *args_tail, **kwargs)
+    def _wrap(original):
+        def _guarded(args, *args_tail, **kwargs):
+            if is_production_egress(args):
+                stats["blocked"] += 1
+                cmd = " ".join(str(a) for a in _normalize_args(args))
+                stats["commands"].append(cmd[:160])
+                pytest.fail(
+                    f"{PREFIX} 测试试图访问生产服务器：{stats['commands'][-1]} —— "
+                    "请改用 monkeypatch 打桩"
+                    "（见 tests/test_share_ssh_transport.py::_fake_run）"
+                )
+            return original(args, *args_tail, **kwargs)
+        return _guarded
 
-    setattr(_guarded_run, _MARK_ATTR, True)
-    setattr(_guarded_run, _STATS_ATTR, stats)
-    subprocess.run = _guarded_run
+    guarded_run = _wrap(subprocess.run)
+    guarded_run.__name__ = "_guarded_run"
+    setattr(guarded_run, _MARK_ATTR, True)
+    setattr(guarded_run, _STATS_ATTR, stats)
+    subprocess.run = guarded_run
+
+    if hasattr(subprocess, "call"):
+        guarded_call = _wrap(subprocess.call)
+        guarded_call.__name__ = "_guarded_call"
+        subprocess.call = guarded_call
+
+
+def _anchor():
+    """返回承载标记与统计的对象（run；未安装时是原实现）。"""
+    import subprocess
+
+    return subprocess.run
 
 
 def stats() -> dict:
     """读取当前守卫的计数（未安装时返回空计数）。"""
-    import subprocess
-
-    return getattr(subprocess.run, _STATS_ATTR, _empty_stats())
+    return getattr(_anchor(), _STATS_ATTR, _empty_stats())
 
 
 def is_installed() -> bool:
-    import subprocess
-
-    return bool(getattr(subprocess.run, _MARK_ATTR, False))
+    return bool(getattr(_anchor(), _MARK_ATTR, False))
 
 
 def summary() -> str:
