@@ -12,7 +12,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -85,7 +85,7 @@ def test_dfx_002_type_mismatch_warns_outside_git(tmp_path, capfd):
 
 def test_dfx_003_zombie_naive_lastmod_normalized(tmp_path, capfd):
     proj, change_id = make_project(tmp_path)
-    stale_naive = (datetime.utcnow() - timedelta(days=8)).strftime("%Y-%m-%dT%H:%M:%S")
+    stale_naive = (datetime.now(timezone.utc) - timedelta(days=8)).strftime("%Y-%m-%dT%H:%M:%S")
     change_dir = proj / ".fstdd" / "changes" / change_id
     state = read_state(proj, change_id)
     state["last_modified"] = stale_naive  # naive 变异体
@@ -96,7 +96,7 @@ def test_dfx_003_zombie_naive_lastmod_normalized(tmp_path, capfd):
     assert "warn" not in err.lower(), f"naive 归一不应告警: {err!r}"
 
     # 阴性对照：naive 新鲜值不判
-    fresh_naive = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
+    fresh_naive = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
     state["last_modified"] = fresh_naive
     write_state(proj, change_id, state)
     assert guard._is_zombie(change_dir) is False
@@ -108,7 +108,7 @@ def test_dfx_003_zombie_naive_lastmod_normalized(tmp_path, capfd):
 
 def test_dfx_004_guard_status_shows_phase_lag(tmp_path):
     proj, change_id = make_project(tmp_path)
-    ago25h = (datetime.utcnow() - timedelta(hours=25)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    ago25h = (datetime.now(timezone.utc) - timedelta(hours=25)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
     state = read_state(proj, change_id)
     state["phases"] = {
         "spec": {"status": "completed", "completed_at": ago25h},

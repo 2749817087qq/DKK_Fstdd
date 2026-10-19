@@ -156,7 +156,7 @@ def test_tc_cdr_002_state_reads_archived(tmp_path):
     out = r.stdout + r.stderr
     assert ".fstdd.yaml not found" not in out, f"仍是误导文案：{out[-300:]}"
     # 不得再暴露「去 changes/ 找」的路径（修复前的原话含 `.fstdd\changes\<name>`）
-    assert ".fstdd\changes" not in out and ".fstdd/changes" not in out, (
+    assert ".fstdd\\changes" not in out and ".fstdd/changes" not in out, (
         f"仍暴露 changes/ 路径 ⇒ 说明解析器还在错的地方找：{out[-300:]}"
     )
     assert ARCH in out, f"未输出该 change 名：{out[-300:]}"
