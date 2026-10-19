@@ -598,12 +598,16 @@ def check_tc_implementation_coverage(change_dir: Path, project_root: Path) -> tu
         return ("SKIP", "test-plan.md 中未找到 TC-ID")
 
     # Search for TC-IDs in test files
+    # REQ-CTR-001：经 iter_test_files 单一事实源扫描（test_*.py + test-*.py），
+    # 不再直接 rglob("test_*.py")——后者对连字符命名结构性失明（下游多层次agent
+    # 的 EXP-2026-0001 类假红；本仓同名编号为 Guard 阶段门，非此语义）。
+    from ..utils import iter_test_files
     tests_dir = project_root / "tests"
     if not tests_dir.exists():
         return ("SKIP", "tests/ 目录不存在，跳过 TC 实现覆盖检查")
 
     implemented_tcs = set()
-    for test_file in tests_dir.rglob("test_*.py"):
+    for test_file in iter_test_files(tests_dir):
         file_content = test_file.read_text(encoding="utf-8")
         for tc_id in planned_tcs:
             if tc_id in file_content:

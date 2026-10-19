@@ -1,0 +1,67 @@
+# agent_spec.yaml — Agent 验证规格（Canonical YAML）— ci-checker-tc-recognition
+
+meta:
+  task_id: "ci-checker-tc-recognition"
+  change_id: "2026-10-16-ci-checker-tc-recognition"
+  task_type: code
+  system: "FSTDD CLI（upstream/fstdd/cli/）：utils.py / ci.py / diff.py / trace.py；测试位于 upstream/tests/"
+  preconditions:
+    - "工作目录为仓库根 D:/tools/FSTDD/FSTDD005-wt-311，基线 HEAD c99ef7d"
+    - "pytest 可用（C:/Python311/python.exe -m pytest），基线 tests/commands/test_ci.py + test_validate.py = 31/31"
+    - "EXP-20260917-A1 证据表中的 10 个归档 change 在 .fstdd/archive/ 下可读"
+    - "不修改真实 tests/ 既有文件内容以外的结构（新增测试追加到既有文件）"
+
+steps:
+  - id: CP-1
+    description: "SC-CTR-001/002：连字符测试文件被覆盖检查识别 + 真实缺口仍 FAIL"
+    action: "pytest tests/commands/test_ci.py 新增用例（连字符 fixture PASS / 双命名均无 FAIL）"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "新增用例 2 条全过；连字符场景 PASS、缺口场景 FAIL 均按预期"
+  - id: CP-2
+    description: "SC-CTR-003：iter_test_files 混合目录全产出无重复"
+    action: "pytest tests/test_utils.py 新增单测（混合命名临时目录）"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "两种命名文件全部产出、数量无重复"
+  - id: CP-3
+    description: "SC-CTR-004：diff/trace 识别连字符测试文件"
+    action: "subprocess 跑 fstdd diff / fstdd trace（临时项目 fixture，tests/ 仅含连字符文件）"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "diff 不再显示该 TC「未覆盖」；trace 输出含测试文件路径"
+  - id: CP-4
+    description: "SC-CTR-005/006：多处引用定义一次 PASS / 两定义行共用 FAIL"
+    action: "pytest tests/commands/test_ci.py 新增用例（引用型 fixture + 重复定义行 fixture）"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "多处引用单定义 PASS；两定义行共用 ID FAIL"
+  - id: CP-5
+    description: "SC-CTR-007：10 个历史归档 change 0 误报（EXP-20260917-A1 取证复跑）"
+    action: "对 .fstdd/archive/ 下 EXP-20260917-A1 证据表的 10 个 change 逐个跑 ci check-failures，采集 (d) 结果"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "(d) 全部 PASS，0 个「重复 TC-ID」（修复前同集合 10/10 FAIL）"
+  - id: CP-6
+    description: "SC-CTR-008/009：既有测试语义更新留痕 + 修复前后真实数据复跑对比"
+    action: "运行更新后的 TC-CI-008；对下游归档 change 2026-10-16-default-free-fixture 复跑 ci check-failures"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "TC-CI-008 新语义通过且含审计注释；下游 change (d) FAIL→PASS、覆盖 0/10→9/10"
+
+rollback:
+  steps:
+    - "git checkout -- upstream/fstdd/cli/utils.py upstream/fstdd/cli/commands/ci.py upstream/fstdd/cli/commands/diff.py upstream/fstdd/cli/commands/trace.py upstream/tests/"
+    - "全部改动位于版本控制内，回滚即还原四个源文件与两个测试文件"

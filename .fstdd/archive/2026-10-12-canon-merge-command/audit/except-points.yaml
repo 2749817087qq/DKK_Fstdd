@@ -153,7 +153,7 @@ points:
   line: 535
 - id: EA-033
   file: upstream/fstdd/cli/commands/guard.py
-  refreshed_reason: 2026-10-04 行号 1203→1265（既有代码插入位移，指纹 return False/except Exception 未变）
+  refreshed_reason: 2026-10-17 行号 1265→1290（cherry-pick d833f41 V3.0.11 作用域感知 +25 行位移，指纹 return False/except Exception 未变）
   stmt: return False
   handler: 'except Exception:'
   classification: 合理容错
@@ -161,7 +161,7 @@ points:
   response: 放行
   detection_path: false
   justification: _disable_guard_hook_in 解析 settings 失败返回 False ⇒ 视作未命中不修改， dry-run 与非 dry-run 语义一致（fail-closed 不写盘），对齐 V3.0.8 guard --disable-hook 的预览/实际执行二分语义
-  line: 1265
+  line: 1290
 - id: EA-013
   file: upstream/fstdd/cli/commands/index.py
   stmt: pass
@@ -267,7 +267,8 @@ points:
   response: 放行
   detection_path: false
   justification: 版本探测读取失败 → None 版本，信息展示容错
-  line: 123
+  line: 153
+  refreshed_reason: '2026-10-17 行号 123→153（change 2026-10-16-ci-checker-tc-recognition 在 resolve_stdd_path 之后插入 iter_test_files 30 行，指纹 return None/except Exception: 未变）'
 - id: EA-025
   file: upstream/fstdd/cli/utils.py
   stmt: pass
@@ -277,4 +278,5 @@ points:
   response: 放行
   detection_path: false
   justification: version 文件 YAML 解析失败 → 继续其他探测路径
-  line: 136
+  line: 166
+  refreshed_reason: '2026-10-17 行号 136→166（同上，iter_test_files 插入 30 行位移）'
