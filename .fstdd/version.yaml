@@ -1,10 +1,35 @@
 # FSTDD 本地版本声明（F 仓 / stdd-repo）
 # 发行版口径：fstdd_version（须 = .fstdd/config.d/project.yaml 的 stdd_version）
 # vendored 上游内核口径：upstream_version（= upstream/ 内核，见 upstream/CHANGELOG.md 与 upstream/pyproject.toml）
-fstdd_version: "3.3.9"
+fstdd_version: "3.4.0"
 upstream_version: "3.1.0"
-released_at: "2026-10-17T08:00:00+08:00"
+released_at: "2026-10-19T11:25:00+08:00"
 changelog: |
+  v3.4.0 — 经验静默回传出站收口版（6 维验收审计）
+
+  交付（1 change：2026-10-18-share-egress-closure，归档 + canon verify + structure merge）：
+  - share-egress-closure（MODIFIED）：出站三关的最后一道闸门（`_verify_outbound`）
+    覆盖面小于第一道（`sanitize()`）的缺陷修复。残余判据补齐 4 类形态
+    （Windows 路径 `\`/`/` / 邮箱 / IPv4 / 内网域名）；`publish()` 改为入口单次校验，
+    三档通道消费同一已校验目录（`prepared=True` 直通）；审计记录新增 `sent_count`；
+    `record_audit` 加跨进程写锁（Windows `msvcrt.locking`）；`sanitized: false` 判据
+    改用 `parse_frontmatter()`；stdout 三处 print 套 `_scrub` 防 token 回显。
+  - 测试出站守卫加固：打点覆盖 `subprocess.run`/`call`（`Popen` 因 asyncio 继承冲突
+    回退，ADJ-001）；支持 `shell=True` 字符串 argv（`shlex.split`）与 `.exe` 后缀；
+    新增仓库根 `conftest.py` 覆盖 `tools/tests/` 子树；`upstream/tests/conftest.py`
+    补 `pytest_sessionfinish` 汇总。
+  - ADJ-004：`test_seg011` 判 stdout 不判 returncode —— 子进程退出码被仓外 shim
+    （WorkBuddyAI `sitecustomize.py:848`）的 `SAFE_DELETE_BULK_GUARD_ERROR state lock
+    timeout` 污染（根因链见 proposal 2026-10-12-test-teardown-resilience 与 EXP-2026-0029）。
+    仓内韧性层只覆盖主进程，子进程独立加载 shim ⇒ 退出码被污染但 stdout 全绿。
+
+  质量：全量门禁 **1337 passed / 11 skipped / 0 failed**（tests/ 338+6skip / upstream/tests 999+5skip）；
+  聚焦套件 179 passed / 2 skipped；`ci check-failures` 0 错 / 14/15 TC 覆盖
+  （缺 TC-CLOSURE-013 人工真机 E2E）；真实端到端 1 次（90 文件 scp，远端核对全绿）；
+  四自检 install PASS / verify PASS 0 WARN；设计偏离 4 条（ADJ-001..004）。
+
+  经验：EXP-2026-0029（并发门禁数不可判根因 = shim state lock timeout）。
+
   v3.3.9 — DELIVER 自动化版（新增 fstdd canon merge 命令）
 
   交付（1 change：2026-10-12-canon-merge-command，归档 + 根 canonical 并入 3 文件 + canon verify 2/2 + structure merge）：
