@@ -1,0 +1,51 @@
+# REITs 投研回测默认配置
+backtest:
+  start_date: "2023-01-01"
+  end_date: "2026-09-30"
+  initial_capital: 1000000
+  rebalance_freq: "weekly"
+  rebalance_day: "friday"
+  max_turnover: 0.30
+  commission_rate: 0.0003
+  slippage_rate: 0.0002
+  dividend_reinvest: true
+  random_seed: null  # null = hash(params)
+
+factors:
+  p_nav:
+    weight: 0.3
+    direction: "asc"
+    threshold: -0.05
+  ffo_yield:
+    weight: 0.3
+    direction: "desc"
+  momentum_20d:
+    weight: 0.2
+    direction: "desc"
+  dividend_yield_ttm:
+    weight: 0.2
+    direction: "desc"
+
+universe:
+  min_listing_days: 60
+  exclude_stale_nav_days: 90
+  max_missing_rate: 0.05
+
+benchmark:
+  type: "equal_weight"
+  rebalance_freq: "monthly"
+
+report:
+  format: "markdown"
+  charts: "matplotlib"
+  decimal_places: 4
+
+database:
+  postgresql:
+    host: "localhost"
+    port: 5432
+    dbname: "reits_db"
+    user: "reits_reader"
+    password_env: "REITS_PG_PASSWORD"
+  duckdb:
+    path: "data/reits_analytics.duckdb"

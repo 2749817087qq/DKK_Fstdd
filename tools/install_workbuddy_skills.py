@@ -109,7 +109,7 @@ VERIFY_ABS = (TOOLS_DIR / "verify_workbuddy_skills.py").as_posix()
 # 本项目自研的 skill：源文件已含完整 frontmatter，直接复制即可，
 # 不走上游模板的「剥离 frontmatter → 适配 → 重组」流程。
 # 注意：这些是本仓库原创，许可证与上游 MIT 不同，见各文件 frontmatter。
-LOCAL_SKILLS = ["fstdd-fin", "fstdd-quant"]
+LOCAL_SKILLS = ["fstdd-fin", "fstdd-quant", "reits-research"]
 
 # 安全策略文本模板目录（2026-10-11 share-hardening：三大段文本外置，便于 diff/审阅）。
 TEMPLATES_DIR = TOOLS_DIR / "templates"
@@ -581,13 +581,8 @@ FSTDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
         print("\n[WARN] 发现影子副本 —— 不会被应用加载，仅会误导排查：")
         for base, item in shadows:
             print(f"  - {base}: {item}")
-        # 自动清理：移到备份目录（不直接删，保留审计痕迹）
-        cleaned = clean_shadows(installed, OUT)
-        if cleaned:
-            backup_dir = OUT.parent / "_fstdd-shadow-backup"
-            print(f"[OK] 已自动清理 {len(cleaned)} 个影子副本 → {backup_dir}")
-            for name in cleaned:
-                print(f"  - moved: {name}")
+        print("  处置建议：人工确认无用后删除，避免与真实安装混淆。")
+        print("  （自动清理已禁用：clean_shadows 会误移 .workbuddy/skills 下的保留文件）")
     if errors:
         print("\n[FAIL] 校验未通过，以下问题必须修复后才能使用：")
         for e in errors:
