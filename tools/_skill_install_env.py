@@ -107,16 +107,38 @@ def frontmatter_version(path: Path) -> str:
     return "?"
 
 
-def shadow_installs(names: list[str], chosen: Path) -> list[tuple[str, str]]:
-    """在**其他**候选目录里发现同名 skill（影子副本）→ [(目录, 名称@版本)]。
+def _active_skill_dirs() -> set[str]:
+    """所有 WORKBUDDY_CONFIG_DIR / CODEBUDDY_CONFIG_DIR 指向的活跃 skill 目录。
 
-    影子副本不会被加载，但会误导排查（看到 3.0.5 就以为已装好）。
+    这些目录被内核 ``getWorkbuddyConfigDir()`` 扫描，是**在用实例**，
+    不应被当影子副本清理。
+    """
+    dirs: set[str] = set()
+    for name in CONFIG_DIR_ENVS:
+        d = _env_path(name)
+        if d:
+            dirs.add(os.path.normcase(str(d / "skills")))
+    # 兜底目录也是活跃的（内核 fallback）
+    dirs.add(os.path.normcase(str(Path.home() / ".workbuddy-ai" / "skills")))
+    dirs.add(os.path.normcase(str(Path.home() / ".workbuddy" / "skills")))
+    return dirs
+
+
+def shadow_installs(names: list[str], chosen: Path) -> list[tuple[str, str]]:
+    """在**非活跃**目录里发现同名 skill（废弃影子副本）→ [(目录, 名称@版本)]。
+
+    影子副本 = 不被内核扫描的目录下的同名 skill（如旧安装路径残留）。
+    **活跃实例**（WORKBUDDY_CONFIG_DIR / CODEBUDDY_CONFIG_DIR 指向的目录、
+    以及内核兜底目录 ~/.workbuddy-ai 和 ~/.workbuddy）**不算影子**，
+    不会被报告或清理 —— 它们是其他在用实例，删它们会破坏其他会话。
     本函数**只报告、不删除** —— 删除属破坏性操作，须人工确认。
     """
     found: list[tuple[str, str]] = []
+    active = _active_skill_dirs()
     chosen_key = os.path.normcase(str(chosen))
     for base in candidate_skill_dirs():
-        if os.path.normcase(str(base)) == chosen_key or not base.is_dir():
+        key = os.path.normcase(str(base))
+        if key == chosen_key or key in active or not base.is_dir():
             continue
         for name in names:
             f = base / name / "SKILL.md"
@@ -126,21 +148,25 @@ def shadow_installs(names: list[str], chosen: Path) -> list[tuple[str, str]]:
 
 
 def clean_shadows(names: list[str], chosen: Path, backup_dir: Path | None = None) -> list[str]:
-    """把影子副本移到备份目录（不直接删，保留审计痕迹）。
+    """把**非活跃**目录里的废弃影子副本移到备份目录（不直接删，保留审计痕迹）。
 
+    **不会触碰活跃实例**（WORKBUDDY_CONFIG_DIR / CODEBUDDY_CONFIG_DIR 指向的目录、
+    以及内核兜底目录 ~/.workbuddy-ai 和 ~/.workbuddy）—— 它们是其他在用实例。
     返回已清理的 skill 名列表。备份目录默认为 ``<chosen 的父目录>/_fstdd-shadow-backup``。
     幂等：已有同名备份目录会被覆盖。
     """
     import shutil
 
     cleaned: list[str] = []
+    active = _active_skill_dirs()
     chosen_key = os.path.normcase(str(chosen))
     if backup_dir is None:
         backup_dir = chosen.parent / "_fstdd-shadow-backup"
     backup_dir.mkdir(parents=True, exist_ok=True)
 
     for base in candidate_skill_dirs():
-        if os.path.normcase(str(base)) == chosen_key or not base.is_dir():
+        key = os.path.normcase(str(base))
+        if key == chosen_key or key in active or not base.is_dir():
             continue
         for name in names:
             src = base / name
