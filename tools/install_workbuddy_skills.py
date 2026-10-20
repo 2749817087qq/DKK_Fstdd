@@ -109,7 +109,7 @@ VERIFY_ABS = (TOOLS_DIR / "verify_workbuddy_skills.py").as_posix()
 # 本项目自研的 skill：源文件已含完整 frontmatter，直接复制即可，
 # 不走上游模板的「剥离 frontmatter → 适配 → 重组」流程。
 # 注意：这些是本仓库原创，许可证与上游 MIT 不同，见各文件 frontmatter。
-LOCAL_SKILLS = ["fstdd-fin"]
+LOCAL_SKILLS = ["fstdd-fin", "fstdd-quant"]
 
 # 安全策略文本模板目录（2026-10-11 share-hardening：三大段文本外置，便于 diff/审阅）。
 TEMPLATES_DIR = TOOLS_DIR / "templates"
