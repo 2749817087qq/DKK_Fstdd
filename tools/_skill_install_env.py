@@ -125,6 +125,34 @@ def shadow_installs(names: list[str], chosen: Path) -> list[tuple[str, str]]:
     return found
 
 
+def clean_shadows(names: list[str], chosen: Path, backup_dir: Path | None = None) -> list[str]:
+    """把影子副本移到备份目录（不直接删，保留审计痕迹）。
+
+    返回已清理的 skill 名列表。备份目录默认为 ``<chosen 的父目录>/_fstdd-shadow-backup``。
+    幂等：已有同名备份目录会被覆盖。
+    """
+    import shutil
+
+    cleaned: list[str] = []
+    chosen_key = os.path.normcase(str(chosen))
+    if backup_dir is None:
+        backup_dir = chosen.parent / "_fstdd-shadow-backup"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    for base in candidate_skill_dirs():
+        if os.path.normcase(str(base)) == chosen_key or not base.is_dir():
+            continue
+        for name in names:
+            src = base / name
+            if src.is_dir() and (src / "SKILL.md").exists():
+                dst = backup_dir / name
+                if dst.exists():
+                    shutil.rmtree(dst)
+                shutil.move(str(src), str(dst))
+                cleaned.append(name)
+    return cleaned
+
+
 # ---------------------------------------------------------------------------
 # 2. 仓库版本 —— 用于识别「装了但过期」
 # ---------------------------------------------------------------------------
