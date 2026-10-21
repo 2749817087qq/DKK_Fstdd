@@ -1,0 +1,16 @@
+# WBCC-0803ADF7-EXP-2026-0030 派生状态死锁（derived-state deadlock）
+- pattern: >
+    熔断/暂停态若从历史表「最近 N 条」派生，而命中熔断的路径提前 return 不写新历史行，
+    则判据窗口被冻结，「最近 N 条全失败」永久成立，无任何自愈路径。
+- root_cause: >
+    把状态量（暂停与否）实现成派生量（从历史推导），且跳过路径绕过写历史。
+    2026-10-21 实证：ccreits 三个 TDX 自采任务 10-16/10-17 被暂停后停更 418h/262h，
+    只能人工介入（scheduler/tasks.py::_is_tdx_task_paused + 调用处 return）。
+- fix_template: >
+    熔断命中时也必须落一条显式状态行（如 status='paused'）推进窗口；
+    并提供半开重试（指数退避、成功即解除）；熔断发生/解除必须发显式告警，
+    不得只留 WARNING 日志（no_silent_degradation）。
+- detection_trigger: "任何「连续 N 次失败则跳过/暂停」类判据；code review 检查跳过路径是否写状态"
+- lifecycle_state: verified
+- source_change: 2026-10-21-tdx-selfcollect-resume
+- observed_at: 2026-10-21T11:35:00+08:00
