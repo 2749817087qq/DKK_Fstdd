@@ -18,7 +18,7 @@ meta:
   blocking_found: 3
   blocking_resolved: 3
   deliver_fixes: 3
-  follow_ups: 7
+  follow_ups: 8
 
 # 每条 = 一个「原设计说的」与「实现/现实」的偏离，及其最终裁决
 adjustments:
@@ -209,6 +209,16 @@ follow_ups:
       其它类型（本 change 使用的 `python_assert` / `stdout_matches` / `stdout_not_contains`）
       落入 `else: ok = False` ⇒ 直接判 FAIL。故 agent spec 目前是「设计文档 + 人工/测试覆盖」，
       不能靠 `fstdd agent run` 自动验收。
+  - id: FU-008
+    title: "测试套件把临时目录永久写进全局项目注册表"
+    detail: >-
+      2026-10-22 DELIVER 冒烟时实测：`~/.fstdd/projects.yaml` 已积累 **7237 条**记录，
+      其中 **7233 条**指向 `AppData/Local/Temp/pytest-of-Administrator/...` 的一次性目录
+      （文件 1.39 MB），条目名就是测试函数名。根因：测试直接调 `cmd_init`，
+      而 `cmd_init` 会经 `upgrade._register_project()` 无条件写全局 registry，
+      测试结束不清理。影响：注册表只增不减、按路径查重退化为线性扫 7000 条，
+      且 `fstdd` 的「项目列表」类输出被垃圾条目淹没。建议：registry 写入改为
+      尊重 `FSTDD_NO_REGISTER` 环境变量（测试置 1），或按 `last_seen` 做 TTL 清理。
 
 # DELIVER 阶段（Phase 4）发现并修正的问题
 deliver_fixes:
