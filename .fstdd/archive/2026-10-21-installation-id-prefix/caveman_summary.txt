@@ -1,0 +1,9 @@
+# init.py 生成 installation_i…
+
+<!-- source_hash: 2d26…
+<!-- generated_: 2026-…
+<!-- canonical: canoni…yaml -->
+
+## What Changes
+
+- `init.py` `cmd_init` 在创建 `.fstdd/` 骨架后、`_regist…token_hex(4).upper()`，

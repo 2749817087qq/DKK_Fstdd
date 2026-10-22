@@ -3,27 +3,59 @@
 import argparse
 import os
 import shutil
+import sys
 from datetime import datetime
 from ..timeutil import utc_now_iso
 from pathlib import Path
 
 
 def _read_version_yaml(project_root: Path) -> dict:
-    """Read .fstdd/version.yaml, return empty dict if not found."""
+    """Read .fstdd/version.yaml, return empty dict if not found.
+
+    解析失败同样返回 ``{}`` 并出声 —— 否则异常在「读」这一步就抛出，
+    ``_write_version_yaml`` 里新增的损坏容错分支永远走不到（死代码），
+    用户看到的是裸 traceback，且拿不到「哪个文件坏了」的提示。
+    """
     version_file = project_root / ".fstdd" / "version.yaml"
-    if version_file.exists():
-        import yaml
+    if not version_file.exists():
+        return {}
+    import yaml
+    try:
         data = yaml.safe_load(version_file.read_text(encoding="utf-8"))
-        return data or {}
-    return {}
+    except (OSError, yaml.YAMLError) as exc:
+        print(f"  ⚠️  {version_file} 无法解析（{exc}），按空配置继续",
+              file=sys.stderr)
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 def _write_version_yaml(project_root: Path, data: dict) -> None:
-    """Write .fstdd/version.yaml."""
+    """Write .fstdd/version.yaml —— 与既有内容**合并**，不整体覆盖。
+
+    为什么要合并：本函数历史上按「调用方写全量」设计，而 ``_do_upgrade`` 只传 5 个
+    版本字段 ⇒ 任何后续在 version.yaml 里新增的字段都会在下次 upgrade 时被**静默抹掉**。
+    实测后果（2026-10-22）：V3.1.1 的 ``installation_id`` 在 ``fstdd upgrade`` 后消失，
+    经验 ID 从 ``WBCC-0803ADF7-EXP-...`` 悄悄退回 ``EXP-...``，撞号缺陷复发且无任何提示。
+    合并后新增字段自动存活，无需「每加一个字段就回来改这里」（那种做法必然漏）。
+    """
     import yaml
     version_file = project_root / ".fstdd" / "version.yaml"
+    merged: dict = {}
+    if version_file.exists():
+        try:
+            loaded = yaml.safe_load(version_file.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError) as exc:
+            # 静默覆盖会同时抹掉 installation_id（→ 经验 ID 退回旧格式，撞号复发）
+            # 与 stdd_version（→ 项目「忘记」自己是什么版本）。出声，别装没事。
+            print(f"  ⚠️  {version_file} 无法解析（{exc}），"
+                  f"本次以传入字段重写，既有字段（含 installation_id）将丢失",
+                  file=sys.stderr)
+            loaded = None
+        if isinstance(loaded, dict):
+            merged = loaded
+    merged.update(data)
     version_file.write_text(
-        yaml.dump(data, allow_unicode=True, default_flow_style=False),
+        yaml.dump(merged, allow_unicode=True, default_flow_style=False),
         encoding="utf-8",
     )
 

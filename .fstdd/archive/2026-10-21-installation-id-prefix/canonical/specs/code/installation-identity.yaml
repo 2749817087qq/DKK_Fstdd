@@ -1,0 +1,98 @@
+# installation-identity.yaml — 行为规格（Canonical YAML）
+# change: 2026-10-21-installation-id-prefix
+# 修订: 2026-10-22（BUILD 阶段 C1 评审后对齐实现：PREFIX 清洗、upgrade 合并语义、
+#       写入侧防御三条 SC 补登记）
+
+meta:
+  capability: "installation-identity"
+  change_id: "2026-10-21-installation-id-prefix"
+  created: "2026-10-21T20:30:00+08:00"
+  revised: "2026-10-22T12:10:00+08:00"
+  confidence: high
+
+# 格式唯一事实来源：`fstdd.cli.utils.INSTALLATION_ID_RE = ^[A-Z0-9]{2,8}-[0-9A-F]{8}$`
+# 生成端（init.py）与读取端（experience.py）共用该常量，不得各写一份。
+
+requirements:
+  - id: REQ-IID-001
+    description: >-
+      `fstdd init` SHALL 在 `.fstdd/version.yaml` 中写入合法形状的 `installation_id`，
+      且 SHALL NOT 丢弃该文件中的既有字段。
+    scenarios:
+      - id: SC-IID-001
+        confidence: high
+        evidence: "proposal C1: init.py 生成 installation_id 写入 version.yaml"
+        given: "在空目录执行 `fstdd init`"
+        when: "init 完成，读取 `.fstdd/version.yaml`"
+        then: "SHALL 含 `installation_id` 字段，值匹配 `^[A-Z0-9]{2,8}-[0-9A-F]{8}$`"
+        and:
+          - "HEX 段 SHALL 由 `secrets.token_hex(4).upper()` 生成（8 位大写十六进制）"
+          - "PREFIX SHALL 由项目名派生，或由 `--prefix` 参数覆盖"
+          - "若 version.yaml 已存在且含其它字段（如 `stdd_version`），写入后这些字段 SHALL 保持不变"
+      - id: SC-IID-002
+        confidence: high
+        evidence: "proposal C1: --prefix 参数"
+        given: "执行 `fstdd init --prefix MYPROJ`"
+        when: "init 完成，读取 `installation_id`"
+        then: "PREFIX SHALL 为 `MYPROJ`，完整值形如 `MYPROJ-A1B2C3D4`"
+        and:
+          - "`--prefix` 值 SHALL 先 `strip().upper()`；满足 `^[A-Z0-9]{2,8}$` 才采纳"
+          - "不合法时 SHALL 向 stdout 告警并回落项目名派生，SHALL NOT 中止 init（原设计为 exit 1，评审后改为降级：init 的其它步骤不应因一个可选参数失败）"
+      - id: SC-IID-003
+        confidence: high
+        evidence: "proposal C1: 项目名派生"
+        given: "项目目录名为 `my-project`（含连字符）"
+        when: "init 缺省无 --prefix"
+        then: "PREFIX SHALL 取 `MYPR`（剥掉非 `[A-Z0-9]` 字符后取前 4 位）"
+        and:
+          - "派生结果 SHALL 恒满足 `^[A-Z0-9]{2,8}$` —— 否则 ID 会变成三段（`MY-P-0803ADF7`），打穿 `split('-')[-1]` 取序号的既有假设"
+          - "项目名为纯中文（清洗后不足 2 位）时，PREFIX SHALL 回落 `FSTDD`"
+          - "修订记录：本 SC 原写「含连字符保留 → `MY-P`」，与「ID 恒为两段」冲突；2026-10-22 评审后改为清洗语义，代码与规格同时对齐"
+
+  - id: REQ-IID-002
+    description: >-
+      `installation_id` SHALL 只在首次 init 时生成一次；后续 `fstdd upgrade`、
+      `fstdd init --force`、`experience add` 均 SHALL NOT 覆盖或重新生成。
+    scenarios:
+      - id: SC-IID-004
+        confidence: high
+        evidence: "2026-10-22 实测：upgrade 走 _write_version_yaml 整体覆盖 → installation_id 被抹"
+        given: "项目已有 `installation_id: WBCC-0803ADF7`"
+        when: "执行 `fstdd upgrade`（其唯一写口是 `upgrade._write_version_yaml`）"
+        then: "`installation_id` SHALL 保持不变"
+        and:
+          - "`_write_version_yaml` SHALL 采用「读既有 → 合并 → 写」语义，而非整体覆盖"
+          - "version.yaml 中**未在该次写入参数里出现**的既有字段 SHALL 一并存活（防止下一个新增字段重蹈 installation_id 覆辙）"
+      - id: SC-IID-005
+        confidence: high
+        evidence: "proposal C4: _post_init_self_check 加 installation_id 断言"
+        given: "init 过程到达 `_post_init_self_check`"
+        when: "自检运行"
+        then: "SHALL 输出 `installation_id: ✅ <实际生效值>`（值取自 version.yaml 且形状合法）"
+        and:
+          - "拿不到合法值时 SHALL 输出 `installation_id: ⚠️ 未写入（新经验将使用旧格式 EXP-YYYY-NNNN）`"
+          - "SHALL NOT 在未生效时打印 ✅（原实现按「字段存在」判 ✅，字段坏值也打 ✅，属恒真断言）"
+
+  - id: REQ-IID-003
+    description: >-
+      `installation_id` 的**写入口径** SHALL 与**读取口径**一致：读取端拒收的值，
+      写入端不得保留或打印为已生效。
+    scenarios:
+      - id: SC-IID-006
+        confidence: high
+        evidence: "C1 评审：写入侧仅判 `isinstance(str) and strip()`，与读取侧正则校验不一致"
+        given: "version.yaml 中 `installation_id` 为非法形状（如 `../etc/passwd`、`WBCC`）或非字符串（如 `[A, B]`）"
+        when: "执行 `fstdd init`"
+        then: "SHALL 向 **stderr** 告警并重新生成合法值覆盖"
+        and:
+          - "覆盖时 SHALL 保留 version.yaml 的其它字段"
+          - "生成后 `experience._next_id` SHALL 立即产出带该前缀的 ID（写进去的值必须真被读取端采用）"
+          - "**空串 / 缺失** 视为「未设置」的等价写法（模板默认值、手工清空），SHALL NOT 告警，直接生成"
+      - id: SC-IID-007
+        confidence: high
+        evidence: "C1 评审：解析失败时原实现以空 dict 覆写，连带抹掉 stdd_version / source_path"
+        given: "version.yaml 存在但 YAML 不可解析"
+        when: "执行 `fstdd init`"
+        then: "SHALL NOT 写入任何内容（文件字节保持不变），并 SHALL 向 stdout 告警提示先修复"
+        and:
+          - "`_ensure_installation_id` SHALL 返回 None，自检随之报 `⚠️ 未写入`"

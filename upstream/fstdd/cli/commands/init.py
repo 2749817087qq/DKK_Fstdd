@@ -1,7 +1,12 @@
 import argparse
+import re
+import secrets
 import sys
 import shutil
 from pathlib import Path
+
+import yaml
+
 
 # ── 模块级常量：供 upgrade.py 等模块导入复用 ──
 
@@ -95,6 +100,113 @@ CONFIG_ALL_FILES = [
 PLATFORMS = ["claude-code", "workbuddy", "trae"]
 
 
+# ── V3.1.1: installation_id 生成 ──────────────────────────────────────
+
+# PREFIX 只允许 A-Z0-9（2-8 位）—— 保证 installation_id 恒为「两段」，
+# 否则 `_next_id` / `_rebuild_index` 里 `split("-")[-1]` 取数字段的假设会失效
+# （项目名带 `-` 时曾产出 3 段 ID）。全形校验见 `utils.INSTALLATION_ID_RE`。
+_PREFIX_RE = re.compile(r"^[A-Z0-9]{2,8}$")
+
+# 项目名里可参与 PREFIX 的字符（大写后）。非 ASCII（中文等）会被整体剔除。
+_PREFIX_STRIP_RE = re.compile(r"[^A-Z0-9]")
+
+
+def _generate_installation_id(prefix: str = "STDD") -> str:
+    """生成 installation_id：`{PREFIX}-{8HEX}`。
+
+    PREFIX 由项目名派生或 ``--prefix`` 参数指定；HEX 由 ``secrets.token_hex(4)``
+    生成（2^32 空间，同项目内碰撞概率极低）。
+    """
+    hex_part = secrets.token_hex(4).upper()
+    return f"{prefix}-{hex_part}"
+
+
+def _get_prefix(args: argparse.Namespace, project_root: Path) -> str:
+    """从 ``--prefix`` 参数或项目名派生 PREFIX。
+
+    - ``--prefix`` 合法（A-Z0-9，2-8 位）→ 直接用
+    - 否则从项目名派生：取 ASCII 片段里**合法字符**的前 4 位
+    - 仍不足 2 位（纯中文项目名等）→ 回落 ``FSTDD``
+
+    派生结果恒满足 ``_PREFIX_RE``，保证 installation_id 是两段式。
+    """
+    explicit = getattr(args, "prefix", None)
+    if explicit:
+        candidate = explicit.strip().upper()
+        if _PREFIX_RE.match(candidate):
+            return candidate
+        # 告警统一走 stderr：与 utils.read_installation_id 的告警同流，便于脚本只抓 stdout
+        print(f"  ⚠️  --prefix '{explicit}' 不合法（只允许 A-Z0-9，2-8 字符），"
+              f"回落到项目名派生", file=sys.stderr)
+
+    # 从项目名派生：剥掉非 [A-Z0-9] 字符（含中文、连字符、下划线、空格）
+    name = project_root.name
+    ascii_name = name.encode("ascii", "ignore").decode("ascii").upper()
+    cleaned = _PREFIX_STRIP_RE.sub("", ascii_name)
+    if len(cleaned) < 2:
+        return "FSTDD"
+    return cleaned[:4]
+
+
+def _ensure_installation_id(project_root: Path, args: argparse.Namespace) -> str | None:
+    """在 ``.fstdd/version.yaml`` 中写入 ``installation_id``，返回最终生效的值。
+
+    - 首次 init：生成并写入
+    - ``--force``（upgrade 场景）：**不覆盖**既有 installation_id
+    - ``version.yaml`` 存在但不可解析：**不写入**（覆写会连带抹掉
+      ``stdd_version`` / ``source_path`` 等字段，且不可恢复），返回 None
+    """
+    version_path = project_root / ".fstdd" / "version.yaml"
+
+    from ..utils import INSTALLATION_ID_RE
+
+    data: dict = {}
+    if version_path.exists():
+        try:
+            loaded = yaml.safe_load(version_path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError, TypeError) as exc:
+            print(f"  ⚠️  {version_path} 无法解析（{exc}），"
+                  f"跳过 installation_id 写入；修复该文件后重跑 fstdd init 即可",
+                  file=sys.stderr)
+            return None
+        if loaded is not None and not isinstance(loaded, dict):
+            print(f"  ⚠️  {version_path} 顶层不是映射（{type(loaded).__name__}），"
+                  f"跳过 installation_id 写入；修复该文件后重跑 fstdd init 即可",
+                  file=sys.stderr)
+            return None
+        if isinstance(loaded, dict):
+            data = loaded
+
+    existing = data.get("installation_id")
+    if isinstance(existing, str):
+        normalized = existing.strip().upper()
+        if INSTALLATION_ID_RE.match(normalized):
+            # 既有 installation_id 不覆盖（upgrade / 重复 init 场景）
+            return normalized
+        if normalized:
+            # 写入口径必须与读取口径（utils.read_installation_id）一致：
+            # 只判「非空」就保留的话，坏值会被打印成「已生效」，而每次 experience add
+            # 才在 stderr 告警并静默产出旧格式 —— 正是本 change 要消灭的「配了却不生效」。
+            print(f"  ⚠️  既有 installation_id {existing!r} 形状非法"
+                  f"（应形如 WBCC-0803ADF7），将重新生成并覆盖", file=sys.stderr)
+    elif existing is not None:
+        # 非字符串（列表 / 数字 / 布尔）同样是坏值，读取端会拒收 → 这里必须重写
+        print(f"  ⚠️  既有 installation_id 不是字符串（{existing!r}），"
+              f"将重新生成并覆盖", file=sys.stderr)
+
+    data["installation_id"] = _generate_installation_id(
+        prefix=_get_prefix(args, project_root)
+    )
+    version_path.write_text(
+        yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False),
+        encoding="utf-8",
+    )
+    return data["installation_id"]
+
+
+# ── cmd_init ──────────────────────────────────────────────────────────
+
+
 def cmd_init(args: argparse.Namespace) -> None:
     project_root = Path.cwd()
 
@@ -127,6 +239,14 @@ def cmd_init(args: argparse.Namespace) -> None:
                     dst = project_root / ".fstdd" / "platforms" / platform / "skills" / skill_file.name
                     if force or not dst.exists():
                         print(f"   复制: {dst}")
+        # dry-run 不写盘，也不能打印一个「下次运行根本不会出现」的随机 ID
+        from ..utils import read_installation_id
+        existing_iid = read_installation_id(project_root)
+        if existing_iid:
+            print(f"   installation_id: {existing_iid}（已存在，保持不变）")
+        else:
+            prefix = _get_prefix(args, project_root)
+            print(f"   installation_id: 将生成 {prefix}-<8位HEX>")
         print(" [DRY-RUN] 文件系统未发生变化")
         return
 
@@ -156,6 +276,13 @@ def cmd_init(args: argparse.Namespace) -> None:
                     copied += 1
                 else:
                     skipped += 1
+
+    # ── V3.1.1: 生成 installation_id 并写入 version.yaml ──
+    # installation_id 作为经验条目 ID 前缀，防止多项目递增编号撞号。
+    # 只在首次 init 时生成；--force（upgrade 场景）不覆盖既有 installation_id。
+    iid = _ensure_installation_id(project_root, args)
+    if iid:
+        print(f"   installation_id: {iid}")
 
     logger.info("FSTDD 初始化完成，已复制 %d 个文件", copied)
     print("FSTDD 初始化完成")
@@ -389,4 +516,11 @@ def _post_init_self_check(project_root: Path) -> None:
     exp_dir = project_root / ".fstdd" / "experiences"
     exp_count = len([p for p in exp_dir.glob("*.md") if not p.name.startswith(".")]) if exp_dir.exists() else 0
     print(f"    经验库: {'✅ ' + str(exp_count) + ' 条' if exp_count > 0 else '⚠️ 空（手动拉取: fstdd experience pull）'}")
+    # V3.1.1: installation_id 自检（形状合法才算 ✅；仅「字段存在」不算）
+    from ..utils import read_installation_id
+    iid = read_installation_id(project_root)
+    if iid:
+        print(f"    installation_id: ✅ {iid}")
+    else:
+        print("    installation_id: ⚠️ 未写入（新经验将使用旧格式 EXP-YYYY-NNNN）")
     print(f"    Agent验证: ✅ agent_tests/ 已创建")

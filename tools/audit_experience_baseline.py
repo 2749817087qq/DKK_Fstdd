@@ -90,7 +90,10 @@ def classify(first_keys, last_keys, nblocks):
 #: 索引项形态：`by_category:` / `by_lifecycle:` 下的**裸列表项** `- <eid>`
 #: （2026-10-10 实测：真实 .experience-index.yaml 中 `experience_id:` 出现 0 次，
 #:  78 个条目全部是裸列表项，含 `EXP-` 与 `FSTDD005-` 两种前缀）
-INDEX_ITEM_RE = re.compile(r"^\s*-\s*((?:[A-Za-z0-9]+-)?EXP-[\w.-]+)\s*$", re.M)
+#: 2026-10-22 放宽前缀段数：V3.1.1 起 ID 形如 `WBCC-0803ADF7-EXP-2026-0001`
+#: （installation_id 本身含 `-`）⇒ 原来的 `(?:[A-Za-z0-9]+-)?` 只允许**一段**前缀，
+#: 命中 0 条 ⇒ 全部条目被误判「未入索引」（与 2026-10-10 那次假阳性洪泛同型）。
+INDEX_ITEM_RE = re.compile(r"^\s*-\s*((?:[A-Za-z0-9]+-)*EXP-[\w.-]+)\s*$", re.M)
 INDEX_KV_RE = re.compile(r"experience_id\s*:\s*['\"]?([\w.-]+)")
 
 

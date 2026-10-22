@@ -173,7 +173,10 @@ def post_one(eid: str, content: str):
 def main() -> None:
     log = load_log()
     done = set(log.get("submitted", []))
-    files = sorted(EXP_DIR.glob("FSTDD003-EXP-*.md"))
+    # 枚举口径 = 任意 ``*.md``（FSD-004）：V3.1.1 起新经验 ID 带 installation_id 前缀
+    # （``FSTDD003-XXXX-EXP-...``），``glob("FSTDD003-EXP-*.md")`` 会全漏。
+    # 重复提交由 submitted 日志去重，故放宽枚举不会重复推送。
+    files = sorted(p for p in EXP_DIR.glob("*.md") if not p.name.startswith("."))
     new = [f for f in files if f.stem not in done]
     if not new:
         print("[OK] 无新增需回传的经验（已提交记录 %d 条）" % len(done))

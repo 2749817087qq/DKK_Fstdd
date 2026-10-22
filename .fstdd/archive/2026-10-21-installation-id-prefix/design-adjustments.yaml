@@ -1,0 +1,240 @@
+# design-adjustments.yaml — BUILD 阶段设计偏离汇总（C6）
+# change: 2026-10-21-installation-id-prefix
+# 生成时间: 2026-10-22T12:30:00+08:00
+# 来源: Part B 实现偏离 + Part C 三路并行评审（代码 / 测试 / 文档）
+
+meta:
+  change_id: "2026-10-21-installation-id-prefix"
+  phase: build
+  reviewer_rounds: 3
+  agents:
+    - name: code
+      scope: "正确性 / 向后兼容 / 静默吞异常 / 过度工程"
+    - name: test
+      scope: "假测试判别力 / TC 覆盖对齐 / 隔离性"
+    - name: docs
+      scope: "文档↔代码一致性 / REQ 覆盖 / YAML 合法性"
+  total_adjustments: 9
+  blocking_found: 3
+  blocking_resolved: 3
+  deliver_fixes: 3
+  follow_ups: 7
+
+# 每条 = 一个「原设计说的」与「实现/现实」的偏离，及其最终裁决
+adjustments:
+  - id: ADJ-001
+    severity: blocking
+    category: design_false_assumption
+    original: >-
+      design.md 风险表称「`fstdd upgrade` 只覆盖 upstream/.fstdd/version.yaml 模板，
+      不改项目级 version.yaml」，故 installation_id 在 upgrade 后安全。
+    reality: >-
+      实测 `upgrade._write_version_yaml` 以固定 5 字段**整体覆盖**项目级 version.yaml
+      ⇒ installation_id 在下次 upgrade 时被静默抹掉，经验 ID 退回旧格式，撞号缺陷复发。
+    resolution: >-
+      `_write_version_yaml` 改「读既有 → 合并 → 写」；新增 SC-IID-004 的 AND 条款
+      「未登记的既有字段 SHALL 一并存活」；测试用 `future_field` 反向断言。
+    files:
+      - upstream/fstdd/cli/commands/upgrade.py
+      - .fstdd/canonical/specs/code/installation-identity.yaml
+      - .fstdd/changes/2026-10-21-installation-id-prefix/design.md
+      - upstream/tests/commands/test_installation_id.py
+
+  - id: ADJ-002
+    severity: blocking
+    category: scope_gap
+    original: >-
+      design.md 只讨论了 `_iter_experience_files` / `_rebuild_index` 两个消费者，
+      认为「带前缀的 stem 与 frontmatter 均为完整 ID，无需特殊处理」。
+    reality: >-
+      全仓实测 4 处仍依赖 `EXP-` 字面前缀：`tools/share_experience.py`
+      （**回传通道**，漏读 = 云端静默收不到新经验）、`tools/fstdd003_daily_share.py`、
+      `tools/audit_experience_baseline.py`（正则只允许一段前缀）、
+      `upstream/.fstdd/hooks/session-end.py`。
+    resolution: >-
+      四处枚举口径统一为「任意 `*.md`（排除 `.` 开头）」/ 正则允许多段前缀；
+      FSD-004 门禁扫描根从 `fstdd/cli` 扩到 `tools/` + `.fstdd/hooks/`，
+      读文件改 `utf-8-sig`（避开 heartbeat.py 的 BOM 假红）。
+    files:
+      - tools/share_experience.py
+      - tools/fstdd003_daily_share.py
+      - tools/audit_experience_baseline.py
+      - upstream/.fstdd/hooks/session-end.py
+      - upstream/tests/commands/test_experience_glob_consistency.py
+
+  - id: ADJ-003
+    severity: blocking
+    category: spec_self_contradiction
+    original: >-
+      SC-IID-003 写「`my-project` → PREFIX 取 `MY-P`（前 4 字符大写，含连字符保留）」。
+    reality: >-
+      `MY-P` 会让 installation_id 变成三段（`MY-P-0803ADF7`），打穿
+      `_next_id` / `_rebuild_index` 里 `split("-")[-1]` 取序号的既有假设
+      （`_rebuild_index` 会把 HEX 段 `0803ADF7` 当序号，last_id 跳到 803 万级）。
+    resolution: >-
+      改为「剥掉所有非 `[A-Z0-9]` 字符后取前 4 位」：`my-project → MYPR`，
+      纯中文项目名 → `FSTDD`。规格/设计/测试方案/实现四处同步，并在 spec 中
+      保留「原写 MY-P，评审后改」的修订记录。
+    files:
+      - upstream/fstdd/cli/commands/init.py
+      - .fstdd/canonical/specs/code/installation-identity.yaml
+      - .fstdd/changes/2026-10-21-installation-id-prefix/design.md
+      - .fstdd/changes/2026-10-21-installation-id-prefix/test-plan.md
+
+  - id: ADJ-004
+    severity: major
+    category: write_read_parity
+    original: "写入侧仅判 `isinstance(str) and strip()`（非空即有效）。"
+    reality: >-
+      读取侧用正则校验形状。坏值被写入且自检打印 ✅，而每次使用都静默回落旧格式
+      ⇒ 「配了不生效」。
+    resolution: >-
+      正则收归 `utils.INSTALLATION_ID_RE` 单一常量；写入端遇坏值告警 + 重写；
+      自检打印实际生效值（拿不到合法值打 ⚠️）。新增 SC-IID-006/007 + REQ-IID-003。
+    files:
+      - upstream/fstdd/cli/utils.py
+      - upstream/fstdd/cli/commands/init.py
+
+  - id: ADJ-005
+    severity: major
+    category: data_loss_risk
+    original: "`_ensure_installation_id` 解析失败时按空 dict 处理并覆写。"
+    reality: >-
+      覆写会连带抹掉 `stdd_version` / `source_path` 等字段，且不可恢复。
+    resolution: >-
+      解析失败即**不写**、stderr 告警、返回 None（自检随之报 ⚠️）；新增 SC-IID-007。
+    files:
+      - upstream/fstdd/cli/commands/init.py
+
+  - id: ADJ-006
+    severity: major
+    category: fake_test
+    original: >-
+      测试用「再跑一次 `cmd_init(force=True)`」验证 upgrade 不覆盖；
+      `test_iter_recognizes_prefixed_file` 只断言文件名；
+      `test_init_self_check_includes_installation_id` 用子串模糊匹配。
+    reality: >-
+      三者对「实现被删/回退」均恒绿（假测试）：前者走的是合并写那一侧，
+      后两者断言对象与被测逻辑无关。
+    resolution: >-
+      改为直接调 `_write_version_yaml` + 未登记字段断言；断言落到
+      `_rebuild_index` 的 eid；自检用 `f"installation_id: ✅ {iid}"` 精确匹配并补反向用例。
+      另修既有 `test_init.py::test_init_dry_run` 的 `try/except: pass`（零断言）。
+    files:
+      - upstream/tests/commands/test_installation_id.py
+      - upstream/tests/commands/test_init.py
+
+  - id: ADJ-007
+    severity: minor
+    category: coverage_gap
+    original: "dry-run 分支零覆盖。"
+    reality: "dry-run 会打印一个「下次运行根本不会出现」的随机 ID（误导）。"
+    resolution: >-
+      dry-run 改展示「已存在值」或「将生成 <PREFIX>-<8位HEX>」；补 2 个用例。
+    files:
+      - upstream/fstdd/cli/commands/init.py
+      - upstream/tests/commands/test_installation_id.py
+
+  - id: ADJ-008
+    severity: minor
+    category: doc_drift
+    original: >-
+      agent spec 的 CP-1~CP-5 全部只有 `exit_code: 0` 或 `stdout_contains: "STDD-"`；
+      CP-4 用 `upgrade --dry-run` 验证写口；test-plan 声称「12 TC / 覆盖率 100%」。
+    reality: >-
+      `_next_id` 是纯函数，恒 exit 0；`--dry-run` 走不到写口；
+      实际测试函数数与计划数不符（计划漏登记 TC-IID-006/007）。
+    resolution: >-
+      agent spec 全部改为可机械判定的值断言（IID 7 CP / EID 8 CP）；
+      test-plan 改为 14 TC + 实际测试函数数 + 显式标注回归护栏用例。
+    files:
+      - .fstdd/canonical/specs/agent/installation-identity.yaml
+      - .fstdd/canonical/specs/agent/experience-id-generation.yaml
+      - .fstdd/changes/2026-10-21-installation-id-prefix/test-plan.md
+
+  - id: ADJ-009
+    severity: minor
+    category: dead_code
+    original: "`upstream/.fstdd/version.yaml` 模板补 `installation_id: ''`。"
+    reality: >-
+      该模板不参与 `FILES_TO_COPY`，init 不复制它 ⇒ 字段写了也不生效，
+      且空值会被误读成「已配置」。
+    resolution: "回退该文件改动；proposal 中同步说明「模板不改」。"
+    files:
+      - .fstdd/canonical/proposals/2026-10-21-installation-id-prefix.yaml
+
+# 后续迭代输入（非本 change 范围）
+follow_ups:
+  - id: FU-001
+    title: "installation_id 碰撞检测"
+    detail: >-
+      `secrets.token_hex(4)` 2^32 空间，未做全局查重。真要提升唯一性可换
+      `token_hex(8)`（格式正则同步放宽 HEX 段）。proposal 已登记为非目标。
+  - id: FU-002
+    title: "`_load_experience` 对无 frontmatter 的 .md 返回 None"
+    detail: >-
+      2026-09 起既有语义，导致这类文件「被枚举但不进索引」。
+      `_iter_experience_files` 的 docstring 却写着「缺失时退回文件名 stem」，
+      文档与实现不一致，建议单开 change 统一。
+  - id: FU-003
+    title: "`tools/heartbeat.py` 带 UTF-8 BOM"
+    detail: >-
+      任何 `ast.parse(open(...encoding='utf-8'))` 的静态门禁都会在它身上假红。
+      本 change 只在 FSD-004 门禁里做 `utf-8-sig` 兼容，未改该文件。
+  - id: FU-004
+    title: "本仓自身仍未生成 installation_id"
+    detail: >-
+      stdd-repo 的 `.fstdd/version.yaml` 无 installation_id，故本仓新经验仍是
+      `EXP-2026-0038` 这种旧格式。是否给框架仓自己也分配一个 ID，需单独决定
+      （会影响既有 FSTDD002-* / EXP-* 条目的共存策略）。
+  - id: FU-005
+    title: "`canon generate` 产出的 proposal.md 缺 `- capability:` 机读声明"
+    detail: >-
+      `ci.py:424` 的 (b) 检查只认 `- capability: <name>` 行，而 `canon generate`
+      只输出 `## Capabilities` + `### New/Modified Capabilities` 的 h3 列表。
+      于是每次重新生成 Human View，(b) 都从「通过/警告」退化成「跳过」。
+      本 change 在 proposal.md 手工补回该行并注明原因；根治需让生成器同时输出机读行。
+  - id: FU-006
+    title: "`canon merge` 对多 capability 的 change 会撞名覆盖"
+    detail: >-
+      `canon.py:_build_merge_plan` 的 D2 规则是「agent spec 以 `meta.change_id` 命名」，
+      隐含「一个 change 只有一个 agent spec」。本 change 有 2 个 capability，
+      两个 agent spec 均映射到 `specs/agent/2026-10-21-installation-id-prefix.yaml`
+      ⇒ 后者覆盖前者（`canon merge --dry-run` 可见两行同目标）。
+      本次改为手工合并 + 按 capability 命名，并在 `.canon-index.yaml` 手工登记。
+  - id: FU-007
+    title: "`fstdd agent run` 只实现 3 种断言类型"
+    detail: >-
+      `agent.py:53-63` 只处理 `exit_code` / `stdout_contains` / `stderr_contains`，
+      其它类型（本 change 使用的 `python_assert` / `stdout_matches` / `stdout_not_contains`）
+      落入 `else: ok = False` ⇒ 直接判 FAIL。故 agent spec 目前是「设计文档 + 人工/测试覆盖」，
+      不能靠 `fstdd agent run` 自动验收。
+
+# DELIVER 阶段（Phase 4）发现并修正的问题
+deliver_fixes:
+  - id: DF-001
+    title: "规格文本的告警流落后于实现（stdout → stderr）"
+    detail: >-
+      BUILD 阶段把 init 的三处告警统一到 stderr，但
+      `canonical/specs/code/installation-identity.yaml` 的 SC-IID-002 与 SC-IID-007
+      仍写「向 stdout 告警」，agent spec 的 CP-3 断言也仍用 `stdout_contains`。
+      实现为准（`init.py:140/170/175/191/195` 全 stderr），已同步修规格 + CP-3 改 `stderr_contains`。
+    files:
+      - .fstdd/canonical/specs/code/installation-identity.yaml
+      - .fstdd/canonical/specs/agent/installation-identity.yaml
+      - .fstdd/archive/2026-10-21-installation-id-prefix/specs/installation-identity/spec.md
+  - id: DF-002
+    title: "`structure delta` 自动产出为空/错乱，改人工补齐"
+    detail: >-
+      `fstdd structure delta` 生成的 `code-structure-delta.md` 只列了 change 目录内
+      两个文件（`caveman_summary.txt` / `evidence/build_audit_table.py`），与真实改动
+      22 个文件完全不符；`code-structure/deltas/` 下 10 份历史 delta 亦全为空
+      「## 变更文件」⇒ 存量工具缺陷。本次按 `git status --porcelain` 人工补齐后
+      再 `structure merge`，使 `index.md` 记录到真实结构变化。
+  - id: DF-003
+    title: "proposal.md 陈旧（缺 C6、source_hash 过期）"
+    detail: >-
+      BUILD 末期改了 canonical proposal YAML（补 C5/C6、改写 constraints），
+      但未重新生成 Human View ⇒ `canon verify` 报 DC-HASH 不一致
+      （YAML 2d26fb92 / MD ce31277d）。改为从 YAML 重新生成（补回机读声明行，见 FU-005）。
+

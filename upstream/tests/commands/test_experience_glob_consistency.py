@@ -36,7 +36,20 @@ CLI = PKG / "cli"
 
 
 def _iter_cli_py_files() -> list[Path]:
-    return sorted(p for p in CLI.rglob("*.py") if "__pycache__" not in p.parts)
+    """待扫描的「枚举经验库」源码范围。
+
+    2026-10-22 扩围（change 2026-10-21-installation-id-prefix）：
+    原范围只有 ``fstdd/cli``，而**真正把经验推出去的是** ``tools/share_experience.py``
+    与 ``tools/fstdd003_daily_share.py`` —— 它们的 ``glob("EXP-*.md")`` 在 ID 带
+    installation_id 前缀后会把新经验**全部漏掉**（回传通道静默失效，比 CLI 侧更隐蔽：
+    本地 list/search 一切正常，只有云端收不到）。故把 tools/ 与项目级 hooks 一并纳入。
+    """
+    roots = [CLI, REPO.parent / "tools", REPO / ".fstdd" / "hooks"]
+    files: list[Path] = []
+    for root in roots:
+        if root.is_dir():
+            files.extend(p for p in root.rglob("*.py") if "__pycache__" not in p.parts)
+    return sorted(set(files))
 
 
 def _make_tmp_dir() -> Path:
@@ -78,10 +91,14 @@ def _collect_exp_assumptions(py: Path) -> list[tuple[int, str]]:
     """AST 扫描：收集对经验库文件名的 EXP- 前缀假设。
 
     用 AST 而非文本正则，天然排除注释与 docstring 里对该 bug 的叙述性引用。
+
+    读文件用 ``utf-8-sig``：``tools/heartbeat.py`` 带 BOM，``utf-8`` 下
+    ``ast.parse`` 直接抛 ``SyntaxError: invalid non-printable character U+FEFF``，
+    会让整条门禁因**无关文件**变红（假红比漏检更伤——下一个人会直接加豁免）。
     """
     import ast
 
-    source = py.read_text(encoding="utf-8")
+    source = py.read_text(encoding="utf-8-sig")
     tree = ast.parse(source)
     found: list[tuple[int, str]] = []
 

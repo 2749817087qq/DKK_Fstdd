@@ -1,9 +1,17 @@
 designs: {}
 proposals:
   2026-10-16-ci-checker-tc-recognition: proposals/2026-10-16-ci-checker-tc-recognition.yaml
+  2026-10-21-installation-id-prefix: proposals/2026-10-21-installation-id-prefix.yaml
 specs:
   agent:
     2026-10-16-ci-checker-tc-recognition: specs/agent/2026-10-16-ci-checker-tc-recognition.yaml
+    # 2026-10-21-installation-id-prefix 含 2 个 capability，agent spec 按 capability 命名
+    # （`canon merge` 的 D2 规则是「agent 以 meta.change_id 命名」，多 capability 会撞名覆盖，
+    #  故本 change 手工合并并在此按 capability 登记 —— 见 FU-006）
+    experience-id-generation: specs/agent/experience-id-generation.yaml
+    installation-identity: specs/agent/installation-identity.yaml
   code:
     2026-10-16-ci-checker-tc-recognition: specs/code/2026-10-16-ci-checker-tc-recognition.yaml
+    experience-id-generation: specs/code/experience-id-generation.yaml
+    installation-identity: specs/code/installation-identity.yaml
 version: '2.9'

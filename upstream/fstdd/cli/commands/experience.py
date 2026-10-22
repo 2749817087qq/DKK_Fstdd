@@ -360,11 +360,32 @@ def _index_add_entry(index: dict, eid: str, data: dict) -> None:
     index.setdefault("by_severity", {}).setdefault(sev, []).append(eid)
 
 
-def _next_id(index: dict) -> str:
+def _read_installation_id(project_root: Path) -> str | None:
+    """从 ``.fstdd/version.yaml`` 读取 ``installation_id``（形状校验在 utils 内统一）。
+
+    文件不存在、无字段、或字段值不是合法 ID 形状时返回 None（调用方回落旧格式）。
+    非法值会向 stderr 出声：否则「明明配了 ID 却仍产出旧格式」会被当成正常回落。
+    """
+    from ..utils import read_installation_id
+
+    return read_installation_id(project_root, warn=True)
+
+
+def _next_id(index: dict, project_root: Path | None = None) -> str:
+    """分配下一个经验 ID。
+
+    - ``project_root`` 给定且 ``.fstdd/version.yaml`` 含 ``installation_id``
+      → ``{installation_id}-EXP-{year}-{NNNN:04d}``
+    - 否则 → ``EXP-{year}-{NNNN:04d}``（旧格式，向后兼容）
+    """
     last = index.get("last_id", 0)
     year = datetime.now().year
     next_num = last + 1
-    return f"EXP-{year}-{next_num:04d}"
+    base = f"EXP-{year}-{next_num:04d}"
+    install_id = _read_installation_id(project_root)  # project_root=None 时返回 None
+    if install_id:
+        return f"{install_id}-{base}"
+    return base
 
 
 def _iter_experience_files(exp_dir) -> list:
@@ -518,7 +539,7 @@ def _cmd_list(args: argparse.Namespace, exp_dir: Path) -> None:
         print()
 
 
-def _cmd_add(args: argparse.Namespace, exp_dir: Path) -> None:
+def _cmd_add(args: argparse.Namespace, exp_dir: Path, project_root: Path | None = None) -> None:
     if args.category not in VALID_CATEGORIES:
         print(f" 无效的 category: '{args.category}'")
         print(f" 有效值: {', '.join(VALID_CATEGORIES)}")
@@ -531,7 +552,7 @@ def _cmd_add(args: argparse.Namespace, exp_dir: Path) -> None:
     with _index_lock(exp_dir):
         index = _load_index(exp_dir, _locked=True)
 
-        eid = _next_id(index)
+        eid = _next_id(index, project_root)
         today = datetime.now().strftime("%Y-%m-%d")
 
         frontmatter = {
@@ -1653,7 +1674,7 @@ def cmd_experience(args: argparse.Namespace) -> None:
     if subcommand == "list":
         _cmd_list(args, exp_dir)
     elif subcommand == "add":
-        _cmd_add(args, exp_dir)
+        _cmd_add(args, exp_dir, project_root)
     elif subcommand == "stats":
         _cmd_stats(args, exp_dir)
     elif subcommand == "export":

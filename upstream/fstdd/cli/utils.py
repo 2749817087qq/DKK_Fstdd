@@ -1,4 +1,5 @@
 import logging
+import re
 import sys
 import io
 from pathlib import Path
@@ -6,6 +7,63 @@ from typing import Optional, Dict, Any, Iterator
 
 _logger: Optional[logging.Logger] = None
 STDD_SOURCE: Optional[Path] = None
+
+# V3.1.1: installation_id 形状 `{PREFIX}-{8HEX}` 的**唯一事实来源**。
+# 生成端（init.py）与读取端（experience.py）共用同一常量 —— 两处各写一份正则会漂移：
+# 生成端放宽而读取端收紧，症状是「init 明明写了 ID，_next_id 却回落到旧格式」。
+INSTALLATION_ID_RE = re.compile(r"^[A-Z0-9]{2,8}-[0-9A-F]{8}$")
+
+
+def read_installation_id(project_root, warn: bool = False) -> Optional[str]:
+    """读取 ``.fstdd/version.yaml`` 的 ``installation_id``。
+
+    文件不存在 / 无字段 / 字段不是合法形状 → 返回 ``None``（调用方回落旧 ID 格式）。
+
+    为什么要校验形状：该字段可能被手改成列表、空串、或含 ``/`` 的任意串。
+    不校验的话 ``_next_id`` 会把它拼进**文件名**（``{iid}-EXP-....md``）
+    ⇒ 路径穿越或建文件失败，且失败点在写盘而非读配置处，排查成本高。
+    非法值一律当「没配置」处理；``warn=True`` 时向 stderr 出声，
+    避免「配了却不生效」被当成正常回落。
+    """
+    if project_root is None:
+        return None
+    version_path = Path(project_root) / ".fstdd" / "version.yaml"
+    if not version_path.exists():
+        return None
+
+    import yaml  # 局部导入：utils 被每个子命令导入，避免启动即加载 yaml
+
+    try:
+        data = yaml.safe_load(version_path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError, TypeError):
+        return None
+    if not isinstance(data, dict):
+        return None
+
+    iid = data.get("installation_id")
+    if iid is None:
+        return None
+    if isinstance(iid, str) and not iid.strip():
+        # 空串 = 「未设置」的等价写法（模板默认值 / 手工清空），不是错值 → 不出声
+        return None
+    if not isinstance(iid, str):
+        if warn:
+            print(
+                f"  ⚠️  {version_path} 的 installation_id 不是字符串"
+                f"（{iid!r}，应形如 WBCC-0803ADF7），本次回落到旧 ID 格式",
+                file=sys.stderr,
+            )
+        return None
+    iid = iid.strip().upper()
+    if not INSTALLATION_ID_RE.match(iid):
+        if warn:
+            print(
+                f"  ⚠️  {version_path} 的 installation_id 形状非法"
+                f"（{iid!r}，应形如 WBCC-0803ADF7），本次回落到旧 ID 格式",
+                file=sys.stderr,
+            )
+        return None
+    return iid
 
 
 def setup_logging(verbose: int = 0) -> None:

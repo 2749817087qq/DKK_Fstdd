@@ -123,6 +123,9 @@ def main() -> None:
     # init
     p_init = subparsers.add_parser("init", help="初始化 STDD 到当前项目", parents=[parent])
     p_init.add_argument("--force", "-f", action="store_true", help="覆盖已存在的文件")
+    p_init.add_argument("--prefix", dest="prefix", default=None,
+                        help="installation_id 前缀（A-Z0-9，2-8 位；默认取项目名中"
+                             "合法字符的前 4 位，纯中文项目名回落 FSTDD）")
 
     # new
     p_new = subparsers.add_parser("new", help="创建新的 change 目录骨架", parents=[parent])

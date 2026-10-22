@@ -1,7 +1,7 @@
 meta:
-  last_updated: '2026-10-16T17:38:08+00:00'
+  last_updated: '2026-10-22T14:30:24+00:00'
   modules: {}
-  total_changes: 26
+  total_changes: 27
 modules:
   adjudication-log.tsv:
     changes:

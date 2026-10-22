@@ -347,11 +347,16 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
 
 
 def collect_local() -> list[dict]:
-    """收集 .fstdd/experiences 下已沉淀的经验。"""
+    """收集 .fstdd/experiences 下已沉淀的经验。
+
+    ⚠️ 枚举口径必须是「任意 ``*.md``」（FSD-004）：V3.1.1 起新经验 ID 带
+    installation_id 前缀（``WBCC-0803ADF7-EXP-2026-0001.md``），
+    ``glob("EXP-*.md")`` 会把它们**全部漏掉** ⇒ 回传通道静默只推旧经验。
+    """
     out = []
     if not EXP_DIR.exists():
         return out
-    for f in sorted(EXP_DIR.glob("EXP-*.md")):
+    for f in sorted(p for p in EXP_DIR.glob("*.md") if not p.name.startswith(".")):
         fm, body = parse_frontmatter(f.read_text(encoding="utf-8", errors="replace"))
         out.append({"id": fm.get("experience_id", f.stem), "fm": fm,
                     "body": body, "source": f.name})

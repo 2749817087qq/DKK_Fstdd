@@ -1,0 +1,67 @@
+# agent_spec.yaml — Agent 验证规格
+# capability: experience-id-generation
+# 修订 2026-10-22（C1 评审）：原 CP-1~CP-5 全部只有 `exit_code: 0` 或
+# `stdout_contains: "STDD-"` 这类恒真/近恒真断言（`_next_id` 是纯函数，永远 exit 0），
+# 等于没验。改为可机械判定的值断言。
+
+meta:
+  task_id: "2026-10-21-installation-id-prefix/experience-id-generation"
+  change_id: "2026-10-21-installation-id-prefix"
+  task_type: code
+  system: "upstream/fstdd/cli/commands/experience.py (_next_id / _iter_experience_files / _rebuild_index) + upstream/fstdd/cli/utils.py"
+  preconditions:
+    - "Phase 2 Gate 2 已确认"
+    - "upstream/tests/ 既有测试全量作为回归基线"
+
+steps:
+  - id: CP-1
+    description: "_next_id 带前缀且序号正确"
+    action: "version.yaml 写 installation_id: STDD-A1B2C3D4；调 _next_id({'last_id': 0}, root) 与 ({'last_id': 41}, root)"
+    assertions:
+      - type: python_assert
+        expected: "eid == f'STDD-A1B2C3D4-EXP-{year}-0001' and eid2.endswith('-0042')"
+  - id: CP-2
+    description: "_next_id 回落旧格式（三种成因）"
+    action: "① 无 version.yaml ② 有文件无字段 ③ 字段形状非法"
+    assertions:
+      - type: python_assert
+        expected: "三者均 == f'EXP-{year}-0001'"
+      - type: stderr_contains
+        expected: "installation_id"
+        condition: "仅 ③ 需要（② 属正常未配置，不得出声）"
+  - id: CP-3
+    description: "project_root=None 回落且不抛异常"
+    action: "调 _next_id({'last_id': 5}, None)"
+    assertions:
+      - type: python_assert
+        expected: "== f'EXP-{year}-0006'"
+  - id: CP-4
+    description: "experience add 全链路产出带前缀文件"
+    action: "含 installation_id 的项目里 _cmd_add"
+    assertions:
+      - type: python_assert
+        expected: "文件 {iid}-EXP-{year}-0001.md 存在 and frontmatter.experience_id == 该 ID and index.last_id == 1"
+  - id: CP-5
+    description: "_iter_experience_files + _rebuild_index 认带前缀 ID"
+    action: "放 STDD-A1B2C3D4-EXP-2026-0001.md（含最小 frontmatter），跑 _iter 与 _rebuild_index"
+    assertions:
+      - type: python_assert
+        expected: "_iter 返回 1 个 Path and eid 集合含完整带前缀 ID and last_id == 1"
+  - id: CP-6
+    description: "frontmatter 优先于文件名 stem"
+    action: "放 random-name.md（frontmatter experience_id: STDD-X-EXP-2026-0001）"
+    assertions:
+      - type: python_assert
+        expected: "索引含 STDD-X-EXP-2026-0001 and 不含 'random-name'"
+  - id: CP-7
+    description: "混合格式共存时 last_id 只认 EXP-YYYY-NNNN 的数字段"
+    action: "放 …-EXP-2026-0005.md 与 EXP-2026-0003.md；另单独放 WBCC-0803ADF7-EXP-2026-0002.md"
+    assertions:
+      - type: python_assert
+        expected: "last_id == 5；单独场景 last_id == 2（HEX 段 0803ADF7 不得被当序号）"
+  - id: CP-8
+    description: "既有 upstream/tests 全量不退化"
+    action: "pytest upstream/tests/ -q"
+    assertions:
+      - type: exit_code
+        expected: 0

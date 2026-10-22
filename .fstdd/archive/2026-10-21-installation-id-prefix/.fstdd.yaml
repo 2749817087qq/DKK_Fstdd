@@ -1,0 +1,55 @@
+baseline:
+  at: '2026-10-21T12:28:08+00:00'
+  base_git_sha: a48942065c907045da8444a89e1ef24c14d480af
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-21-installation-id-prefix
+complexity_score: 8
+current_phase: deliver
+design_adjustments:
+  count: 9
+last_modified: '2026-10-22T14:30:00+00:00'
+long_range:
+  enabled: true
+  excluded:
+  - git push（需单独授权）
+  - 修改既有经验条目 ID（non_goals）
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-10-22T00:24:00+08:00'
+mode: thorough
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-22T14:28:10+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认 Gate 3
+    status: completed
+  deliver:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-22T14:30:00+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 用户「确认 Gate 3」—— 授权收口 DELIVER（归档 + canonical 合并 + 结构合并 + 经验回传 + git commit；
+      不含 git push，已在 long_range.excluded 声明）
+    status: completed
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-21T16:23:28+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认 Gate2
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-21T12:28:08+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认 Gate1
+    status: completed
+score_confidence: preliminary
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 14
+  tc_cases: 14
+  test_functions: 44
+version: '3.0'

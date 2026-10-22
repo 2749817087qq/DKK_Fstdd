@@ -1,0 +1,164 @@
+# 2026-10-21-installation-id-prefix.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `fstdd canon generate` 生成。
+
+meta:
+  change_id: "2026-10-21-installation-id-prefix"
+  title: "init.py 生成 installation_id + _next_id() 使用前缀，消除多项目递增编号撞号"
+  created: "2026-10-21T20:22:00+08:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: >-
+    `_next_id()` 使用全局递增 `EXP-{year}-{NNNN}`，每个 `fstdd init` 的项目各自
+    从种子库（18 条）复制一份、各自递增编号，互不感知。当两个项目都走到
+    `EXP-2026-0019` 时，两份经验内容完全无关却同 ID，合并时必然冲突。
+    实测（2026-10-21）：ccreits-site 项目的 0019~0022/0030/0031 与上游仓库
+    `.fstdd/experiences/` 的同 ID 条目内容完全不同，6 条撞号。
+  motivation: >-
+    这是框架级设计缺陷，不修则每多一个项目就多一批撞号。上游已有半成品方案：
+    `.fstdd/experiences/` 里 `FSTDD002-EXP-*` 前缀实践（12 条），其中
+    `FSTDD002-EXP-20260918-1.md` 本身就记录了「经验命名规范缺失导致回传归属
+    不可审计」——但前缀方案未固化到 `_next_id()` 代码。本次把它落地。
+  evidence:
+    observed_at: "2026-10-21T20:06:00+08:00"
+    observed_base_git_sha: "a489420"
+    details: >-
+      代码取证（`upstream/fstdd/cli/commands/`）：
+      - `experience.py:363` `_next_id` 实现：`last_id + 1` → `EXP-{year}-{NNNN:04d}`，
+        无安装前缀。
+      - `init.py` 全文 392 行，无 `installation_id` / `uuid` / `secrets` / `token_hex`
+        任何调用；`_register_project`（upgrade.py:57）只写全局 registry，不写项目
+        `version.yaml`。
+      - `version.yaml` 模板（upstream/.fstdd/version.yaml）无 installation_id 字段。
+      撞号实测（2026-10-21，ccreits-site 项目）：
+      - 项目级 `EXP-2026-0019` = syspath 判存在不判位置；
+        上游 `.fstdd/experiences/EXP-2026-0019` = compare_digest 非 ASCII TypeError。
+      - 同理 0020/0021/0022/0030/0031 均为同 ID 不同内容。
+      - 已用 `WBCC-0803ADF7-` 前缀手动改编号并回传（commit `a489420`），
+        但这是手工补丁，不是框架级修复。
+
+what_changes:
+  - id: C1
+    description: >-
+      `init.py` 的 `cmd_init` 在创建 `.fstdd/` 骨架后、`_register_project` 之前，
+      生成 `installation_id`（`secrets.token_hex(4).upper()`，格式 `{PREFIX}-{8HEX}`，
+      PREFIX 由 `--prefix` 参数或项目名自动派生），写入 `.fstdd/version.yaml`
+      新增字段 `installation_id`。
+    type: modified
+  - id: C2
+    description: >-
+      `experience.py` 的 `_next_id()` 改为从 `.fstdd/version.yaml` 读取
+      `installation_id`，返回 `f"{install_id}-EXP-{year}-{NNNN:04d}"`。
+      `version.yaml` 不存在或无 `installation_id` 字段时，回落到旧的
+      `EXP-{year}-{NNNN}` 格式（向后兼容）。
+    type: modified
+  - id: C3
+    description: >-
+      `experience.py` 的 `_iter_experience_files()` 与 `_rebuild_index()`
+      确认可识别带前缀的文件名（`WBCC-*-EXP-*` / `FSTDD00X-*-EXP-*`），
+      从 frontmatter `experience_id` 或文件名 stem 提取完整 ID。
+      已有实现（2026-09-17 修复）已支持任意 `.md` + frontmatter `experience_id`，
+      需确认带前缀的文件名 stem 也能被正确提取。
+    type: modified
+  - id: C4
+    description: >-
+      `init.py` 的 `_post_init_self_check` 打印 `installation_id` 的**实际生效值**
+      （形状合法才打 ✅，否则打 ⚠️ 未写入）。`version.yaml` 模板
+      （`upstream/.fstdd/version.yaml`）**不改**：该字段由 init 运行时生成，
+      模板不参与 `FILES_TO_COPY` 复制清单，写空值既无效果又会被误读成「已配置」。
+    type: modified
+  - id: C5
+    description: >-
+      `upgrade.py` 的 `_write_version_yaml` 从「整体覆盖」改为「读既有 → 合并 → 写」。
+      否则 `fstdd upgrade` 会把 installation_id 连同其它新增字段一起静默抹掉
+      （2026-10-22 实测故障路径），撞号缺陷复发且零报错。
+    type: modified
+    added_at: "2026-10-22（BUILD C1 评审）"
+  - id: C6
+    description: >-
+      下游枚举口径统一为「任意 `*.md`（排除 `.` 开头）」：`tools/share_experience.py`
+      （回传通道）、`tools/fstdd003_daily_share.py`、`tools/audit_experience_baseline.py`
+      的 `INDEX_ITEM_RE`、`upstream/.fstdd/hooks/session-end.py` 四处原有 `EXP-*`
+      前缀假设，带前缀 ID 后会全部漏读。同时把 FSD-004 门禁的扫描根从 `fstdd/cli`
+      扩到 `tools/` 与 `.fstdd/hooks/`，让同类回归立刻变红。
+    type: modified
+    added_at: "2026-10-22（BUILD C1 评审）"
+
+capabilities:
+  new:
+    - name: "installation-identity"
+      description: >-
+        每个 `fstdd init` 的项目获得一个全局唯一的 `installation_id`，
+        写入 `.fstdd/version.yaml`，作为该项目所有经验条目 ID 的前缀。
+  modified:
+    - name: "experience-id-generation"
+      description: >-
+        `_next_id()` 产出的 ID 从 `EXP-{year}-{NNNN}` 变为
+        `{installation_id}-EXP-{year}-{NNNN}`，保证多项目间不撞号。
+
+constraints:
+  - "向后兼容：`version.yaml` 不存在或无 `installation_id` 字段时，`_next_id()` 回落到旧格式"
+  - "installation_id 生成用 `secrets.token_hex(4)`（8 位十六进制），不依赖外部 UUID 库"
+  - "PREFIX 恒为 `[A-Z0-9]{2,8}`：由项目名派生时先剥掉所有非 `[A-Z0-9]` 字符再取前 4 位（`my-project → MYPR`），清洗后不足 2 位回落 `FSTDD`（纯中文项目名）；`--prefix` 显式指定时同样校验，不合法则告警并回落（不中止 init）"
+  - "installation_id 必须**恒为两段**（`PREFIX-HEX`）：多段会打穿 `split('-')[-1]` 取序号的既有假设"
+  - "不修改既有经验条目的 ID（只影响新生成的）；既有条目保持原样"
+  - "不修改 `_register_project` 的全局 registry 写入逻辑"
+  - "不引入新依赖（只用标准库 secrets/yaml）"
+
+stakeholders:
+  - "所有 FSTDD 用户（多项目使用者不再撞号）"
+  - "经验回传中心节点（inbox 可按 installation_id 前缀归属）"
+  - "知识图谱合并器（节点按前缀去重）"
+
+risk_areas:
+  - capability: "experience-id-generation"
+    risk: >-
+      既有项目（已 init 但无 installation_id）的 `_next_id()` 回落到旧格式，
+      可能与新项目的带前缀 ID 在合并时撞号（旧格式无前缀 vs 新格式有前缀，
+      ID 字符串不同，不会直接撞号，但索引去重逻辑需确认）。
+    mitigation: >-
+      回落路径产出 `EXP-{year}-{NNNN}`，带前缀路径产出
+      `{PREFIX}-EXP-{year}-{NNNN}`，两者字符串不同，不会覆盖。
+      `_rebuild_index` 已用 `experience_id` 作为唯一键。
+  - capability: "installation-identity"
+    risk: >-
+      `secrets.token_hex(4)` 有 2^32 空间，生日攻击概率在 ~65K 项目时 >50%。
+      对个人/小团队项目足够，但大规模部署可能重复。
+    mitigation: >-
+      PREFIX 部分由项目名派生（如 `STDD` / `WBCC`），实际唯一空间是
+      `PREFIX × HEX`。**本 change 不做碰撞检测**（init 时不去全局表里查重）——
+      8 位 HEX 对个人/小团队足够；真要提升唯一性，后续把 `token_hex(4)` 换成
+      `token_hex(8)` 即可（格式正则同步放宽 HEX 段长度）。
+
+non_goals:
+  - "不重写既有经验条目的 ID（只影响新生成的）"
+  - "不修改经验回传通道（scp/inbox 已按前缀归属）"
+  - "不修改知识图谱合并器（`kg_sync` 已按 `experience_id` 全字符串去重）"
+  - "不做 installation_id 的全局注册表（不碰 `_register_project` 的 registry）"
+  - "不做 installation_id 轮换/迁移工具"
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L2
+  reference_changes: []
+  anchor_implementations:
+    - "FSTDD002-EXP-* 前缀实践（上游 .fstdd/experiences/ 12 条）"
+    - "WBCC-0803ADF7-EXP-* 手工补丁（ccreits-site 项目 6 条，commit a489420）"
+
+success_criteria:
+  - "`fstdd init` 后 `.fstdd/version.yaml` 含 `installation_id` 字段（非空）"
+  - "`installation_id` 格式为 `{PREFIX}-{8HEX}`（如 `STDD-A1B2C3D4`），PREFIX 恒为 `[A-Z0-9]{2,8}` 且 ID 恒为两段"
+  - "`fstdd experience add` 产出的 ID 含 installation_id 前缀"
+  - "既有项目（无 installation_id）的 `experience add` 回落到旧格式 `EXP-{year}-{NNNN}`"
+  - "`fstdd experience list` 能列出带前缀的条目"
+  - "`fstdd upgrade` 后 installation_id 仍在（version.yaml 合并写），且未登记的既有字段一并存活"
+  - "回传通道（tools/share_experience.py）能枚举到带前缀的新经验"
+  - "新增回归测试全绿"
+  - "既有 upstream/tests 全量不退化"
