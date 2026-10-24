@@ -1,6 +1,7 @@
 # FSTDD 本地版本声明（F 仓 / stdd-repo）
 # 发行版口径：fstdd_version（须 = .fstdd/config.d/project.yaml 的 stdd_version）
 # vendored 上游内核口径：upstream_version（= upstream/ 内核，见 upstream/CHANGELOG.md 与 upstream/pyproject.toml）
+installation_id: STDD-EFC09CF4
 fstdd_version: "3.4.0"
 upstream_version: "3.1.0"
 released_at: "2026-10-19T11:25:00+08:00"

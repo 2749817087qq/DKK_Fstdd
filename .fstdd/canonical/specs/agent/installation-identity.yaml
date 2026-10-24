@@ -2,10 +2,13 @@
 # capability: installation-identity
 # 修订 2026-10-22（C1 评审）：CP-2 原无实质断言、CP-4 用 upgrade --dry-run 走不到写口，
 # 均为「看起来验了、实际没验」。改为可机械判定的断言。
+# 追加 2026-10-22（2026-10-22-installation-id-backfill）：CP-8..CP-15 覆盖回填路径、
+# 文本形态保留、幂等、registry 不写、两路径 PREFIX 一致、真实经验库 last_id 回归。
 
 meta:
   task_id: "2026-10-21-installation-id-prefix/installation-identity"
   change_id: "2026-10-21-installation-id-prefix"
+  revised_by: "2026-10-22-installation-id-backfill"
   task_type: code
   system: "upstream/fstdd/cli/commands/init.py + upstream/fstdd/cli/utils.py + upstream/fstdd/cli/commands/upgrade.py"
   preconditions:
@@ -65,3 +68,53 @@ steps:
     assertions:
       - type: python_assert
         expected: "文件内容与写入前完全一致 and stderr 含 '无法解析'"
+  - id: CP-8
+    description: "回填命令在无 .fstdd/ 的目录下拒绝执行"
+    action: "在空 tmp 目录执行 `fstdd installation-id`"
+    assertions:
+      - type: exit_code
+        expected: 2
+      - type: stderr_contains
+        expected: "fstdd init"
+  - id: CP-9
+    description: "回填只新增 1 行，且插在首个顶层键之前"
+    action: "复制真实 336 行 version.yaml → `fstdd installation-id` → 比行数与插入位置"
+    assertions:
+      - type: python_assert
+        expected: "行数 == 337 and 首个顶层键行 == 'installation_id: <IID>' and 前 4 行仍是注释"
+  - id: CP-10
+    description: "文本形态保留：注释 / 块标量 / 键值深比较 / 行尾"
+    action: "同上，写入后逐项断言"
+    assertions:
+      - type: python_assert
+        expected: "所有原 '#' 行仍在 and 'changelog: |' 仍在 and safe_load(旧)==safe_load(新) 除 installation_id"
+  - id: CP-11
+    description: "重复执行幂等"
+    action: "连续执行两次 → 比字节与 mtime"
+    assertions:
+      - type: python_assert
+        expected: "第二次执行后文件 bytes 与 mtime 均不变 and exit 0"
+  - id: CP-12
+    description: "回填不写全局 registry"
+    action: "记录 ~/.fstdd/projects.yaml 字节 → 回填 → 再比"
+    assertions:
+      - type: python_assert
+        expected: "projects.yaml 字节不变"
+  - id: CP-13
+    description: "upgrade 写口保留注释与块标量"
+    action: "带注释 version.yaml → upgrade._write_version_yaml 传新字段 → 断言"
+    assertions:
+      - type: python_assert
+        expected: "注释行全在 and 'changelog: |' 仍在 and installation_id 不变 and 新字段已写入"
+  - id: CP-14
+    description: "两条路径 PREFIX 一致（契约）"
+    action: "同目录名/同 --prefix 分别走 init 与 installation-id，比较 PREFIX"
+    assertions:
+      - type: python_assert
+        expected: "init 与 installation-id 产出的 PREFIX 完全相同（含 'BAD!' 回落场景）"
+  - id: CP-15
+    description: "真实 109 条经验库 last_id 不变"
+    action: "回填前后各调一次 _rebuild_index(本仓 .fstdd/experiences)"
+    assertions:
+      - type: python_assert
+        expected: "last_id == 40 两次相同"

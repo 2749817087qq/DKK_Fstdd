@@ -1,0 +1,39 @@
+baseline:
+  at: '2026-10-22T15:20:00+00:00'
+  base_git_sha: d86a075
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-22-installation-id-backfill
+complexity_score: 7
+current_phase: build
+mode: standard
+status: archived
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-24T07:04:51+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 继续
+    slices_completed:
+      '1':
+        new_tests: 17
+        status: done
+        tc_coverage: 9/9
+        verified_at: '2026-10-22T17:30:00+00:00'
+    status: completed
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-22T15:48:42+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-22T15:20:57+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 确认
+    status: completed
+score_confidence: preliminary
+task_type: code
+version: '3.0'

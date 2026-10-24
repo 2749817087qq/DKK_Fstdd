@@ -66,6 +66,102 @@ def read_installation_id(project_root, warn: bool = False) -> Optional[str]:
     return iid
 
 
+def set_top_level_scalar(path, key: str, value: str) -> bool:
+    """在 YAML 文件顶部首个顶层键之前定向插入/替换 ``key: value``，保留其余字节。
+
+    设计约束（change 2026-10-22-installation-id-backfill，REQ-IID-004 / SC-IID-010）：
+    - **不**用 ``yaml.dump`` 整体回写——那会丢注释、把块标量退化成转义串（实测 −101 行）。
+    - bytes 级读写，按原文件主导行尾（CRLF/LF）保持；支持 UTF-8 BOM 剥离。
+    - 插入点 = 首个顶层键行之前（避开「文件以块标量结尾被吸进块内」的陷阱）。
+    - 写入前 4 条自检（解析 / 键值深比较 / 注释行 / 块标量标记）任一失败则不落盘。
+    - 幂等：目标键已等于 value → 不写（连 mtime 都不动）。
+
+    返回 True 表示已落盘（或本就相等无需写）；False 表示自检失败未落盘。
+    """
+    import yaml
+
+    path = Path(path)
+    if not path.exists():
+        # 文件不存在 → 直接创建单键文件（init 在全新项目上的落点）
+        path.write_bytes(f"{key}: {value}\n".encode("utf-8"))
+        return True
+
+    raw = path.read_bytes()
+    if raw.startswith(b"\xef\xbb\xbf"):  # UTF-8 BOM 剥离
+        raw = raw[3:]
+    text = raw.decode("utf-8")
+
+    if not text.strip():
+        path.write_bytes(f"{key}: {value}\n".encode("utf-8"))
+        return True
+
+    newline = "\r\n" if "\r\n" in text else "\n"
+    lines = text.split(newline)
+
+    # 首个顶层键行（插入点）：跳过注释与空行，要求行首为字母/下划线（无缩进）
+    topkey_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*:")
+    insert_idx = len(lines)
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if not s or s.startswith("#"):
+            continue
+        if topkey_re.match(line):
+            insert_idx = i
+            break
+
+    # 解析原文件做幂等与深比较判据
+    try:
+        original = yaml.safe_load(text)
+    except (OSError, yaml.YAMLError, TypeError):
+        return False
+    if not isinstance(original, dict):
+        return False
+    if original.get(key) == value:
+        return True  # 幂等：值已相等，不写
+
+    # 该 key 若有既有顶层行 → 原位替换；否则在插入点新增
+    key_re = re.compile(r"^" + re.escape(key) + r":(\s|$)")
+    existing_idx = None
+    for i, line in enumerate(lines):
+        if key_re.match(line):
+            existing_idx = i
+            break
+
+    if existing_idx is not None:
+        new_lines = list(lines)
+        new_lines[existing_idx] = f"{key}: {value}"
+    else:
+        new_lines = lines[:insert_idx] + [f"{key}: {value}"] + lines[insert_idx:]
+
+    candidate = newline.join(new_lines)
+
+    # ── 写入前 4 条自检 ──
+    try:
+        reparsed = yaml.safe_load(candidate)
+    except (OSError, yaml.YAMLError, TypeError):
+        return False
+    if not isinstance(reparsed, dict):
+        return False
+    expected = dict(original)
+    expected[key] = value
+    if reparsed != expected:
+        return False
+    # ③ 原文件所有注释行逐行仍在（list 保序 → 顺序不变）
+    comment_lines = [l for l in lines if l.lstrip().startswith("#")]
+    for cl in comment_lines:
+        if cl not in new_lines:
+            return False
+    # ④ 原文件块标量标记（形如 `changelog: |`）仍在
+    block_re = re.compile(r"^[ \t]*[A-Za-z_][A-Za-z0-9_]*:\s*\|")
+    block_markers = [l for l in lines if block_re.match(l)]
+    for bm in block_markers:
+        if bm not in new_lines:
+            return False
+
+    path.write_bytes(candidate.encode("utf-8"))
+    return True
+
+
 def setup_logging(verbose: int = 0) -> None:
     global _logger
     _logger = logging.getLogger("stdd")

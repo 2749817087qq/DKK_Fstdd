@@ -194,14 +194,12 @@ def _ensure_installation_id(project_root: Path, args: argparse.Namespace) -> str
         print(f"  ⚠️  既有 installation_id 不是字符串（{existing!r}），"
               f"将重新生成并覆盖", file=sys.stderr)
 
-    data["installation_id"] = _generate_installation_id(
-        prefix=_get_prefix(args, project_root)
-    )
-    version_path.write_text(
-        yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False),
-        encoding="utf-8",
-    )
-    return data["installation_id"]
+    new_id = _generate_installation_id(prefix=_get_prefix(args, project_root))
+    from ..utils import set_top_level_scalar
+    if not set_top_level_scalar(version_path, "installation_id", new_id):
+        print(f"  ⚠️  {version_path} 写入 installation_id 自检失败，未落盘", file=sys.stderr)
+        return None
+    return new_id
 
 
 # ── cmd_init ──────────────────────────────────────────────────────────
@@ -310,6 +308,53 @@ def cmd_init(args: argparse.Namespace) -> None:
     print("   /fstdd-understand  <需求描述>    启动新变更的需求理解阶段")
     print("   /fstdd-spec                      进入规格设计阶段")
     print("   /fstdd-continue                  继续执行当前变更")
+
+
+def cmd_installation_id(args: argparse.Namespace) -> None:
+    """确保 ``.fstdd/version.yaml`` 含合法 ``installation_id``，零副作用回填。
+
+    - 无 ``.fstdd/`` → stderr 报错并以 2 退出（不写任何文件）
+    - 已有合法值 → 打印现值、不改文件、0 退出（幂等）
+    - 无/坏值 → 生成并写入（注释保留定向插入，不写全局 registry）
+    - ``--dry-run`` → 只打印将生成的值，不落盘
+
+    与 ``cmd_init`` 正交：复用同文件的 ``_get_prefix()`` / ``_generate_installation_id()``
+    与 ``utils.INSTALLATION_ID_RE``，但**不**跑任何 ``_post_init_*``、**不**写全局 registry。
+    """
+    from ..utils import read_installation_id, set_top_level_scalar
+
+    project_root = Path.cwd()
+    dry_run = getattr(args, "dry_run", False)
+
+    fstdd_dir = project_root / ".fstdd"
+    if not fstdd_dir.is_dir():
+        print(
+            f"  ⚠️  当前目录不是已初始化的 FSTDD 项目（缺少 {fstdd_dir}）。"
+            f"请先运行 'fstdd init' 完成初始化。",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    version_path = fstdd_dir / "version.yaml"
+    existing = read_installation_id(project_root, warn=True)
+    if existing:
+        if dry_run:
+            print(f"  [DRY-RUN] installation_id 已存在: {existing}（保持不变）")
+        else:
+            print(f"   installation_id: {existing}（已存在，保持不变）")
+        return
+
+    new_id = _generate_installation_id(prefix=_get_prefix(args, project_root))
+    if dry_run:
+        print(f"  [DRY-RUN] 将生成 installation_id: {new_id}")
+        return
+
+    if not version_path.exists():
+        print(f"  ⚠️  {version_path} 缺失，将创建并写入 installation_id", file=sys.stderr)
+    if not set_top_level_scalar(version_path, "installation_id", new_id):
+        print(f"  ⚠️  {version_path} 写入 installation_id 自检失败，未落盘", file=sys.stderr)
+        sys.exit(3)
+    print(f"   installation_id: {new_id}（已写入 {version_path}）")
 
 
 def _post_init_guard(project_root: Path) -> None:

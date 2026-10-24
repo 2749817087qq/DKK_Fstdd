@@ -22,12 +22,13 @@ COMMAND_GROUPS = [
     ("管控", ["guard", "ci", "bootcamp", "upgrade", "install"]),
     ("工具", ["canon", "proposal", "extract-proposal", "dependency-graph",
               "structure", "index", "agent", "hooks", "skill", "caveman"]),
-    ("维护", ["experience", "knowledge", "kg", "fix", "init", "baseline"]),
+    ("维护", ["experience", "knowledge", "kg", "fix", "init", "installation-id", "baseline"]),
     ("批量", ["batch"]),
 ]
 
 _CMD_HELP = {
     "init": "初始化 STDD 到当前项目",
+    "installation-id": "确保 .fstdd/version.yaml 含 installation_id（零副作用回填）",
     "new": "创建新的 change 目录骨架",
     "validate": "验证 change 结构",
     "status": "显示 artifact 完成状态",
@@ -490,6 +491,12 @@ def main() -> None:
     p_baseline.add_argument("--format", choices=["text", "json"], default="text",
                             help="show/check: 输出格式")
 
+    # V3.1.1: installation-id — 零副作用回填 installation_id（2026-10-22-installation-id-backfill）
+    p_iid = subparsers.add_parser("installation-id", help="确保项目含 installation_id（零副作用回填）", parents=[parent])
+    p_iid.add_argument("--prefix", dest="prefix", default=None,
+                       help="installation_id 前缀（A-Z0-9，2-8 位；默认取项目名派生，"
+                            "纯中文项目名回落 FSTDD）")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -547,6 +554,7 @@ def main() -> None:
         "bootcamp": "fstdd.cli.commands.bootcamp.cmd_bootcamp",
         # V3.1: baseline — 时间基线管理
         "baseline": "fstdd.cli.commands.baseline._dispatch",
+        "installation-id": "fstdd.cli.commands.init.cmd_installation_id",
     }
 
     if args.command in commands:

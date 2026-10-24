@@ -30,18 +30,27 @@ def _read_version_yaml(project_root: Path) -> dict:
 
 
 def _write_version_yaml(project_root: Path, data: dict) -> None:
-    """Write .fstdd/version.yaml —— 与既有内容**合并**，不整体覆盖。
+    """Write .fstdd/version.yaml —— 与既有内容**合并**，不整体覆盖，且保留文本形态。
 
     为什么要合并：本函数历史上按「调用方写全量」设计，而 ``_do_upgrade`` 只传 5 个
     版本字段 ⇒ 任何后续在 version.yaml 里新增的字段都会在下次 upgrade 时被**静默抹掉**。
     实测后果（2026-10-22）：V3.1.1 的 ``installation_id`` 在 ``fstdd upgrade`` 后消失，
     经验 ID 从 ``WBCC-0803ADF7-EXP-...`` 悄悄退回 ``EXP-...``，撞号缺陷复发且无任何提示。
     合并后新增字段自动存活，无需「每加一个字段就回来改这里」（那种做法必然漏）。
+
+    文本形态保护（change 2026-10-22-installation-id-backfill，SC-IID-013）：
+    共用 ``utils.set_top_level_scalar`` 作唯一写入口——逐键定向插入/替换，
+    注释头、`changelog`/`notes` 字面块、行尾等其余字节原样保留，不再 ``yaml.dump``
+    整体回写（那会把 336 行发行说明压成 235 行转义串）。
     """
-    import yaml
+    from ..utils import set_top_level_scalar
+
     version_file = project_root / ".fstdd" / "version.yaml"
-    merged: dict = {}
+
+    # 解析既有内容（容错：坏文件不静默覆盖，出声保留）
+    original: dict = {}
     if version_file.exists():
+        import yaml
         try:
             loaded = yaml.safe_load(version_file.read_text(encoding="utf-8"))
         except (OSError, yaml.YAMLError) as exc:
@@ -52,12 +61,18 @@ def _write_version_yaml(project_root: Path, data: dict) -> None:
                   file=sys.stderr)
             loaded = None
         if isinstance(loaded, dict):
-            merged = loaded
-    merged.update(data)
-    version_file.write_text(
-        yaml.dump(merged, allow_unicode=True, default_flow_style=False),
-        encoding="utf-8",
-    )
+            original = loaded
+
+    # 只写确有变化的键（幂等：值已相等则跳过）；其余既有字段（含 installation_id）自动存活
+    changed = {k: v for k, v in data.items() if original.get(k) != v}
+    if not changed:
+        return
+
+    for k, v in changed.items():
+        if not set_top_level_scalar(version_file, k, v):
+            print(f"  ⚠️  {version_file} 写入 {k} 自检失败，停止写入以免破坏既有内容",
+                  file=sys.stderr)
+            return
 
 
 def _registry_path() -> Path:

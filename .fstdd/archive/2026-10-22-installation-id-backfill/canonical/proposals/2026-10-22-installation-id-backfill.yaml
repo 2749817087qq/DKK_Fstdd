@@ -1,0 +1,178 @@
+# 2026-10-22-installation-id-backfill.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `fstdd canon generate` 生成。
+
+meta:
+  change_id: "2026-10-22-installation-id-backfill"
+  title: "installation_id 回填：给已初始化项目补齐身份，且不破坏 version.yaml 的可读文本形态"
+  created: "2026-10-22T23:20:00+08:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: >-
+    上一个 change（2026-10-21-installation-id-prefix）只让**新**项目在 `fstdd init` 时
+    获得 `installation_id`。所有在 v3.1.1 之前初始化的项目 —— 包括本框架仓 stdd-repo
+    自己 —— 都没有该字段，`_next_id()` 继续产旧格式 `EXP-{year}-{NNNN}`，撞号风险
+    并未真正消除：ccreits-site 目前靠手工打的 `WBCC-0803ADF7-` 前缀撑着（commit
+    a489420，6 条经验逐个改名），而框架仓新沉淀的 EXP-2026-0038/0039/0040 仍是旧格式。
+    现存的唯一回填路径是「在项目根重跑 `fstdd init`」，实测会带来两类破坏（见 evidence）。
+  motivation: >-
+    ① 框架仓自己不吃自己的方案，FU-004 一直挂着；② 回填能力不只本仓需要 ——
+    任何 2026-10 之前初始化过的项目都需要，所以必须做成 CLI 路径而不是一次性脚本，
+    否则每个项目都要各自写一遍脚本、各自承担一次「改坏 version.yaml」的风险。
+  evidence:
+    observed_at: "2026-10-22T23:10:00+08:00"
+    observed_base_git_sha: "d86a075"
+    details: >-
+      【实测 1｜yaml.dump 回写破坏文本形态】把本仓 `.fstdd/version.yaml`（336 行 /
+      27280 字节，含 4 行注释头 + 300 行 `changelog: |` 字面块）复制到临时目录，
+      直接调用 `init._ensure_installation_id` 后对比：
+        - 行数 336 → 235（−101），字节 27280 → 27992；
+        - 4 行注释头（版本三轴 E/K/R 说明）**全部丢失**；
+        - `changelog: |` 字面块退化为双引号转义串（`\n` + 续行 `\`），发行说明不再可读；
+        - `yaml.safe_load` 后所有键值**仍等价**（不是数据丢失），破坏的是文本形态与
+          `git blame` 连续性；回填会产出 100+ 行噪声 diff，把真正的「+1 行」淹没。
+      根因：`_ensure_installation_id` 用 `yaml.dump` 整体回写。上一 change 的测试全部
+      用 `tmp_path` **新建**文件（无注释），故该缺陷从未被覆盖。
+      【实测 2｜cmd_init 在已初始化项目上并非空操作】除写 version.yaml 外还会执行：
+        - `_post_init_guard()` → 跑 `guard init`（本仓存在 `.claude/`，会改其配置）；
+        - `_post_init_experiences()` → 跑 `experience pull --pack python`（联网拉社区经验，
+          往 `.fstdd/experiences/` 加文件）；
+        - `_post_init_isolation()` → 给 `.fstdd/config.d/project.yaml` 补 `isolation` 块
+          （本仓当前无该块，会被写入）；
+        - `_register_project()` → 写全局 `~/.fstdd/projects.yaml`（该表已被测试污染，
+          7237 条中 7233 条指向 pytest 临时目录，见 FU-008）。
+      【实测 3｜经验库现状】`.fstdd/experiences/` 共 109 个 `.md`，4 种命名族并存：
+        `EXP-2026-00XX`（现行）/ `EXP-009-20260924-SLUG` / `EXP-XXXXXXXX`（8 位 hex）/
+        `FSTDD002-EXP-20260918-1`；`.experience-index.yaml` 的 `last_id` = 40。
+      【实测 4｜下游已就绪】上一 change 已把 4 处 `glob("EXP-*.md")` 改为 `glob("*.md")`
+        （含回传通道 `tools/share_experience.py`），`tools/audit_experience_baseline.py`
+        的 `INDEX_ITEM_RE` 已允许多段前缀；全仓 grep 无遗留 `EXP-\d` 正则假设；
+        无测试硬编码经验条数。⇒ 回填后新 ID 不会打穿下游。
+
+what_changes:
+  - id: C1
+    description: >-
+      新增顶层子命令 `fstdd installation-id [--prefix X] [--dry-run]`：**只**确保
+      `installation_id` 存在，不执行 guard 安装 / 经验拉取 / 配置补块 / 全局注册表写入。
+      已存在合法值 → 打印现值并以 0 退出（不改文件）；不存在 → 生成并写入；
+      `--dry-run` 只打印将生成的值。`.fstdd/` 不存在时报错并以非 0 退出。
+      复用 `init._get_prefix()` / `_generate_installation_id()` / `utils.INSTALLATION_ID_RE`，
+      不复制正则与派生逻辑。
+    type: new
+  - id: C2
+    description: >-
+      `init._ensure_installation_id()` 的写入从 `yaml.dump` 整体回写改为**注释保留的定向插入**：
+      在**首个顶层键行之前**插入一行 `installation_id: <值>`（注释头仍留在文件最上方），
+      而非在文件末尾追加（文件若以块标量结尾，追加行会被吸进块内）。
+      写入前 4 条自检（解析 / 键值深比较 / 注释行 / 块标量标记）：`yaml.safe_load`
+      可解析且为映射、去掉目标键后键值深比较相等、原注释头逐行仍在、
+      `changelog: |` 等块标量字面标记仍在；任一不满足则不落盘并报错。
+      `version.yaml` 不可解析时**不写**（沿用上一 change 的 SC-IID-007）。
+    type: modified
+  - id: C3
+    description: >-
+      `upgrade._write_version_yaml()` 同缺陷同修：它也是 `yaml.dump` 整体回写，
+      下一次 `fstdd upgrade` 会把 C2 保住的注释头再毁一次。改为同样的注释保留写入
+      （合并语义不变：未在该次写入参数里出现的既有字段一并存活）。
+    type: modified
+  - id: C4
+    description: >-
+      在 stdd-repo 根执行一次 `fstdd installation-id`（PREFIX = `STDD`，由目录名
+      `stdd-repo` 自动派生），把结果留档为本 change 的验收证据（`git diff` 应为 +1 行）。
+      并在本仓真跑一次 `fstdd experience add` 验证产出 ID 以 `STDD-` 开头。
+    type: modified
+
+capabilities:
+  new: []
+  modified:
+    - name: "installation-identity"
+      description: >-
+        补上「已初始化项目如何获得 installation_id」这条路径：新增零副作用回填命令，
+        且写入 SHALL 保留 version.yaml 的注释与字面块等可读文本形态（不再用 yaml.dump
+        整体回写）。
+
+impact:
+  code:
+    - "upstream/fstdd/cli/commands/init.py：`_ensure_installation_id` 写入改为注释保留插入；并新增 `cmd_installation_id` 入口（不另建模块，复用同文件的 prefix 派生）"
+    - "upstream/fstdd/cli/commands/upgrade.py：`_write_version_yaml` 同修"
+    - "upstream/fstdd/cli/utils.py：新增 `set_top_level_scalar()`（注释保留的唯一写入口）"
+    - "upstream/fstdd/cli/__init__.py：注册 `installation-id` 子命令"
+    - "upstream/tests/commands/：新增/扩展测试（注释保留、幂等、错误路径、prefix 一致性）"
+  config:
+    - ".fstdd/version.yaml：新增 `installation_id` 一行（本仓回填，C4）"
+    - ".fstdd/experiences/.experience-index.yaml：**不改**（last_id 保持 40，作为回归断言）"
+  infrastructure:
+    - "无新增依赖、无服务变更、无部署动作"
+    - "全局 `~/.fstdd/projects.yaml`：本 change 的 `installation-id` 命令**不写**该表（与 init 的差异点）"
+
+constraints:
+  - "不修改既有 109 个经验文件的 ID 与文件名；4 种命名族保持原样"
+  - "不改 `.fstdd/experiences/.experience-index.yaml` 的 last_id（当前 40）"
+  - "不引入新依赖（不使用 ruamel.yaml 等 round-trip 库）"
+  - "重复执行 `fstdd installation-id` SHALL 使 version.yaml 字节级不变（可重复执行不产生副作用）"
+  - "version.yaml 不可解析时 SHALL NOT 写入任何内容（沿用 SC-IID-007）"
+  - "插入位置 SHALL 为首个顶层键行之前；SHALL NOT 在文件末尾追加（若文件以块标量结尾会被吸进块内）"
+  - "`--prefix` 校验与降级语义 SHALL 与 `fstdd init --prefix` 完全一致（共用同一实现）"
+
+stakeholders:
+  - "所有在 v3.1.1 之前初始化的 FSTDD 项目（需要回填 installation_id）"
+  - "本框架仓 stdd-repo 自身（新经验终于带前缀）"
+  - "经验回传中心节点（可按前缀归属）"
+
+risk_areas:
+  - capability: "installation-identity"
+    risk: >-
+      文本插入若位置或缩进处理不当，可能产出非法 YAML 或把键插进上一个块标量内部。
+    mitigation: >-
+      插入点选「首个顶层键行之前」（正则 `^[A-Za-z_][\\w]*:` 的首个命中行），
+      而非末尾追加；写后强制 `yaml.safe_load` + 键值逐键比对 + 注释头/字面块标记断言，
+      任一失败则不落盘。测试用真实 336 行 version.yaml 副本作夹具，不用空文件。
+  - capability: "installation-identity"
+    risk: >-
+      新命令与 `init` 的 prefix 派生逻辑各写一份，日后漂移成「两条路径给不同前缀」。
+    mitigation: >-
+      新命令直接调用 `init._get_prefix()`，正则共用 `utils.INSTALLATION_ID_RE`；
+      新增契约测试断言两路径在同一目录名/同一 `--prefix` 下产出的 PREFIX 一致。
+  - capability: "installation-identity"
+    risk: >-
+      回填后既有 4 种命名族与新的 `STDD-XXXXXXXX-EXP-YYYY-NNNN` 共存，`_rebuild_index`
+      可能把 8 位 hex 段当序号（`last_id` 跳到百万级）。
+    mitigation: >-
+      上一 change 的 SC-EID-006 已定义 `_rebuild_index` 契约并有
+      `test_rebuild_index_ignores_hex_tail` 覆盖；本 change 增加「以真实 109 条经验库
+      为夹具」的回归断言，确保回填前后 `last_id` 恒为 40。
+
+non_goals:
+  - "不做 installation_id 碰撞检测（FU-001）"
+  - "不迁移/归一既有 4 种命名族的经验 ID"
+  - "不改 `fstdd init` 在**首次初始化**（新建文件）场景下的行为"
+  - "不修全局 `~/.fstdd/projects.yaml` 被测试污染的问题（FU-008）"
+  - "不替其他历史项目自动回填，只提供命令"
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L2
+  reference_changes:
+    - "2026-10-21-installation-id-prefix"
+  anchor_implementations:
+    - "init._ensure_installation_id / _get_prefix / _generate_installation_id（V3.1.1）"
+    - "upgrade._write_version_yaml 的读-合并-写（2026-10-21 ADJ-001）"
+
+success_criteria:
+  - "stdd-repo 的 `.fstdd/version.yaml` 含 `installation_id`，值匹配 `^[A-Z0-9]{2,8}-[0-9A-F]{8}$`"
+  - "回填后该文件 4 行注释头仍在、`changelog: |` 字面块标记仍在，且 `git diff` 仅新增 1 行"
+  - "回填后 `yaml.safe_load` 的既有键值与本 change 前逐键相等（changelog / notes / feedback_protocol 内容不变）"
+  - "重复执行 `fstdd installation-id`，version.yaml 字节级不变"
+  - "在无 `.fstdd/` 的目录执行 `fstdd installation-id` 时给出明确错误并以非 0 退出"
+  - "`fstdd installation-id --prefix 'BAD!'` 向 stderr 告警并回落项目名派生，不中止"
+  - "stdd-repo 内 `fstdd experience add` 产出的 ID 以 `STDD-` 开头"
+  - "带注释的 version.yaml 经 `upgrade._write_version_yaml` 后注释头与字面块仍在"
+  - "`_rebuild_index` 在真实 109 条经验库上回填前后 `last_id` 恒为 40"
+  - "全量回归（框架侧 + 仓库侧）不退化；`fstdd ci check-failures` 0 error"
