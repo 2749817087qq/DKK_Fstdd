@@ -50,11 +50,52 @@ def _empty_graph() -> dict:
     }
 
 
+def _dedupe_edges(edges: list) -> list:
+    """去重 edges（EXP-2026-0055）：同 from→to 只保留 last_synced_at 最新的一条。
+
+    无向边视为同一条：(A,B) 与 (B,A) 去重为一条。
+    返回新列表，不修改入参。
+    """
+    best = {}  # frozenset({a,b}) -> edge with latest last_synced_at
+    for e in edges or []:
+        a, b = e.get("from"), e.get("to")
+        if not a or not b or a == b:
+            continue
+        key = frozenset({a, b})
+        prev = best.get(key)
+        if prev is None:
+            best[key] = e
+        else:
+            prev_t = prev.get("last_synced_at") or ""
+            cur_t = e.get("last_synced_at") or ""
+            if cur_t > prev_t:
+                best[key] = e
+    return list(best.values())
+
+
 def _save_graph(graph_path: Path, graph: dict) -> None:
+    """保存知识图谱（原子写 + fsync，EXP-2026-0062）。"""
+    import os
     graph_path.parent.mkdir(parents=True, exist_ok=True)
     graph["last_merged"] = utc_now_iso(timespec="seconds")
-    with open(graph_path, "w", encoding="utf-8") as f:
+    # EXP-2026-0055: 落盘前统一去重 edges
+    if "edges" in graph:
+        graph["edges"] = _dedupe_edges(graph.get("edges"))
+    tmp_path = graph_path.with_suffix(graph_path.suffix + ".tmp")
+    with open(tmp_path, "w", encoding="utf-8") as f:
         yaml.dump(graph, f, allow_unicode=True, default_flow_style=False)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_path, graph_path)
+    # 目录 fsync 让 rename 持久化；失败静默降级
+    try:
+        fd = os.open(str(graph_path.parent), os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+    except (OSError, ValueError):
+        pass
 
 
 def _text_similarity(a: str, b: str) -> float:

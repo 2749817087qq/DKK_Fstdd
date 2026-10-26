@@ -1,0 +1,49 @@
+baseline:
+  at: '2026-10-26T13:39:47+00:00'
+  base_git_sha: c8bb94023516bc7790a1d860521071b6c0cfc527
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-26-experience-lib-triage
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 0
+last_modified: '2026-10-26T14:13:45+00:00'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-26T14:12:57+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 'Phase 3 BUILD: 3 项修复完成 + 11 TDD 测试全绿 + 门禁 ci check-failures
+      0 FAIL'
+    slices_completed:
+      S1:
+        new_tests: 11
+        tc_coverage: TC-ELT-001,TC-ELT-002,TC-ELT-003,TC-ELT-004,TC-ELT-005,TC-ELT-006,TC-ELT-007,TC-ELT-008,TC-ELT-009,TC-ELT-010,TC-ELT-011
+        verified_at: '2026-10-26T14:12:42+08:00'
+    status: completed
+  deliver:
+    status: in_progress
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-26T13:53:19+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 'Phase 2 SPEC 完成: design.md + specs/experience-lib-triage/spec.md
+      + test-plan.md 三件套齐全'
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-26T13:39:47+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 用户引用「要，可以走 FSTDD 四阶段」—— 授权从 113 条经验提取 5 项可执行变更，作为 v3.5.0 输入
+    status: completed
+score_confidence: null
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

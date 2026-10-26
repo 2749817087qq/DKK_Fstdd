@@ -586,14 +586,22 @@ def check_tc_implementation_coverage(change_dir: Path, project_root: Path) -> tu
 
     This is the critical check that would have caught the V2.7 development failure:
     30 planned TCs had zero corresponding test functions.
+
+    EXP-2026-0067：planned TC 只按**定义点**提取（走 _tcid_definition_points），
+    不再用全文 `_TC_ANY_RE` —— 否则 test-plan 里**引用**的他人 TC-ID（回归矩阵 /
+    证据表 / 案例标题等）会被误算进 planned，把覆盖率稀释并漏检真正的缺口。
     """
     test_plan = change_dir / "test-plan.md"
     if not test_plan.exists():
         return ("SKIP", "test-plan.md 不存在，跳过 TC 实现覆盖检查")
 
-    # Extract TC-IDs from test plan
     content = test_plan.read_text(encoding="utf-8")
-    planned_tcs = set(re.findall(r"(TC-[A-Z]+-\d{3})", content))
+    # EXP-2026-0067：优先按定义点提取；无定义点时回退全文（旧格式兼容）
+    def_points = _tcid_definition_points(content)
+    if def_points:
+        planned_tcs = set(def_points)
+    else:
+        planned_tcs = set(re.findall(r"(TC-[A-Z]+-\d{3})", content))
     if not planned_tcs:
         return ("SKIP", "test-plan.md 中未找到 TC-ID")
 

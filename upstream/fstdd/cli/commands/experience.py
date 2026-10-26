@@ -36,6 +36,42 @@ def _json_default(o):
     return str(o)
 
 
+def _fsync_after_write(fd_or_path) -> None:
+    """在写文件后强制刷盘，防止 Windows 页缓存延迟导致断电丢失。
+
+    EXP-2026-0062 教训：`write_knowledge_card` / `write_experience` 用 `write_text`
+    直接写，无 fsync，Windows 上可能停留在页缓存，断电即丢失（实测 3 次丢失）。
+    本函数支持两种调用：fd（int）或 path（Path/str），失败静默降级（不阻塞主流程）。
+    """
+    try:
+        if isinstance(fd_or_path, int):
+            os.fsync(fd_or_path)
+        else:
+            fd = os.open(str(fd_or_path), os.O_RDONLY)
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
+    except (OSError, ValueError):
+        # Windows / 部分文件系统不支持 fsync —— 静默降级，不阻塞主流程
+        pass
+
+
+def _atomic_write_text(path: Path, content: str, encoding: str = "utf-8") -> None:
+    """原子写 + fsync：tmp + fsync + os.replace，保证断电一致性（EXP-2026-0062）。
+
+    替代裸 `Path.write_text()`，让 fsync 成为所有关键写入的收口点。
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp, "w", encoding=encoding, newline="") as f:
+        f.write(content)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
+    _fsync_after_write(path.parent)  # 目录 fsync 让 rename 持久化
+
+
 
 VALID_CATEGORIES = [
     "hallucination",
@@ -292,7 +328,10 @@ def _load_index(exp_dir: Path, _locked: bool = False) -> dict:
 
 
 def _save_index(exp_dir: Path, index: dict) -> None:
-    """原子落盘索引；自带锁，也可安全地被 _index_lock 包住（重入）。"""
+    """原子落盘索引；自带锁，也可安全地被 _index_lock 包住（重入）。
+
+    EXP-2026-0062：写入 tmp 后先 fsync 文件本身，再 fsync 父目录，保证 rename 持久化。
+    """
     with _index_lock(exp_dir) as acquired:
         _ensure_dir(exp_dir)
         index_path = _get_index_path(exp_dir)
@@ -300,11 +339,16 @@ def _save_index(exp_dir: Path, index: dict) -> None:
         try:
             with open(tmp_path, "w", encoding="utf-8", newline="") as f:
                 yaml.dump(index, f, allow_unicode=True, default_flow_style=False)
+                f.flush()
+                os.fsync(f.fileno())
             os.replace(tmp_path, index_path)
+            _fsync_after_write(exp_dir)  # 目录 fsync 让 rename 持久化
         except OSError:
             # 极端并发下 Windows 可能瞬时拒绝 replace，退化为直接写
             with open(index_path, "w", encoding="utf-8", newline="") as f:
                 yaml.dump(index, f, allow_unicode=True, default_flow_style=False)
+                f.flush()
+                os.fsync(f.fileno())
             print("  警告: 索引原子替换失败，已退化为直接写入。", file=sys.stderr)
 
 
@@ -585,7 +629,7 @@ def _cmd_add(args: argparse.Namespace, exp_dir: Path, project_root: Path | None 
         content = f"---\n{yaml.dump(frontmatter, allow_unicode=True, default_flow_style=False)}---\n\n{body}\n"
 
         exp_file = exp_dir / f"{eid}.md"
-        exp_file.write_text(content, encoding="utf-8")
+        _atomic_write_text(exp_file, content)  # EXP-2026-0062: fsync 原子写
 
         _index_add_entry(index, eid, frontmatter)
         # 用已分配的 id 推进 last_id，避免与并发写入互相覆盖
