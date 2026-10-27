@@ -4,8 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fstdd"
-# R 轴版本，须与 .fstdd/version.yaml: fstdd_version 一致（当前 3.3.9）
-version = "3.3.9"
+# R 轴版本。唯一事实源 = .fstdd/config.d/project.yaml: stdd_version
+# （由 TC-ISO-019 自动锚定，四处声明面须同号：本文件 / version.yaml / project.yaml / CHANGELOG.md）
+version = "3.5.0"
 description = "Spec-first TDD governance toolchain (financial extension distro)"
 requires-python = ">=3.10"
 dependencies = [

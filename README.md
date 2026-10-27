@@ -206,6 +206,28 @@ fstdd new fix-guard-scope                       # 默认 none，行为与旧版�
 详见 **[`docs/007-change-isolation.md`](./docs/007-change-isolation.md)**：三种形态对比、配置项，
 以及 **worktree 建在仓库外、需要手动清理** 这一注意事项。
 
+### 给已有项目补 installation_id（`fstdd installation-id`）
+
+**什么时候需要**：多个项目共用同一套经验库时，经验 ID 会撞号 —— 两个项目各自产出
+`EXP-2026-0019`，内容却完全不同，回传时互相覆盖。根因是项目缺 `installation_id`
+（v3.5.0 起 `fstdd init` 会自动生成 `{PREFIX}-{8HEX}`，但老项目没有）。
+
+**怎么补**：
+
+```bash
+fstdd installation-id --dry-run          # 先看会写什么，不改文件
+fstdd installation-id --prefix MYPROJ    # 指定前缀（不指定则按项目名推导）
+fstdd installation-id                    # 实际写入
+```
+
+**它做什么**：只补齐 `.fstdd/version.yaml` 里缺失的 `installation_id` 一行。
+
+**它不做什么**（这点很重要）：**不跑** `guard init`、**不拉**经验、**不写**全局项目注册表。
+此前想补这个字段只能跑 `fstdd init`，而 init 会连带做一堆不该在「补字段」时发生的事。
+
+**补完之后**：**新**经验 ID 带前缀（`MYPROJ-EXP-2026-0001`）；**既有条目 ID 不变**
+（不迁移、不重写），所以历史引用不会断。
+
 ---
 
 ## 6. 安全策略
@@ -449,6 +471,8 @@ python tools/share_experience.py --export
 
 | 版本 | 日期 | 主题（一句话） | 值不值得升 |
 |---|---|---|---|
+| **3.5.0** | 2026-10-27 | **安装身份与门禁可信度收口** —— 新增 `fstdd installation-id`（零副作用补 `installation_id`）+ 经验 ID 加安装前缀（消多项目撞号 8 例）+ 装完自动清影子副本（且不误移活跃实例）+ 经验库 fsync 原子落盘 / edges 幂等去重 + 门禁三处假红修复（测试文件识别失明、TC-ID 查重口径、`phase-integrity` 作用域） | ✅ **必升** —— 多项目并存会**经验 ID 撞号**（同 ID 不同内容）；装完会留 7 个影子目录；门禁假红会让你习惯性忽略红灯 |
+| **3.4.0** | 2026-10-19 | **经验静默回传出站收口** —— 出站三关最后一道闸门 `_verify_outbound` 残余判据补齐 4 类形态（Windows 路径 / 邮箱 / IPv4 / 内网域名）；`publish()` 入口单次校验；审计加 `sent_count` 与跨进程写锁 | ✅ **必升** —— 修复前生产静默路径上这些形态**原样出站**；且 2 进程并发写审计实测丢 40% |
 | **3.3.9** | 2026-10-17 | **DELIVER 自动化** —— 新增 `fstdd canon merge <change>` 命令，自动化归档 change 的 canonical 合并到仓库根 `canonical/`（`canon verify` ③ 2/2、13/13 merge 测试全绿） | ✅ **必升** —— 消 DELIVER 阶段手工合并 canonical 的易错步骤（此前须手工拷贝 + 插索引） |
 | **3.3.8** | 2026-10-09 | **归档生命周期收口** —— 5 个模块的 change 目录解析器统一走 `finder`（读路径支持归档）；归档 change 的**写操作统一拒绝并指路 `rollback`**（`gate amend-audit` 除外）；`archive` 归档即闭合 `deliver` 相位；`rollback` 保留原相位 | ✅ **必升** —— 修复前对已归档 change 报「change 不存在」（误导文案）；且 `rollback` 会把 `current_phase` 重置为 `understand`、与 `phases.*.status` 自相矛盾，继续推进会**回到错误相位** |
 | **3.3.7** | 2026-10-07 | **工具链契约保真（声明 = 行为）** —— 6 处「工具骗人」缺陷：`--dry-run` 被静默忽略、经验索引被写成 CRLF、`extract-proposal` 恒空、`ci` (d) 误判 60% 的 test-plan、`experience list --format json` 崩溃、`verify_notices` 默认移走文件 | ✅ **必升** —— 前两项会**静默改变状态 / 移走文件**；第 4 项把门禁变成噪声（43 份 test-plan 误判 26→0） |

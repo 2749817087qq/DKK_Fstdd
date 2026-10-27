@@ -2,10 +2,49 @@
 # 发行版口径：fstdd_version（须 = .fstdd/config.d/project.yaml 的 stdd_version）
 # vendored 上游内核口径：upstream_version（= upstream/ 内核，见 upstream/CHANGELOG.md 与 upstream/pyproject.toml）
 installation_id: STDD-EFC09CF4
-fstdd_version: "3.4.0"
+fstdd_version: "3.5.0"
 upstream_version: "3.1.0"
-released_at: "2026-10-19T11:25:00+08:00"
+released_at: "2026-10-27T21:00:00+08:00"
 changelog: |
+  v3.5.0 — 安装身份与门禁可信度收口版
+
+  交付（2 change + 1 发布收口）：
+  - installation-identity（NEW）：新增 `fstdd installation-id [--prefix X] [--dry-run]`
+    子命令，只补齐缺失 installation_id，不跑 guard init / 经验拉取 / registry 写入；
+    `_ensure_installation_id` 与 `upgrade._write_version_yaml` 改用
+    `utils.set_top_level_scalar`（bytes 级定向插入），保留注释头/块标量/行尾
+    （原 yaml.dump 整体回写实测 336→235 行、注释头全丢、changelog 退化为转义串）。
+  - experience-id-generation（MODIFIED）：经验 ID 加 installation 前缀
+    `{PREFIX}-EXP-YYYY-NNNN`（无 id 回落旧格式），修复实测 8 例多项目撞号；
+    `utils.INSTALLATION_ID_RE` + `read_installation_id()` 收为读写端唯一事实源；
+    下游 4 处 `glob("EXP-*.md")` → `glob("*.md")`（含经验回传通道，漏读会静默只推旧经验）。
+  - experience-lib-triage（NEW）：EXP-2026-0062 关键写入点 fsync 原子落盘
+    （`_save_index` 文件+目录 fsync / `_save_graph` tmp+fsync+os.replace）；
+    EXP-2026-0055 知识图谱 edges 幂等去重（无向边 frozenset 归一）；
+    EXP-2026-0067 `ci` 的 TC planned 只按定义点提取。
+  - contract-gap-regression-tests（NEW）：9 用例锁定 3 类攻击向量 —— `_resolve_in`
+    输入拒绝（EXP-2026-0032）、archive 守卫 resolve() 归一化（EXP-2026-0027）、
+    全仓无内联 `(?i)` 拼接（EXP-2026-0031）；3 条经验推进 verified。
+  - 安装脚本：装完自动清理影子副本（移到 `~/.workbuddy-ai/_fstdd-shadow-backup`，
+    不直接删）；新增 `_active_skill_dirs()` 令 shadow 判据排除活跃实例
+    （修「把 `.workbuddy/skills` 下活跃实例当影子移走」事故）。
+  - 门禁修复：`utils.iter_test_files()` 单一事实源（同时认 `test_*.py` 与 `test-*.py`），
+    修连字符命名测试文件假 FAIL；`check_tcid_unique` 改定义行口径，修 10/10 归档
+    change 的 (d) 误报（判据不放宽）；`phase-integrity` 拦截作用域感知化（V3.0.11），
+    陈旧 change 不再全局硬拦截冻结工作区。
+  - 两个领域 skill 入库：reits-research（投研报告 + 回测验证引擎）、
+    fstdd-quant（量化规驱 v1.0.0）。
+
+  发布收口（本版新规）：
+  - 修复 v3.4.0 发布漏改 —— `pyproject.toml:version` 停在 3.3.9 而其余三处为 3.4.0
+    （hotfix 1b2995c 只修了 project.yaml）。
+  - 新增 `tests/test_version_consistency.py`（TC-VCON-001..005）：把「四处声明面同号」
+    收为单一判据（含 pyproject 版本注释过期字面量检查），并自带负向自检；
+    既有 `test_L1_11` 只比对 version.yaml 与 project.yaml 两处 ⇒ pyproject 不在判据内。
+
+  质量：全量 pytest 0 failed（见 test-report）；`ci check-failures` 0 FAIL；
+  新增测试 5 文件 / 44+ 例；3 条经验 discovered→verified。
+
   v3.4.0 — 经验静默回传出站收口版（6 维验收审计）
 
   交付（1 change：2026-10-18-share-egress-closure，归档 + canon verify + structure merge）：

@@ -8,6 +8,99 @@
 
 ---
 
+## [3.5.0] — 2026-10-27
+
+> **一句话**：把「安装 / 经验 / 门禁」三条链上 v3.4.0 之后的 36 个增量收口成一个
+> 可发布版本 —— 多项目经验不再撞号、装完不再留影子垃圾、门禁红了就是真问题。
+
+### 新增 — 安装身份与经验 ID 隔离（`fstdd installation-id`）
+
+**带来什么帮助**：多项目并存时经验 ID 不再撞号；给已有项目补 `installation_id`
+不再被迫跑一遍有副作用的 `init`。
+
+- **新增 `fstdd installation-id [--prefix X] [--dry-run]` 子命令**：只补齐缺失的
+  `installation_id`，**不跑** guard init / 经验拉取 / 全局 registry 写入。此前想补这个
+  字段只能跑 `fstdd init`，而 init 会连带做一堆不该在「补字段」时发生的事。
+- **经验 ID 加 installation 前缀**：有 id 时产出 `{PREFIX}-EXP-YYYY-NNNN`，无则回落
+  旧格式 `EXP-YYYY-NNNN`。修复实测 8 例撞号（`ccreits-site` 的 `0019~0022/0030/0031`
+  与上游同 ID 不同内容）。
+- **`utils.INSTALLATION_ID_RE` + `read_installation_id()` 作为写端/读端唯一事实源**。
+  此前写侧只判非空、读侧用正则 ⇒ 坏值被打印 OK 却不生效。
+- **下游枚举口径修正**：4 处 `glob("EXP-*.md")` → `glob("*.md")`。其中
+  `tools/share_experience.py` 是经验回传通道，漏读会**静默只推旧经验**。
+- **`upgrade` 不再抹掉 `installation_id`**：`_write_version_yaml` 改「读-合并-写」，
+  并改用 `utils.set_top_level_scalar`（bytes 级定向插入），保留注释头 / 块标量 / 行尾。
+  此前 `yaml.dump` 整体回写实测把 336 行压成 235 行、注释头全丢、changelog 退化为转义串。
+
+### 新增 — 两个领域 skill 入库
+
+**带来什么帮助**：REITs 投研、量化策略研发两类任务开箱可用，不必每次从零搭方法论。
+
+- **`reits-research`**：REITs 投研报告撰写 + FSTDD 驱动的回测验证引擎。
+- **`fstdd-quant`**：量化投资策略研发版 FSTDD v1.0.0（规驱）。
+
+### 修复 — 安装脚本影子副本治理
+
+**带来什么帮助**：装完不再留 7 个影子目录要手动清；也不会误删正在用的实例。
+
+- **装完自动清理影子副本**：移到 `~/.workbuddy-ai/_fstdd-shadow-backup`（不直接删，
+  保留审计痕迹），`verify` 不再报 WARN。
+- **影子判据排除活跃实例**：新增 `_active_skill_dirs()`（`WORKBUDDY_CONFIG_DIR` /
+  `CODEBUDDY_CONFIG_DIR` 指向目录 + 内核兜底目录），`shadow_installs()` /
+  `clean_shadows()` 遍历时跳过。修的是「把 `.workbuddy/skills` 下的**活跃实例**当影子
+  移走」这个真事故。
+
+### 修复 — 经验库数据完整性（3 项 high/critical 经验）
+
+**带来什么帮助**：索引与知识图谱不再因断电/并发丢条目；edges 不再重复堆积。
+
+- **关键写入点 fsync 原子落盘**（EXP-2026-0062）：`_save_index` 加文件 fsync + 目录
+  fsync（Windows 下 `os.open(dir)` 不可用，降级），`_save_graph` 改
+  tmp + fsync + `os.replace` 原子写。
+- **知识图谱 edges 幂等去重**（EXP-2026-0055）：无向边按 `frozenset` 归一，落盘前统一
+  去重并保留最新 `last_synced_at`。
+- **`ci check-failures` 的 TC planned 只按定义点提取**（EXP-2026-0067）：修复
+  「引用了别人的 TC-ID 也被算成自己的 planned TC」导致覆盖率被稀释。
+- **3 类 contract_gap 攻击向量回归测试锁定**（`tests/test_contract_gap_regression.py`，
+  9 用例）：`_resolve_in` 输入拒绝（EXP-2026-0032）、archive 守卫 `resolve()` 归一化
+  （EXP-2026-0027）、全仓无内联 `(?i)` 拼接（EXP-2026-0031）。3 条经验推进到 `verified`。
+
+### 修复 — 门禁与守卫的假红 / 误拦
+
+**带来什么帮助**：门禁红了就是真问题，不再需要人肉判断「这条是不是假的」。
+
+- **检查器测试文件识别失明**：新增 `utils.iter_test_files()` 单一事实源，同时产出
+  `test_*.py` 与 `test-*.py`；`ci` / `diff` / `trace` 三处调用点收敛。修复连字符命名
+  测试文件的假 FAIL（`0/N` 覆盖）。
+- **TC-ID 查重口径分裂**：`check_tcid_unique` 由「全文计数」改为「**定义行**」口径
+  （与 `validate.py` 对齐），修复 10/10 归档 change 的 (d) 误报。**真实判据不放宽**：
+  planned TC 无实现仍 FAIL，两定义行共用 ID 仍 FAIL。
+- **`phase-integrity` 拦截作用域感知化**（V3.0.11）：陈旧 change（build 完成但缺
+  Gate 确认 `confirmed_at`）不再触发**全局硬拦截**冻结整个工作区写入 —— scope 外仅
+  warn 放行，已处于 deliver 且 build 完成亦放行，scope 内且非 deliver 维持硬拦截。
+
+### 变更 — 版本声明面收口为「四处同号」（本版新规）
+
+**带来什么帮助**：`pyproject.toml` 不会再悄悄落后于其他三处。
+
+- **修复 v3.4.0 发布漏改**：`pyproject.toml:version` 停在 `3.3.9`，而
+  `.fstdd/version.yaml` / `.fstdd/config.d/project.yaml` / `CHANGELOG.md` 三处均为
+  `3.4.0`。v3.4.0 的 hotfix 只修了 `project.yaml`，pyproject 与它的注释
+  「（当前 3.3.9）」一起漏掉。
+- **新增 `tests/test_version_consistency.py`（TC-VCON-001..005）**：把「四处声明面
+  同号」收为**单一判据**，含 `pyproject.toml` 版本注释的过期字面量检查，并**自带负向
+  自检**（造不一致数据验证判据会红）。既有 `test_L1_11` 只比对 version.yaml 与
+  project.yaml **两处** ⇒ pyproject 根本不在判据内，这才是漏检根因。
+
+### 升级注意
+
+- 已有项目可跑 `fstdd installation-id` 补 `installation_id`（零副作用，建议先 `--dry-run`）。
+- 经验 ID 在补齐 `installation_id` 后**新条目**带前缀；既有条目 ID 不变（不迁移、不重写）。
+- 装完自动清理影子副本会把废弃副本移到 `~/.workbuddy-ai/_fstdd-shadow-backup`，
+  需要回滚时从该目录取回即可（不是删除）。
+
+---
+
 ## [3.4.0] — 2026-10-19
 
 ### 修复 — 经验静默回传的出站收口（2026-10-18，6 维验收审计）
