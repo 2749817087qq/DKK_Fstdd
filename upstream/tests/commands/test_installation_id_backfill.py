@@ -242,7 +242,10 @@ def test_012_idempotent_and_dry_run(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(root3)
     cmd_installation_id(_ns(dry_run=True))
     text3 = (root3 / ".fstdd" / "version.yaml").read_text(encoding="utf-8")
-    assert "installation_id" not in text3, "dry-run 落盘了 installation_id"
+    # 判据按**顶层键**而非全文包含：version.yaml 的 `changelog` 正文里合法地提到
+    # `installation_id` 一词（v3.5.0 起 changelog 记录了该字段的引入），
+    # 全文包含判据会把这种正常记录误报成「dry-run 落盘」（实测 v3.5.0 发布时假红）。
+    assert not re.search(r"^installation_id:", text3, re.MULTILINE), "dry-run 落盘了 installation_id"
     assert "将生成" in capsys.readouterr().out
 
 
@@ -321,17 +324,34 @@ def test_015_prefix_consistency(tmp_path, prefix_arg, capsys):
 # TC-IID-016: 真实 109 条经验库 last_id 恒 40 ｜ P1（回归护栏）
 # ══════════════════════════════════════════════════════════════════════
 
+def _max_exp_seq(exp_dir: Path) -> int:
+    """从文件名派生经验序号上界（兼容 `EXP-YYYY-NNNN` 与 `{prefix}-EXP-YYYY-NNNN`）。
+
+    不硬编码 —— 经验库一增长，硬编码的期望值就假红（实测 v3.5.0 发布时已从 40 涨到 43）。
+    """
+    best = 0
+    for p in exp_dir.glob("*.md"):
+        for m in re.finditer(r"EXP-\d{4}-(\d{4})", p.stem):
+            best = max(best, int(m.group(1)))
+    return best
+
+
 def test_016_real_experience_lib_last_id_40(tmp_path):
-    """TC-IID-016 ｜ SC-IID-015: 回填前后 _rebuild_index 的 last_id 恒为 40（8 位 hex 不被当序号）。"""
+    """TC-IID-016 ｜ SC-IID-015: 回填前后 _rebuild_index 的 last_id 恒定（8 位 hex 不被当序号）。"""
     exp_src = ROOT / ".fstdd" / "experiences"
     exp_dst = tmp_path / "experiences"
     shutil.copytree(exp_src, exp_dst)
 
     idx1 = _rebuild_index(exp_dst)
     idx2 = _rebuild_index(exp_dst)
-    assert idx1["last_id"] == 40, idx1["last_id"]
-    assert idx2["last_id"] == 40
+
+    # 期望值从文件名**动态派生**（此前硬编码 40，经验库一增长即假红）
+    expected = _max_exp_seq(exp_dst)
+    assert expected > 0, "经验库为空或文件名不含 EXP-YYYY-NNNN"
+    assert idx1["last_id"] == expected, f"{idx1['last_id']} != {expected}"
+    assert idx2["last_id"] == expected
 
     md_files = list(exp_dst.glob("*.md"))
-    assert len(md_files) == 109, f"经验文件数异常: {len(md_files)}"
     assert len(md_files) == len(list(exp_src.glob("*.md"))), "经验文件被改名/缺失"
+    # 核心契约不变：last_id 是纯序号，不被 installation_id 里的 8 位 hex 污染
+    assert idx1["last_id"] < 10000, f"last_id 疑似被 8 位 hex 污染: {idx1['last_id']}"

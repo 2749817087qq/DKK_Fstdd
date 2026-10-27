@@ -2,8 +2,8 @@ meta:
   title: 全仓裸 except 吞异常点审计表（活表）
   change: 2026-10-21-installation-id-prefix
   refreshed_from: 2026-10-12-canon-merge-command
-  observed_at: '2026-10-22T03:55:00+00:00'
-  observed_base_git_sha: a48942065c907045da8444a89e1ef24c14d480af
+  observed_at: '2026-10-27T13:30:00+00:00'
+  observed_base_git_sha: 44c6650d945a8c677479b5d44dba09fa370ed73c
   scanner: tools/audit_silent_except.py
   refreshed_at: '2026-10-22T11:55:00+08:00'
   refreshed_reason: '2026-10-21 change installation-id-prefix 刷新：承接归档活表 25 点。本 change 在 upstream/fstdd/cli/commands/init.py 新增 _generate_installation_id / _get_prefix / _ensure_installation_id 及 _post_init_self_check
@@ -182,7 +182,7 @@ points:
   response: 放行
   detection_path: false
   justification: 多平台守卫安装探测：单平台异常 continue 试下一平台，设计即探测式
-  line: 327
+  line: 372
   line_shifted_from: 200
 - id: EA-015
   file: upstream/fstdd/cli/commands/init.py
@@ -193,7 +193,7 @@ points:
   response: 放行
   detection_path: false
   justification: 读取 IDE settings 探测守卫钩子：探测失败仅少一条状态提示
-  line: 512
+  line: 557
   line_shifted_from: 385
 - id: EA-017
   file: upstream/fstdd/cli/commands/knowledge.py
@@ -204,7 +204,7 @@ points:
   response: 放行
   detection_path: false
   justification: 本地克隆图读取失败 → 空图兜底，同降级族
-  line: 154
+  line: 195
   refreshed_reason: '2026-10-07 行号 171→154（本 change 在该文件插入 import / dry-run 守卫导致位移，指纹 pass/except Exception: 未变）'
 - id: EA-017
   file: upstream/fstdd/cli/commands/knowledge.py
@@ -215,7 +215,7 @@ points:
   response: 放行
   detection_path: false
   justification: 本地克隆图读取失败 → 空图兜底，同降级族
-  line: 172
+  line: 213
   refreshed_reason: '2026-10-07 行号 171→172（本 change 在该文件插入 import / dry-run 守卫导致位移，指纹 pass/except Exception: 未变）'
 - id: EA-018
   file: upstream/fstdd/cli/commands/phase.py
@@ -269,7 +269,7 @@ points:
   response: 放行
   detection_path: false
   justification: 版本探测读取失败 → None 版本，信息展示容错
-  line: 211
+  line: 307
   refreshed_reason: '2026-10-17 行号 123→153（change 2026-10-16-ci-checker-tc-recognition 在 resolve_stdd_path 之后插入 iter_test_files 30 行，指纹 return None/except Exception: 未变）'
   line_shifted_from: 153
 - id: EA-025
@@ -281,6 +281,6 @@ points:
   response: 放行
   detection_path: false
   justification: version 文件 YAML 解析失败 → 继续其他探测路径
-  line: 224
+  line: 320
   refreshed_reason: 2026-10-17 行号 136→166（同上，iter_test_files 插入 30 行位移）
   line_shifted_from: 166
