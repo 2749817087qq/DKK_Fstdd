@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-27-contract-gap-regression-tests: proposals/2026-10-27-contract-gap-regression-tests.yaml
+specs:
+  agent:
+    2026-10-27-contract-gap-regression-tests: specs/agent/2026-10-27-contract-gap-regression-tests.yaml
+  code:
+    2026-10-27-contract-gap-regression-tests: specs/code/2026-10-27-contract-gap-regression-tests.yaml
+version: '2.9'

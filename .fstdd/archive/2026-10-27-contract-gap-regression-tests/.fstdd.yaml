@@ -1,0 +1,48 @@
+baseline:
+  at: '2026-10-27T02:43:13+00:00'
+  base_git_sha: 5c5c40dc6ab506c494714d2f8815ba10e151b854
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-27-contract-gap-regression-tests
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 0
+last_modified: '2026-10-27T02:50:48+00:00'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-27T02:50:47+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 'Phase 3 BUILD: 9 TDD 用例全绿 + 门禁 0 FAIL + 3 经验 verified'
+    slices_completed:
+      S1:
+        new_tests: 9
+        tc_coverage: TC-CGR-001,TC-CGR-002,TC-CGR-003,TC-CGR-004,TC-CGR-005,TC-CGR-006,TC-CGR-007,TC-CGR-008,TC-CGR-009
+        verified_at: '2026-10-27T10:50:00+08:00'
+    status: completed
+  deliver:
+    status: completed
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-27T02:45:45+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: spec.md + test-plan.md 齐全，9 TC-CGR-001..009 定义点已登记
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-27T02:43:13+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: 3 类 contract_gap（EXP-0027/0031/0032）代码已修复但无回归测试；本 change 加测试锁定攻击向量已被挡住，同时把
+      3 条经验推至 verified
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

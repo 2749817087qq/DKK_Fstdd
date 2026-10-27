@@ -25,7 +25,7 @@ phases:
         verified_at: '2026-10-26T14:12:42+08:00'
     status: completed
   deliver:
-    status: in_progress
+    status: completed
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-10-26T13:53:19+00:00'
@@ -40,7 +40,7 @@ phases:
     confirmed_evidence: 用户引用「要，可以走 FSTDD 四阶段」—— 授权从 113 条经验提取 5 项可执行变更，作为 v3.5.0 输入
     status: completed
 score_confidence: null
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 0
