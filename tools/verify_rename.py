@@ -221,7 +221,13 @@ def tc_005() -> tuple[bool, str]:
     archive = new_dir / "archive"
     if not archive.exists():
         return False, ".fstdd/archive/ 不存在"
-    changes = sorted(p.name for p in archive.iterdir() if p.is_dir())
+    changes = sorted(
+        p.name for p in archive.iterdir()
+        # `aborted/` 是被 abort 的 change 的**容器**，自身不是 change —— 不能要求它
+        # 自己有 test-report.md（实测它只在子目录里有）。容器与 change 必须分层处理，
+        # 否则每 abort 一个 change 就会让本用例永久变红。
+        if p.is_dir() and p.name != "aborted"
+    )
     if len(changes) < 2:
         return False, f"归档 change 少于 2 个（实际 {len(changes)} 个）"
     # 关键资产可访问
@@ -229,6 +235,13 @@ def tc_005() -> tuple[bool, str]:
         tr = archive / c / "test-report.md"
         if not tr.exists():
             return False, f"{c} 的 test-report.md 不可访问"
+    # aborted 容器下的 change 同样逐个检查（容器被跳过，但它装的东西不能漏检）
+    aborted = archive / "aborted"
+    if aborted.is_dir():
+        for c in sorted(p for p in aborted.iterdir() if p.is_dir()):
+            tr = c / "test-report.md"
+            if not tr.exists():
+                return False, f"aborted/{c.name} 的 test-report.md 不可访问"
     if old_dir.exists():
         return False, "旧目录 .stdd/ 仍存在（迁移不彻底）"
     return True, f"迁移完成，{len(changes)} 个归档 change 及其 test-report 均可访问"
@@ -329,6 +342,24 @@ def tc_008() -> tuple[bool, str]:
     """
     old = "st" + "dd"
     skip_dirs = {"upstream", ".git", "backups", "__pycache__", "archive", "_scratch"}
+    # 合法例外：经验 ID 带 installation 前缀的形态 `{installation_id}-EXP-YYYY-NNNN.md`。
+    # v3.5.0 起经验文件名 = installation_id 前缀 + EXP-ID，前缀是**身份的一部分**
+    # （本项目 installation_id = STDD-EFC09CF4，其前缀恰好是旧名缩写）。
+    # 这不是「文件名未改名」—— 改它等于换安装身份，会切断既有经验引用。
+    #
+    # 判据从 version.yaml 的 installation_id **精确派生**，不是通配 `*-exp-*`：
+    # 通配会放过「prefix 随便写的经验文件」，而这里要挡的恰恰是「乱命名」。
+    exp_prefixed = None
+    _vf = REPO / ".fstdd" / "version.yaml"
+    if _vf.exists():
+        _m = re.search(
+            r'^installation_id:\s*["\']?([A-Za-z0-9_-]+)["\']?\s*$',
+            _vf.read_text(encoding="utf-8", errors="replace"),
+            re.MULTILINE,
+        )
+        if _m:
+            _prefix = re.escape(_m.group(1).lower())
+            exp_prefixed = re.compile(rf"^{_prefix}-exp-\d{{4}}-\d{{4}}$")
     hits = []
     for p in REPO.rglob("*"):
         if not p.is_file():
@@ -338,6 +369,8 @@ def tc_008() -> tuple[bool, str]:
             continue
         # 文件名（不含扩展名）里出现旧标识
         stem = p.stem.lower()
+        if exp_prefixed is not None and exp_prefixed.match(stem):
+            continue
         if old in stem and "fstdd" not in stem:
             hits.append(str(rel))
     if hits:
