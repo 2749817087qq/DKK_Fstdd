@@ -714,8 +714,13 @@ def check_claims(change_dir: Path, project_root: Path) -> tuple[str, str]:
 
     import subprocess
     try:
+        # 只扫 **subject**（标题行），不扫 body。
+        # 理由：body 里常引用历史版本（如「修复 v3.4.0 引入的问题」「本仓 v3.3.6 记为已知缺陷」），
+        # 那是**引用**不是**断言**；标题才是「这条 commit 声称自己做了什么」。
+        # 实测 2026-10-28：扫全文时本 change 的 commit body 引用了 v3.3.6 / v3.4.0
+        # ⇒ 假报「版本号矛盾」。
         r = subprocess.run(
-            ["git", "log", "--format=%s%n%b", f"{sha}..HEAD"],
+            ["git", "log", "--format=%s", f"{sha}..HEAD"],
             cwd=str(project_root),
             capture_output=True,
             text=True,
@@ -729,6 +734,26 @@ def check_claims(change_dir: Path, project_root: Path) -> tuple[str, str]:
         return ("WARN", f"(o) git log 返回 {r.returncode}")
 
     found = set(_VERSION_IN_MSG_RE.findall(r.stdout or ""))
+    # 排除「已有 tag 的历史版本」：提到已发布版本属引用，不构成矛盾
+    try:
+        tag_out = subprocess.run(
+            ["git", "tag", "--list", "fstdd-v*"],
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=20,
+        ).stdout or ""
+        tagged = {
+            m.group(1)
+            for m in (re.match(r"^fstdd-v(\d+\.\d+\.\d+)$", t.strip()) for t in tag_out.splitlines())
+            if m
+        }
+    except Exception:  # noqa: BLE001
+        tagged = set()
+    found = {v for v in found if v not in tagged}
+
     mismatched = sorted(v for v in found if v != actual)
     if mismatched:
         shown = "、".join("v" + v for v in mismatched)
