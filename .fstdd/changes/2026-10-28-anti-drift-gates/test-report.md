@@ -108,4 +108,39 @@
 
 ## 七、全量结果
 
-（待全量门禁完成后填入）
+### 三轮全量对比
+
+| 轮次 | total | failed | skipped | 失败明细 |
+|---|---|---|---|---|
+| 第 1 轮（提交前） | 1483 | 8 | 10 | evidence 标签 5 + 审计表漂移 2 + 未跟踪文件 1 |
+| 第 2 轮（提交后） | 1483 | 4 | 11 | 守卫测试 2（正确报警）+ flaky 2 |
+| **第 3 轮（终值）** | **1483** | **1** | **11** | **flaky 1** |
+
+### 终值
+
+```
+total=1483  failed=1  skipped=11
+FAIL: upstream.tests.test_inbox_endpoint.TestAEndpointProtocol::test_a21_post_unknown_path_404
+      ConnectionAbortedError: [WinError 10053] 主机中的软件中止了一个已建立的连接
+```
+
+**判定：通过（1482/1483）**。唯一失败是**已确认的 flaky**：
+
+- 隔离复跑**单跑 PASS**（本轮实测两次：全量前 1 次、全量后 1 次）
+- 根因：该用例起 HTTP 端点做 POST 探测，全量并发下端口/连接竞态
+- 属**预存在 flaky**，与本 change 改动无关（本 change 未触碰 `test_inbox_endpoint.py` 及 `tools/inbox_server.py`）
+
+### 四自检
+
+（见 Gate 3 前的最终自检输出）
+
+### ci 检查
+
+```
+fstdd ci check-failures 2026-10-28-anti-drift-gates
+  ✅ 通过: 7    ⚠ 警告: 1    ⏭ 跳过: 5    ❌ 错误: 0
+  ⚠ (g) AND 超限: spec.md: AND 数量 22
+```
+
+`(g)` 的 WARN 来自 canon 渲染后的 `spec.md` 把多个 Scenario 的 `and` 合并计数
+（既存判据问题，非本 change 引入；不阻断）。
