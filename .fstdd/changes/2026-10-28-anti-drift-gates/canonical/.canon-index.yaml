@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-28-anti-drift-gates: proposals/2026-10-28-anti-drift-gates.yaml
+specs:
+  agent:
+    2026-10-28-anti-drift-gates: specs/agent/2026-10-28-anti-drift-gates.yaml
+  code:
+    2026-10-28-anti-drift-gates: specs/code/2026-10-28-anti-drift-gates.yaml
+version: '2.9'

@@ -28,6 +28,16 @@ capabilities:
     - name: ""
       description: ""
 
+# 范围锁（anti-drift-gates，2026-10-28）：本 change 允许改动的路径。
+# 声明后 `ci check-failures` 的 (b) 会按此严格比对实际 diff（越界 ⇒ FAIL）；
+# 不声明则只 WARN「范围锁未生效」（老 change 不爆红）。
+# 路径写法：目录以 / 结尾（匹配其后代），其余按 fnmatch glob。
+# ⚠️ 不要写 "upstream/"、"tests/"、"." 这类宽前缀 —— 会被判「scope 过宽」，
+#    等于没声明。收窄到具体文件或子目录才有意义。
+scope:
+  mode: strict                 # strict | advisory
+  paths: []                    # 例：["upstream/fstdd/cli/commands/ci.py", "upstream/tests/"]
+
 constraints:
   - ""
 

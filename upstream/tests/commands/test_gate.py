@@ -13,7 +13,10 @@ def _make_args(subcommand="approve", **kwargs):
     )
     # V3.0.5 硬防线：默认走 dialog 通道（口头确认）。旧测试语义即口头确认。
     kwargs.setdefault("confirmed_by", "dialog")
-    kwargs.setdefault("evidence", "")
+    # anti-drift-gates C5（2026-10-28）：dialog/cli 通道的 evidence 须含事实标签 [F]。
+    # 默认值带标签，让既有用例聚焦各自要测的维度（顺序/幂等/审计链），
+    # 标签校验本身由 test_anti_drift_gates.py::TestEvidenceTag 专项覆盖。
+    kwargs.setdefault("evidence", "[F:test-fixture] 测试夹具默认证据")
     for k, v in kwargs.items():
         setattr(ns, k, v)
     return ns
@@ -427,7 +430,7 @@ class TestGateHardDefense:
         from fstdd.cli.commands.gate import cmd_gate
 
         args = _make_args("approve", name="2026-01-01-gate-test", gate=1,
-                          confirmed_by="dialog", evidence="用户：确认")
+                          confirmed_by="dialog", evidence="[F:dialog] 用户：确认")
         cmd_gate(args)
         captured = capsys.readouterr()
         assert "Gate 1 confirmed" in captured.out
@@ -435,7 +438,7 @@ class TestGateHardDefense:
         data = yaml.safe_load((change_dir / ".fstdd.yaml").read_text(encoding="utf-8"))
         u = data["phases"]["understand"]
         assert u["confirmed_by"] == "dialog"
-        assert u["confirmed_evidence"] == "用户：确认"
+        assert u["confirmed_evidence"] == "[F:dialog] 用户：确认"
         assert u["confirmed_at"] is not None
 
     def test_confirmed_actor_lands(self, tmp_path, monkeypatch, capsys):

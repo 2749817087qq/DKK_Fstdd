@@ -581,7 +581,7 @@ def _check_phase_integrity(data: dict, current_phase: str) -> tuple:
                 actual = ", ".join(sorted(gp_data.keys())) if gp_data else "(无字段)"
                 fix_cmd = (
                     f"fstdd gate approve <change_id> --gate {gp_idx + 1} "
-                    "--confirmed-by dialog"
+                    '--confirmed-by dialog --evidence "[F:你的证据来源] 事实描述"'
                 )
                 hint = ""
                 if str(gp_data.get("gate", "")).strip() == "approved":

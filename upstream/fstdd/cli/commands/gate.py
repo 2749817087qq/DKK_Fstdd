@@ -312,6 +312,25 @@ def cmd_gate(args: argparse.Namespace) -> None:
         print(f"  Error: --confirmed-by file_token but GATE{gate_num}_APPROVED token file not found in {change_dir.name}.")
         sys.exit(2)
 
+    # anti-drift-gates C5（2026-10-28）：evidence 须含事实标签 [F]，默认强制。
+    #
+    # 理由：Gate 是人工确认点，光写「已完成」无法区分「有据」与「凭感觉」。
+    # 两条豁免（都是「凭据已由其他机制保证」的通道，不是放水）：
+    #   1. `gate amend-audit` —— 走前面的独立分支直接 return，到不了这里
+    #      （事后追认不该被要求补当时的证据格式）；
+    #   2. `--confirmed-by file_token` —— token 文件本身就是凭据，且该通道
+    #      在上一段已 return（无论成功同步还是拒绝）。
+    from ..utils import has_fact_tag
+
+    if not has_fact_tag(evidence):
+        print("  [FAIL] Gate 确认需要事实标签 [F] —— 光写「已完成」不算证据。")
+        print("         正确写法示例：")
+        print('           --evidence "[F:pytest] 9/9 全绿；[F:git] diff 只动 ci.py；'
+              '[D] 由测试结果推出实现正确"')
+        print("         标签约定：[F] 事实（附来源） / [D] 推导（给链） / "
+              "[G] 猜测（禁入结论）")
+        sys.exit(2)
+
     # Validate gate order
     valid, err = _check_gate_order(gate_num, change_dir)
     if not valid:

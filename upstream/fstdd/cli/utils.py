@@ -13,6 +13,24 @@ STDD_SOURCE: Optional[Path] = None
 # 生成端放宽而读取端收紧，症状是「init 明明写了 ID，_next_id 却回落到旧格式」。
 INSTALLATION_ID_RE = re.compile(r"^[A-Z0-9]{2,8}-[0-9A-F]{8}$")
 
+# anti-drift-gates C5：evidence 事实标签的**唯一事实源**。
+# 形态 `[F]` 或 `[F:来源]`。判据只应有一处 —— 散落到各调用方内联正则必然分叉
+# （本仓 EXP-2026-0026：判据锚点必须落在统一实现上）。
+FACT_TAG_RE = re.compile(r"\[F(?::[^\]\n]+)?\]")
+
+
+def has_fact_tag(text) -> bool:
+    """判断 evidence 是否含事实标签 ``[F]`` / ``[F:来源]``。
+
+    约定（写入 fstdd-build / fstdd-deliver skill）：
+    - ``[F]`` 事实 —— 须附命令输出 / 文件内容 / 测试结果
+    - ``[D]`` 推导 —— 从 [F] 推出，须给推导链
+    - ``[G]`` 猜测 —— 无证据，禁入任务清单 / change 范围 / commit message
+    """
+    if not text:
+        return False
+    return bool(FACT_TAG_RE.search(str(text)))
+
 
 def read_installation_id(project_root, warn: bool = False) -> Optional[str]:
     """读取 ``.fstdd/version.yaml`` 的 ``installation_id``。

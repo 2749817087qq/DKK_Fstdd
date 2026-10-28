@@ -200,6 +200,15 @@ def main() -> None:
     p_ci_cov.add_argument("name", nargs="?", help="change 目录名（默认使用最近的）")
     p_ci_ctr = ci_subs.add_parser("check-contracts", help="契约断层检查 (k)", parents=[parent])
     p_ci_ctr.add_argument("name", nargs="?", help="change 目录名（默认使用最近的）")
+    # anti-drift-gates（2026-10-28）：三闸聚合报告
+    p_ci_drift = ci_subs.add_parser(
+        "check-drift", help="反漂移三闸报告（断言证据 / 范围锁 / 收尾冻结）", parents=[parent]
+    )
+    p_ci_drift.add_argument("name", nargs="?", help="change 目录名（默认使用最近的）")
+    p_ci_drift.add_argument(
+        "--strict", action="store_true", help="任一闸 WARN 也返回非 0（收尾自查口径）"
+    )
+    p_ci_drift.add_argument("--json", action="store_true", help="JSON 输出")
 
     # state (V2.5 新增)
     p_state = subparsers.add_parser("state", help="查看/恢复跨 Session 状态", parents=[parent])

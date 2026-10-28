@@ -74,7 +74,7 @@ def read_state(proj: Path, change_id: str) -> dict:
 
 def gate1(proj: Path, change_id: str):
     rc, out, err = run_cli("gate", "approve", change_id, "--gate", "1",
-                           "--confirmed-by", "dialog", "--evidence", "TB 测试",
+                           "--confirmed-by", "dialog", "--evidence", "[F:test] TB 测试",
                            cwd=proj)
     assert rc == 0, f"gate approve 失败 rc={rc}\n{out}\n{err}"
 

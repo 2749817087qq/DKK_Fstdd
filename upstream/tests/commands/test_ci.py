@@ -404,20 +404,27 @@ class TestCiCheckEnhanced:
         return change_dir
 
     def test_scope_creep_pass(self, tmp_path, monkeypatch):
-        """TC-CI-ENH-001: check-scope passes when no out-of-scope files."""
+        """TC-CI-ENH-001: 无 git 历史时降级为 WARN（不再静默 SKIP）。
+
+        行为变更（2026-10-28 anti-drift-gates C1）：旧实现在无 git 时 SKIP，
+        新实现返回 WARN 并说明「无法确定 change 起点」—— 静默 SKIP 在聚合输出里
+        与 PASS 一样「不报错」，等于「范围锁失效」被当成「检查通过」。
+        """
         self._setup_scope_change(tmp_path)
         monkeypatch.chdir(tmp_path)
 
         from fstdd.cli.commands.ci import check_scope_creep
         change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-scope-test"
-        # Mock: check reads git diff but won't find anything alarming
-        # Actually, without git, it should SKIP
         status, msg = check_scope_creep(change_dir, tmp_path)
-        # Without git history, this will likely SKIP
-        assert status in ("PASS", "SKIP")
+        assert status in ("PASS", "WARN")
 
     def test_scope_creep_skip_no_capability_declared(self, tmp_path, monkeypatch):
-        """TC-CI-ENH-003: check-scope skips when no capability in proposal."""
+        """TC-CI-ENH-003: 未声明 scope 时返回 WARN（不再是 SKIP）。
+
+        行为变更（2026-10-28 anti-drift-gates C1 / SC-ADG-003）：
+        SKIP 与 PASS 在聚合输出里都「不报错」，等于范围锁失效无人知；
+        改 WARN 才能被看见。
+        """
         _setup_project(tmp_path)
         change_dir = tmp_path / ".fstdd" / "changes" / "2026-01-01-skip"
         change_dir.mkdir(parents=True)
@@ -426,7 +433,8 @@ class TestCiCheckEnhanced:
 
         from fstdd.cli.commands.ci import check_scope_creep
         status, msg = check_scope_creep(change_dir, tmp_path)
-        assert status == "SKIP"
+        assert status == "WARN"
+        assert "范围锁未生效" in msg
 
     def test_coverage_pass(self, tmp_path, monkeypatch):
         """TC-CI-ENH-004: check-coverage passes when coverage >= threshold."""

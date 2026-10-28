@@ -413,49 +413,371 @@ def check_and_count(change_dir: Path, _project_root: Path) -> tuple[str, str]:
     return ("PASS", "(g) AND 数量正常")
 
 
-@_register_check
-def check_scope_creep(change_dir: Path, _project_root: Path) -> tuple[str, str]:
-    """(b) Check files changed match declared capabilities in proposal."""
-    proposal_path = change_dir / "proposal.md"
-    if not proposal_path.exists():
-        return ("SKIP", "(b) proposal.md 不存在")
+# ── 范围锁（anti-drift-gates，2026-10-28）────────────────────
+# 豁免白名单：这些路径即使不在 scope.paths 内也不算蔓延（属正常流程产出物）。
+# 集中定义，不散落到各判据里 —— 否则新增一类产出物要改多处。
+SCOPE_EXEMPT_PREFIXES = (
+    ".fstdd/changes/",      # 本 change 产出物（proposal / spec / test-plan / report）
+    ".fstdd/archive/",      # 归档产出物
+    ".fstdd/experiences/",  # BUILD C5 要求更新既有经验条目
+    ".fstdd/specs/",        # DELIVER 合并的全局 spec
+    ".fstdd/code-structure/",
+    "docs/",                # 文档
+)
+SCOPE_EXEMPT_EXACT = {
+    "README.md", "CHANGELOG.md", "NOTICE.md", ".gitignore", ".gitattributes",
+    ".fstdd/version.yaml", ".fstdd/config.d/project.yaml", ".fstdd/backlog.md",
+}
 
-    content = proposal_path.read_text(encoding="utf-8")
-    caps = re.findall(r"-\s*(?:STDD-MARKER:\s*)?capability:\s*(\S+)", content)
-    if not caps:
-        return ("SKIP", "(b) proposal 未声明 capability 列表")
+# scope 过宽的判据：命中这些根目录等于「声明了全仓」，范围锁形同虚设
+_BROAD_SCOPE_ROOTS = ("upstream", "tests", "tools", "src", "app", "skills")
 
-    # Get changed files via git diff --stat
-    import subprocess
+
+def _load_baseline_sha(change_dir: Path):
+    """从 change 的 .fstdd.yaml 读 baseline.base_git_sha；读不到返回 None。"""
+    state_file = change_dir / ".fstdd.yaml"
+    if not state_file.exists():
+        return None
     try:
-        result = subprocess.run(
-            ["git", "diff", "--stat", "HEAD~1"],
-            capture_output=True, text=True, timeout=10,
-            cwd=str(change_dir.parent.parent)
+        import yaml as _yaml
+        data = _yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
+    except (OSError, UnicodeDecodeError, Exception):  # noqa: BLE001
+        return None
+    baseline = data.get("baseline") if isinstance(data, dict) else None
+    if not isinstance(baseline, dict):
+        return None
+    sha = baseline.get("base_git_sha")
+    return str(sha).strip() if sha else None
+
+
+def _iter_changed_files(change_dir: Path, project_root: Path, status_filter=None):
+    """列出 change 期间的改动文件：baseline 与**工作区**的差异。
+
+    返回 (files, reason)：files 为 [(status, rel_path)]，reason 非空表示无法执行。
+
+    ⚠️ 用 `git diff <sha>`（不带 `..HEAD`）而非 `git diff <sha>..HEAD` ——
+    前者对比 baseline 与工作区，**包含未提交改动**。BUILD 阶段改动都在工作区，
+    用 `..HEAD` 会让自查恒报「0 个改动文件」，等于范围锁在 BUILD 期失效
+    （实测 2026-10-28：本 change 自查时闸2 显示 0 个改动文件）。
+    未跟踪的新文件由 `git status --porcelain` 补充（`git diff` 看不到它们）。
+    """
+    import subprocess
+
+    sha = _load_baseline_sha(change_dir)
+    if not sha:
+        return [], "无法确定 change 起点（.fstdd.yaml 缺 baseline.base_git_sha）"
+    try:
+        r = subprocess.run(
+            ["git", "diff", "--name-status", sha],
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=20,
         )
-        changed_files = result.stdout.strip()
-    except Exception:
-        return ("SKIP", "(b) 无法运行 git diff，跳过范围检查")
+    except Exception as exc:  # noqa: BLE001
+        return [], f"git diff 执行失败（{type(exc).__name__}）"
+    if r.returncode != 0:
+        return [], f"git diff 返回 {r.returncode}（baseline {sha[:8]} 可能已不可达）"
 
-    if not changed_files:
-        return ("PASS", "(b) 无文件变更")
+    files = []
+    for line in (r.stdout or "").splitlines():
+        parts = line.split("\t")
+        if len(parts) < 2:
+            continue
+        status = parts[0].strip()
+        path = parts[-1].strip().replace("\\", "/")
+        if not status or not path:
+            continue
+        if status_filter and status[0] not in status_filter:
+            continue
+        files.append((status, path))
 
-    # Simple heuristic: check if changed files are in expected directories
-    changed_paths = re.findall(r"^\s*([^\s|]+)", changed_files, re.MULTILINE)
+    # 补充未跟踪的新文件（git diff 不显示 untracked）
+    try:
+        r2 = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=all"],
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=20,
+        )
+        if r2.returncode == 0:
+            seen = {p for _s, p in files}
+            for line in (r2.stdout or "").splitlines():
+                if not line.startswith("?? "):
+                    continue
+                path = line[3:].strip().replace("\\", "/")
+                if not path or path in seen:
+                    continue
+                if status_filter and "A" not in status_filter:
+                    continue
+                files.append(("A", path))
+    except Exception:  # noqa: BLE001
+        pass
+
+    return files, ""
+
+
+def _sanitize_scope_patterns(patterns):
+    """剔除含 `..` 的 scope pattern（输入层拒绝，EXP-2026-0027）。
+
+    返回 (cleaned, dropped)。
+    """
+    cleaned, dropped = [], []
+    for raw in patterns:
+        s = str(raw).strip()
+        if not s:
+            continue
+        parts = Path(s.replace("\\", "/")).parts
+        if ".." in parts or s in (".", ".."):
+            dropped.append(s)
+            continue
+        cleaned.append(s)
+    return cleaned, dropped
+
+
+def _is_scope_too_broad(patterns):
+    """返回过宽的 pattern 列表（声明了整个根目录 ⇒ 范围锁失效）。"""
+    broad = []
+    for raw in patterns:
+        s = str(raw).strip()
+        norm = s.rstrip("/")
+        if s in ("", ".") or norm in ("", "."):
+            broad.append(s or "(空串)")
+        elif norm in _BROAD_SCOPE_ROOTS:
+            broad.append(s)
+    return broad
+
+
+def _is_scope_exempt(rel_path: str) -> bool:
+    """流程产出物豁免：即使不在 scope.paths 内也不算蔓延。"""
+    p = str(rel_path).replace("\\", "/")
+    if p in SCOPE_EXEMPT_EXACT:
+        return True
+    return any(p.startswith(pref) for pref in SCOPE_EXEMPT_PREFIXES)
+
+
+@_register_check
+def check_scope_creep(change_dir: Path, project_root: Path) -> tuple[str, str]:
+    """(b) 范围蔓延：基于 change 自己声明的 scope.paths 与实际 diff 逐文件比对。
+
+    严格度按「是否声明 scope.paths」自然分界（不引入时间基准）：
+    - 已声明 + 越界  -> FAIL
+    - 已声明 + 在范围内 -> PASS
+    - 未声明          -> WARN（老 change 不爆红）
+    """
+    from .guard import _load_change_scope, _is_in_change_scope
+
+    raw_patterns = _load_change_scope(change_dir)
+    if not raw_patterns:
+        return (
+            "WARN",
+            "(b) 范围锁未生效：本 change 未声明 scope.paths —— 在 "
+            "canonical/proposals/*.yaml 加 `scope: {paths: [...]}` 即可启用严格检查",
+        )
+
+    patterns, dropped = _sanitize_scope_patterns(raw_patterns)
+    notes = []
+    if dropped:
+        notes.append(f"已剔除含 .. 的 pattern {len(dropped)} 条（{'、'.join(dropped[:3])}）")
+    if not patterns:
+        msg = "(b) 范围锁未生效：scope.paths 全部无效"
+        return ("WARN", msg + ("；" + "；".join(notes) if notes else ""))
+
+    broad = _is_scope_too_broad(patterns)
+    if broad:
+        notes.append(f"scope 过宽（{'、'.join(broad)}）—— 建议收窄到具体文件或子目录")
+
+    changed, reason = _iter_changed_files(change_dir, project_root)
+    if reason:
+        msg = f"(b) 无法执行范围检查：{reason}"
+        return ("WARN", msg + ("；" + "；".join(notes) if notes else ""))
+
     out_of_scope = []
-    for fp in changed_paths:
-        fp = fp.strip()
-        # A file is in-scope if it's under one of the capability spec dirs
-        # or in common dirs like .fstdd/, tests/, etc.
-        common_dirs = {".fstdd/", "tests/", "docs/", ".github/"}
-        is_common = any(fp.startswith(d) for d in common_dirs)
-        is_cap = any(f"specs/{c}/" in fp or f"commands/{c}" in fp for c in caps)
-        if not is_common and not is_cap:
-            out_of_scope.append(fp)
+    for _status, path in changed:
+        if _is_scope_exempt(path):
+            continue
+        if not _is_in_change_scope(project_root, path, patterns):
+            out_of_scope.append(path)
 
     if out_of_scope:
-        return ("WARN", f"(b) 范围蔓延: {len(out_of_scope)} 个文件可能超出声明范围 ({', '.join(out_of_scope[:3])}...)")
-    return ("PASS", f"(b) 文件变更在声明范围内 ({len(caps)} capabilities)")
+        head = "、".join(out_of_scope[:5])
+        more = f" 等 {len(out_of_scope)} 个" if len(out_of_scope) > 5 else ""
+        msg = (
+            f"(b) 范围蔓延：{len(out_of_scope)} 个文件不在本 change 声明范围内"
+            f"（{head}{more}）—— 若属本 change 请补进 scope.paths，否则移出本次改动"
+        )
+        return ("FAIL", msg + ("；" + "；".join(notes) if notes else ""))
+
+    msg = (
+        f"(b) 文件变更在声明范围内（{len(patterns)} 条 scope.paths，"
+        f"{len(changed)} 个改动文件）"
+    )
+    return ("PASS", msg + ("；" + "；".join(notes) if notes else ""))
+
+
+# ── DELIVER 冻结 / 断言核实 / backlog（anti-drift-gates）──────────
+
+# 收尾阶段禁止新增的路径前缀：新增功能/测试属范围膨胀（形态 C）
+DELIVER_FREEZE_PREFIXES = ("upstream/fstdd/", "upstream/tests/")
+
+# 逃生阀环境变量：设了非空理由即放行（留痕优先于硬拦）
+ALLOW_LATE_ENV = "FSTDD_ALLOW_LATE_CHANGE"
+
+# commit message 里的版本号形态（严格三段式，避免误吃 1.2 或 2026-10-28）
+_VERSION_IN_MSG_RE = re.compile(r"\bv(\d+\.\d+\.\d+)\b")
+
+
+def _load_change_state(change_dir: Path) -> dict:
+    """读 change 的 .fstdd.yaml；任何失败返回 {}（调用方按 SKIP 处理）。"""
+    state_file = change_dir / ".fstdd.yaml"
+    if not state_file.exists():
+        return {}
+    try:
+        import yaml as _yaml
+        data = _yaml.safe_load(state_file.read_text(encoding="utf-8")) or {}
+    except Exception:  # noqa: BLE001
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+@_register_check
+def check_deliver_freeze(change_dir: Path, project_root: Path) -> tuple[str, str]:
+    """(n) DELIVER 冻结：收尾阶段禁止新增源文件 / 测试文件。
+
+    判据：`current_phase == deliver` 且 `phases.build.status == completed` 时，
+    baseline..HEAD 的 **A（新增）** 状态文件落在 upstream/fstdd/ 或 upstream/tests/
+    ⇒ FAIL。`.fstdd/` 与 `docs/` 属归档产出物，天然不在前缀内。
+    逃生阀：环境变量 `FSTDD_ALLOW_LATE_CHANGE='理由'` 放行并回显理由。
+    """
+    state = _load_change_state(change_dir)
+    if not state:
+        return ("SKIP", "(n) .fstdd.yaml 缺失，跳过冻结检查")
+
+    phase = state.get("current_phase")
+    build_status = ((state.get("phases") or {}).get("build") or {}).get("status")
+    if phase != "deliver" or build_status != "completed":
+        return (
+            "SKIP",
+            f"(n) 未处于 deliver+build完成（当前 {phase}/{build_status}），冻结不适用",
+        )
+
+    changed, reason = _iter_changed_files(change_dir, project_root, status_filter="A")
+    if reason:
+        return ("WARN", f"(n) 无法执行冻结检查：{reason}")
+
+    late = [
+        p for _st, p in changed
+        if any(p.startswith(pre) for pre in DELIVER_FREEZE_PREFIXES)
+    ]
+    allow = (os.environ.get(ALLOW_LATE_ENV) or "").strip()
+
+    if late and not allow:
+        head = "、".join(late[:5])
+        more = f" 等 {len(late)} 个" if len(late) > 5 else ""
+        return ("FAIL", (
+            f"(n) DELIVER 冻结：收尾阶段新增了 {len(late)} 个源/测试文件"
+            f"（{head}{more}）—— 收尾不应新增功能；确需新增请设 "
+            f"{ALLOW_LATE_ENV}='理由' 显式放行"
+        ))
+    if late and allow:
+        return ("PASS", f"(n) DELIVER 冻结已放行（理由：{allow}），新增 {len(late)} 个文件")
+    return ("PASS", "(n) DELIVER 相位无新增源/测试文件")
+
+
+@_register_check
+def check_claims(change_dir: Path, project_root: Path) -> tuple[str, str]:
+    """(o) 断言核实：commit message 里的版本号须与 version.yaml 一致。
+
+    这是「形态 A 无证据断言」唯一可机器验证的部分 —— 本仓 2026-10-27 实测：
+    commit 写「v3.4.0 增量」而 3.4.0 早已发布，无任何检查发现该矛盾。
+    """
+    version_file = project_root / ".fstdd" / "version.yaml"
+    if not version_file.exists():
+        return ("SKIP", "(o) .fstdd/version.yaml 缺失")
+    try:
+        import yaml as _yaml
+        vdata = _yaml.safe_load(version_file.read_text(encoding="utf-8")) or {}
+    except Exception:  # noqa: BLE001
+        return ("SKIP", "(o) version.yaml 解析失败")
+    actual = str((vdata or {}).get("fstdd_version") or "").strip()
+    if not actual:
+        return ("SKIP", "(o) version.yaml 缺 fstdd_version")
+
+    sha = _load_baseline_sha(change_dir)
+    if not sha:
+        return ("WARN", "(o) 无法确定 change 起点（缺 baseline），断言核实跳过")
+
+    import subprocess
+    try:
+        r = subprocess.run(
+            ["git", "log", "--format=%s%n%b", f"{sha}..HEAD"],
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=20,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return ("WARN", f"(o) git log 执行失败（{type(exc).__name__}）")
+    if r.returncode != 0:
+        return ("WARN", f"(o) git log 返回 {r.returncode}")
+
+    found = set(_VERSION_IN_MSG_RE.findall(r.stdout or ""))
+    mismatched = sorted(v for v in found if v != actual)
+    if mismatched:
+        shown = "、".join("v" + v for v in mismatched)
+        return ("FAIL", (
+            f"(o) 断言核实失败：commit message 出现 {shown}，"
+            f"而 version.yaml 的 fstdd_version 是 {actual}"
+            f" —— 版本号须与实际一致（改 message 或升版）"
+        ))
+    if found:
+        return ("PASS", f"(o) commit message 版本号一致（v{actual}，{len(found)} 种）")
+    return ("PASS", "(o) commit message 未出现版本号，无需核实")
+
+
+@_register_check
+def check_backlog_open(change_dir: Path, project_root: Path) -> tuple[str, str]:
+    """(p) 候选池未闭合项：DELIVER 时提示 `.fstdd/backlog.md` 还有多少债。
+
+    只 WARN 不阻断 —— 阻断会逼人为了过门禁而乱勾，反而毁掉候选池的可信度。
+    """
+    state = _load_change_state(change_dir)
+    phase = state.get("current_phase")
+    if phase != "deliver":
+        return ("SKIP", f"(p) 未处于 deliver（当前 {phase}），backlog 检查不适用")
+
+    backlog = project_root / ".fstdd" / "backlog.md"
+    if not backlog.exists():
+        return ("PASS", "(p) 无 .fstdd/backlog.md（尚未建候选池）")
+
+    try:
+        text = backlog.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        return ("SKIP", f"(p) backlog.md 不可读（{type(exc).__name__}）")
+
+    total = 0
+    mine = 0
+    tag = f"[{change_dir.name}]"
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("- [ ]"):
+            total += 1
+            if tag in s:
+                mine += 1
+
+    if total == 0:
+        return ("PASS", "(p) backlog 无未处理项")
+    return ("WARN", (
+        f"(p) backlog 有 {total} 项未处理（本 change 引入 {mine} 项、"
+        f"历史遗留 {total - mine} 项）—— 建议转入下一轮迭代，不阻断"
+    ))
 
 
 @_register_check
@@ -532,6 +854,116 @@ def check_contract_gap(change_dir: Path, project_root: Path) -> tuple[str, str]:
     return ("PASS", f"(k) 契约一致 ({len(cap_fields)} capabilities)")
 
 
+def _scan_gate_evidence_tags(change_dir: Path):
+    """返回 evidence 缺 [F] 标签的 Gate 名列表（已确认的才检查）。"""
+    from ..utils import has_fact_tag
+
+    state = _load_change_state(change_dir)
+    phases = state.get("phases") or {}
+    missing = []
+    for label, key in (("Gate 1", "understand"), ("Gate 2", "spec"), ("Gate 3", "build")):
+        phase_data = phases.get(key) or {}
+        if not phase_data.get("confirmed_at"):
+            continue
+        if not has_fact_tag(phase_data.get("confirmed_evidence") or ""):
+            missing.append(label)
+    return missing
+
+
+def cmd_check_drift(args: argparse.Namespace) -> None:
+    """`ci check-drift` —— 反漂移三闸聚合报告。
+
+    闸1 断言证据：commit 版本号核实 + Gate evidence 是否带事实标签
+    闸2 范围锁：实际 diff 与 scope.paths 比对
+    闸3 收尾冻结：deliver 相位禁新增源文件 + backlog 未闭合项
+
+    退出码：任一闸 FAIL ⇒ 1；`--strict` 时任一闸 WARN 亦 ⇒ 1；否则 0。
+    """
+    from ..finder import find_change_dir
+
+    project_root = Path.cwd()
+    change_dir = find_change_dir(getattr(args, "name", None), project_root, include_archive=True)
+    if change_dir is None:
+        print(f" 找不到 change: {getattr(args, 'name', None) or '(无)'}")
+        sys.exit(1)
+
+    strict = bool(getattr(args, "strict", False))
+    as_json = bool(getattr(args, "json", False))
+
+    # ── 闸1：断言证据 ──
+    claims_status, claims_msg = check_claims(change_dir, project_root)
+    gate1 = [{"name": "claims", "status": claims_status, "message": claims_msg}]
+    missing_tags = _scan_gate_evidence_tags(change_dir)
+    if missing_tags:
+        gate1.append({
+            "name": "evidence-tag",
+            "status": "WARN",
+            "message": f"以下 Gate 的 evidence 缺 [F] 事实标签：{'、'.join(missing_tags)}",
+        })
+
+    # ── 闸2：范围锁 ──
+    scope_status, scope_msg = check_scope_creep(change_dir, project_root)
+    if strict and scope_status == "WARN":
+        scope_status = "FAIL"
+        scope_msg += "（--strict：WARN 升格为 FAIL）"
+    gate2 = [{"name": "scope", "status": scope_status, "message": scope_msg}]
+
+    # ── 闸3：收尾冻结 ──
+    freeze_status, freeze_msg = check_deliver_freeze(change_dir, project_root)
+    backlog_status, backlog_msg = check_backlog_open(change_dir, project_root)
+    gate3 = [
+        {"name": "deliver-freeze", "status": freeze_status, "message": freeze_msg},
+        {"name": "backlog", "status": backlog_status, "message": backlog_msg},
+    ]
+
+    gates = [("闸1 断言证据", gate1), ("闸2 范围锁", gate2), ("闸3 收尾冻结", gate3)]
+
+    def _gate_status(items):
+        if any(i["status"] == "FAIL" for i in items):
+            return "FAIL"
+        if any(i["status"] == "WARN" for i in items):
+            return "WARN"
+        if all(i["status"] == "SKIP" for i in items):
+            return "SKIP"
+        return "PASS"
+
+    summary = [(label, _gate_status(items), items) for label, items in gates]
+
+    if as_json:
+        print(json.dumps(
+            {
+                "change": change_dir.name,
+                "strict": strict,
+                "gates": [
+                    {
+                        "gate": label,
+                        "status": st,
+                        "items": items,
+                    }
+                    for label, st, items in summary
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        ))
+    else:
+        print()
+        print("  FSTDD 反漂移三闸报告")
+        print(f"  change: {change_dir.name}{'（strict）' if strict else ''}")
+        print(f"  {'─' * 56}")
+        symbol = {"PASS": "✓", "FAIL": "✗", "WARN": "⚠", "SKIP": "→"}
+        for label, st, items in summary:
+            print(f"  {symbol.get(st, '?')} {label}: {st}")
+            for item in items:
+                print(f"      [{item['status']}] {item['message']}")
+        print(f"  {'─' * 56}")
+
+    has_fail = any(st == "FAIL" for _l, st, _i in summary)
+    has_warn = any(st == "WARN" for _l, st, _i in summary)
+    if has_fail or (strict and has_warn):
+        sys.exit(1)
+
+
 def cmd_ci(args: argparse.Namespace) -> None:
     from ..utils import get_logger
     get_logger()
@@ -550,9 +982,12 @@ def cmd_ci(args: argparse.Namespace) -> None:
         _cmd_check_failures(args, project_root)
     elif subcommand in ("check-scope", "check-coverage", "check-contracts"):
         _run_single_check(args, project_root, subcommand)
+    elif subcommand == "check-drift":
+        cmd_check_drift(args)
     else:
         print(f" 未知子命令: {subcommand}")
-        print(" 可用: init, generate, check-failures, check-scope, check-coverage, check-contracts")
+        print(" 可用: init, generate, check-failures, check-scope, check-coverage, "
+              "check-contracts, check-drift")
         sys.exit(1)
 
 
@@ -610,16 +1045,21 @@ def check_tc_implementation_coverage(change_dir: Path, project_root: Path) -> tu
     # 不再直接 rglob("test_*.py")——后者对连字符命名结构性失明（下游多层次agent
     # 的 EXP-2026-0001 类假红；本仓同名编号为 Guard 阶段门，非此语义）。
     from ..utils import iter_test_files
-    tests_dir = project_root / "tests"
-    if not tests_dir.exists():
-        return ("SKIP", "tests/ 目录不存在，跳过 TC 实现覆盖检查")
+    # anti-drift-gates（2026-10-28）：同时扫仓库根 `tests/` 与 `upstream/tests/`。
+    # 原实现只看 `<root>/tests` ⇒ upstream 侧 change 的 TC 覆盖恒报 0/N
+    # （本仓 v3.3.6 已记为已知缺陷；本轮实测 0/24 复现，故一并修）。
+    test_dirs = [project_root / "tests", project_root / "upstream" / "tests"]
+    existing_dirs = [d for d in test_dirs if d.is_dir()]
+    if not existing_dirs:
+        return ("SKIP", "tests/ 与 upstream/tests/ 都不存在，跳过 TC 实现覆盖检查")
 
     implemented_tcs = set()
-    for test_file in iter_test_files(tests_dir):
-        file_content = test_file.read_text(encoding="utf-8")
-        for tc_id in planned_tcs:
-            if tc_id in file_content:
-                implemented_tcs.add(tc_id)
+    for tests_dir in existing_dirs:
+        for test_file in iter_test_files(tests_dir):
+            file_content = test_file.read_text(encoding="utf-8")
+            for tc_id in planned_tcs:
+                if tc_id in file_content:
+                    implemented_tcs.add(tc_id)
 
     missing = planned_tcs - implemented_tcs
     coverage_pct = len(implemented_tcs) / len(planned_tcs) * 100 if planned_tcs else 100

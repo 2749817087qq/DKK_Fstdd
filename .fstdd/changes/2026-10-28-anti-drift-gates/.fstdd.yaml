@@ -1,0 +1,47 @@
+baseline:
+  at: '2026-10-28T11:33:29+00:00'
+  base_git_sha: d31f24a7d65b7bd62683d63234eab700a64dfeae
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-28-anti-drift-gates
+complexity_score: 12
+current_phase: build
+design_adjustments:
+  count: 0
+last_modified: '2026-10-28T11:37:20+00:00'
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-10-28T11:37:40+00:00'
+mode: thorough
+phases:
+  build:
+    status: in_progress
+  deliver:
+    status: pending
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-28T11:37:13+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: '[F:proposal] 8 项 what_changes + 12 条 scope.paths + 10 条 SC；[F:spec]
+      6 REQ/24 SC（anti-drift-gates 20 + ci-check-accuracy 4）；[F:test-plan] 24 TC 与
+      24 SC 一一对应、TC-ID 零重复；[F:design] 7 决策含备选排除 + 9 条风险缓解；[D] 覆盖完整可进 BUILD。D哥 确认原文：「确认」'
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-28T11:33:29+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: '[F:dialog] D哥 三项裁决：(1) 范围锁 FAIL 只对本 change 之后新建的 change 生效，老
+      change 走 WARN；(2) gate approve --evidence 强制 [F] 标签；(3) 候选池统一放 .fstdd/backlog.md
+      单文件。proposal 已按此更新，YAML 校验通过：8 项变更 / 12 条 scope.paths / 10 条 SC。'
+    status: completed
+score_confidence: null
+status: active
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

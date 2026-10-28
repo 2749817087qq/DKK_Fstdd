@@ -92,7 +92,7 @@ def test_tsn_001_cli_outputs_tz_aware(tmp_path):
     # gate approve → confirmed_at 必须带时区
     rc, out, err = run_cli(
         "gate", "approve", change_id, "--gate", "1",
-        "--confirmed-by", "dialog", "--evidence", "TSN-001 测试",
+        "--confirmed-by", "dialog", "--evidence", "[F:test] TSN-001 测试",
         cwd=proj,
     )
     assert rc == 0, f"gate approve 失败 rc={rc}\n{out}\n{err}"

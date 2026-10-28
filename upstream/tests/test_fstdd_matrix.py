@@ -179,7 +179,7 @@ class TestCLI:
         run_cli(["new", "demo-change"], tmp_path)
         rc, out = run_cli(
             ["gate", "approve", DEMO_CHANGE, "--gate", "1",
-             "--confirmed-by", "dialog", "--evidence", "matrix test"],
+             "--confirmed-by", "dialog", "--evidence", "[F:test] matrix test"],
             tmp_path)
         assert rc == 0, out
 

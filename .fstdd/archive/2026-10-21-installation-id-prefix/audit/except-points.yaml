@@ -2,8 +2,8 @@ meta:
   title: 全仓裸 except 吞异常点审计表（活表）
   change: 2026-10-21-installation-id-prefix
   refreshed_from: 2026-10-12-canon-merge-command
-  observed_at: '2026-10-27T13:30:00+00:00'
-  observed_base_git_sha: 44c6650d945a8c677479b5d44dba09fa370ed73c
+  observed_at: '2026-10-28T12:20:00+00:00'
+  observed_base_git_sha: d31f24a7d65b7bd62683d63234eab700a64dfeae
   scanner: tools/audit_silent_except.py
   refreshed_at: '2026-10-22T11:55:00+08:00'
   refreshed_reason: '2026-10-21 change installation-id-prefix 刷新：承接归档活表 25 点。本 change 在 upstream/fstdd/cli/commands/init.py 新增 _generate_installation_id / _get_prefix / _ensure_installation_id 及 _post_init_self_check
@@ -269,7 +269,7 @@ points:
   response: 放行
   detection_path: false
   justification: 版本探测读取失败 → None 版本，信息展示容错
-  line: 307
+  line: 325
   refreshed_reason: '2026-10-17 行号 123→153（change 2026-10-16-ci-checker-tc-recognition 在 resolve_stdd_path 之后插入 iter_test_files 30 行，指纹 return None/except Exception: 未变）'
   line_shifted_from: 153
 - id: EA-025
@@ -281,6 +281,6 @@ points:
   response: 放行
   detection_path: false
   justification: version 文件 YAML 解析失败 → 继续其他探测路径
-  line: 320
+  line: 338
   refreshed_reason: 2026-10-17 行号 136→166（同上，iter_test_files 插入 30 行位移）
   line_shifted_from: 166

@@ -1,0 +1,217 @@
+# spec.yaml — anti-drift-gates（行为规格）
+# change: 2026-10-28-anti-drift-gates
+
+meta:
+  capability: "anti-drift-gates"
+  change_id: "2026-10-28-anti-drift-gates"
+  created: "2026-10-28T11:45:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-ADG-001
+    description: |
+      范围锁：`ci check-failures` 的 (b) 检查须基于 change 自己声明的
+      `scope.paths` 与实际 diff 逐文件比对，而非 capability 名与路径前缀的
+      模糊匹配。严格度按「是否声明 scope.paths」分界。
+    scenarios:
+      - id: SC-ADG-001
+        confidence: high
+        evidence: "proposal C1；design.md 决策 2；D哥 裁决「只对本 change 之后新建的 change 生效」"
+        given: "change 的 canonical/proposals/*.yaml 声明了 scope.paths: ['upstream/fstdd/cli/commands/ci.py']"
+        when: "baseline..HEAD 的 diff 含 upstream/fstdd/cli/commands/guard.py（不在 scope 内）"
+        then: "(b) 检查 SHALL 返回 FAIL"
+        and:
+          - "结果文本 SHALL 列出越界文件名"
+          - "结果文本 SHALL 提示「改这里不在本 change 声明范围内」"
+
+      - id: SC-ADG-002
+        confidence: high
+        evidence: "proposal SC-02 正例"
+        given: "change 声明了 scope.paths: ['upstream/fstdd/cli/commands/ci.py']"
+        when: "baseline..HEAD 的 diff 只含 upstream/fstdd/cli/commands/ci.py"
+        then: "(b) 检查 SHALL 返回 PASS"
+        and:
+          - "结果文本 SHALL 注明「在声明范围内」"
+
+      - id: SC-ADG-003
+        confidence: high
+        evidence: "proposal C1；D哥 裁决「老 change 走 WARN」"
+        given: "change 的 proposal 未声明 scope.paths"
+        when: "执行 ci check-failures"
+        then: "(b) 检查 SHALL 返回 WARN（不是 FAIL，不是 SKIP）"
+        and:
+          - "结果文本 SHALL 含「范围锁未生效」与补声明指引"
+
+      - id: SC-ADG-004
+        confidence: high
+        evidence: "proposal SC-03；design.md 决策 2 的 --strict 口径"
+        given: "change 的 proposal 未声明 scope.paths"
+        when: "执行 ci check-drift --strict"
+        then: "闸2 结论 SHALL 为 FAIL（WARN 升格）"
+        and: []
+
+      - id: SC-ADG-005
+        confidence: medium
+        evidence: "design.md 风险表「AI 把 scope.paths 写宽」"
+        given: "change 声明 scope.paths: ['upstream/']（覆盖整个内核目录）"
+        when: "执行 ci check-failures"
+        then: "(b) 检查 SHALL 返回 WARN 并提示 scope 过宽"
+        and:
+          - "空串、'.'、'tests/' 同样触发过宽判定"
+
+      - id: SC-ADG-006
+        confidence: high
+        evidence: "EXP-2026-0027 输入层拒绝原则；design.md 风险表"
+        given: "change 声明 scope.paths 含 '../etc/passwd' 或 'upstream/../.git/'"
+        when: "读取 scope 并做范围判定"
+        then: "含 '..' 的 pattern SHALL 被剔除"
+        and:
+          - "剔除动作 SHALL 产生 WARN，说明剔除了哪条"
+
+  - id: REQ-ADG-002
+    description: |
+      DELIVER 冻结：进入 deliver 相位且 build 已完成时，禁止新增源文件或测试文件。
+    scenarios:
+      - id: SC-ADG-007
+        confidence: high
+        evidence: "proposal C2 / SC-04；design.md 决策 4"
+        given: "change 的 current_phase == deliver 且 phases.build.status == completed"
+        when: "baseline..HEAD 的 diff 含状态 A（新增）的 upstream/fstdd/cli/commands/foo.py"
+        then: "(n) 检查 SHALL 返回 FAIL"
+        and:
+          - "结果文本 SHALL 列出新增文件与「收尾阶段禁止新增」的说明"
+          - "结果文本 SHALL 提示逃生阀 --allow-late-change"
+
+      - id: SC-ADG-008
+        confidence: high
+        evidence: "design.md 决策 4「只拦 A 不拦 M」"
+        given: "change 的 current_phase == deliver 且 build 完成"
+        when: "baseline..HEAD 的 diff 只含状态 M（修改）的 upstream/fstdd/cli/commands/ci.py"
+        then: "(n) 检查 SHALL 返回 PASS"
+        and:
+          - "收尾修 typo / 补文档属正常收尾，不得拦"
+
+      - id: SC-ADG-009
+        confidence: high
+        evidence: "design.md 决策 4 逃生阀"
+        given: "同上 SC-ADG-007 的新增源文件情形"
+        when: "执行 ci check-failures --allow-late-change '评审要求补一个适配器'"
+        then: "(n) 检查 SHALL 返回 PASS（放行）"
+        and:
+          - "放行理由 SHALL 记录到 .fstdd.yaml 的 design_adjustments"
+
+      - id: SC-ADG-010
+        confidence: high
+        evidence: "design.md 决策 4；proposal C2"
+        given: "change 的 current_phase == deliver 且 build 完成"
+        when: "baseline..HEAD 的 diff 含状态 A 的 .fstdd/changes/<change>/test-report.md"
+        then: "(n) 检查 SHALL 返回 PASS"
+        and:
+          - ".fstdd/ 下的归档产出物全豁免"
+
+  - id: REQ-ADG-003
+    description: |
+      断言核实：commit message 里出现的版本号须与实际版本一致。
+    scenarios:
+      - id: SC-ADG-011
+        confidence: high
+        evidence: "proposal C3 / SC-05；本仓 2026-10-27 实测（commit 写 v3.4.0 增量而 3.4.0 已发布）"
+        given: ".fstdd/version.yaml 的 fstdd_version == '3.5.0'"
+        when: "baseline..HEAD 的某条 commit message 含 'v3.4.0 增量'"
+        then: "(o) 检查 SHALL 返回 FAIL"
+        and:
+          - "结果文本 SHALL 列出矛盾的两处值（commit 里的 vs version.yaml 的）"
+
+      - id: SC-ADG-012
+        confidence: high
+        evidence: "proposal SC-05 正例"
+        given: ".fstdd/version.yaml 的 fstdd_version == '3.5.0'"
+        when: "所有 commit message 里的版本号都是 v3.5.0，或不含版本号"
+        then: "(o) 检查 SHALL 返回 PASS"
+        and: []
+
+  - id: REQ-ADG-004
+    description: |
+      `ci check-drift` 提供三闸聚合报告，供 AI 在 BUILD 末与 DELIVER 前自查。
+    scenarios:
+      - id: SC-ADG-013
+        confidence: high
+        evidence: "proposal C4 / SC-01"
+        given: "存在活跃 change"
+        when: "执行 fstdd ci check-drift"
+        then: "stdout SHALL 含三节：闸1 断言证据 / 闸2 范围锁 / 闸3 收尾冻结"
+        and:
+          - "每节 SHALL 给出该闸的结论（PASS / WARN / FAIL / SKIP）"
+          - "任一闸 FAIL 时退出码 SHALL 为 1"
+
+      - id: SC-ADG-014
+        confidence: high
+        evidence: "proposal C4；design.md 决策 2"
+        given: "闸2 结论为 WARN（未声明 scope）且其余闸 PASS"
+        when: "执行 fstdd ci check-drift --strict"
+        then: "退出码 SHALL 为 1（WARN 升格为失败）"
+        and:
+          - "不加 --strict 时退出码 SHALL 为 0"
+
+  - id: REQ-ADG-005
+    description: |
+      Gate 确认的 evidence 须含事实标签 `[F]`，否则拒绝（默认强制）。
+    scenarios:
+      - id: SC-ADG-015
+        confidence: high
+        evidence: "proposal C5 / SC-08；D哥 裁决「强制 [F] 标签」"
+        given: "执行 fstdd gate approve <change> --gate 2 --confirmed-by dialog --evidence '已完成'"
+        when: "evidence 不含 [F] 或 [F:来源] 形态标签"
+        then: "命令 SHALL 拒绝执行并以非 0 退出"
+        and:
+          - "stdout/stderr SHALL 打印正确写法示例（含 [F] 与 [D] 的用法）"
+          - "Gate 状态 SHALL NOT 被写入（拒绝须是原子的）"
+
+      - id: SC-ADG-016
+        confidence: high
+        evidence: "proposal SC-08 正例"
+        given: "evidence 为 '[F:pytest] 9/9 全绿；[D] 由测试结果推出实现正确'"
+        when: "执行 gate approve"
+        then: "命令 SHALL 成功（退出码 0）"
+        and:
+          - "Gate 状态 SHALL 正常写入"
+
+      - id: SC-ADG-017
+        confidence: high
+        evidence: "design.md 决策 5 约束"
+        given: "执行 fstdd gate amend-audit <change> --gate 1 --evidence '补历史追认'（无 [F] 标签）"
+        when: "evidence 不含事实标签"
+        then: "命令 SHALL 正常执行（amend-audit 不受标签约束）"
+        and: []
+
+  - id: REQ-ADG-006
+    description: |
+      全局候选池 `.fstdd/backlog.md` 作为范围外发现的唯一去处。
+    scenarios:
+      - id: SC-ADG-018
+        confidence: high
+        evidence: "proposal C6 / SC-06；D哥 裁决「统一放 .fstdd/backlog.md 一个文件」"
+        given: "仓库已安装模板"
+        when: "比对 .fstdd/templates/backlog.md 与 upstream/.fstdd/templates/backlog.md"
+        then: "两文件 SHALL 逐字节一致"
+        and:
+          - "文件 SHALL 含「## 未处理」与「## 已处理」两节"
+          - "文件 SHALL 说明条目格式 [<change-id>] 前缀"
+
+      - id: SC-ADG-019
+        confidence: high
+        evidence: "proposal SC-06「fstdd new 不创建 per-change discoveries.md」"
+        given: "执行 fstdd new some-new-change"
+        when: "检查新建的 change 目录"
+        then: "目录 SHALL NOT 含 discoveries.md"
+        and: []
+
+      - id: SC-ADG-020
+        confidence: medium
+        evidence: "proposal C6「区分本 change 引入项与历史遗留项」"
+        given: "phase == deliver，backlog.md 有 3 项未勾选（其中 1 项标 [<本 change>]）"
+        when: "执行 ci check-failures"
+        then: "(n) 检查 SHALL 返回 WARN"
+        and:
+          - "结果文本 SHALL 分别给出「本 change 引入 N 项」与「历史遗留 M 项」"
+          - "该 WARN SHALL NOT 阻断（不改变退出码）"

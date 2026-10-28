@@ -1,0 +1,232 @@
+# 2026-10-28-anti-drift-gates.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-10-28-anti-drift-gates"
+  title: "反漂移三道闸：断言证据分级 / 范围锁 + 全局 backlog 池 / DELIVER 冻结"
+  created: "2026-10-28T11:28:52+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    FSTDD 的门禁只检查「做完了没」，不检查「说的对不对」。三种漂移形态因此在
+    BUILD / DELIVER 阶段反复发生，且现有检查拦不住。
+
+    形态 A（无证据断言）：AI 凭记忆断言版本/ID/状态，与实际不符。
+      实测两例（均发生在本仓 2026-10-27）：
+      - commit message 写「v3.4.0 增量」，实际 v3.4.0 早在 10-19 已发布
+        （`git tag --sort=-creatordate` 第一条即 `fstdd-v3.4.0`）；
+      - memory 记「EXP-2026-0044/0045」，实际不存在（真 ID 是 0043/0038）。
+
+    形态 B（范围蔓延）：BUILD 中「顺手」改本 change 之外的东西，无任何拦截。
+      根因已定位：`upstream/fstdd/cli/commands/ci.py:417-458` 的 `check_scope_creep`
+      判据是「文件路径是否含 `specs/<capability>/` 或 `commands/<capability>`」，
+      而本仓代码在 `upstream/fstdd/cli/commands/*.py`，与 capability 名毫无路径
+      关系 ⇒ 几乎所有真实代码改动都被判 out_of_scope ⇒ 长期以 WARN 呈现 ⇒
+      被当噪声忽略。且它用 `git diff --stat HEAD~1` 只看最近一次 commit（不是
+      整个 change 期间），change 刚开始时 `HEAD~1` 不存在 ⇒ 直接 SKIP
+      （本仓 MEMORY 记的「(b) 恒 SKIP」即此）。
+
+    形态 C（收尾膨胀）：DELIVER 阶段「还应该补个 XXX」，无冻结机制。
+      同时 `gate approve --evidence` 的 evidence 是自由文本，写「已完成」也算
+      通过 —— 无法区分「有据」与「凭感觉」。
+
+    已存在可复用能力（本 change 不新造，只接线）：
+    - `guard.py:_load_change_scope()` 已能从 `canonical/proposals/*.yaml` 读
+      `scope.paths`（失败 fail-closed）；
+    - `guard.py:_is_in_change_scope()` 已做 `normpath + resolve().relative_to()`
+      归一化后匹配（`..` 逃逸挡得住），支持目录前缀 + fnmatch。
+    二者目前只用于 guard 的相位封锁，`ci` 侧完全没用 ⇒ 范围锁的数据源与判据
+    都已就位，缺的只是接线。
+
+  motivation: |
+    漂移的代价不是「多写了点东西」，而是结论不可信：一旦 AI 在收尾阶段凭猜测
+    提出要处理的问题，后续所有判断都建立在沙上。D哥 明确反馈「我已经遇到很多
+    次了，后面就漂移了」—— 需要机制层拦截，不是再写一份文档。
+
+  evidence:
+    observed_at: "2026-10-28T11:28:58+00:00"
+    observed_base_git_sha: "d31f24a7d65b7bd62683d63234eab700a64dfeae"
+    details: |
+      1) `upstream/fstdd/cli/commands/ci.py:417-458` 的 `check_scope_creep`：
+         判据 `is_cap = any(f"specs/{c}/" in fp or f"commands/{c}" in fp for c in caps)`
+         与实际代码路径 `upstream/fstdd/cli/commands/<module>.py` 不匹配；
+         `common_dirs = {".fstdd/", "tests/", "docs/", ".github/"}` 把 change 产出物
+         全放过；`git diff --stat HEAD~1` 只看单次 commit。
+         结论：该检查对本仓恒为 PASS/WARN，从未 FAIL 过一次。
+      2) 只有 2 个 change 声明过 `scope`（2026-09-25-guard-phase-path-scope /
+         2026-09-25-new-isolate-flag），其后 40+ 个 change 全部无声明 —— 因为
+         `.fstdd/templates/canonical/proposal.yaml` 模板里没有 scope 段。
+      3) `git tag --sort=-creatordate | head -1` = `fstdd-v3.4.0`（2026-10-19），
+         而 2026-10-27 的 commit message 仍写「v3.4.0 增量」—— 无任何检查发现该矛盾。
+
+what_changes:
+  - id: C1
+    description: |
+      重写 `ci.py:check_scope_creep`：数据源改用 `_load_change_scope`（读
+      `canonical/proposals/*.yaml` 的 `scope.paths`），判据改用
+      `_is_in_change_scope`，diff 范围改为 `baseline.base_git_sha..HEAD`
+      （整个 change 期间累计）。
+
+      严格度按「是否声明 scope.paths」**自然分界**（D哥 定：只对本 change 之后
+      新建的 change 生效，老 change 走 WARN）：
+      - **已声明 scope.paths** ⇒ 超范围 **FAIL**（严格模式）；
+      - **未声明 scope.paths** ⇒ **WARN** 并提示「范围锁未生效」（老 change 不爆红）；
+      - `ci check-drift --strict` 时，未声明亦升为 **FAIL**（收尾自查口径）。
+      不引入时间基准 —— 声明与否本身就是分界线，且与 C7（模板补 scope 段）
+      配合后，新 change 从模板生成即带声明。
+      scope 过宽检测：paths 命中 `upstream/`、`tests/`、`""` 等宽前缀时 WARN 并提示收窄。
+    type: modified
+
+  - id: C2
+    description: |
+      新增 `ci.py:check_deliver_freeze`：`phase == deliver` 且
+      `phases.build.status == completed` 时，若 `baseline..HEAD` 的 diff 含
+      `upstream/fstdd/**` 或 `upstream/tests/**` 的新增文件（A 状态）则 FAIL。
+      `.fstdd/**` 为归档产出物，豁免。逃生阀：`--allow-late-change "理由"`
+      显式放行并写入 `design-adjustments`。
+    type: new
+
+  - id: C3
+    description: |
+      新增 `ci.py:check_claims`：收尾断言核实 —— 扫描 `baseline..HEAD` 的
+      commit message，若出现 `vX.Y.Z` 形态版本号，须与
+      `.fstdd/version.yaml: fstdd_version` 一致；不一致则 FAIL。
+      这是「形态 A 无证据断言」唯一可机器验证的部分。
+    type: modified
+
+  - id: C4
+    description: |
+      新增 `fstdd ci check-drift [change] [--json] [--strict]`：把 C1/C2/C3
+      聚合成人类可读三闸报告（闸1 断言证据 / 闸2 范围锁 / 闸3 收尾冻结），
+      `--strict` 时任一 WARN 也返回非 0。供 AI 在 BUILD 末与 DELIVER 前自查。
+    type: new
+
+  - id: C5
+    description: |
+      `gate approve` 新增 evidence 格式校验：evidence 须含至少一个事实标签
+      `[F]`（形态 `[F]` 或 `[F:来源]`）。**默认即强制**（D哥 定）—— 缺标签时
+      拒绝并返回非 0，同时打印正确写法示例。
+      新增 `utils.has_fact_tag()` 作为唯一判据（不散落正则）。
+      仅作用于 `gate approve`；`gate amend-audit`（补历史审计）不受约束。
+    type: modified
+
+  - id: C6
+    description: |
+      新增**全局候选池** `.fstdd/backlog.md`（D哥 定：统一一个文件，不按 change 散落）：
+      执行中发现、但不属于当前 change 范围的问题一律写这里，按 `[<change-id>]` 前缀
+      归属来源。`fstdd new` **不**生成 per-change 的 discoveries.md。
+      `check_deliver_freeze` 额外检查：DELIVER 时若 backlog 有未勾选 `- [ ]` 项则
+      WARN，并区分「本 change 引入的项数」与「历史遗留项数」（不阻断）。
+      模板双份落盘：`.fstdd/templates/backlog.md` + `upstream/.fstdd/templates/backlog.md`。
+    type: new
+
+  - id: C7
+    description: |
+      `.fstdd/templates/canonical/proposal.yaml` 增补 `scope:` 段（`mode` +
+      `paths`），并在 `upstream/.fstdd/templates/canonical/proposal.yaml` 同步
+      双份一致。这是范围锁能生效的前提 —— 模板无此段是 40+ change 全无声明的根因。
+    type: modified
+
+  - id: C8
+    description: |
+      `fstdd-build` / `fstdd-deliver` skill 增补「反漂移硬规则」章节：断言证据
+      分级（`[F]` 事实须附命令/文件证据、`[D]` 推导须给链、`[G]` 猜测禁入任务
+      清单）、范围外发现一律写 `.fstdd/backlog.md`、DELIVER 禁新增功能。
+      本地 `.fstdd/skills/` 与 `upstream/.fstdd/skills/` 双份一致。
+    type: modified
+
+capabilities:
+  new:
+    - name: anti-drift-gates
+      description: |
+        三道闸的机器检查与报告：范围锁（scope.paths 接线）、DELIVER 冻结
+        （新增源文件拦截）、断言核实（commit message 版本号 vs version.yaml）。
+        统一入口 `fstdd ci check-drift`。
+  modified:
+    - name: ci-check-accuracy
+      description: |
+        修复 `check_scope_creep` 的判据错配（capability 名 vs 路径前缀）与
+        diff 范围错配（HEAD~1 vs baseline..HEAD），结论由 WARN 提升为 FAIL。
+
+scope:
+  mode: strict
+  paths:
+    - "upstream/fstdd/cli/commands/ci.py"
+    - "upstream/fstdd/cli/commands/gate.py"
+    - "upstream/fstdd/cli/commands/guard.py"
+    - "upstream/fstdd/cli/commands/new.py"
+    - "upstream/fstdd/cli/utils.py"
+    - "upstream/fstdd/cli/__init__.py"
+    - "upstream/tests/commands/test_ci.py"
+    - "upstream/tests/commands/test_gate.py"
+    - "upstream/tests/commands/test_guard_error_messages.py"
+    - "upstream/tests/test_fstdd_matrix.py"
+    - "upstream/tests/test_time_baseline_ops.py"
+    - "upstream/tests/test_timestamp_ops.py"
+    - "upstream/tests/test_anti_drift_gates.py"
+    - "upstream/.fstdd/templates/"
+    - "upstream/.fstdd/skills/"
+    - ".fstdd/templates/"
+    - ".fstdd/skills/"
+    - ".fstdd/backlog.md"
+    - "tests/test_anti_drift_gates.py"
+
+constraints:
+  - "不新造 scope 数据源 —— 复用 guard.py 的 _load_change_scope / _is_in_change_scope（已做 resolve 归一化，.. 逃逸挡得住）"
+  - "范围锁未声明 scope 时不得误判为 FAIL —— 必须 WARN 并提示失效，否则历史 change 全部爆红"
+  - "DELIVER 冻结只拦新增源文件（A 状态），不拦修改（M）—— 收尾修 typo / 补文档属正常"
+  - "escape hatch 必须留：--allow-late-change 显式放行并落 design-adjustments，防机制卡死"
+  - "所有新检查须正例 + 反例成对（只跑 happy path 发现不了判据失效）"
+
+stakeholders:
+  - "D哥（决策者：漂移的实际受害者，提出需求）"
+  - "FSTDD 各节点（AI 执行方：受闸门约束，也是受益方）"
+
+risk_areas:
+  - capability: anti-drift-gates
+    risk: "范围锁误报把正常改动判成蔓延 —— 一旦频繁误报，人就会习惯性忽略红灯（这正是 check_scope_creep 现在的死法）"
+    mitigation: |
+      三重防线：① 未声明 scope 一律 WARN 不 FAIL；② 文档类路径（docs/、README、
+      CHANGELOG、.fstdd/experiences/、.fstdd/specs/）显式豁免；③ 每个判据配反例
+      测试，证明「真蔓延」能红、「正常改动」能绿。
+  - capability: anti-drift-gates
+    risk: "AI 把 scope.paths 写得极宽（如 upstream/）让范围锁形同虚设"
+    mitigation: "check_scope_creep 内置过宽检测：paths 命中 upstream/、tests/、空串等宽前缀时 WARN 并提示收窄"
+  - capability: ci-check-accuracy
+    risk: "改动 check_scope_creep 会让既有归档 change 的 ci 结果变化"
+    mitigation: "check 仅对活跃 change 生效（走 finder.require_active_change_dir 语义），历史归档不回溯"
+
+non_goals:
+  - "不做 AI 对话层的实时拦截（hook 级）—— 本轮只做可自查的机器判据，hook 拦截另立 change"
+  - "不引入新的外部依赖（仅标准库 + 既有 PyYAML）"
+  - "不改 guard 的相位封锁行为（只复用其 helper，不动其逻辑）"
+  - "不做 test-report 里用例数的自动核对（需跑全量测试，成本过高，留人工）"
+
+critical:
+  is_critical: true
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L3
+  reference_changes:
+    - "2026-09-25-guard-phase-path-scope（scope.paths 机制来源：_load_change_scope / _is_in_change_scope 的原始实现与测试）"
+    - "2026-10-07-tool-defect-fixes（ci-check-accuracy 前身：判据错配修复范式 + AST 契约扫描）"
+    - "2026-09-25-new-isolate-flag（scope.paths 的第二个使用例，验证跨 change 隔离语义）"
+  anchor_implementations: []
+
+success_criteria:
+  - "SC-01：`fstdd ci check-drift` 命令存在，输出三闸报告（闸1/闸2/闸3 各一节），退出码 0/1 语义正确"
+  - "SC-02：`check_scope_creep` 对**已声明** scope.paths 且改动超范围的 change 返回 FAIL（反例），对范围内改动返回 PASS（正例）"
+  - "SC-03：`check_scope_creep` 在 change **未声明** scope 时返回 WARN（不是 FAIL、不是 SKIP）；`ci check-drift --strict` 下同一情形升为 FAIL"
+  - "SC-04：`check_deliver_freeze` 在 phase=deliver 且新增 upstream/fstdd/** 文件时返回 FAIL，`--allow-late-change` 时放行"
+  - "SC-05：`check_claims` 对 commit message 版本号与 version.yaml 不一致返回 FAIL，一致返回 PASS"
+  - "SC-06：`.fstdd/backlog.md` 模板存在且双份（.fstdd/ + upstream/.fstdd/）逐字节一致；`fstdd new` **不**创建 per-change discoveries.md"
+  - "SC-07：proposal 模板含 scope 段且双份一致；`_load_change_scope` 能从新模板产物读到 paths"
+  - "SC-08：`gate approve --evidence` 缺 `[F]` 标签时**默认拒绝**（非 0 退出 + 打印正确写法）；`gate amend-audit` 不受影响"
+  - "SC-09：新增测试 >= 15 个，且每个判据正例+反例成对"
+  - "SC-10：全量门禁 `pytest upstream/tests tests` 0 failed；`ci check-failures` 0 FAIL"
