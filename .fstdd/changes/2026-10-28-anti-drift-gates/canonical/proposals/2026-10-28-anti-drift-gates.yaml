@@ -172,6 +172,8 @@ scope:
     - ".fstdd/skills/"
     - ".fstdd/backlog.md"
     - "tests/test_anti_drift_gates.py"
+    - "tests/test_installation_id_traceability.py"
+    - "tests/test_installation_id_backfill_traceability.py"
 
 constraints:
   - "不新造 scope 数据源 —— 复用 guard.py 的 _load_change_scope / _is_in_change_scope（已做 resolve 归一化，.. 逃逸挡得住）"

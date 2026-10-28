@@ -73,15 +73,18 @@ def test_planned_tc_count():
     assert all(t.startswith("TC-IID-") for t in EXPECTED_TCS)
 
 
-def test_ci_check_scope_is_known_false_red():
-    """固化「ci check-failures 的 TC 覆盖对 upstream 测试假红」这一已知缺陷。
+def test_ci_check_scope_covers_both_trees():
+    """固化「TC 覆盖同时扫仓库根 tests/ 与 upstream/tests/」这一**已修复**行为。
 
-    判据：`ci.py` 里 tests_dir 仍是 `project_root / "tests"`。
-    哪天上游把它改成同时扫两棵树，本用例会红 —— 那时应删除本用例并改真实断言。
+    历史：2026-10-28 之前 ci.py 只扫 `<root>/tests`，导致 upstream 侧 change
+    的 TC 覆盖恒报 0/N（假红）。anti-drift-gates change 修掉了它
+    （实测本 change 从 0/24 变 24/24），本用例遂由「固化已知缺陷」
+    改为「固化修复后的行为」—— 这正是原用例 docstring 预告的处置。
     """
     ci_src = (REPO / "upstream" / "fstdd" / "cli" / "commands" / "ci.py").read_text(
         encoding="utf-8"
     )
-    assert 'tests_dir = project_root / "tests"' in ci_src, (
-        "ci.py 的 TC 覆盖扫描范围已变化，请更新本用例（可能已修复假红）"
+    assert 'project_root / "upstream" / "tests"' in ci_src, (
+        "TC 覆盖应同时扫 upstream/tests/，否则 upstream 侧 change 恒报 0/N"
     )
+    assert 'project_root / "tests"' in ci_src, "仓库根 tests/ 仍须覆盖"
