@@ -1,7 +1,7 @@
 # 反漂移三道闸：断言证据分级 / 范围锁 + 全局 backlog 池 / DELIVER 冻结
 
-<!-- source_hash: 6ccf76be0fa20f1d -->
-<!-- generated_at: 2026-10-28T11:33:29+00:00 -->
+<!-- source_hash: a235823200695d7f -->
+<!-- generated_at: 2026-10-29T16:21:51+00:00 -->
 <!-- canonical: canonical/proposals/2026-10-28-anti-drift-gates.yaml -->
 
 ## Why

@@ -1,0 +1,91 @@
+# agent_spec.yaml — anti-drift-gates（验证规格）
+# change: 2026-10-28-anti-drift-gates
+# CP 检查点与 spec.yaml 的 Scenario 一一对应
+
+meta:
+  task_id: "anti-drift-gates-verify"
+  change_id: "2026-10-28-anti-drift-gates"
+  task_type: code
+  system: "FSTDD CLI（fstdd ci / fstdd gate）"
+  preconditions:
+    - "仓库已初始化 .fstdd/"
+    - "python -m pytest 可用（managed venv）"
+
+steps:
+  - id: CP-1
+    description: "check-drift 命令存在且输出三闸报告"
+    action: "python -m fstdd ci check-drift"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "闸1"
+      - type: stdout_contains
+        expected: "闸2"
+      - type: stdout_contains
+        expected: "闸3"
+
+  - id: CP-2
+    description: "范围锁反例：已声明 scope + 越界文件 ⇒ FAIL"
+    action: "pytest upstream/tests/test_anti_drift_gates.py -k scope_fail"
+    assertions:
+      - type: exit_code
+        expected: 0
+      - type: stdout_contains
+        expected: "passed"
+
+  - id: CP-3
+    description: "范围锁正例：范围内改动 ⇒ PASS"
+    action: "pytest upstream/tests/test_anti_drift_gates.py -k scope_pass"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-4
+    description: "未声明 scope ⇒ WARN（非 FAIL 非 SKIP）"
+    action: "pytest upstream/tests/test_anti_drift_gates.py -k scope_warn"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-5
+    description: "DELIVER 冻结：deliver 相位新增源文件 ⇒ FAIL"
+    action: "pytest upstream/tests/test_anti_drift_gates.py -k deliver_freeze"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-6
+    description: "逃生阀：--allow-late-change 放行并留痕"
+    action: "pytest upstream/tests/test_anti_drift_gates.py -k allow_late"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-7
+    description: "断言核实：commit 版本号与 version.yaml 不一致 ⇒ FAIL"
+    action: "pytest upstream/tests/test_anti_drift_gates.py -k claims"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-8
+    description: "gate approve 缺 [F] 标签 ⇒ 拒绝（非 0 退出）"
+    action: "pytest upstream/tests/test_anti_drift_gates.py -k evidence_tag"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-9
+    description: "gate amend-audit 不受 evidence 标签约束"
+    action: "pytest upstream/tests/test_anti_drift_gates.py -k amend_audit"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-10
+    description: "backlog 模板双份逐字节一致"
+    action: "pytest upstream/tests/test_anti_drift_gates.py -k backlog_template"
+    assertions:
+      - type: exit_code
+        expected: 0

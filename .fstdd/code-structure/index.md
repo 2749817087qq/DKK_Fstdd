@@ -460,3 +460,15 @@
 - `.fstdd/version.yaml` schema 增加可选键 `installation_id`（本仓自身仍未设置，见 FU-004）。
 
 ---
+
+## 2026-10-28-anti-drift-gates (2026-10-30)
+> Git commit: 94e06b3
+
+# Code Structure Delta — 2026-10-28-anti-drift-gates
+> 生成时间: 2026-10-29T16:19:27+00:00 | Git commit: b909892
+> 置信度: 0.70 (AI-generated — 以源代码为准)
+
+## 变更文件
+
+- `caveman_summary.txt`
+---

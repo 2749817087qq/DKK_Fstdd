@@ -59,7 +59,7 @@ phases:
         verified_at: '2026-10-28T23:50:00+08:00'
     status: completed
   deliver:
-    status: in_progress
+    status: completed
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-10-28T11:37:13+00:00'
@@ -77,7 +77,7 @@ phases:
       单文件。proposal 已按此更新，YAML 校验通过：8 项变更 / 12 条 scope.paths / 10 条 SC。'
     status: completed
 score_confidence: null
-status: active
+status: archived
 task_type: code
 traceability:
   spec_scenarios: 0

@@ -1,0 +1,33 @@
+# agent_spec.yaml — ci-check-accuracy（验证规格，MODIFIED）
+# change: 2026-10-28-anti-drift-gates
+
+meta:
+  task_id: "ci-check-accuracy-verify"
+  change_id: "2026-10-28-anti-drift-gates"
+  task_type: code
+  system: "FSTDD CLI（fstdd ci check-failures）"
+  preconditions:
+    - "仓库已初始化 .fstdd/"
+    - "python -m pytest 可用（managed venv）"
+
+steps:
+  - id: CP-1
+    description: "判据锚点不依赖 capability 名出现在路径里"
+    action: "pytest upstream/tests/test_anti_drift_gates.py -k anchor_not_capname"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-2
+    description: "diff 覆盖 baseline..HEAD 全部 commit（多 commit 蔓延可检出）"
+    action: "pytest upstream/tests/test_anti_drift_gates.py -k multi_commit"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-3
+    description: "无 baseline / 无 HEAD~1 时不崩溃、不静默 SKIP"
+    action: "pytest upstream/tests/test_anti_drift_gates.py -k no_baseline"
+    assertions:
+      - type: exit_code
+        expected: 0
