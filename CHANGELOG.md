@@ -8,6 +8,62 @@
 
 ---
 
+## [3.6.0] — 2026-10-30
+
+> **一句话**：把「AI 凭猜测提出要处理的问题」这个漂移根因做成**可机器拦截**的三道闸 ——
+> 断言有据、改动有界、收尾有冻。附带修掉 3 处让门禁「永远绿」的判据缺陷。
+
+### 新增 — 反漂移三道闸（`fstdd ci check-drift`）
+
+**带来什么帮助**：三种漂移不再靠自觉，而是**跑一条命令就能查**。
+
+| 闸 | 拦什么 | 机制 |
+|---|---|---|
+| 闸1 断言证据 | AI 凭记忆断言版本/ID/状态 | `gate approve --evidence` **强制**含 `[F]` 事实标签（缺则拒绝）；`(o) check_claims` 扫 commit subject 的版本号与 `version.yaml` 比对 |
+| 闸2 范围锁 | BUILD 中「顺手」改本 change 之外的东西 | 重写 `(b)`：数据源改为 change 自己声明的 `scope.paths`，diff 改为 `baseline..工作区`，结论 WARN → **FAIL** |
+| 闸3 收尾冻结 | DELIVER 阶段「还应该补个 XXX」 | `(n) check_deliver_freeze` 拦 deliver 相位新增的 `upstream/fstdd/**` 与 `upstream/tests/**` 文件（只拦新增不拦修改）；`(p) check_backlog_open` 提示候选池未闭合项 |
+
+- **新命令** `fstdd ci check-drift [change] [--strict] [--json]`：三闸聚合报告，`--strict` 时 WARN 也返回非 0。
+- **新模板** `.fstdd/templates/backlog.md`（全局候选池，条目带 `[<change-id>]` 归属）。
+- **proposal 模板增 `scope:` 段** —— 此前 40+ 个 change 全无声明的根因就是模板没给位置。
+- **skill 增「反漂移硬规则」章节**（`fstdd-build` / `fstdd-deliver`）：`[F]`/`[D]`/`[G]` 分级、范围外发现进 backlog、收尾禁新增。
+
+**严格度分界**（避免历史 change 全爆红）：
+
+| 情形 | 结论 |
+|---|---|
+| 已声明 `scope.paths` + 改动越界 | **FAIL** |
+| 已声明 + 改动在范围内 | PASS |
+| 未声明 `scope.paths` | **WARN** + 提示「范围锁未生效」 |
+| 未声明 + `check-drift --strict` | **FAIL**（收尾自查口径） |
+
+**逃生阀**：`FSTDD_ALLOW_LATE_CHANGE='理由'` 显式放行 DELIVER 期新增（会回显理由留痕）。
+
+### 修复 — 三处「让门禁永远绿」的判据缺陷
+
+- **`(b)` 范围蔓延从未 FAIL 过一次**：原判据是「路径是否含 `specs/<cap>/` 或 `commands/<cap>`」，
+  而本仓代码在 `upstream/fstdd/cli/commands/<module>.py`，与 capability 名**毫无路径关系**；
+  且用 `git diff HEAD~1` 只看单次 commit，change 刚开始时直接 SKIP。
+- **TC 实现覆盖只扫 `<root>/tests`**：不扫 `upstream/tests/` ⇒ upstream 侧 change 恒报 0/N
+  （本仓 v3.3.6 已记为已知缺陷，本轮实测 0/24 复现）⇒ 两个目录都扫。
+- **`(o) check_claims` 的假阳性**：初版扫全文，把 body 里「修复 v3.4.0 引入的问题」这类
+  **引用历史版本**误判成断言矛盾 ⇒ 改为只扫 subject + 排除已有 tag 的历史版本。
+
+### 修复 — 其他
+
+- **Guard 的 `fix_cmd` 模板未带 `--evidence`**：照抄修复命令会被新的 evidence 校验拒绝 ⇒ 模板补上。
+- **`deliver.md` 的 BOM**：与 upstream 版从第 1 字节就 differ ⇒ 去掉。
+
+### 升级注意
+
+- `gate approve` 现在**必须**带含 `[F]` 的 evidence，例如：
+  `--evidence "[F:pytest] 9/9 全绿；[D] 由测试结果推出实现正确"`。
+  两条豁免：`gate amend-audit`（事后追认）与 `--confirmed-by file_token`（token 文件即凭据）。
+- 新 change 建议在 `canonical/proposals/*.yaml` 声明 `scope.paths`，否则范围锁只 WARN 不拦。
+- 历史 change 不受影响（未声明 scope ⇒ 走 WARN 分支）。
+
+---
+
 ## [3.5.0] — 2026-10-27
 
 > **一句话**：把「安装 / 经验 / 门禁」三条链上 v3.4.0 之后的 36 个增量收口成一个

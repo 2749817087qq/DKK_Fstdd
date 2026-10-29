@@ -6,10 +6,10 @@ baseline:
   node_id: DESKTOP-TBJSBQ5
 change_id: 2026-10-28-anti-drift-gates
 complexity_score: 12
-current_phase: build
+current_phase: deliver
 design_adjustments:
   count: 0
-last_modified: '2026-10-28T11:37:20+00:00'
+last_modified: '2026-10-29T16:19:44+00:00'
 long_range:
   enabled: true
   mode: full_auto
@@ -18,9 +18,48 @@ long_range:
 mode: thorough
 phases:
   build:
-    status: in_progress
+    confirmed_actor: ai
+    confirmed_at: '2026-10-29T16:19:11+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: '[F:pytest] 全量 1483 total / 1 failed（预存在 flaky test_inbox_endpoint::test_a21，单跑
+      PASS 两次）/ 11 skipped；[F:selfcheck] 四自检 rename 8/8 · eol 7/7 · skill_standards
+      7/7 · workbuddy_skills PASS；[F:ci] check-failures 7 PASS / 1 WARN / 5 SKIP /
+      0 FAIL；[F:drift] 闸1 PASS · 闸2 PASS（21 条 scope / 38 改动文件）· 闸3 SKIP（未到 deliver）；[D]
+      24/24 TC 覆盖完整、6/6 切片 done，质量达标。D哥 确认原文：「确认」'
+    slices_completed:
+      S1:
+        new_tests: 4
+        status: done
+        tc_coverage: TC-CIA-001,TC-CIA-002,TC-CIA-003,TC-CIA-004
+        verified_at: '2026-10-28T12:00:00+08:00'
+      S2:
+        new_tests: 9
+        status: done
+        tc_coverage: TC-ADG-001,TC-ADG-002,TC-ADG-003,TC-ADG-005,TC-ADG-006
+        verified_at: '2026-10-28T12:10:00+08:00'
+      S3:
+        new_tests: 5
+        status: done
+        tc_coverage: TC-ADG-007,TC-ADG-008,TC-ADG-009,TC-ADG-010,TC-ADG-020
+        verified_at: '2026-10-28T12:20:00+08:00'
+      S4:
+        new_tests: 3
+        status: done
+        tc_coverage: TC-ADG-011,TC-ADG-012
+        verified_at: '2026-10-28T12:25:00+08:00'
+      S5:
+        new_tests: 3
+        status: done
+        tc_coverage: TC-ADG-015,TC-ADG-016,TC-ADG-017
+        verified_at: '2026-10-28T23:30:00+08:00'
+      S6:
+        new_tests: 7
+        status: done
+        tc_coverage: TC-ADG-004,TC-ADG-013,TC-ADG-014,TC-ADG-018,TC-ADG-019
+        verified_at: '2026-10-28T23:50:00+08:00'
+    status: completed
   deliver:
-    status: pending
+    status: in_progress
   spec:
     confirmed_actor: ai
     confirmed_at: '2026-10-28T11:37:13+00:00'

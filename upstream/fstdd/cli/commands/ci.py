@@ -650,28 +650,98 @@ def check_deliver_freeze(change_dir: Path, project_root: Path) -> tuple[str, str
     """(n) DELIVER 冻结：收尾阶段禁止新增源文件 / 测试文件。
 
     判据：`current_phase == deliver` 且 `phases.build.status == completed` 时，
-    baseline..HEAD 的 **A（新增）** 状态文件落在 upstream/fstdd/ 或 upstream/tests/
-    ⇒ FAIL。`.fstdd/` 与 `docs/` 属归档产出物，天然不在前缀内。
+    **BUILD 完成之后**新增的文件落在 upstream/fstdd/ 或 upstream/tests/ ⇒ FAIL。
+
+    时间边界（关键）：用 `phases.build.confirmed_at` 反查「BUILD 完成时的 commit」，
+    只检查那之后的改动。否则 BUILD 期正常交付的测试文件会被误判成「收尾新增」
+    （实测 2026-10-28：本 change 自己的 test_anti_drift_gates.py 被误拦）。
+    无 `confirmed_at` 时降级为 baseline 起算（宽松，但至少能拦未声明的收尾新增）。
+
     逃生阀：环境变量 `FSTDD_ALLOW_LATE_CHANGE='理由'` 放行并回显理由。
     """
+    import subprocess
+
     state = _load_change_state(change_dir)
     if not state:
         return ("SKIP", "(n) .fstdd.yaml 缺失，跳过冻结检查")
 
     phase = state.get("current_phase")
-    build_status = ((state.get("phases") or {}).get("build") or {}).get("status")
+    build_phase = (state.get("phases") or {}).get("build") or {}
+    build_status = build_phase.get("status")
     if phase != "deliver" or build_status != "completed":
         return (
             "SKIP",
             f"(n) 未处于 deliver+build完成（当前 {phase}/{build_status}），冻结不适用",
         )
 
-    changed, reason = _iter_changed_files(change_dir, project_root, status_filter="A")
-    if reason:
-        return ("WARN", f"(n) 无法执行冻结检查：{reason}")
+    # 时间边界：BUILD 完成那一刻的 commit
+    boundary_sha = _load_baseline_sha(change_dir)
+    boundary_desc = "baseline"
+    build_confirmed = build_phase.get("confirmed_at")
+    if build_confirmed:
+        try:
+            r = subprocess.run(
+                ["git", "log", "--until", str(build_confirmed), "-1", "--format=%H"],
+                cwd=str(project_root),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=20,
+            )
+            sha = (r.stdout or "").strip()
+            if r.returncode == 0 and sha:
+                boundary_sha = sha
+                boundary_desc = f"BUILD 完成时 commit {sha[:8]}"
+        except Exception:  # noqa: BLE001
+            pass
+
+    if not boundary_sha:
+        return ("WARN", "(n) 无法确定检查起点（缺 baseline 且缺 build.confirmed_at）")
+
+    try:
+        r = subprocess.run(
+            ["git", "diff", "--name-status", "--diff-filter=A", boundary_sha],
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=20,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return ("WARN", f"(n) 无法执行冻结检查（{type(exc).__name__}）")
+    if r.returncode != 0:
+        return ("WARN", f"(n) git diff 返回 {r.returncode}（起点 {boundary_sha[:8]} 不可达）")
+
+    added = []
+    for line in (r.stdout or "").splitlines():
+        parts = line.split("\t")
+        if len(parts) >= 2:
+            added.append(parts[-1].strip().replace("\\", "/"))
+
+    # 补充未跟踪的新文件
+    try:
+        r2 = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=all"],
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=20,
+        )
+        if r2.returncode == 0:
+            for line in (r2.stdout or "").splitlines():
+                if line.startswith("?? "):
+                    p = line[3:].strip().replace("\\", "/")
+                    if p and p not in added:
+                        added.append(p)
+    except Exception:  # noqa: BLE001
+        pass
 
     late = [
-        p for _st, p in changed
+        p for p in added
         if any(p.startswith(pre) for pre in DELIVER_FREEZE_PREFIXES)
     ]
     allow = (os.environ.get(ALLOW_LATE_ENV) or "").strip()
@@ -680,13 +750,13 @@ def check_deliver_freeze(change_dir: Path, project_root: Path) -> tuple[str, str
         head = "、".join(late[:5])
         more = f" 等 {len(late)} 个" if len(late) > 5 else ""
         return ("FAIL", (
-            f"(n) DELIVER 冻结：收尾阶段新增了 {len(late)} 个源/测试文件"
+            f"(n) DELIVER 冻结：{boundary_desc} 之后新增了 {len(late)} 个源/测试文件"
             f"（{head}{more}）—— 收尾不应新增功能；确需新增请设 "
             f"{ALLOW_LATE_ENV}='理由' 显式放行"
         ))
     if late and allow:
         return ("PASS", f"(n) DELIVER 冻结已放行（理由：{allow}），新增 {len(late)} 个文件")
-    return ("PASS", "(n) DELIVER 相位无新增源/测试文件")
+    return ("PASS", f"(n) {boundary_desc} 之后无新增源/测试文件")
 
 
 @_register_check
