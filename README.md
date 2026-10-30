@@ -220,6 +220,36 @@ fstdd installation-id --prefix MYPROJ    # 指定前缀（不指定则按项目�
 fstdd installation-id                    # 实际写入
 ```
 
+### 自查漂移（`fstdd ci check-drift`，v3.6.0 起）
+
+执行 AI 最常犯的三类漂移，一条命令全查：
+
+```bash
+fstdd ci check-drift                # 三闸报告
+fstdd ci check-drift --strict       # 任一闸 WARN 也返回非 0（收尾自查口径）
+fstdd ci check-drift --json         # 机器可读
+```
+
+| 闸 | 拦什么 | 怎么拦 |
+|---|---|---|
+| **闸1 断言证据** | AI 凭记忆断言版本 / ID / 状态 | `gate approve --evidence` 必须含 `[F]` 事实标签；`check_claims` 扫 commit subject 的版本号与 `version.yaml` 比对 |
+| **闸2 范围锁** | BUILD 中「顺手」改本 change 之外的东西 | 按 change 自己声明的 `scope.paths` 比对实际 diff，越界 **FAIL** |
+| **闸3 收尾冻结** | DELIVER 阶段「还应该补个 XXX」 | deliver 相位禁止新增源文件 / 测试文件（只拦新增不拦修改） |
+
+**要让闸2 生效，需在 `canonical/proposals/*.yaml` 声明 `scope.paths`**：
+
+```yaml
+scope:
+  mode: strict
+  paths:
+    - "upstream/fstdd/cli/commands/ci.py"
+    - "upstream/tests/"
+```
+
+未声明时只 WARN（不阻断老 change）。范围外的发现请写进 `.fstdd/backlog.md`，不要顺手改。
+
+**逃生阀**：确需在收尾期新增，用 `FSTDD_ALLOW_LATE_CHANGE='理由'` 显式放行（会回显理由留痕）。
+
 **它做什么**：只补齐 `.fstdd/version.yaml` 里缺失的 `installation_id` 一行。
 
 **它不做什么**（这点很重要）：**不跑** `guard init`、**不拉**经验、**不写**全局项目注册表。
@@ -467,10 +497,11 @@ python tools/share_experience.py --export
 ## 11. 版本与文档（**文档导航**）
 
 ### 版本历史
-**当前版本：`3.3.9`** ｜ 完整更新日志见 **[`CHANGELOG.md`](./CHANGELOG.md)**
+**当前版本：`3.6.0`** ｜ 完整更新日志见 **[`CHANGELOG.md`](./CHANGELOG.md)**
 
 | 版本 | 日期 | 主题（一句话） | 值不值得升 |
 |---|---|---|---|
+| **3.6.0** | 2026-10-30 | **反漂移三道闸** —— 把「AI 凭猜测提出要处理的问题」做成可机器拦截：闸1 断言证据（`gate approve` 强制 `[F]` 标签 + `check_claims` 核实版本号）· 闸2 范围锁（`(b)` 重写，按 `scope.paths` 判，WARN→**FAIL**）· 闸3 收尾冻结（deliver 相位拦新增源文件）。新命令 `fstdd ci check-drift`，新模板 `.fstdd/backlog.md` | ✅ **必升** —— 修掉 3 处「让门禁永远绿」的判据缺陷（`(b)` 判据锚点错配、TC 覆盖只扫 `tests/`、`check_claims` 假阳性）。升级后 `gate approve` 必须带 `[F]` 证据 |
 | **3.5.0** | 2026-10-27 | **安装身份与门禁可信度收口** —— 新增 `fstdd installation-id`（零副作用补 `installation_id`）+ 经验 ID 加安装前缀（消多项目撞号 8 例）+ 装完自动清影子副本（且不误移活跃实例）+ 经验库 fsync 原子落盘 / edges 幂等去重 + 门禁三处假红修复（测试文件识别失明、TC-ID 查重口径、`phase-integrity` 作用域） | ✅ **必升** —— 多项目并存会**经验 ID 撞号**（同 ID 不同内容）；装完会留 7 个影子目录；门禁假红会让你习惯性忽略红灯 |
 | **3.4.0** | 2026-10-19 | **经验静默回传出站收口** —— 出站三关最后一道闸门 `_verify_outbound` 残余判据补齐 4 类形态（Windows 路径 / 邮箱 / IPv4 / 内网域名）；`publish()` 入口单次校验；审计加 `sent_count` 与跨进程写锁 | ✅ **必升** —— 修复前生产静默路径上这些形态**原样出站**；且 2 进程并发写审计实测丢 40% |
 | **3.3.9** | 2026-10-17 | **DELIVER 自动化** —— 新增 `fstdd canon merge <change>` 命令，自动化归档 change 的 canonical 合并到仓库根 `canonical/`（`canon verify` ③ 2/2、13/13 merge 测试全绿） | ✅ **必升** —— 消 DELIVER 阶段手工合并 canonical 的易错步骤（此前须手工拷贝 + 插索引） |
