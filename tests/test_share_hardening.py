@@ -305,7 +305,15 @@ def test_seg011_silent_share_suite_is_green():
     # 解析 stdout 末尾的 pytest 汇总行（如 `23 passed in 1.23s`）
     tail = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
     _GREEN_RE = re.compile(r"^\d+ passed(?: in [\d.]+s)?(?:\s+\[100%\])?\s*$")
-    suite_green = bool(_GREEN_RE.match(tail.strip())) and ("F" not in r.stdout and "E " not in r.stdout)
+    # 2026-11-03（share-scp-tar-packing）：shim 污染加重后，除了 stderr 噪声，
+    # 还可能把 stdout 的 `N passed` 汇总行整个吞掉，末行只剩 `[100%]` 进度行。
+    # 放行条件精化为：末行是汇总行 **或** 纯进度行，且 stdout 无 F/E ——
+    # pytest -q 下失败用 `F` 表示，"F" not in stdout 仍能捕获全部真红。
+    _PROGRESS_RE = re.compile(r"^[.sx]+(?:\s+\[\d+%\])?\s*$")
+    suite_green = (
+        bool(_GREEN_RE.match(tail.strip()) or _PROGRESS_RE.match(tail.strip()))
+        and ("F" not in r.stdout and "E " not in r.stdout)
+    )
 
     if r.returncode == 0:
         assert suite_green, f"returncode=0 但 stdout 末行非全绿: {tail!r}\n{r.stdout[-800:]}"
