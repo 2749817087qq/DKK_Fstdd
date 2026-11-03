@@ -95,6 +95,33 @@
 | 2 | `_scp_dir_files`（回退路径）与 tar 路径的「文件口径」 | 都用 `rglob("*.md")`，但回退路径的 argv 含绝对路径，远端落盘为扁平文件名 | 无（实际经验文件都在顶层） | 观察；若出现子目录场景再统一 |
 | 3 | 临时 tar 目录清理 | `finally` 已加，但异常早退路径（如 `local_count` 计算失败）仍可能残留 | 磁盘占用 | 已清 6 个历史残留；观察 |
 
+## 五、全量门禁
+
+| 轮次 | total | failed | skipped | 失败明细 |
+|---|---|---|---|---|
+| 第 1 轮（提交 7175e19 后） | 1494 | 4 | 11 | test_a6 未跟踪项 1 + test_seg011 1（见下）+ test_a21 flaky 1 + **test_tc_tsp_001 1（我的新测试 tarfile.open 缺 encoding）** |
+| **第 2 轮（提交 e68a493 后）** | **1494** | **0** | **11** | **全绿** |
+
+**终值：1494 total / 0 failed / 11 skipped —— 全绿。**
+
+### 过程中的两个真问题（均已修）
+
+1. **`test_seg011_silent_share_suite_is_green` 单跑也红（非 flaky）**：该用例实跑
+   `upstream/tests/test_silent_share.py`（23/0 全绿），但 shim 污染这次把 stdout 的
+   `23 passed` 汇总行整个吞掉，末行只剩 `[100%]` 进度行 ⇒ 原判据判非绿。
+   判据精化：末行匹配「汇总行或纯进度行」二选一，`F`/`E` 检查保留（真红仍会捕获）。
+   隔离复跑 2 次均 PASS（提交 e68a493）。
+2. **`tarfile.open` 缺 `encoding=`**：`subprocess_encoding_policy` 判据把
+   `tarfile.open(path, "r:gz")` 视为文本 I/O —— 实际它有 `encoding` 参数（成员名解码），
+   加上即可，共 5 处（生产 1 + 测试 4）。
+
+### 第 2 轮前的隔离复跑
+
+| 用例 | 全量 | 隔离复跑 | 判定 |
+|---|---|---|---|
+| `test_a21_post_unknown_path_404` | FAIL | PASS | 预存在 flaky（端口竞态，本 change 未触碰 inbox_server） |
+| `test_seg011_...` | FAIL | FAIL×2 | **真红** ⇒ 定位并修（见上） |
+
 ## 七、真实链路验证（SC-03 的端到端）
 
 | 项 | 值 |
