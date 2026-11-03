@@ -1,0 +1,139 @@
+# spec.yaml — share-transport-performance（行为规格，MODIFIED）
+# change: 2026-10-31-share-scp-tar-packing
+
+meta:
+  capability: "share-transport-performance"
+  change_id: "2026-10-31-share-scp-tar-packing"
+  created: "2026-10-31T13:26:00+00:00"
+  confidence: high
+
+requirements:
+  - id: REQ-SCP-001
+    description: |
+      scp 通道须先把 out_dir 的全部文件打成**单个** tar.gz 再传输，
+      而非把每个文件路径逐个塞进 scp 命令行。打包须扁平化（成员名不含目录成分）。
+    scenarios:
+      - id: SC-SCP-001
+        confidence: high
+        evidence: "proposal C1；design.md 决策 1/2；实测 112 文件逐文件 scp 耗时 5m19s"
+        given: "out_dir 含 5 个 .md 文件（含子目录下的文件）"
+        when: "调用 _pack_tar(out_dir)"
+        then: "返回单个 .tar.gz 路径，SHALL NOT 返回 None"
+        and:
+          - "解包后文件数 SHALL 等于 5"
+          - "解包后每个成员的 name SHALL 不含 '/'（已扁平化）"
+
+      - id: SC-SCP-002
+        confidence: high
+        evidence: "design.md 决策 2；proposal C1"
+        given: "out_dir 下有子目录 a/b/EXP-001.md"
+        when: "调用 _pack_tar(out_dir)"
+        then: "该成员在 tar 内的 name SHALL 为 'EXP-001.md'"
+        and:
+          - "SHALL NOT 为 'a/b/EXP-001.md'"
+
+  - id: REQ-SCP-002
+    description: |
+      走 tar 路径时，scp 命令行的源文件列表须**恰好 1 个**（tar 包本身）。
+    scenarios:
+      - id: SC-SCP-003
+        confidence: high
+        evidence: "proposal C2 / SC-02；design.md「112 次协商 → 1 次」"
+        given: "out_dir 含 112 个文件，远端 tar 可用"
+        when: "调用 _scp_dir(out_dir, ...)"
+        then: "捕获到的 scp argv 中，源文件参数 SHALL 恰好 1 个"
+        and:
+          - "该参数 SHALL 以 .tar.gz 结尾"
+
+  - id: REQ-SCP-003
+    description: |
+      远端解包后须校验文件数与本地一致，不一致则返回失败（防解包不完整被当成功）。
+    scenarios:
+      - id: SC-SCP-004
+        confidence: high
+        evidence: "proposal C3 / SC-04；design.md 决策 4"
+        given: "本地打包 112 个文件，但远端解包后只有 100 个 .md"
+        when: "执行数量校验"
+        then: "_scp_dir SHALL 返回 (False, reason)"
+        and:
+          - "reason SHALL 含本地数与远端数两个数字"
+          - "批次目录 SHALL 被清理（不留半成品）"
+
+      - id: SC-SCP-005
+        confidence: high
+        evidence: "SC-SCP-004 正例"
+        given: "本地 112 个，远端解包后也是 112 个"
+        when: "执行数量校验"
+        then: "_scp_dir SHALL 返回 (True, '')"
+        and: []
+
+  - id: REQ-SCP-004
+    description: |
+      tar 打包失败时须自动回退到逐文件传输，且 reason 里标注已回退。
+    scenarios:
+      - id: SC-SCP-006
+        confidence: high
+        evidence: "proposal C4 / SC-05；design.md 决策 5"
+        given: "_pack_tar 因文件被占用抛异常（monkeypatch 模拟）"
+        when: "调用 _scp_dir(out_dir, ...)"
+        then: "SHALL 走逐文件路径完成传输，返回 (True, reason)"
+        and:
+          - "reason SHALL 含「回退」字样"
+          - "SHALL NOT 直接返回失败"
+
+      - id: SC-SCP-007
+        confidence: high
+        evidence: "design.md 决策 3「无 tar 直接回退」"
+        given: "远端 command -v tar 返回非 0（无 tar）"
+        when: "调用 _scp_dir(out_dir, ...)"
+        then: "SHALL 回退逐文件，SHALL NOT 尝试 tar 解包"
+        and:
+          - "reason SHALL 说明远端无 tar"
+
+  - id: REQ-SCP-005
+    description: |
+      既有安全校验在 tar 路径上须继续生效：`..` 路径、`-` 开头文件名、`--` 终止选项。
+    scenarios:
+      - id: SC-SCP-008
+        confidence: high
+        evidence: "proposal constraints；design.md「保留不变」"
+        given: "out_dir 里有文件名以 '-' 开头（如 '-oProxyCommand=x'）"
+        when: "调用 _scp_dir(out_dir, ...)"
+        then: "SHALL 返回 (False, reason) 且 reason 含「以 `-` 开头」"
+        and:
+          - "SHALL NOT 执行任何 scp / ssh 子进程"
+
+      - id: SC-SCP-009
+        confidence: high
+        evidence: "proposal constraints；EXP-2026-0027 输入层拒绝原则"
+        given: "remote_dir 为 '../etc'（含上跳）"
+        when: "调用 _scp_dir(out_dir, '../etc')"
+        then: "SHALL 返回 (False, reason) 且 reason 含拒绝原因"
+        and:
+          - "SHALL NOT 执行任何子进程"
+
+  - id: REQ-SCP-006
+    description: |
+      批次目录命名与远端布局须保持不变（消费方依赖）。
+    scenarios:
+      - id: SC-SCP-010
+        confidence: high
+        evidence: "proposal C2 / SC-06；design.md 决策 6"
+        given: "FSTDD_NODE_ID=local"
+        when: "走 tar 路径完成一次传输"
+        then: "远端批次目录名 SHALL 匹配 `local-experiences-\\d{8}-\\d{6}`"
+        and:
+          - "解包后 SHALL 只留 .md 文件，tar.gz 已被删除"
+
+  - id: REQ-SCP-007
+    description: |
+      tar 路径的端到端耗时须显著低于逐文件路径（性能目标）。
+    scenarios:
+      - id: SC-SCP-011
+        confidence: medium
+        evidence: "proposal SC-03；实测 112 文件逐文件 5m19s"
+        given: "112 个 1-5KB 的文件"
+        when: "只跑 _pack_tar 的打包阶段（不含网络）"
+        then: "打包耗时 SHALL < 2 秒"
+        and:
+          - "（端到端 <30s 由真实链路验证，不进单测 —— 单测不依赖网络）"

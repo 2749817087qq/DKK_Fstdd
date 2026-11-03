@@ -1,0 +1,9 @@
+designs: {}
+proposals:
+  2026-10-31-share-scp-tar-packing: proposals/2026-10-31-share-scp-tar-packing.yaml
+specs:
+  agent:
+    2026-10-31-share-scp-tar-packing: specs/agent/2026-10-31-share-scp-tar-packing.yaml
+  code:
+    2026-10-31-share-scp-tar-packing: specs/code/2026-10-31-share-scp-tar-packing.yaml
+version: '2.9'

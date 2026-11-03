@@ -27,6 +27,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 from pathlib import Path
@@ -945,6 +946,104 @@ def publish_via_scp(out_dir: Path,
         shutil.rmtree(send_dir, ignore_errors=True)
 
 
+def _pack_tar(out_dir: Path) -> tuple[Path | None, str]:
+    """把 out_dir 下所有文件打成**单个** .tar.gz，成员名扁平化。
+
+    为什么用 tarfile 而非系统 tar：跨平台行为一致（Windows bsdtar vs GNU tar 有差异）、
+    不依赖 PATH、且只有 Python API 能逐条指定 `arcname`。
+
+    为什么 arcname=basename：从根上消除路径穿越 —— tar 成员名物理上不含 `../`，
+    远端解包时不可能写到批次目录外（结构性免疫，不靠解包后校验）。
+
+    返回 (tar_path, reason)。失败时 tar_path 为 None，调用方应回退逐文件。
+    """
+    # 只打包 .md 经验条目 —— 与远端 `ls *.md | wc -l` 的计数口径一致。
+    # 2026-10-31 修：原用 rglob("*") 会把 .experience-index.yaml /
+    # audit-*.json 一起打包，导致「本地 N 个、远端 M 个」数量校验必然失败。
+    files = sorted(p for p in out_dir.rglob("*.md") if p.is_file())
+    if not files:
+        return None, f"out_dir 无可打包的 .md 文件: {out_dir}"
+
+    node_id = os.environ.get("FSTDD_NODE_ID", "local")
+    ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    tmp_dir = Path(tempfile.mkdtemp(prefix="fstdd_tar_"))
+    tar_path = tmp_dir / f"{node_id}-experiences-{ts}.tar.gz"
+
+    try:
+        with tarfile.open(tar_path, "w:gz", encoding="utf-8") as tf:
+            for f in files:
+                tf.add(str(f), arcname=os.path.basename(str(f)))
+    except Exception as exc:  # noqa: BLE001 —— 打包失败必须能回退，不得逃逸
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return None, f"tar 打包失败（{type(exc).__name__}: {str(exc)[:80]}）"
+
+    return tar_path, ""
+
+
+def _scp_dir_files(out_dir: Path, ssh_alias: str, batch_dir: str) -> tuple[bool, str]:
+    """逐文件 scp（原实现，保留为 tar 路径的 fallback）。
+
+    显式枚举文件而非 `dir/*`：Windows 的 scp 不展开通配符，会把 `dir/*` 当字面路径
+    stat ⇒ 失败（2026-10-17 实测每次失败都在远端留一个空目录）。
+    """
+    files = sorted(p.as_posix() for p in out_dir.rglob("*.md") if p.is_file())
+    if not files:
+        return False, f"out_dir 无可回传的 .md 文件: {out_dir}"
+
+    r = subprocess.run(
+        ["scp", "-r", "--", *files, f"{ssh_alias}:{batch_dir}/"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if r.returncode != 0:
+        return False, f"scp 失败 — {(r.stderr or r.stdout).strip()[:120]}"
+
+    r = subprocess.run(
+        ["ssh", ssh_alias, f"ls {batch_dir}/*.md 2>/dev/null | wc -l"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    n = r.stdout.strip() or "?"
+    print(f"[OK] 已 scp {n} 条经验 → {ssh_alias}:{batch_dir}")
+    return True, ""
+
+
+def _scp_tar(tar_path: Path, ssh_alias: str, batch_dir: str,
+             expected_count: int) -> tuple[bool, str, bool]:
+    """单次 scp 上传 tar 包 → 远端解包 → 删 tar → 校验文件数。
+
+    返回 `(ok, reason, is_count_mismatch)`。第三位为 True 表示「数量不符」——
+    这是**数据完整性问题**，回退逐文件也解决不了（会用同一批文件再传一次），
+    调用方必须直接失败而不是回退。
+    """
+    tar_name = tar_path.name
+
+    r = subprocess.run(
+        ["scp", "--", tar_path.as_posix(), f"{ssh_alias}:{batch_dir}/"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if r.returncode != 0:
+        return False, f"scp tar 包失败 — {(r.stderr or r.stdout).strip()[:120]}", False
+
+    r = subprocess.run(
+        ["ssh", ssh_alias, f"cd {batch_dir} && tar -xzf {tar_name} && rm -f {tar_name}"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if r.returncode != 0:
+        return False, f"远端解包失败 — {(r.stderr or r.stdout).strip()[:120]}", False
+
+    # 数量校验：tar 返回 0 只代表「没报错」，不代表「文件齐」
+    r = subprocess.run(
+        ["ssh", ssh_alias, f"ls {batch_dir}/*.md 2>/dev/null | wc -l"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    n_raw = (r.stdout or "").strip()
+    if not n_raw.isdigit():
+        return False, f"远端文件数无法解析: {n_raw[:40]!r}", False
+    n = int(n_raw)
+    if n != expected_count:
+        subprocess.run(
+            ["ssh", ssh_alias, f"rm -rf {batch_dir}"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace")
+        return False, f"远端文件数不符：本地 {expected_count}，远端 {n}（批次已清理）", True
+
+    print(f"[OK] 已 tar 传输 {n} 条经验 → {ssh_alias}:{batch_dir}")
+    return True, "", False
+
+
 def _scp_dir(out_dir: Path,
              ssh_alias: str = "fstdd-hub",
              remote_dir: str = "/home/ubuntu/fstdd-inbox") -> tuple[bool, str]:
@@ -971,6 +1070,20 @@ def _scp_dir(out_dir: Path,
         if not _ok:
             return False, _err
 
+    # 0.5 源文件枚举与名字校验 —— 必须在**任何子进程之前**。
+    # 2026-10-31 修：原实现把 bad_names 校验放在 SSH 可达性探测之后，
+    # 导致「文件名非法」时仍会先启动 ssh（安全校验形同虚设）。
+    files = sorted(p.as_posix() for p in out_dir.rglob("*.md") if p.is_file())
+    if not files:
+        return False, f"out_dir 无可回传的 .md 文件: {out_dir}"
+
+    # 选项注入防护（2026-10-18 审计 F6）：`-oProxyCommand=...` 这类名字会被
+    # scp 当选项解析。双保险：① 显式拒绝 `-` 开头；② argv 用 `--` 终止选项。
+    bad_names = [os.path.basename(f) for f in files if os.path.basename(f).startswith("-")]
+    if bad_names:
+        return False, ("源文件名以 `-` 开头，会被 scp 当作选项，已拒绝：%s"
+                       % ", ".join(bad_names[:5]))
+
     # 1. 快速可达性检查（ssh -o ConnectTimeout=5 alias echo OK）
     r = subprocess.run(
         ["ssh", "-o", "ConnectTimeout=5", ssh_alias, "echo", "OK"],
@@ -996,20 +1109,7 @@ def _scp_dir(out_dir: Path,
     # 会把 `dir/*` 当字面路径 stat ⇒ 失败；而批次目录已在远端建好，
     # 于是每次失败都在远端留下一个空目录（2026-10-17 实测今日远端 20+ 个）。
     # 同时用 as_posix() 换正斜杠 —— Windows 反斜杠会被 scp 当成转义符。
-    files = sorted(p.as_posix() for p in out_dir.iterdir() if p.is_file())
-    if not files:
-        return False, f"out_dir 为空，无可回传文件: {out_dir}"
-
-    # 选项注入防护（2026-10-18 审计 F6）：本函数已对 ssh_alias / remote_dir /
-    # FSTDD_NODE_ID 做白名单校验，但**源文件名**此前没有任何校验。虽然 as_posix()
-    # 产出的是绝对路径（不以 `-` 开头），一旦有人改成相对路径或传入手工构造的
-    # 目录，`-oProxyCommand=...` 这类名字就会被 scp 当选项解析。
-    # 双保险：① 显式拒绝 `-` 开头；② argv 用 `--` 终止选项解析（OpenSSH scp
-    # 走 getopt，`--` 有效 —— 2026-10-18 实测 EXIT=0）。
-    bad_names = [os.path.basename(f) for f in files if os.path.basename(f).startswith("-")]
-    if bad_names:
-        return False, ("源文件名以 `-` 开头，会被 scp 当作选项，已拒绝：%s"
-                       % ", ".join(bad_names[:5]))
+    # （files 与 bad_names 已在本函数开头计算并校验 —— 见「0.5」段）
 
     r = subprocess.run(
         ["ssh", ssh_alias, f"mkdir -p {batch_dir}"],
@@ -1017,19 +1117,52 @@ def _scp_dir(out_dir: Path,
     if r.returncode != 0:
         return False, f"mkdir 失败: {batch_dir} — {(r.stderr or r.stdout).strip()[:120]}"
 
-    r = subprocess.run(
-        ["scp", "-r", "--", *files, f"{ssh_alias}:{batch_dir}/"],
-        capture_output=True, text=True, encoding="utf-8", errors="replace")
-    if r.returncode != 0:
-        return False, f"scp 失败 — {(r.stderr or r.stdout).strip()[:120]}"
+    # 4. 传输：优先 tar 打包单次传输（N 次协商 → 1 次），失败回退逐文件。
+    # 2026-10-31 实测：112 个文件逐文件 scp 耗时 5m19s，任何外层 timeout < 5min
+    # 都会 SIGTERM 杀掉进程 ⇒ 判失败 ⇒ 降级 inbox ⇒ 审计记 failure，
+    # 但已传的文件留在服务器上（假失败）。
+    local_count = sum(1 for p in out_dir.rglob("*.md") if p.is_file())
 
-    # 5. 验证远端文件数
+    # 4a. 探测远端 tar —— tar 是性能优化，不该成为新的单点故障
     r = subprocess.run(
-        ["ssh", ssh_alias, f"ls {batch_dir}/*.md 2>/dev/null | wc -l"],
+        ["ssh", ssh_alias, "command -v tar"],
         capture_output=True, text=True, encoding="utf-8", errors="replace")
-    n = r.stdout.strip() or "?"
-    print(f"[OK] 已 scp {n} 条经验 → {ssh_alias}:{batch_dir}")
-    return True, ""
+    has_tar = r.returncode == 0
+
+    if not has_tar:
+        ok, reason = _scp_dir_files(out_dir, ssh_alias, batch_dir)
+        if ok:
+            return True, "远端无 tar，已回退逐文件"
+        return False, f"远端无 tar 且逐文件失败（{reason}）"
+
+    try:
+        tar_path, pack_reason = _pack_tar(out_dir)
+    except Exception as exc:  # noqa: BLE001 —— 打包异常必须回退，不得逃逸
+        tar_path, pack_reason = None, f"tar 打包异常（{type(exc).__name__}: {str(exc)[:80]}）"
+
+    if tar_path is None:
+        ok, reason = _scp_dir_files(out_dir, ssh_alias, batch_dir)
+        if ok:
+            return True, f"tar 打包失败（{pack_reason}），已回退逐文件"
+        return False, f"tar 打包失败（{pack_reason}）；逐文件也失败（{reason}）"
+
+    try:
+        ok, reason, is_count_mismatch = _scp_tar(tar_path, ssh_alias, batch_dir, local_count)
+    finally:
+        shutil.rmtree(tar_path.parent, ignore_errors=True)
+
+    if ok:
+        return True, ""
+
+    # 数量不符是数据完整性问题 —— 回退逐文件只会用同一批文件再传一次，
+    # 必须直接失败（2026-10-31：TC-SCP-004 暴露原实现会「回退后假成功」）。
+    if is_count_mismatch:
+        return False, reason
+
+    ok2, reason2 = _scp_dir_files(out_dir, ssh_alias, batch_dir)
+    if ok2:
+        return True, f"tar 路径失败（{reason}），已回退逐文件"
+    return False, f"tar 路径失败（{reason}）；逐文件也失败（{reason2}）"
 
 
 def publish_via_inbox(out_dir: Path, url: str,

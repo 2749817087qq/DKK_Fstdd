@@ -1,0 +1,90 @@
+# agent_spec.yaml — share-transport-performance（验证规格）
+# change: 2026-10-31-share-scp-tar-packing
+
+meta:
+  task_id: "share-scp-tar-packing-verify"
+  change_id: "2026-10-31-share-scp-tar-packing"
+  task_type: code
+  system: "FSTDD 经验回传 scp 通道（tools/share_experience.py）"
+  preconditions:
+    - "仓库已初始化 .fstdd/"
+    - "python -m pytest 可用（managed venv）"
+    - "单测不依赖真实网络/ssh（全部 monkeypatch subprocess）"
+
+steps:
+  - id: CP-1
+    description: "tar 打包：文件数与内容一致，成员名已扁平化"
+    action: "pytest tests/test_share_scp_tar.py -k pack_roundtrip"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-2
+    description: "tar 打包：子目录文件被扁平化为纯文件名"
+    action: "pytest tests/test_share_scp_tar.py -k pack_flatten"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-3
+    description: "scp 命令行只有 1 个源文件（tar 包本身）"
+    action: "pytest tests/test_share_scp_tar.py -k single_source"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-4
+    description: "远端解包文件数不符 ⇒ 失败且清理批次目录"
+    action: "pytest tests/test_share_scp_tar.py -k count_mismatch"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-5
+    description: "远端解包文件数相符 ⇒ 成功"
+    action: "pytest tests/test_share_scp_tar.py -k count_ok"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-6
+    description: "tar 打包异常 ⇒ 回退逐文件且 reason 标注"
+    action: "pytest tests/test_share_scp_tar.py -k fallback_on_pack_error"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-7
+    description: "远端无 tar ⇒ 回退逐文件"
+    action: "pytest tests/test_share_scp_tar.py -k fallback_no_remote_tar"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-8
+    description: "安全校验：'-' 开头文件名被拒且不启动子进程"
+    action: "pytest tests/test_share_scp_tar.py -k reject_dash_filename"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-9
+    description: "安全校验：remote_dir 含 '..' 被拒且不启动子进程"
+    action: "pytest tests/test_share_scp_tar.py -k reject_dotdot_remote"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-10
+    description: "批次目录命名不变（{node}-experiences-{YYYYmmdd-HHMMSS}）且 tar 包已删"
+    action: "pytest tests/test_share_scp_tar.py -k batch_layout_unchanged"
+    assertions:
+      - type: exit_code
+        expected: 0
+
+  - id: CP-11
+    description: "打包 112 个文件耗时 < 2s（不含网络）"
+    action: "pytest tests/test_share_scp_tar.py -k pack_perf"
+    assertions:
+      - type: exit_code
+        expected: 0

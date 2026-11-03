@@ -14,6 +14,7 @@ import http.server
 import importlib.util
 import json
 import re
+import tarfile
 import threading
 from pathlib import Path
 
@@ -274,9 +275,22 @@ def test_outbound_scp_transfers_staged_content(tmp_path, monkeypatch):
             args = list(cmd)
             tail = args[args.index("--") + 1:] if "--" in args else args[2:]
             file_list = tail[:-1]
-            seen["src"] = Path(file_list[0]).parent
-            seen["content"] = "\n".join(
-                Path(p).read_text(encoding="utf-8") for p in sorted(file_list))
+            # 2026-10-31（share-scp-tar-packing）：scp 通道改 tar 打包后，
+            # 源可能是 .tar.gz（二进制）—— 解开读成员，并记 src_is_tar 供断言分流。
+            parts: list[str] = []
+            for p in sorted(file_list):
+                pp = Path(p)
+                if pp.name.endswith(".tar.gz"):
+                    seen["src_is_tar"] = True
+                    with tarfile.open(pp, "r:gz", encoding="utf-8") as tf:
+                        for m in tf.getmembers():
+                            fh = tf.extractfile(m)
+                            if fh is not None:
+                                parts.append(fh.read().decode("utf-8"))
+                else:
+                    seen["src"] = pp.parent
+                    parts.append(pp.read_text(encoding="utf-8"))
+            seen["content"] = "\n".join(parts)
         elif cmd[0] == "ssh" and "wc -l" in cmd[-1]:
             r.stdout = "2\n"
         return r
@@ -284,8 +298,11 @@ def test_outbound_scp_transfers_staged_content(tmp_path, monkeypatch):
     monkeypatch.setattr(se.subprocess, "run", _run)
     ok, reason = se.publish_via_scp(out)
     assert ok, reason
-    assert seen["src"].resolve() != out.resolve()
-    assert seen["src"].name.startswith("exp_stage_")
+    # 2026-10-31：tar 路径下源是临时打包目录，不再有 exp_stage_* 这一层；
+    # 「不直接传活体目录」的意图仍成立，故按通道分流断言。
+    if not seen.get("src_is_tar"):
+        assert seen["src"].resolve() != out.resolve()
+        assert seen["src"].name.startswith("exp_stage_")
     assert not re.search(r"/(?:home|Users)/", seen["content"])
     assert BAD_TOKEN not in seen["content"]
 

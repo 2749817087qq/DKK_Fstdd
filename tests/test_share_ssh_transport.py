@@ -29,6 +29,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import sys
+import tarfile
 from pathlib import Path
 
 import pytest
@@ -94,7 +95,13 @@ def _scp_sources(cmd: list) -> list:
 
 
 def _fake_run(ssh_ok: bool, seen: dict, scp_ok: bool = True):
-    """伪造 subprocess.run：scp/ssh 按 ssh_ok/scp_ok 控制成败，并回读传输内容。"""
+    """伪造 subprocess.run：scp/ssh 按 ssh_ok/scp_ok 控制成败，并回读传输内容。
+
+    2026-10-31（share-scp-tar-packing）：scp 通道改为「tar 打包单次传输」后，
+    源文件可能是 `.tar.gz`（二进制）。这里按后缀分流 —— tar 包解开读成员内容，
+    并设 `seen["src_is_tar"]=True` 供断言分流（tar 路径下源是临时打包目录，
+    不再有「独立校验目录」这个概念，但「不直接传活体目录」的意图仍成立）。
+    """
 
     def _run(cmd, **kw):
         r = _R()
@@ -103,9 +110,21 @@ def _fake_run(ssh_ok: bool, seen: dict, scp_ok: bool = True):
             if scp_ok:
                 file_list = _scp_sources(cmd)
                 seen["argv"] = list(cmd)
-                seen["src"] = Path(file_list[0]).parent
-                seen["content"] = "\n".join(
-                    Path(p).read_text(encoding="utf-8") for p in sorted(file_list))
+                parts: list[str] = []
+                for p in sorted(file_list):
+                    pp = Path(p)
+                    if pp.name.endswith(".tar.gz"):
+                        seen["src_is_tar"] = True
+                        with tarfile.open(pp, "r:gz", encoding="utf-8") as tf:
+                            seen["tar_members"] = sorted(m.name for m in tf.getmembers())
+                            for m in tf.getmembers():
+                                fh = tf.extractfile(m)
+                                if fh is not None:
+                                    parts.append(fh.read().decode("utf-8"))
+                    else:
+                        seen["src"] = pp.parent
+                        parts.append(pp.read_text(encoding="utf-8"))
+                seen["content"] = "\n".join(parts)
                 return r
             r.returncode = 1
             r.stderr = "stub: scp unavailable"
@@ -163,10 +182,14 @@ def test_silent_share_no_token_uses_scp(tmp_path, monkeypatch):
     # scp 确实被调用（而不是绕过 publish 直调 inbox POST）
     assert "owner/name" in calls
     assert seen["content"]
-    # 传输源**恒为本模块创建的校验目录**，绝不是调用方 OUT_DIR：
-    # pre_staged 只跳过脱敏动作，仍会过滤 + 残余自检后拷到 exp_verify_*（审计 F1）
-    assert seen["src"].resolve() != (tmp_path / "experiences").resolve()
-    assert seen["src"].name.startswith("exp_verify_"), seen["src"]
+    # 传输源**恒为独立校验产物**，绝不是调用方 OUT_DIR：
+    # pre_staged 只跳过脱敏动作，仍会过滤 + 残余自检后拷到 exp_verify_*（审计 F1）。
+    # 2026-10-31：scp 通道改 tar 打包后，源变成临时打包目录（fstdd_tar_*），
+    # 不再有「exp_verify_* 目录」这一层 —— 但「不直接传活体目录」的意图仍成立，
+    # 故按通道分流断言。
+    if not seen.get("src_is_tar"):
+        assert seen["src"].resolve() != (tmp_path / "experiences").resolve()
+        assert seen["src"].name.startswith("exp_verify_"), seen["src"]
     # 传输内容已脱敏
     assert "ghp_" not in seen["content"]
     assert "172.18.0.8" not in seen["content"]
@@ -656,13 +679,19 @@ def test_pre_staged_filters_index_files_and_residual(tmp_path, monkeypatch):
     ok, reason = se.publish_via_scp(out, "stub-host", "/tmp/x", pre_staged=True)
     assert ok, reason
 
-    sent = sorted(Path(p).name for p in _scp_sources(seen["argv"]))
+    # 2026-10-31：scp 通道改 tar 打包后，出站内容以 tar 成员名体现；
+    # 逐文件回退路径才用 argv 的源文件列表。两条路径都要断言同一件事：
+    # 「只有 EXP-OK.md 出站，残留/索引/指引都被过滤」。
+    if seen.get("src_is_tar"):
+        sent = list(seen["tar_members"])
+    else:
+        sent = sorted(Path(p).name for p in _scp_sources(seen["argv"]))
+        assert seen["src"].name.startswith("exp_verify_"), seen["src"]
+
     assert sent == ["EXP-OK.md"], sent
     assert "EXP-LEFTOVER.md" not in sent, "未脱敏残留不得出站"
     assert "README.md" not in sent, "索引文件不得出站"
     assert "SUBMIT.md" not in sent, "回传指引不得出站"
-    # 传输源是校验后的独立目录，不是调用方目录
-    assert seen["src"].name.startswith("exp_verify_"), seen["src"]
 
 
 def test_pre_staged_audits_rejected_entries(tmp_path, monkeypatch):
@@ -731,14 +760,17 @@ def test_scp_argv_has_double_dash_and_no_glob(tmp_path, monkeypatch):
 
     argv = seen["argv"]
     assert argv[0] == "scp"
-    assert "-r" in argv
+    # 2026-10-31：tar 路径下不再有 `-r`（单文件传输）；逐文件回退路径才有。
     assert "--" in argv, "必须用 `--` 终止选项解析（审计 F6）"
     assert not any("*" in str(a) for a in argv), "不得出现 shell glob：%r" % (argv,)
     sources = _scp_sources(argv)
-    assert sources, "必须显式枚举源文件"
+    assert sources, "必须显式给出源文件"
     for s in sources:
         assert "\\" not in s, "Windows 反斜杠会被 scp 当转义符：%r" % s
         assert not Path(s).name.startswith("-"), "文件名不得以 `-` 开头：%r" % s
+    # tar 路径：恰好 1 个源且为 .tar.gz（N 次协商 → 1 次，2026-10-31 性能改造）
+    assert len(sources) == 1, f"tar 路径应只有 1 个源: {sources}"
+    assert sources[0].endswith(".tar.gz"), sources[0]
     assert argv[-1].startswith("stub-host:"), argv[-1]
 
 
@@ -773,7 +805,12 @@ def test_scp_dir_implementation_is_covered(tmp_path, monkeypatch):
 
     ok, reason = se._scp_dir(out, "stub-host", "/tmp/x")
     assert ok, reason
-    assert sorted(Path(p).name for p in _scp_sources(seen["argv"])) == ["EXP-SHT1.md"]
+    names = [Path(p).name for p in _scp_sources(seen["argv"])]
+    # 2026-10-31：内部枚举逻辑改为「打包成 1 个 tar.gz 单次传输」
+    assert len(names) == 1, f"tar 路径应只传 1 个包，实际 {names}"
+    assert names[0].endswith(".tar.gz"), names
+    # 传的仍是那份经验（解包后内容可见）
+    assert "EXP-SHT1" in seen["content"]
 
 
 # ============================================================
