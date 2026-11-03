@@ -103,6 +103,11 @@ scope:
     - "tests/test_share_ssh_transport.py"
     - "tests/test_share_publish_sanitize.py"
     - "tests/test_share_hardening.py"
+    - "pyproject.toml"
+    - "CHANGELOG.md"
+    - "docs/UPSTREAM_BASELINE.md"
+    - ".fstdd/config.d/project.yaml"
+    - ".fstdd/version.yaml"
 
 constraints:
   - "不改变三档降级语义（scp → github → inbox），只优化 scp 档内部实现"

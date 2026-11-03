@@ -1,7 +1,7 @@
 # 经验回传 scp 通道改 tar 打包：112 个文件 5m19s → 目标 <30s
 
-<!-- source_hash: 50ee16dff5b93f1a -->
-<!-- generated_at: 2026-11-03T11:17:41+00:00 -->
+<!-- source_hash: 6ffd0b9449457192 -->
+<!-- generated_at: 2026-11-03T11:58:58+00:00 -->
 <!-- canonical: canonical/proposals/2026-10-31-share-scp-tar-packing.yaml -->
 
 ## Why

@@ -1,0 +1,81 @@
+baseline:
+  at: '2026-10-31T13:20:46+00:00'
+  base_git_sha: f7a30b9d14a57161e7b2e03369e67a2fa4f2d4b7
+  clock_source: system
+  established_by: gate1
+  node_id: DESKTOP-TBJSBQ5
+change_id: 2026-10-31-share-scp-tar-packing
+complexity_score: null
+current_phase: deliver
+design_adjustments:
+  count: 0
+last_modified: '2026-11-03T11:57:31+00:00'
+mode: standard
+phases:
+  build:
+    confirmed_actor: ai
+    confirmed_at: '2026-11-03T11:57:08+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: '[F:pytest] 全量 1494 total / 0 failed / 11 skipped（第 2 轮，全绿）；[F:selfcheck]
+      四自检 rename 8/8 · eol 7/7 · skill_standards 7/7 · workbuddy_skills PASS；[F:ci]
+      check-failures 6 PASS / 1 WARN / 0 FAIL，TC 覆盖 11/11；[F:real] 真实链路 319s->54s，服务器
+      112 files / tar.gz 残留 0；[D] SC 8/9 达成，SC-03 未达标（54s vs 30s）如实记录并进 backlog。D哥
+      确认原文：「确认」'
+    slices_completed:
+      S1:
+        new_tests: 2
+        status: done
+        tc_coverage: TC-SCP-001,TC-SCP-002
+        verified_at: '2026-10-31T15:30:00+08:00'
+      S2:
+        new_tests: 1
+        status: done
+        tc_coverage: TC-SCP-003
+        verified_at: '2026-10-31T15:35:00+08:00'
+      S3:
+        new_tests: 2
+        status: done
+        tc_coverage: TC-SCP-004,TC-SCP-005
+        verified_at: '2026-10-31T15:40:00+08:00'
+      S4:
+        new_tests: 2
+        status: done
+        tc_coverage: TC-SCP-006,TC-SCP-007
+        verified_at: '2026-10-31T15:45:00+08:00'
+      S5:
+        new_tests: 2
+        status: done
+        tc_coverage: TC-SCP-008,TC-SCP-009
+        verified_at: '2026-10-31T15:50:00+08:00'
+      S6:
+        new_tests: 2
+        status: done
+        tc_coverage: TC-SCP-010,TC-SCP-011
+        verified_at: '2026-11-03T19:40:00+08:00'
+    status: completed
+  deliver:
+    status: completed
+  spec:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-31T13:25:45+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: '[F:design] 6 决策含备选排除 + 7 条风险缓解；[F:spec] 7 REQ / 11 SC（每 REQ
+      1-2 个 SC）；[F:test-plan] 11 TC 与 11 SC 一一对应、TC-ID 零重复；[F:env] 远端 GNU tar 1.35
+      已实测；[D] 覆盖完整可进 BUILD。D哥 确认原文：「确认」'
+    status: completed
+  understand:
+    confirmed_actor: ai
+    confirmed_at: '2026-10-31T13:20:46+00:00'
+    confirmed_by: dialog
+    confirmed_evidence: '[F:proposal] 5 项 what_changes + 3 条 scope.paths + 9 条 SC；[F:template]
+      对照 proposal 模板逐键核对，补回遗漏的 capabilities 段（1 个 modified: share-transport-performance）；[F:evidence]
+      112 文件实测 5m19s，三次超时留 13/25/37 个半成品批次而审计全记 failure。D哥 确认原文：「确认」'
+    status: completed
+score_confidence: null
+status: archived
+task_type: code
+traceability:
+  spec_scenarios: 0
+  tc_cases: 0
+  test_functions: 0
+version: '3.0'

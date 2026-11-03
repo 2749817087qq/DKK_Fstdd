@@ -1,0 +1,167 @@
+# 2026-10-31-share-scp-tar-packing.yaml — Canonical Proposal (YAML-first, V2.9)
+# AI 起草、AI 修改、AI 消费。Human View 由 `stdd canon generate` 生成。
+
+meta:
+  change_id: "2026-10-31-share-scp-tar-packing"
+  title: "经验回传 scp 通道改 tar 打包：112 个文件 5m19s → 目标 <30s"
+  created: "2026-10-31T13:16:39+00:00"
+  status: draft
+  version: "2.9"
+
+why:
+  problem: |
+    `tools/share_experience.py` 的 `_scp_dir()` 把 out_dir 里**每个文件单独列进 scp 命令行**
+    （`scp -r -- file1 file2 ... file112 host:dir/`）。112 个经验实测耗时 **5 分 19 秒**。
+
+    后果不是「慢」，而是**假失败**：任何外层 timeout < 5min 的调用（CI、skill 自动调用、
+    人工 `timeout 120`）都会在传输中途 SIGTERM 杀掉进程 ⇒ `subprocess.run` 返回非 0
+    ⇒ `_scp_dir` 判失败 ⇒ `publish()` 降级到 inbox 通道（本机无 inbox token ⇒ 401）
+    ⇒ 审计记 `target: endpoint` / `result: failure`。
+
+    **但已传的文件留在服务器上** —— 实测 2026-10-31 三次不同 timeout 留下 13 / 25 / 37 个
+    文件的三个半成品批次，而审计全部记成「失败」。症状极具迷惑性：服务器上明明有文件，
+    审计说没传上去。
+
+    这个假信号直接导致我在 v3.6.0 DELIVER 收尾时误报「经验回传失败、112 条待传」——
+    而这恰恰是 v3.6.0「反漂移机制」要防的**形态 A（无证据断言：看了审计就下结论，
+    没核实服务器上的事实）**。
+
+  motivation: |
+    「审计说的和实际发生的不一致」比「慢」严重得多 —— 它让所有基于审计的判断都不可信。
+    而且这条通道是 Phase 4 DELIVER 的自动步骤，每次交付都会跑，假信号会持续制造误判。
+
+  evidence:
+    observed_at: "2026-10-31T12:40:02+00:00"
+    observed_base_git_sha: "f7a30b9d14a57161e7b2e03369e67a2fa4f2d4b7"
+    details: |
+      1) 完整跑一次（timeout 900）：
+         `[OK] 已 scp 112 条经验 → fstdd-hub:/home/ubuntu/fstdd-inbox/local-experiences-20261031-203459`
+         `经验静默回传: 成功（目标 scp）` —— **耗时 5m19s**（12:34:43 → 12:40:02 UTC）。
+      2) 三次超时中断留下的半成品批次（服务器 `ls | wc -l` 实测）：
+         - `local-experiences-20261031-202819`：13 files（我给的 timeout 60s）
+         - `local-experiences-20261031-202930`：25 files（timeout 90s）
+         - `local-experiences-20261031-203115`：37 files（timeout 120s）
+         三次审计全部记 `target: endpoint` / `result: failure` / `HTTP 401`。
+      3) 对照：19:25:53 与 19:29:27 两次无 timeout 限制的批次均为 **89 files（完整）**。
+      4) 现有实现位置：`tools/share_experience.py:_scp_dir()` 第 1010-1015 行
+         `scp -r -- <全部文件> host:batch_dir/`（显式枚举，注释说明是为了绕开
+         Windows scp 不展开 glob 的问题）。
+
+what_changes:
+  - id: C1
+    description: |
+      新增 `_pack_tar(out_dir) -> tuple[Path | None, str]`：用 Python 标准库 `tarfile`
+      把 out_dir 下所有文件打成单个 `<node_id>-experiences-<ts>.tar.gz`（写到临时目录），
+      返回路径与失败原因。用标准库而非系统 `tar` 命令 —— 跨平台（Windows/macOS/Linux）
+      且不依赖 PATH。
+    type: new
+
+  - id: C2
+    description: |
+      改 `_scp_dir()` 第 4 步：从「枚举全部文件逐个 scp」改为
+      「scp 单个 tar 包 → 远端 `tar -xzf` 解包 → 删 tar」。批次目录名与时间戳语义不变
+      （仍是 `{node_id}-experiences-{YYYYmmdd-HHMMSS}`），保证既有消费方（服务器侧扫描）
+      不受影响。
+    type: modified
+
+  - id: C3
+    description: |
+      远端解包后的**文件数校验**改为：`ls batch_dir/*.md | wc -l` 与打包前的本地文件数
+      比对，不一致则返回失败（防止解包不完整被当成功）。同时校验 tar 包已被删除
+      （不留残骸）。
+    type: modified
+
+  - id: C4
+    description: |
+      保留**逐文件 scp 作为 fallback**：tar 打包失败（如文件被占用 / tarfile 异常）时
+      自动回退到原有逐文件路径，并在 reason 里标注「已回退逐文件模式」。
+      理由：tar 是性能优化，不该成为新的单点故障。
+    type: modified
+
+  - id: C5
+    description: |
+      新增 `tests/test_share_scp_tar.py`：覆盖 ① tar 打包产物可被解开且文件数与源一致
+      ② 打包后单次 scp 的 argv 里只有 1 个源文件 ③ 远端解包文件数不符 ⇒ 失败
+      ④ tar 打包异常 ⇒ 回退逐文件 ⑤ 安全校验（`..` 路径、`-` 开头文件名）在 tar 路径上
+      仍然生效。
+    type: new
+
+capabilities:
+  new: []
+  modified:
+    - name: "share-transport-performance"
+      description: |
+        经验回传 scp 通道的传输效率与成败判据：从「逐文件 scp」改为「tar 打包 + 单次传输
+        + 远端解包」，并补齐「远端解包后文件数校验」（防解包不完整被当成功）与
+        「tar 失败自动回退逐文件」（防优化变成新单点故障）。
+
+scope:
+  mode: strict
+  paths:
+    - "tools/share_experience.py"
+    - "tests/test_share_scp_tar.py"
+    - "tests/test_share_ssh_transport.py"
+    - "tests/test_share_publish_sanitize.py"
+    - "tests/test_share_hardening.py"
+    - "pyproject.toml"
+    - "CHANGELOG.md"
+    - "docs/UPSTREAM_BASELINE.md"
+    - ".fstdd/config.d/project.yaml"
+    - ".fstdd/version.yaml"
+
+constraints:
+  - "不改变三档降级语义（scp → github → inbox），只优化 scp 档内部实现"
+  - "不改变批次目录命名与远端布局 —— 服务器侧扫描逻辑不能受影响"
+  - "保留全部既有安全校验（`_validate_remote_path` 白名单、`-` 开头文件名拒绝、`--` 终止选项）"
+  - "tar 是优化不是单点故障：打包失败必须回退逐文件"
+  - "远端解包后必须验证文件数，不能假定 tar 成功即文件齐"
+
+stakeholders:
+  - "D哥（决策者：要求修这条假信号）"
+  - "FSTDD 各节点（Phase 4 DELIVER 自动步骤的调用方）"
+
+risk_areas:
+  - capability: share-transport-performance
+    risk: "远端没有 tar 命令（极老发行版 / busybox）⇒ 解包失败，比逐文件更糟"
+    mitigation: |
+      ① 解包前先 `command -v tar` 探测，无 tar 直接回退逐文件模式；
+      ② 解包失败时清理半成品目录并回退逐文件；
+      ③ 本机服务器实测有 GNU tar（Ubuntu 22.04）。
+  - capability: share-transport-performance
+    risk: "tar 包内含路径穿越条目（如 `../evil`）导致远端解包写到批次目录外"
+    mitigation: |
+      打包时用 `arcname=os.path.basename(f)` 强制扁平化 —— 只保留文件名，不带任何目录成分；
+      并在打包前复用既有的「`-` 开头文件名拒绝」校验。
+  - capability: share-transport-performance
+    risk: "改 scp 实现破坏既有 15 个 transport 测试"
+    mitigation: "先跑 `tests/test_share_ssh_transport.py` 建立基线；改动后逐个复核失败项，只改因实现变更而必须调整的断言"
+
+non_goals:
+  - "不改 inbox 通道（那是另一个问题：本机从未拿到 inbox token）"
+  - "不改 GitHub 通道"
+  - "不做增量/断点续传（本轮只解决单次传输耗时）"
+
+critical:
+  is_critical: false
+  risk_assessment:
+    safety_critical: false
+    financial: false
+    cross_system: false
+
+anchoring:
+  level: L2
+  reference_changes:
+    - "2026-10-21-installation-id-prefix（share 通道安全校验前身）"
+    - "2026-10-27-share-egress-closure（出站收口三关）"
+  anchor_implementations: []
+
+success_criteria:
+  - "SC-01：`_pack_tar()` 存在，能把 N 个文件打成单个 .tar.gz，解包后文件数与内容与源一致"
+  - "SC-02：`_scp_dir()` 走 tar 路径时，scp 命令行**只有 1 个源文件**（tar 包本身）"
+  - "SC-03：112 个文件场景下，tar 路径的实测耗时 < 30 秒（当前逐文件为 5m19s）"
+  - "SC-04：远端解包后文件数与本地不一致时，返回失败（不是假成功）"
+  - "SC-05：tar 打包异常时自动回退逐文件，且 reason 里标注回退"
+  - "SC-06：批次目录命名与远端布局不变（`{node_id}-experiences-{YYYYmmdd-HHMMSS}`）"
+  - "SC-07：既有 `tests/test_share_ssh_transport.py` 全部用例通过（或只改因实现变更必须改的断言，并注明理由）"
+  - "SC-08：新增测试 ≥ 5 个，覆盖打包/单次传输/数量校验/回退/安全校验"
+  - "SC-09：全量门禁 0 failed"
