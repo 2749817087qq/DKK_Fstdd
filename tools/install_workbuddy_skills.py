@@ -549,6 +549,26 @@ FSTDD = **Spec 先行 + TDD 执行**。先定义行为（GIVEN/WHEN/THEN 规格�
 5. 提示版本漂移或要升级 → `fstdd-upgrade`
 6. **当前项目没有 `.fstdd/` 目录时，一律先执行初始化再进入任何阶段。**
 
+## ⚠️ DELIVER 实战已知坑（2026-10/11 两轮交付实测，执行 DELIVER 前必读）
+
+1. **`fstdd archive` 只合并 MD 层 specs**（`.fstdd/specs/`），**不合并 canonical YAML 层**
+   （`canonical/proposals/` 与 `canonical/specs/{{code,agent}}/`）——须手工补 3 个文件，
+   否则 `ci check-failures` 会因 scope/proposal 缺失而红。产物输出说「Specs 已合并」时别信全。
+2. **`canon generate` 对归档 change 会写归档目录里的 proposal.md**（读入口写文件的已知上限）；
+   改过 `proposals/*.yaml` 后必须 `canon generate` 重生成再 `canon verify`，否则 hash 不一致。
+3. **`fstdd new` 会在 `canonical/specs/{{code,agent}}/` 生成 `<change>.yaml` 占位**，须移走
+   （safe-delete 拦 `rm`/`unlink`，用 `mv` 移出仓库）。
+4. **`phase advance` BUILD→DELIVER 要求 per-slice 证据链**：`.fstdd.yaml` 的
+   `slices_completed` 每个切片都要有 `tc_coverage` / `new_tests` / `verified_at`，缺则拒绝。
+5. **升版 5 处声明面要预先补进 scope.paths**（pyproject / version.yaml / config.d /
+   UPSTREAM_BASELINE / CHANGELOG），否则闸2 范围锁在 DELIVER 相位 FAIL。
+6. **`git checkout --` 对「size/mtime 未变但内容损坏」的文件静默跳过**（git 按 stat 缓存
+   判无修改）。文件被外部改坏（如 null 填充）时用 `git show <commit>:<path>` 取 blob
+   强制重写。pytest 报 `source code string cannot contain null bytes` 即此症。
+7. **经验回传的成败以服务器落盘文件为准**，`.fstdd/share-audit.yaml` 是二手证据 ——
+   实测出现过「审计记 failure、文件已传上去」的假信号（v3.6.1 tar 打包已根治，
+   但「先核实一手事实再下结论」的纪律不变）。
+
 ## 安全提示（本机策略）
 
 - `fstdd-deliver` 的 Step 2.8「经验回传」为**静默回传**：自动执行、无交互、失败不阻断 DELIVER。
